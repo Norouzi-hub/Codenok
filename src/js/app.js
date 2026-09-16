@@ -156,8 +156,13 @@
       text = '⚠ داده ذخیره نمی‌شود';
       cls = 'chip bad';
     } else if (s.linked) {
-      text = '💾 ' + s.fileName + (s.lastSavedAt ? ' • ' + J.stamp(s.lastSavedAt).split('ساعت')[1].trim() : '');
+      text = '💾 ' + s.fileName +
+        (s.lastSavedAt ? ' • ' + J.stamp(s.lastSavedAt).split('ساعت')[1].trim() : '');
       cls = 'chip good';
+    } else if (s.hasStored) {
+      // فایل از نشست قبل هست و فقط اجازه‌اش لازم است — یک کلیک، نه انتخاب دوباره
+      text = '🔓 تأیید دسترسی به ' + s.storedName;
+      cls = 'chip warn';
     } else if (s.canLink) {
       text = '⚠ به فایلی روی دیسک وصل نیست';
       cls = 'chip warn';
@@ -168,7 +173,26 @@
     statusChip.textContent = text;
     statusChip.className = cls;
     statusChip.title = s.error ? ('خطای ذخیره: ' + s.error)
-      : 'برای مدیریت ذخیره‌سازی کلیک کنید';
+      : (s.hasStored && !s.linked
+        ? 'برای ادامهٔ ذخیرهٔ خودکار روی همان فایل، یک بار کلیک کنید'
+        : 'برای مدیریت ذخیره‌سازی کلیک کنید');
+  }
+
+  /** کلیک روی چیپ: اگر فقط اجازه لازم است همان‌جا بگیر، وگرنه تنظیمات */
+  function onChipClick() {
+    var s = w.Store.status();
+    if (!s.linked && s.hasStored) {
+      w.Store.relinkFile(true).then(function (ok) {
+        if (ok) {
+          w.U.toast('دسترسی برقرار شد؛ تغییرات دوباره خودکار ذخیره می‌شوند.', 'good');
+          w.Store.flushNow();
+        } else {
+          w.UIMisc.settingsDialog(app);
+        }
+      });
+      return;
+    }
+    w.UIMisc.settingsDialog(app);
   }
 
   function topBar() {
@@ -186,9 +210,7 @@
       if (e.key === 'Escape') { searchInput.value = ''; app.state.q = ''; app.render(); }
     });
 
-    statusChip = el('button.chip', {
-      type: 'button', onclick: function () { w.UIMisc.settingsDialog(app); }
-    });
+    statusChip = el('button.chip', { type: 'button', onclick: onChipClick });
 
     navButtons = {
       list: el('button.nav-btn.active', {
@@ -304,6 +326,8 @@
           return M.load();
         });
       }
+    }).then(function () {
+      return w.Docs.load();
     }).then(function () {
       bindShortcuts();
       app.render();

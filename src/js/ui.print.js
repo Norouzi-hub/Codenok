@@ -61,6 +61,31 @@
       ]));
     });
 
+    var attached = w.Docs ? w.Docs.current(rec.id) : [];
+    if (attached.length) {
+      var docTable = el('table.p-table.p-list.p-docs', null, [
+        el('tr', null, [
+          el('th', { text: 'نوع سند' }), el('th', { text: 'تاریخ' }),
+          el('th', { text: 'شمارهٔ نامه' }), el('th', { text: 'نام فایل' })
+        ])
+      ]);
+      attached.forEach(function (d) {
+        docTable.appendChild(el('tr', null, [
+          el('td', { text: d.kind }),
+          el('td', { text: d.docDate ? J.format(d.docDate) : '' }),
+          el('td', { text: d.letterNo || '' }),
+          el('td', { text: d.fileName })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'مستندات پیوست' }),
+        el('p.p-sub', {
+          text: 'پوشه: ' + (rec.docFolder || '—')
+        }),
+        docTable
+      ]));
+    }
+
     var items = M.timelineFor(rec);
     if (items.length) {
       var list = el('table.p-table.p-history', null, [

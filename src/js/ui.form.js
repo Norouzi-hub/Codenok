@@ -75,9 +75,15 @@
     return wrap;
   }
 
+  var KIND_LABELS = {
+    create: 'ثبت پرونده', update: 'ویرایش', delete: 'حذف',
+    import: 'ورود از فایل', restore: 'بازیابی پشتیبان',
+    'doc-add': 'افزودن سند', 'doc-version': 'نسخهٔ تازهٔ سند',
+    'doc-remove': 'حذف سند', 'doc-folder': 'تغییر پوشهٔ مستندات'
+  };
+
   function kindLabel(kind) {
-    return { create: 'ثبت پرونده', update: 'ویرایش', delete: 'حذف', import: 'ورود از فایل',
-      restore: 'بازیابی پشتیبان' }[kind] || kind;
+    return KIND_LABELS[kind] || kind;
   }
 
   function renderTimeline(rec) {
@@ -89,6 +95,26 @@
         box.appendChild(el('li.tl-item.tl-milestone', null, [
           el('span.tl-date', { text: J.format(it.date) }),
           el('span.tl-body', null, [el('b', { text: it.label })])
+        ]));
+        return;
+      }
+      if (it.type === 'doc') {
+        var d = it.doc;
+        box.appendChild(el('li.tl-item.tl-doc', null, [
+          el('span.tl-date', { text: J.format(it.date) }),
+          el('span.tl-body', null, [
+            el('span.doc-icon', { text: w.UIDocs.iconFor(d.fileName) }),
+            el('b', { text: d.kind }),
+            el('span.muted', {
+              text: ' — ' + (d.title || d.letterNo || d.originalName || d.fileName) + ' '
+            }),
+            el('button.linkish', {
+              type: 'button', text: 'باز کردن',
+              onclick: function () {
+                w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+              }
+            })
+          ])
         ]));
         return;
       }
@@ -256,45 +282,61 @@
     // ---------------------------------------------------------------- ساخت DOM
     headTitle = el('h2.case-title');
 
-    var tabs = el('div.tabs', null, w.GROUPS.map(function (g) {
-      var count = M.FIELDS.filter(function (f) {
-        return f.group === g.key && draft[f.key];
-      }).length;
-      return el('button.tab' + (g.key === activeTab ? '.active' : ''), {
+    var tabs = el('div.tabs');
+
+    function makeTab(key, label, count) {
+      var tab = el('button.tab' + (key === activeTab ? '.active' : ''), {
         type: 'button',
         onclick: function () {
-          activeTab = g.key;
-          app.state.formTab = g.key;
+          activeTab = key;
+          app.state.formTab = key;
           renderPanel();
           w.U.$$('.tab', tabs).forEach(function (t) { t.classList.remove('active'); });
-          this.classList.add('active');
+          tab.classList.add('active');
         }
       }, [
-        el('span', { text: g.label }),
+        el('span', { text: label }),
         count ? el('span.badge', { text: w.U.toFaDigits(count) }) : null
       ]);
-    }).concat([
-      el('button.tab' + (activeTab === '__history' ? '.active' : ''), {
-        type: 'button',
-        onclick: function () {
-          activeTab = '__history';
-          app.state.formTab = '__history';
-          renderPanel();
-          w.U.$$('.tab', tabs).forEach(function (t) { t.classList.remove('active'); });
-          this.classList.add('active');
-        }
-      }, [
-        el('span', { text: 'تاریخچه و رویدادها' }),
-        existing ? el('span.badge', {
-          text: w.U.toFaDigits(M.historyFor(existing.id).length)
-        }) : null
-      ])
-    ]));
+      tab.dataset.tab = key;
+      tabs.appendChild(tab);
+      return tab;
+    }
+
+    w.GROUPS.forEach(function (g) {
+      makeTab(g.key, g.label, M.FIELDS.filter(function (f) {
+        return f.group === g.key && draft[f.key];
+      }).length);
+    });
+    makeTab('__docs', 'مستندات',
+      existing ? w.Docs.current(existing.id).length : 0);
+    makeTab('__history', 'تاریخچه و رویدادها',
+      existing ? M.historyFor(existing.id).length : 0);
+
+    /** شمارندهٔ یک تب را بدون رندر دوبارهٔ کل صفحه به‌روز می‌کند */
+    function setTabCount(key, n) {
+      var tab = tabs.querySelector('[data-tab="' + key + '"]');
+      if (!tab) return;
+      var badge = tab.querySelector('.badge');
+      if (n) {
+        if (badge) badge.textContent = w.U.toFaDigits(n);
+        else tab.appendChild(el('span.badge', { text: w.U.toFaDigits(n) }));
+      } else if (badge) {
+        badge.remove();
+      }
+    }
 
     var panel = el('div.form-panel');
 
     function renderPanel() {
       w.U.clear(panel);
+      if (activeTab === '__docs') {
+        panel.appendChild(w.UIDocs.render(app, existing, function () {
+          renderPanel();
+          if (existing) setTabCount('__docs', w.Docs.current(existing.id).length);
+        }));
+        return;
+      }
       if (activeTab === '__history') {
         if (!existing) {
           panel.appendChild(el('p.muted', { text: 'پس از ذخیرهٔ پرونده، تاریخچه اینجا نمایش داده می‌شود.' }));

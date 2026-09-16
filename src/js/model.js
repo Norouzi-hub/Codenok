@@ -29,6 +29,8 @@
       parts.push(v);
       if (f.type === 'date') parts.push(w.J.format(v, { latin: true }));
     });
+    // نام و نوع مستندات پیوست هم باید با جستجوی سراسری پیدا شوند
+    if (rec._docText) parts.push(rec._docText);
     return w.U.normalize(parts.join(' '));
   }
 
@@ -61,6 +63,14 @@
     return changes;
   }
 
+  /** ثبت رویداد در تاریخچه و ذخیرهٔ فوری آن */
+  function logEvent(kind, rec, changes, note) {
+    var entry = addHistory(kind, rec, changes, note);
+    w.Store.put('history', [entry]);
+    w.Store.scheduleSave();
+    return entry;
+  }
+
   function addHistory(kind, rec, changes, note) {
     var entry = {
       id: w.U.uid(),
@@ -89,6 +99,12 @@
         items.push({ type: 'milestone', date: v, label: m.label, sortKey: v + '0' });
       }
     });
+    if (w.Docs) {
+      w.Docs.forCase(rec.id).forEach(function (d) {
+        if (d.superseded || !d.docDate || !w.J.unpack(d.docDate)) return;
+        items.push({ type: 'doc', date: d.docDate, doc: d, sortKey: d.docDate + '0' });
+      });
+    }
     historyFor(rec.id).forEach(function (h) {
       // atJalali با ارقام فارسی ذخیره می‌شود؛ باید اول لاتین شود
       var d = w.U.toLatinDigits(h.atJalali || '').replace(/[^0-9]/g, '').slice(0, 8);
@@ -99,6 +115,12 @@
   }
 
   // --------------------------------------------------------------- عملیات CRUD
+  /**
+   * کلیدهایی که فیلد فرم نیستند ولی روی پرونده می‌مانند و نباید با
+   * ویرایش از بین بروند (مثلاً نام پوشهٔ مستندات روی دیسک).
+   */
+  var SYSTEM_KEYS = ['docFolder'];
+
   function normalizeRecord(rec) {
     var out = {};
     FIELDS.forEach(function (f) {
@@ -107,6 +129,9 @@
       v = String(v).trim();
       if (!v) return;
       out[f.key] = (f.type === 'date') ? w.J.parse(v) : v;
+    });
+    SYSTEM_KEYS.forEach(function (k) {
+      if (rec[k] != null && rec[k] !== '') out[k] = rec[k];
     });
     out.id = rec.id;
     return out;
@@ -138,6 +163,10 @@
     var after = normalizeRecord(data);
     after.id = id;
     after.createdAt = before.createdAt;
+    // اگر فراخوان کلید سیستمی را نفرستاده، از رکورد قبلی نگه داشته می‌شود
+    SYSTEM_KEYS.forEach(function (k) {
+      if (after[k] == null && before[k] != null) after[k] = before[k];
+    });
     var changes = diff(before, after);
     if (!changes.length) return Promise.resolve({ record: before, changes: [] });
     after.updatedAt = new Date().toISOString();
@@ -420,7 +449,7 @@
     state: state, FIELDS: FIELDS, FIELD_BY_KEY: FIELD_BY_KEY, DATE_KEYS: DATE_KEYS,
     load: load, reload: reload, seed: seed, bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
-    idSet: idSet,
+    idSet: idSet, reindex: index, addHistory: logEvent,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
     stats: stats, stale: stale, strip: strip, diff: diff,

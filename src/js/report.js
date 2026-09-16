@@ -538,7 +538,29 @@
       'دست‌کم یکی از فیلدهای کلیدی (کد ملی، تاریخ ورود، مرجع گزارش‌دهنده، ' +
       'نوع پرونده، واحد سازمانی) خالی است.', incomplete);
 
-    // ۹) گلوگاه: اگر میانهٔ زمان تا کمیته بالاست
+    // ۹) مستندات — فقط وقتی اصلاً از مستندات استفاده می‌شود، وگرنه نویز است
+    if (w.Docs && w.Docs.all().length) {
+      var hasDoc = function (rec, kind) {
+        return w.Docs.current(rec.id).some(function (d) { return d.kind === kind; });
+      };
+      add('serious', '📄', 'رأی صادرشده بدون سند رأی',
+        'تاریخ طرح در کمیته ثبت شده ولی فایل رأی کمیته پیوست نشده است.',
+        cases.filter(function (c) {
+          return c.committeeDate && !hasDoc(c, 'رأی کمیته');
+        }));
+      add('warning', '📎', 'ابلاغ بدون سند ابلاغیه',
+        'تاریخ ابلاغ رأی ثبت شده ولی نامهٔ ابلاغ پیوست نشده است.',
+        cases.filter(function (c) {
+          return c.noticeLetterDate && !hasDoc(c, 'نامهٔ ابلاغ رأی');
+        }));
+      add('warning', '🗂', 'پرونده‌های بدون هیچ سند',
+        'هیچ مدرکی برای این پرونده‌ها بارگذاری نشده است.',
+        cases.filter(function (c) {
+          return !isClosed(c) && !w.Docs.forCase(c.id).length;
+        }));
+    }
+
+    // ۱۰) گلوگاه: اگر میانهٔ زمان تا کمیته بالاست
     var d = durations(cases).filter(function (l) {
       return l.label.indexOf('طرح در کمیته') > 0;
     })[0];
@@ -564,6 +586,21 @@
       });
     }
     return out;
+  }
+
+  /** فراوانی نوع سند در برش جاری */
+  function docKinds(cases) {
+    if (!w.Docs || !w.Docs.all().length) return [];
+    var ids = {};
+    cases.forEach(function (c) { ids[c.id] = true; });
+    var counts = {};
+    w.Docs.all().forEach(function (d) {
+      if (d.superseded || !ids[d.caseId]) return;
+      counts[d.kind] = (counts[d.kind] || 0) + 1;
+    });
+    return Object.keys(counts).map(function (k) {
+      return { label: k, value: counts[k], key: k };
+    }).sort(function (a, b) { return b.value - a.value; });
   }
 
   /** همهٔ داده‌های یک گزارش، یکجا */
@@ -602,6 +639,7 @@
       durations: durations(cases),
       aging: aging(cases),
       experts: experts(cases),
+      docKinds: docKinds(cases),
       findings: findings(cases)
     };
   }
@@ -611,7 +649,7 @@
     build: build, rangeOf: rangeOf, previousRange: previousRange,
     scope: scope, kpis: kpis, trend: trend, funnel: funnel,
     byField: byField, durations: durations, aging: aging, experts: experts,
-    findings: findings, isClosed: isClosed, closeDate: closeDate,
+    findings: findings, docKinds: docKinds, isClosed: isClosed, closeDate: closeDate,
     STAGES: STAGES, reachedStage: reachedStage,
     addDays: addDays, median: median, mean: mean, monthLabel: monthLabel,
     yearsInData: yearsInData

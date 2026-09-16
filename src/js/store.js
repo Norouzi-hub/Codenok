@@ -7,13 +7,13 @@
   'use strict';
 
   var DB_NAME = 'parvandeha';
-  var DB_VERSION = 1;
+  var DB_VERSION = 2;
   var LS_KEY = 'parvandeha:snapshot';
   var SCHEMA_VERSION = 1;
 
   var db = null;
   var mode = 'memory';          // idb | localStorage | memory
-  var mem = { cases: {}, history: {}, meta: {} };
+  var mem = { cases: {}, history: {}, docs: {}, meta: {} };
 
   // ---------------------------------------------------------------- IndexedDB
 
@@ -35,6 +35,11 @@
         }
         if (!d.objectStoreNames.contains('meta')) {
           d.createObjectStore('meta', { keyPath: 'key' });
+        }
+        if (!d.objectStoreNames.contains('docs')) {
+          var ds = d.createObjectStore('docs', { keyPath: 'id' });
+          ds.createIndex('caseId', 'caseId', { unique: false });
+          ds.createIndex('chain', 'chain', { unique: false });
         }
       };
       req.onsuccess = function () { resolve(req.result); };
@@ -97,6 +102,7 @@
       w.localStorage.setItem(LS_KEY, JSON.stringify({
         cases: Object.keys(mem.cases).map(function (k) { return mem.cases[k]; }),
         history: Object.keys(mem.history).map(function (k) { return mem.history[k]; }),
+        docs: Object.keys(mem.docs).map(function (k) { return mem.docs[k]; }),
         meta: Object.keys(mem.meta).map(function (k) { return mem.meta[k]; })
       }));
       return true;
@@ -127,8 +133,8 @@
   }
 
   function clearAll() {
-    mem = { cases: {}, history: {}, meta: mem.meta };
-    if (mode === 'idb') return idbClear(['cases', 'history']);
+    mem = { cases: {}, history: {}, docs: {}, meta: mem.meta };
+    if (mode === 'idb') return idbClear(['cases', 'history', 'docs']);
     if (mode === 'localStorage') lsWrite();
     return Promise.resolve();
   }
@@ -164,9 +170,14 @@
       fileName: fileName,
       lastSavedAt: lastSavedAt,
       error: saveError,
-      canLink: supportsFileSystem()
+      canLink: supportsFileSystem(),
+      hasStored: hasStoredFile(),
+      storedName: storedFileName()
     };
   }
+
+  // ارجاع‌های سیستم فایل قابل تبدیل به JSON نیستند و در پشتیبان نمی‌آیند
+  var HANDLE_KEYS = ['fileHandle', 'docsFolder'];
 
   function snapshot() {
     return {
@@ -175,8 +186,9 @@
       exportedAt: new Date().toISOString(),
       cases: Object.keys(mem.cases).map(function (k) { return mem.cases[k]; }),
       history: Object.keys(mem.history).map(function (k) { return mem.history[k]; }),
+      docs: Object.keys(mem.docs).map(function (k) { return mem.docs[k]; }),
       meta: Object.keys(mem.meta)
-        .filter(function (k) { return k !== 'fileHandle'; })
+        .filter(function (k) { return HANDLE_KEYS.indexOf(k) < 0; })
         .map(function (k) { return mem.meta[k]; })
     };
   }
@@ -213,14 +225,35 @@
     return metaSet('fileHandle', null).then(emit);
   }
 
-  /** فایل انتخاب‌شده در نشست قبل را دوباره وصل می‌کند (با اجازهٔ کاربر). */
-  function relinkFile() {
+  /** آیا فایلی از نشست قبل ذخیره شده که فقط اجازه‌اش لازم است؟ */
+  function hasStoredFile() {
+    var h = metaGet('fileHandle', null);
+    return !!(h && h.queryPermission);
+  }
+
+  function storedFileName() {
+    var h = metaGet('fileHandle', null);
+    return h ? h.name : '';
+  }
+
+  /**
+   * فایل نشست قبل را دوباره وصل می‌کند.
+   * interactive=false هنگام راه‌اندازی (بدون کنش کاربر، فقط اگر اجازه از قبل
+   * هست)؛ interactive=true وقتی کاربر دکمه‌ای زده و می‌شود اجازه خواست.
+   */
+  function relinkFile(interactive) {
     var handle = metaGet('fileHandle', null);
     if (!handle || !handle.queryPermission) return Promise.resolve(false);
-    return verifyPermission(handle, true).then(function (ok) {
+    var check = interactive
+      ? verifyPermission(handle, true)
+      : handle.queryPermission({ mode: 'readwrite' }).then(function (state) {
+        return state === 'granted';
+      });
+    return check.then(function (ok) {
       if (!ok) return false;
       fileHandle = handle;
       fileName = handle.name;
+      saveError = null;
       emit();
       return true;
     }).catch(function () { return false; });
@@ -272,7 +305,8 @@
     return openDb().then(function (d) {
       db = d;
       mode = 'idb';
-      return Promise.all([idbAll('cases'), idbAll('history'), idbAll('meta')]);
+      return Promise.all([idbAll('cases'), idbAll('history'), idbAll('meta'),
+        idbAll('docs')]);
     }).catch(function (err) {
       // IndexedDB در دسترس نیست (مثلاً حالت ناشناس یا سیاست مرورگر)
       console.warn('IndexedDB در دسترس نبود:', err && err.message);
@@ -284,12 +318,14 @@
       } catch (e) {
         mode = 'memory';
       }
-      return [snap ? snap.cases : [], snap ? snap.history : [], snap ? snap.meta : []];
+      return [snap ? snap.cases : [], snap ? snap.history : [], snap ? snap.meta : [],
+        snap ? snap.docs : []];
     }).then(function (res) {
       (res[0] || []).forEach(function (c) { mem.cases[c.id] = c; });
       (res[1] || []).forEach(function (h) { mem.history[h.id] = h; });
       (res[2] || []).forEach(function (m) { mem.meta[m.key] = m; });
-      return relinkFile();
+      (res[3] || []).forEach(function (d) { mem.docs[d.id] = d; });
+      return relinkFile(false);
     }).then(function () {
       return status();
     });
@@ -305,7 +341,11 @@
     }).then(function () {
       return put('history', snap.history || []);
     }).then(function () {
-      var metas = (snap.meta || []).filter(function (m) { return m.key !== 'fileHandle'; });
+      return (snap.docs && snap.docs.length) ? put('docs', snap.docs) : null;
+    }).then(function () {
+      var metas = (snap.meta || []).filter(function (m) {
+        return HANDLE_KEYS.indexOf(m.key) < 0;
+      });
       return metas.length ? put('meta', metas) : null;
     }).then(function () { scheduleSave(); });
   }
@@ -314,6 +354,7 @@
     init: init, getAll: getAll, put: put, remove: remove, clearAll: clearAll,
     metaGet: metaGet, metaSet: metaSet, snapshot: snapshot, restore: restore,
     linkFile: linkFile, unlinkFile: unlinkFile, writeFile: writeFile,
+    hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,
     status: status, onStatusChange: onStatusChange,
     supportsFileSystem: supportsFileSystem

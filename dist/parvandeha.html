@@ -853,6 +853,126 @@ select.input { cursor: pointer; }
 .sev-good { border-color: #bfe0cd; }
 .sev-good .sev-tag { color: #15633b; border-color: #bfe0cd; background: #f1f9f4; }
 
+/* ---------------------------------------------------------------- مستندات */
+.doc-panel { font-size: 13px; }
+.doc-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.doc-folder {
+  font-size: 12px;
+  color: var(--muted);
+  background: #f3f6fa;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 9px;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-drop {
+  border: 2px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  margin-bottom: 12px;
+  transition: border-color .12s, background .12s;
+}
+.doc-drop.over { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+
+.doc-empty {
+  text-align: center;
+  padding: 28px 16px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+}
+.doc-empty .btn { margin-top: 8px; }
+
+.doc-list { list-style: none; margin: 0; padding: 0; }
+.doc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 7px;
+  background: #fcfcfb;
+}
+.doc-item.missing { border-color: #e9bdb9; background: #fdf7f6; }
+.doc-icon { font-size: 17px; line-height: 1.4; flex: 0 0 auto; }
+.doc-body { flex: 1; min-width: 0; }
+.doc-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.doc-kind {
+  font-size: 11px;
+  background: var(--brand-soft);
+  color: #1b4972;
+  border: 1px solid #bcd2ea;
+  border-radius: 999px;
+  padding: 1px 9px;
+  white-space: nowrap;
+}
+.doc-version {
+  font-size: 11px;
+  border: 1px solid #e8d3a8;
+  background: #fdf7ec;
+  color: #8a5400;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.doc-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.doc-meta { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.doc-file {
+  font-size: 11px;
+  color: #a2a09a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.doc-warn { font-size: 11.5px; color: var(--bad); }
+.doc-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
+.doc-versions { margin-top: 5px; font-size: 12px; }
+.doc-versions summary { cursor: pointer; color: var(--muted); }
+.doc-versions ul { margin: 4px 0 0; padding-inline-start: 18px; }
+
+.linkish {
+  font: inherit;
+  font-size: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--brand);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.doc-add-row {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.doc-add-file { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.doc-add-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.doc-add-fields { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px 10px; align-items: center; }
+.doc-add-fields .date-hint { display: none; }
+
+.scan-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.scan-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tl-doc .tl-body::before { background: var(--brand-soft); border-color: var(--brand); }
+.tl-doc .doc-icon { font-size: 14px; margin-inline-end: 4px; }
+
 /* ------------------------------------------------------- نوار برش گزارش */
 .filter-note {
   display: flex;
@@ -897,6 +1017,7 @@ select.input { cursor: pointer; }
   .p-chart { width: 100%; margin-bottom: 6px; }
   .p-chart svg { width: 100%; height: auto; max-width: 680px; }
   .p-chart .c-cat, .p-chart .c-val, .p-chart .c-tick, .p-chart .c-seg { font-size: 8pt; }
+  .p-docs td:first-child { width: 150px; }
   .p-table.p-kpi { width: 70%; }
   .p-table.p-kpi th { width: 55%; }
   #print-area .c-legend { display: flex; gap: 14px; margin: 0 0 4px; font-size: 9pt; }
@@ -911,6 +1032,8 @@ select.input { cursor: pointer; }
 
 /* ---------------------------------------------------------------- واکنش‌گرا */
 @media (max-width: 900px) {
+  .doc-add-fields { grid-template-columns: auto 1fr; }
+  .doc-item { flex-wrap: wrap; }
   .hero-row { grid-template-columns: 1fr; }
   .chart-grid { grid-template-columns: 1fr; }
   .main-nav { order: 2; }
@@ -2845,13 +2968,13 @@ window.SEED_CASES = [
   'use strict';
 
   var DB_NAME = 'parvandeha';
-  var DB_VERSION = 1;
+  var DB_VERSION = 2;
   var LS_KEY = 'parvandeha:snapshot';
   var SCHEMA_VERSION = 1;
 
   var db = null;
   var mode = 'memory';          // idb | localStorage | memory
-  var mem = { cases: {}, history: {}, meta: {} };
+  var mem = { cases: {}, history: {}, docs: {}, meta: {} };
 
   // ---------------------------------------------------------------- IndexedDB
 
@@ -2873,6 +2996,11 @@ window.SEED_CASES = [
         }
         if (!d.objectStoreNames.contains('meta')) {
           d.createObjectStore('meta', { keyPath: 'key' });
+        }
+        if (!d.objectStoreNames.contains('docs')) {
+          var ds = d.createObjectStore('docs', { keyPath: 'id' });
+          ds.createIndex('caseId', 'caseId', { unique: false });
+          ds.createIndex('chain', 'chain', { unique: false });
         }
       };
       req.onsuccess = function () { resolve(req.result); };
@@ -2935,6 +3063,7 @@ window.SEED_CASES = [
       w.localStorage.setItem(LS_KEY, JSON.stringify({
         cases: Object.keys(mem.cases).map(function (k) { return mem.cases[k]; }),
         history: Object.keys(mem.history).map(function (k) { return mem.history[k]; }),
+        docs: Object.keys(mem.docs).map(function (k) { return mem.docs[k]; }),
         meta: Object.keys(mem.meta).map(function (k) { return mem.meta[k]; })
       }));
       return true;
@@ -2965,8 +3094,8 @@ window.SEED_CASES = [
   }
 
   function clearAll() {
-    mem = { cases: {}, history: {}, meta: mem.meta };
-    if (mode === 'idb') return idbClear(['cases', 'history']);
+    mem = { cases: {}, history: {}, docs: {}, meta: mem.meta };
+    if (mode === 'idb') return idbClear(['cases', 'history', 'docs']);
     if (mode === 'localStorage') lsWrite();
     return Promise.resolve();
   }
@@ -3002,9 +3131,14 @@ window.SEED_CASES = [
       fileName: fileName,
       lastSavedAt: lastSavedAt,
       error: saveError,
-      canLink: supportsFileSystem()
+      canLink: supportsFileSystem(),
+      hasStored: hasStoredFile(),
+      storedName: storedFileName()
     };
   }
+
+  // ارجاع‌های سیستم فایل قابل تبدیل به JSON نیستند و در پشتیبان نمی‌آیند
+  var HANDLE_KEYS = ['fileHandle', 'docsFolder'];
 
   function snapshot() {
     return {
@@ -3013,8 +3147,9 @@ window.SEED_CASES = [
       exportedAt: new Date().toISOString(),
       cases: Object.keys(mem.cases).map(function (k) { return mem.cases[k]; }),
       history: Object.keys(mem.history).map(function (k) { return mem.history[k]; }),
+      docs: Object.keys(mem.docs).map(function (k) { return mem.docs[k]; }),
       meta: Object.keys(mem.meta)
-        .filter(function (k) { return k !== 'fileHandle'; })
+        .filter(function (k) { return HANDLE_KEYS.indexOf(k) < 0; })
         .map(function (k) { return mem.meta[k]; })
     };
   }
@@ -3051,14 +3186,35 @@ window.SEED_CASES = [
     return metaSet('fileHandle', null).then(emit);
   }
 
-  /** فایل انتخاب‌شده در نشست قبل را دوباره وصل می‌کند (با اجازهٔ کاربر). */
-  function relinkFile() {
+  /** آیا فایلی از نشست قبل ذخیره شده که فقط اجازه‌اش لازم است؟ */
+  function hasStoredFile() {
+    var h = metaGet('fileHandle', null);
+    return !!(h && h.queryPermission);
+  }
+
+  function storedFileName() {
+    var h = metaGet('fileHandle', null);
+    return h ? h.name : '';
+  }
+
+  /**
+   * فایل نشست قبل را دوباره وصل می‌کند.
+   * interactive=false هنگام راه‌اندازی (بدون کنش کاربر، فقط اگر اجازه از قبل
+   * هست)؛ interactive=true وقتی کاربر دکمه‌ای زده و می‌شود اجازه خواست.
+   */
+  function relinkFile(interactive) {
     var handle = metaGet('fileHandle', null);
     if (!handle || !handle.queryPermission) return Promise.resolve(false);
-    return verifyPermission(handle, true).then(function (ok) {
+    var check = interactive
+      ? verifyPermission(handle, true)
+      : handle.queryPermission({ mode: 'readwrite' }).then(function (state) {
+        return state === 'granted';
+      });
+    return check.then(function (ok) {
       if (!ok) return false;
       fileHandle = handle;
       fileName = handle.name;
+      saveError = null;
       emit();
       return true;
     }).catch(function () { return false; });
@@ -3110,7 +3266,8 @@ window.SEED_CASES = [
     return openDb().then(function (d) {
       db = d;
       mode = 'idb';
-      return Promise.all([idbAll('cases'), idbAll('history'), idbAll('meta')]);
+      return Promise.all([idbAll('cases'), idbAll('history'), idbAll('meta'),
+        idbAll('docs')]);
     }).catch(function (err) {
       // IndexedDB در دسترس نیست (مثلاً حالت ناشناس یا سیاست مرورگر)
       console.warn('IndexedDB در دسترس نبود:', err && err.message);
@@ -3122,12 +3279,14 @@ window.SEED_CASES = [
       } catch (e) {
         mode = 'memory';
       }
-      return [snap ? snap.cases : [], snap ? snap.history : [], snap ? snap.meta : []];
+      return [snap ? snap.cases : [], snap ? snap.history : [], snap ? snap.meta : [],
+        snap ? snap.docs : []];
     }).then(function (res) {
       (res[0] || []).forEach(function (c) { mem.cases[c.id] = c; });
       (res[1] || []).forEach(function (h) { mem.history[h.id] = h; });
       (res[2] || []).forEach(function (m) { mem.meta[m.key] = m; });
-      return relinkFile();
+      (res[3] || []).forEach(function (d) { mem.docs[d.id] = d; });
+      return relinkFile(false);
     }).then(function () {
       return status();
     });
@@ -3143,7 +3302,11 @@ window.SEED_CASES = [
     }).then(function () {
       return put('history', snap.history || []);
     }).then(function () {
-      var metas = (snap.meta || []).filter(function (m) { return m.key !== 'fileHandle'; });
+      return (snap.docs && snap.docs.length) ? put('docs', snap.docs) : null;
+    }).then(function () {
+      var metas = (snap.meta || []).filter(function (m) {
+        return HANDLE_KEYS.indexOf(m.key) < 0;
+      });
       return metas.length ? put('meta', metas) : null;
     }).then(function () { scheduleSave(); });
   }
@@ -3152,6 +3315,7 @@ window.SEED_CASES = [
     init: init, getAll: getAll, put: put, remove: remove, clearAll: clearAll,
     metaGet: metaGet, metaSet: metaSet, snapshot: snapshot, restore: restore,
     linkFile: linkFile, unlinkFile: unlinkFile, writeFile: writeFile,
+    hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,
     status: status, onStatusChange: onStatusChange,
     supportsFileSystem: supportsFileSystem
@@ -3192,6 +3356,8 @@ window.SEED_CASES = [
       parts.push(v);
       if (f.type === 'date') parts.push(w.J.format(v, { latin: true }));
     });
+    // نام و نوع مستندات پیوست هم باید با جستجوی سراسری پیدا شوند
+    if (rec._docText) parts.push(rec._docText);
     return w.U.normalize(parts.join(' '));
   }
 
@@ -3224,6 +3390,14 @@ window.SEED_CASES = [
     return changes;
   }
 
+  /** ثبت رویداد در تاریخچه و ذخیرهٔ فوری آن */
+  function logEvent(kind, rec, changes, note) {
+    var entry = addHistory(kind, rec, changes, note);
+    w.Store.put('history', [entry]);
+    w.Store.scheduleSave();
+    return entry;
+  }
+
   function addHistory(kind, rec, changes, note) {
     var entry = {
       id: w.U.uid(),
@@ -3252,6 +3426,12 @@ window.SEED_CASES = [
         items.push({ type: 'milestone', date: v, label: m.label, sortKey: v + '0' });
       }
     });
+    if (w.Docs) {
+      w.Docs.forCase(rec.id).forEach(function (d) {
+        if (d.superseded || !d.docDate || !w.J.unpack(d.docDate)) return;
+        items.push({ type: 'doc', date: d.docDate, doc: d, sortKey: d.docDate + '0' });
+      });
+    }
     historyFor(rec.id).forEach(function (h) {
       // atJalali با ارقام فارسی ذخیره می‌شود؛ باید اول لاتین شود
       var d = w.U.toLatinDigits(h.atJalali || '').replace(/[^0-9]/g, '').slice(0, 8);
@@ -3262,6 +3442,12 @@ window.SEED_CASES = [
   }
 
   // --------------------------------------------------------------- عملیات CRUD
+  /**
+   * کلیدهایی که فیلد فرم نیستند ولی روی پرونده می‌مانند و نباید با
+   * ویرایش از بین بروند (مثلاً نام پوشهٔ مستندات روی دیسک).
+   */
+  var SYSTEM_KEYS = ['docFolder'];
+
   function normalizeRecord(rec) {
     var out = {};
     FIELDS.forEach(function (f) {
@@ -3270,6 +3456,9 @@ window.SEED_CASES = [
       v = String(v).trim();
       if (!v) return;
       out[f.key] = (f.type === 'date') ? w.J.parse(v) : v;
+    });
+    SYSTEM_KEYS.forEach(function (k) {
+      if (rec[k] != null && rec[k] !== '') out[k] = rec[k];
     });
     out.id = rec.id;
     return out;
@@ -3301,6 +3490,10 @@ window.SEED_CASES = [
     var after = normalizeRecord(data);
     after.id = id;
     after.createdAt = before.createdAt;
+    // اگر فراخوان کلید سیستمی را نفرستاده، از رکورد قبلی نگه داشته می‌شود
+    SYSTEM_KEYS.forEach(function (k) {
+      if (after[k] == null && before[k] != null) after[k] = before[k];
+    });
     var changes = diff(before, after);
     if (!changes.length) return Promise.resolve({ record: before, changes: [] });
     after.updatedAt = new Date().toISOString();
@@ -3583,7 +3776,7 @@ window.SEED_CASES = [
     state: state, FIELDS: FIELDS, FIELD_BY_KEY: FIELD_BY_KEY, DATE_KEYS: DATE_KEYS,
     load: load, reload: reload, seed: seed, bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
-    idSet: idSet,
+    idSet: idSet, reindex: index, addHistory: logEvent,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
     stats: stats, stale: stale, strip: strip, diff: diff,
@@ -5415,7 +5608,29 @@ else if (typeof exports === 'object'){
       'دست‌کم یکی از فیلدهای کلیدی (کد ملی، تاریخ ورود، مرجع گزارش‌دهنده، ' +
       'نوع پرونده، واحد سازمانی) خالی است.', incomplete);
 
-    // ۹) گلوگاه: اگر میانهٔ زمان تا کمیته بالاست
+    // ۹) مستندات — فقط وقتی اصلاً از مستندات استفاده می‌شود، وگرنه نویز است
+    if (w.Docs && w.Docs.all().length) {
+      var hasDoc = function (rec, kind) {
+        return w.Docs.current(rec.id).some(function (d) { return d.kind === kind; });
+      };
+      add('serious', '📄', 'رأی صادرشده بدون سند رأی',
+        'تاریخ طرح در کمیته ثبت شده ولی فایل رأی کمیته پیوست نشده است.',
+        cases.filter(function (c) {
+          return c.committeeDate && !hasDoc(c, 'رأی کمیته');
+        }));
+      add('warning', '📎', 'ابلاغ بدون سند ابلاغیه',
+        'تاریخ ابلاغ رأی ثبت شده ولی نامهٔ ابلاغ پیوست نشده است.',
+        cases.filter(function (c) {
+          return c.noticeLetterDate && !hasDoc(c, 'نامهٔ ابلاغ رأی');
+        }));
+      add('warning', '🗂', 'پرونده‌های بدون هیچ سند',
+        'هیچ مدرکی برای این پرونده‌ها بارگذاری نشده است.',
+        cases.filter(function (c) {
+          return !isClosed(c) && !w.Docs.forCase(c.id).length;
+        }));
+    }
+
+    // ۱۰) گلوگاه: اگر میانهٔ زمان تا کمیته بالاست
     var d = durations(cases).filter(function (l) {
       return l.label.indexOf('طرح در کمیته') > 0;
     })[0];
@@ -5441,6 +5656,21 @@ else if (typeof exports === 'object'){
       });
     }
     return out;
+  }
+
+  /** فراوانی نوع سند در برش جاری */
+  function docKinds(cases) {
+    if (!w.Docs || !w.Docs.all().length) return [];
+    var ids = {};
+    cases.forEach(function (c) { ids[c.id] = true; });
+    var counts = {};
+    w.Docs.all().forEach(function (d) {
+      if (d.superseded || !ids[d.caseId]) return;
+      counts[d.kind] = (counts[d.kind] || 0) + 1;
+    });
+    return Object.keys(counts).map(function (k) {
+      return { label: k, value: counts[k], key: k };
+    }).sort(function (a, b) { return b.value - a.value; });
   }
 
   /** همهٔ داده‌های یک گزارش، یکجا */
@@ -5479,6 +5709,7 @@ else if (typeof exports === 'object'){
       durations: durations(cases),
       aging: aging(cases),
       experts: experts(cases),
+      docKinds: docKinds(cases),
       findings: findings(cases)
     };
   }
@@ -5488,10 +5719,507 @@ else if (typeof exports === 'object'){
     build: build, rangeOf: rangeOf, previousRange: previousRange,
     scope: scope, kpis: kpis, trend: trend, funnel: funnel,
     byField: byField, durations: durations, aging: aging, experts: experts,
-    findings: findings, isClosed: isClosed, closeDate: closeDate,
+    findings: findings, docKinds: docKinds, isClosed: isClosed, closeDate: closeDate,
     STAGES: STAGES, reachedStage: reachedStage,
     addDays: addDays, median: median, mean: mean, monthLabel: monthLabel,
     yearsInData: yearsInData
+  };
+})(window);
+
+</script>
+<script>
+/* ==== js/docs.js ==== */
+/*
+ * مستندات پرونده: فایل‌ها در یک پوشهٔ واقعی روی دیسک کاربر ذخیره می‌شوند،
+ * هر پرونده در زیرپوشهٔ خودش. فقط فراداده در دیتابیس می‌ماند.
+ * نیازمند File System Access API (کروم/اج).
+ */
+(function (w) {
+  'use strict';
+
+  var J = w.J, M = w.Model;
+
+  var KINDS_DEFAULT = [
+    'نامهٔ وارده', 'نامهٔ صادره', 'گزارش بازرسی', 'دعوت‌نامهٔ جلسه',
+    'دفاعیهٔ کتبی', 'استعلام حراست', 'پاسخ حراست', 'صورت‌جلسهٔ کمیته',
+    'رأی کمیته', 'نامهٔ ابلاغ رأی', 'بازگشت ابلاغ', 'حکم کارگزینی',
+    'مدارک هویتی', 'سایر'
+  ];
+
+  /** نوع سند → مرحلهٔ گردش‌کار، برای نشاندن سند در تایم‌لاین */
+  var KIND_STAGE = {
+    'نامهٔ وارده': 'intake', 'گزارش بازرسی': 'intake',
+    'دعوت‌نامهٔ جلسه': 'defense', 'دفاعیهٔ کتبی': 'defense',
+    'استعلام حراست': 'defense', 'پاسخ حراست': 'defense',
+    'صورت‌جلسهٔ کمیته': 'verdict', 'رأی کمیته': 'verdict',
+    'نامهٔ ابلاغ رأی': 'notice', 'بازگشت ابلاغ': 'notice',
+    'حکم کارگزینی': 'notice'
+  };
+
+  var docs = [];           // همهٔ رکوردهای فراداده
+  var byCase = {};
+  var root = null;         // FileSystemDirectoryHandle پوشهٔ ریشه
+  var rootName = '';
+  var listeners = [];
+
+  function emit() { listeners.forEach(function (fn) { fn(status()); }); }
+  function onChange(fn) { listeners.push(fn); }
+
+  function supported() { return typeof w.showDirectoryPicker === 'function'; }
+
+  function hasStoredFolder() {
+    var h = w.Store.metaGet('docsFolder', null);
+    return !!(h && h.queryPermission);
+  }
+
+  function storedFolderName() {
+    var h = w.Store.metaGet('docsFolder', null);
+    return h ? h.name : '';
+  }
+
+  function status() {
+    return {
+      supported: supported(), linked: !!root, folderName: rootName,
+      hasStored: hasStoredFolder(), storedName: storedFolderName()
+    };
+  }
+
+  // -------------------------------------------------------- پاک‌سازی نام‌ها
+  var WIN_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
+
+  /**
+   * نامی که هم در ویندوز و هم در مک معتبر باشد.
+   * حروف فارسی مشکلی ندارند؛ مسئله نویسه‌های ممنوع و نقطه/فاصلهٔ انتهایی است.
+   */
+  function safeName(name, fallback) {
+    var s = String(name == null ? '' : name)
+      .replace(/[\\/:*?"<>|]/g, '-')       // ممنوع در ویندوز
+      .replace(/[\x00-\x1F\x7F]/g, '')     // نویسه‌های کنترلی
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/[. ]+$/, '');              // ویندوز نقطه/فاصلهٔ انتهایی نمی‌پذیرد
+    if (WIN_RESERVED.test(s)) s = '_' + s;
+    if (s.length > 120) s = s.slice(0, 120).trim().replace(/[. ]+$/, '');
+    // نامی که پس از پاک‌سازی فقط خط تیره و فاصله مانده، نام نیست
+    if (!/[\w\u0600-\u06FF]/.test(s)) s = '';
+    return s || (fallback || 'بدون نام');
+  }
+
+  /** نام پوشهٔ یک پرونده: «شماره پرونده - نام و نام خانوادگی» */
+  function folderNameFor(rec) {
+    var person = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
+    var caseNo = w.U.toLatinDigits(rec.caseNo || '').trim();
+    return safeName([caseNo, person].filter(Boolean).join(' - '), caseNo || rec.id);
+  }
+
+  function splitExt(fileName) {
+    var m = /^(.*?)(\.[A-Za-z0-9]{1,8})?$/.exec(String(fileName || ''));
+    return { base: m[1] || 'سند', ext: (m[2] || '').toLowerCase() };
+  }
+
+  /** نام فایل: «۱۴۰۴-۰۷-۲۰ - نوع سند - شماره نامه - عنوان.pdf» */
+  function fileNameFor(meta, originalName, versionSuffix) {
+    var ext = splitExt(originalName).ext || '';
+    var datePart = '';
+    var p = J.unpack(meta.docDate || '');
+    if (p) datePart = p.jy + '-' + J.pad2(p.jm) + '-' + J.pad2(p.jd);
+    var parts = [datePart, meta.kind, meta.letterNo, meta.title]
+      .map(function (x) { return String(x || '').trim(); })
+      .filter(Boolean);
+    var base = safeName(parts.join(' - '), splitExt(originalName).base);
+    if (versionSuffix) base += ' - نسخه ' + versionSuffix;
+    return base + ext;
+  }
+
+  // ------------------------------------------------------ کار با پوشهٔ ریشه
+  function verify(handle) {
+    var opts = { mode: 'readwrite' };
+    return handle.queryPermission(opts).then(function (state) {
+      if (state === 'granted') return true;
+      return handle.requestPermission(opts).then(function (s) { return s === 'granted'; });
+    });
+  }
+
+  function linkFolder() {
+    if (!supported()) {
+      return Promise.reject(new Error('این مرورگر از ذخیرهٔ مستندات در پوشه پشتیبانی نمی‌کند'));
+    }
+    return w.showDirectoryPicker({ mode: 'readwrite', id: 'parvandeha-docs' })
+      .then(function (handle) {
+        root = handle;
+        rootName = handle.name;
+        return w.Store.metaSet('docsFolder', handle);
+      })
+      .then(function () { emit(); return true; });
+  }
+
+  function unlinkFolder() {
+    root = null;
+    rootName = '';
+    return w.Store.metaSet('docsFolder', null).then(emit);
+  }
+
+  /** اتصال دوبارهٔ پوشهٔ نشست قبل (با تأیید کاربر) */
+  function relinkFolder(interactive) {
+    var handle = w.Store.metaGet('docsFolder', null);
+    if (!handle || !handle.queryPermission) return Promise.resolve(false);
+    var check = interactive
+      ? verify(handle)
+      : handle.queryPermission({ mode: 'readwrite' }).then(function (s) {
+        return s === 'granted';
+      });
+    return check.then(function (ok) {
+      if (!ok) return false;
+      root = handle;
+      rootName = handle.name;
+      emit();
+      return true;
+    }).catch(function () { return false; });
+  }
+
+  function requireRoot() {
+    if (root) return Promise.resolve(root);
+    return relinkFolder(true).then(function (ok) {
+      if (!ok) throw new Error('پوشهٔ مستندات در دسترس نیست؛ از تنظیمات دوباره وصلش کنید');
+      return root;
+    });
+  }
+
+  /** پوشهٔ یک پرونده؛ نام پوشه پس از ساخت روی خود پرونده ثبت می‌شود */
+  function caseFolder(rec, create) {
+    return requireRoot().then(function (r) {
+      var name = rec.docFolder || folderNameFor(rec);
+      return r.getDirectoryHandle(name, { create: !!create }).then(function (dir) {
+        if (create && rec.docFolder !== name) {
+          rec.docFolder = name;
+          return w.Store.put('cases', [M.strip(rec)]).then(function () { return dir; });
+        }
+        return dir;
+      });
+    });
+  }
+
+  /** پیمایش محتوای یک پوشه بدون نیاز به for-await */
+  function listDir(dir) {
+    var it = dir.values();
+    var out = [];
+    function step() {
+      return it.next().then(function (r) {
+        if (r.done) return out;
+        out.push(r.value);
+        return step();
+      });
+    }
+    return step();
+  }
+
+  /** اگر نام تکراری بود، «(۲)» اضافه می‌کند */
+  function uniqueName(dir, name) {
+    return listDir(dir).then(function (entries) {
+      var taken = {};
+      entries.forEach(function (e) { taken[e.name.toLowerCase()] = true; });
+      if (!taken[name.toLowerCase()]) return name;
+      var s = splitExt(name), i = 2;
+      while (taken[(s.base + ' (' + i + ')' + s.ext).toLowerCase()] && i < 500) i++;
+      return s.base + ' (' + i + ')' + s.ext;
+    });
+  }
+
+  // ----------------------------------------------------------- عملیات سند
+  function indexDocs() {
+    byCase = {};
+    docs.forEach(function (d) {
+      (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
+    });
+    Object.keys(byCase).forEach(function (k) {
+      byCase[k].sort(function (a, b) {
+        return (a.docDate || '') < (b.docDate || '') ? -1 : 1;
+      });
+      refreshSearchText(k);
+    });
+  }
+
+  /** متن مستندات به نمایهٔ جستجوی پرونده اضافه می‌شود */
+  function refreshSearchText(caseId) {
+    var rec = M.get(caseId);
+    if (!rec) return;
+    rec._docText = (byCase[caseId] || []).map(function (d) {
+      return [d.kind, d.title, d.letterNo, d.fileName].filter(Boolean).join(' ');
+    }).join(' ');
+    M.reindex(rec);
+  }
+
+  function forCase(caseId) { return byCase[caseId] || []; }
+
+  function current(caseId) {
+    return forCase(caseId).filter(function (d) { return !d.superseded; });
+  }
+
+  function versionsOf(doc) {
+    return forCase(doc.caseId).filter(function (d) {
+      return d.chain === doc.chain && d.id !== doc.id;
+    }).sort(function (a, b) { return a.version - b.version; });
+  }
+
+  function persist(list) { return w.Store.put('docs', list); }
+
+  /**
+   * افزودن یک فایل به پروندهٔ مشخص.
+   * meta: {kind, title, letterNo, docDate}
+   */
+  function addFile(rec, file, meta) {
+    return caseFolder(rec, true).then(function (dir) {
+      var wanted = fileNameFor(meta, file.name, null);
+      return uniqueName(dir, wanted).then(function (name) {
+        return dir.getFileHandle(name, { create: true }).then(function (fh) {
+          return fh.createWritable().then(function (wr) {
+            return wr.write(file).then(function () { return wr.close(); });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      var doc = {
+        id: w.U.uid(),
+        chain: w.U.uid(),
+        caseId: rec.id,
+        caseNo: rec.caseNo || '',
+        folderName: rec.docFolder,
+        fileName: name,
+        originalName: file.name,
+        kind: meta.kind || 'سایر',
+        title: meta.title || '',
+        letterNo: meta.letterNo || '',
+        docDate: meta.docDate || J.today(),
+        stage: KIND_STAGE[meta.kind] || '',
+        size: file.size,
+        mime: file.type || '',
+        version: 1,
+        superseded: false,
+        addedAt: new Date().toISOString(),
+        addedAtJalali: J.stamp(),
+        user: M.state.settings.user || 'کاربر'
+      };
+      docs.push(doc);
+      indexDocs();
+      return persist([doc]).then(function () {
+        M.addHistory('doc-add', rec, [],
+          doc.kind + (doc.title ? ' («' + doc.title + '»)' : '') +
+          ' — فایل: ' + doc.fileName);
+        return doc;
+      });
+    });
+  }
+
+  /** نسخهٔ تازه از یک سند؛ نسخهٔ قبلی روی دیسک دست‌نخورده می‌ماند */
+  function addVersion(rec, oldDoc, file) {
+    var meta = {
+      kind: oldDoc.kind, title: oldDoc.title,
+      letterNo: oldDoc.letterNo, docDate: oldDoc.docDate
+    };
+    var nextVersion = Math.max.apply(null, forCase(rec.id)
+      .filter(function (d) { return d.chain === oldDoc.chain; })
+      .map(function (d) { return d.version; })) + 1;
+
+    return caseFolder(rec, true).then(function (dir) {
+      var wanted = fileNameFor(meta, file.name, nextVersion);
+      return uniqueName(dir, wanted).then(function (name) {
+        return dir.getFileHandle(name, { create: true }).then(function (fh) {
+          return fh.createWritable().then(function (wr) {
+            return wr.write(file).then(function () { return wr.close(); });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      oldDoc.superseded = true;
+      var doc = {
+        id: w.U.uid(), chain: oldDoc.chain, caseId: rec.id, caseNo: rec.caseNo || '',
+        folderName: rec.docFolder, fileName: name, originalName: file.name,
+        kind: meta.kind, title: meta.title, letterNo: meta.letterNo,
+        docDate: meta.docDate, stage: oldDoc.stage,
+        size: file.size, mime: file.type || '', version: nextVersion,
+        superseded: false, addedAt: new Date().toISOString(),
+        addedAtJalali: J.stamp(), user: M.state.settings.user || 'کاربر'
+      };
+      docs.push(doc);
+      indexDocs();
+      return persist([oldDoc, doc]).then(function () {
+        M.addHistory('doc-version', rec, [], doc.kind + ' — نسخهٔ ' +
+          w.U.toFaDigits(nextVersion) + ' ثبت شد؛ نسخهٔ قبلی نگه داشته شد.');
+        return doc;
+      });
+    });
+  }
+
+  function openDoc(doc) {
+    var rec = M.get(doc.caseId);
+    return caseFolder(rec, false)
+      .then(function (dir) { return dir.getFileHandle(doc.fileName); })
+      .then(function (fh) { return fh.getFile(); })
+      .then(function (file) {
+        var url = URL.createObjectURL(file);
+        var win = w.open(url, '_blank');
+        if (!win) w.U.download(doc.fileName, file);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+        return true;
+      })
+      .catch(function (err) {
+        doc.missing = true;
+        persist([doc]);
+        throw new Error('فایل در پوشه پیدا نشد: ' + doc.fileName);
+      });
+  }
+
+  function removeDoc(doc) {
+    var rec = M.get(doc.caseId);
+    return caseFolder(rec, false).then(function (dir) {
+      return dir.removeEntry(doc.fileName).catch(function () { /* از قبل نبوده */ });
+    }).catch(function () { /* پوشه در دسترس نیست */ })
+      .then(function () {
+        docs = docs.filter(function (d) { return d.id !== doc.id; });
+        // اگر نسخهٔ جاری حذف شد، آخرین نسخهٔ قبلی دوباره جاری می‌شود
+        var chain = docs.filter(function (d) { return d.chain === doc.chain; });
+        var touched = [];
+        if (chain.length) {
+          chain.sort(function (a, b) { return a.version - b.version; });
+          var last = chain[chain.length - 1];
+          if (last.superseded) { last.superseded = false; touched.push(last); }
+        }
+        indexDocs();
+        return w.Store.remove('docs', [doc.id]).then(function () {
+          return touched.length ? persist(touched) : null;
+        }).then(function () {
+          if (rec) {
+                M.addHistory('doc-remove', rec, [], doc.kind + ' — فایل: ' + doc.fileName);
+          }
+        });
+      });
+  }
+
+  /** فایل‌هایی که در پوشه هستند ولی در برنامه ثبت نشده‌اند (مثلاً خروجی اسکنر) */
+  function scan(rec) {
+    return caseFolder(rec, false).then(listDir).then(function (entries) {
+      var known = {};
+      forCase(rec.id).forEach(function (d) { known[d.fileName.toLowerCase()] = true; });
+      return entries.filter(function (e) {
+        return e.kind === 'file' && !known[e.name.toLowerCase()] &&
+          e.name.charAt(0) !== '.';
+      });
+    }).catch(function () { return []; });
+  }
+
+  /** ثبت یک فایل موجود در پوشه، بدون جابه‌جا کردنش */
+  function register(rec, entry, meta) {
+    return entry.getFile().then(function (file) {
+      var doc = {
+        id: w.U.uid(), chain: w.U.uid(), caseId: rec.id, caseNo: rec.caseNo || '',
+        folderName: rec.docFolder || folderNameFor(rec), fileName: entry.name,
+        originalName: entry.name,
+        kind: (meta && meta.kind) || 'سایر', title: (meta && meta.title) || '',
+        letterNo: (meta && meta.letterNo) || '',
+        docDate: (meta && meta.docDate) || J.today(),
+        stage: KIND_STAGE[(meta && meta.kind)] || '',
+        size: file.size, mime: file.type || '', version: 1, superseded: false,
+        addedAt: new Date().toISOString(), addedAtJalali: J.stamp(),
+        user: M.state.settings.user || 'کاربر'
+      };
+      docs.push(doc);
+      indexDocs();
+      return persist([doc]).then(function () {
+        M.addHistory('doc-add', rec, [], doc.kind + ' — فایل موجود در پوشه ثبت شد: ' +
+          entry.name);
+        return doc;
+      });
+    });
+  }
+
+  /**
+   * هم‌نام کردن پوشه با مشخصات فعلی پرونده (کپی سپس حذف پوشهٔ قدیم).
+   * پوشهٔ قدیم فقط پس از کپی موفق همهٔ فایل‌ها حذف می‌شود.
+   */
+  function renameFolder(rec) {
+    var oldName = rec.docFolder;
+    var newName = folderNameFor(rec);
+    if (!oldName || oldName === newName) return Promise.resolve(false);
+    return requireRoot().then(function (r) {
+      return r.getDirectoryHandle(oldName).then(function (oldDir) {
+        return r.getDirectoryHandle(newName, { create: true }).then(function (newDir) {
+          return listDir(oldDir).then(function (entries) {
+            var files = entries.filter(function (e) { return e.kind === 'file'; });
+            return files.reduce(function (chain, entry) {
+              return chain.then(function () {
+                return entry.getFile().then(function (file) {
+                  return newDir.getFileHandle(entry.name, { create: true })
+                    .then(function (fh) { return fh.createWritable(); })
+                    .then(function (wr) {
+                      return wr.write(file).then(function () { return wr.close(); });
+                    });
+                });
+              });
+            }, Promise.resolve());
+          }).then(function () {
+            return r.removeEntry(oldName, { recursive: true });
+          });
+        });
+      });
+    }).then(function () {
+      rec.docFolder = newName;
+      var touched = forCase(rec.id);
+      touched.forEach(function (d) { d.folderName = newName; });
+      return Promise.all([
+        w.Store.put('cases', [M.strip(rec)]),
+        touched.length ? persist(touched) : null
+      ]);
+    }).then(function () {
+      M.addHistory('doc-folder', rec, [], 'نام پوشهٔ مستندات به «' + newName + '» تغییر کرد');
+      return true;
+    });
+  }
+
+  function folderMismatch(rec) {
+    return !!(rec.docFolder && rec.docFolder !== folderNameFor(rec));
+  }
+
+  function kinds() {
+    return M.state.lists.DocKinds || KINDS_DEFAULT;
+  }
+
+  function load() {
+    return w.Store.getAll('docs').then(function (list) {
+      docs = list || [];
+      indexDocs();
+      if (!M.state.lists.DocKinds) {
+        M.state.lists.DocKinds = KINDS_DEFAULT.slice();
+      }
+      return relinkFolder(false);
+    });
+  }
+
+  function all() { return docs; }
+
+  function stats() {
+    var byKind = {};
+    docs.forEach(function (d) {
+      if (d.superseded) return;
+      byKind[d.kind] = (byKind[d.kind] || 0) + 1;
+    });
+    return {
+      total: docs.filter(function (d) { return !d.superseded; }).length,
+      byKind: byKind,
+      casesWithDocs: Object.keys(byCase).length
+    };
+  }
+
+  w.Docs = {
+    KINDS_DEFAULT: KINDS_DEFAULT, KIND_STAGE: KIND_STAGE,
+    supported: supported, status: status, onChange: onChange,
+    linkFolder: linkFolder, unlinkFolder: unlinkFolder, relinkFolder: relinkFolder,
+    load: load, all: all, forCase: forCase, current: current, versionsOf: versionsOf,
+    addFile: addFile, addVersion: addVersion, openDoc: openDoc, removeDoc: removeDoc,
+    scan: scan, register: register, renameFolder: renameFolder,
+    hasStoredFolder: hasStoredFolder, storedFolderName: storedFolderName,
+    folderMismatch: folderMismatch, folderNameFor: folderNameFor,
+    fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
+    indexDocs: indexDocs
   };
 })(window);
 
@@ -5848,9 +6576,15 @@ else if (typeof exports === 'object'){
     return wrap;
   }
 
+  var KIND_LABELS = {
+    create: 'ثبت پرونده', update: 'ویرایش', delete: 'حذف',
+    import: 'ورود از فایل', restore: 'بازیابی پشتیبان',
+    'doc-add': 'افزودن سند', 'doc-version': 'نسخهٔ تازهٔ سند',
+    'doc-remove': 'حذف سند', 'doc-folder': 'تغییر پوشهٔ مستندات'
+  };
+
   function kindLabel(kind) {
-    return { create: 'ثبت پرونده', update: 'ویرایش', delete: 'حذف', import: 'ورود از فایل',
-      restore: 'بازیابی پشتیبان' }[kind] || kind;
+    return KIND_LABELS[kind] || kind;
   }
 
   function renderTimeline(rec) {
@@ -5862,6 +6596,26 @@ else if (typeof exports === 'object'){
         box.appendChild(el('li.tl-item.tl-milestone', null, [
           el('span.tl-date', { text: J.format(it.date) }),
           el('span.tl-body', null, [el('b', { text: it.label })])
+        ]));
+        return;
+      }
+      if (it.type === 'doc') {
+        var d = it.doc;
+        box.appendChild(el('li.tl-item.tl-doc', null, [
+          el('span.tl-date', { text: J.format(it.date) }),
+          el('span.tl-body', null, [
+            el('span.doc-icon', { text: w.UIDocs.iconFor(d.fileName) }),
+            el('b', { text: d.kind }),
+            el('span.muted', {
+              text: ' — ' + (d.title || d.letterNo || d.originalName || d.fileName) + ' '
+            }),
+            el('button.linkish', {
+              type: 'button', text: 'باز کردن',
+              onclick: function () {
+                w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+              }
+            })
+          ])
         ]));
         return;
       }
@@ -6029,45 +6783,61 @@ else if (typeof exports === 'object'){
     // ---------------------------------------------------------------- ساخت DOM
     headTitle = el('h2.case-title');
 
-    var tabs = el('div.tabs', null, w.GROUPS.map(function (g) {
-      var count = M.FIELDS.filter(function (f) {
-        return f.group === g.key && draft[f.key];
-      }).length;
-      return el('button.tab' + (g.key === activeTab ? '.active' : ''), {
+    var tabs = el('div.tabs');
+
+    function makeTab(key, label, count) {
+      var tab = el('button.tab' + (key === activeTab ? '.active' : ''), {
         type: 'button',
         onclick: function () {
-          activeTab = g.key;
-          app.state.formTab = g.key;
+          activeTab = key;
+          app.state.formTab = key;
           renderPanel();
           w.U.$$('.tab', tabs).forEach(function (t) { t.classList.remove('active'); });
-          this.classList.add('active');
+          tab.classList.add('active');
         }
       }, [
-        el('span', { text: g.label }),
+        el('span', { text: label }),
         count ? el('span.badge', { text: w.U.toFaDigits(count) }) : null
       ]);
-    }).concat([
-      el('button.tab' + (activeTab === '__history' ? '.active' : ''), {
-        type: 'button',
-        onclick: function () {
-          activeTab = '__history';
-          app.state.formTab = '__history';
-          renderPanel();
-          w.U.$$('.tab', tabs).forEach(function (t) { t.classList.remove('active'); });
-          this.classList.add('active');
-        }
-      }, [
-        el('span', { text: 'تاریخچه و رویدادها' }),
-        existing ? el('span.badge', {
-          text: w.U.toFaDigits(M.historyFor(existing.id).length)
-        }) : null
-      ])
-    ]));
+      tab.dataset.tab = key;
+      tabs.appendChild(tab);
+      return tab;
+    }
+
+    w.GROUPS.forEach(function (g) {
+      makeTab(g.key, g.label, M.FIELDS.filter(function (f) {
+        return f.group === g.key && draft[f.key];
+      }).length);
+    });
+    makeTab('__docs', 'مستندات',
+      existing ? w.Docs.current(existing.id).length : 0);
+    makeTab('__history', 'تاریخچه و رویدادها',
+      existing ? M.historyFor(existing.id).length : 0);
+
+    /** شمارندهٔ یک تب را بدون رندر دوبارهٔ کل صفحه به‌روز می‌کند */
+    function setTabCount(key, n) {
+      var tab = tabs.querySelector('[data-tab="' + key + '"]');
+      if (!tab) return;
+      var badge = tab.querySelector('.badge');
+      if (n) {
+        if (badge) badge.textContent = w.U.toFaDigits(n);
+        else tab.appendChild(el('span.badge', { text: w.U.toFaDigits(n) }));
+      } else if (badge) {
+        badge.remove();
+      }
+    }
 
     var panel = el('div.form-panel');
 
     function renderPanel() {
       w.U.clear(panel);
+      if (activeTab === '__docs') {
+        panel.appendChild(w.UIDocs.render(app, existing, function () {
+          renderPanel();
+          if (existing) setTabCount('__docs', w.Docs.current(existing.id).length);
+        }));
+        return;
+      }
       if (activeTab === '__history') {
         if (!existing) {
           panel.appendChild(el('p.muted', { text: 'پس از ذخیرهٔ پرونده، تاریخچه اینجا نمایش داده می‌شود.' }));
@@ -6210,6 +6980,31 @@ else if (typeof exports === 'object'){
         el('h2', { text: g.label }), table
       ]));
     });
+
+    var attached = w.Docs ? w.Docs.current(rec.id) : [];
+    if (attached.length) {
+      var docTable = el('table.p-table.p-list.p-docs', null, [
+        el('tr', null, [
+          el('th', { text: 'نوع سند' }), el('th', { text: 'تاریخ' }),
+          el('th', { text: 'شمارهٔ نامه' }), el('th', { text: 'نام فایل' })
+        ])
+      ]);
+      attached.forEach(function (d) {
+        docTable.appendChild(el('tr', null, [
+          el('td', { text: d.kind }),
+          el('td', { text: d.docDate ? J.format(d.docDate) : '' }),
+          el('td', { text: d.letterNo || '' }),
+          el('td', { text: d.fileName })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'مستندات پیوست' }),
+        el('p.p-sub', {
+          text: 'پوشه: ' + (rec.docFolder || '—')
+        }),
+        docTable
+      ]));
+    }
 
     var items = M.timelineFor(rec);
     if (items.length) {
@@ -6616,6 +7411,16 @@ else if (typeof exports === 'object'){
       widths: [26, 10, 12, 12, 20]
     });
 
+    if (data.docKinds && data.docKinds.length) {
+      sheets.push({
+        name: 'مستندات',
+        rows: [['نوع سند', 'تعداد']].concat(data.docKinds.map(function (d) {
+          return [d.label, fa(d.value)];
+        })),
+        widths: [34, 12]
+      });
+    }
+
     [['وضعیت پرونده‌ها', data.status, 'وضعیت'],
      ['نوع پرونده', data.caseTypes, 'نوع پرونده'],
      ['سن پرونده‌های باز', data.aging, 'بازهٔ سنی'],
@@ -6732,6 +7537,7 @@ else if (typeof exports === 'object'){
     M.FIELDS.forEach(function (f) {
       if (f.list) titleByList[f.list] = w.UIForm.cleanLabel(f.label);
     });
+    titleByList.DocKinds = 'نوع سند (مستندات)';
 
     names.forEach(function (name) {
       var ta = el('textarea.input.area', {
@@ -6788,8 +7594,26 @@ else if (typeof exports === 'object'){
             : 'این مرورگر از ذخیرهٔ مستقیم روی فایل پشتیبانی نمی‌کند؛ از «نسخهٔ پشتیبان» استفاده کنید.')
       }));
       if (s.canLink) {
+        if (!s.linked && s.hasStored) {
+          storageInfo.appendChild(el('button.btn.small.primary', {
+            type: 'button', text: 'تأیید دسترسی به ' + s.storedName,
+            onclick: function () {
+              w.Store.relinkFile(true).then(function (ok) {
+                if (ok) {
+                  w.U.toast('دسترسی برقرار شد.', 'good');
+                  w.Store.flushNow();
+                } else {
+                  w.U.toast('دسترسی داده نشد.', 'bad');
+                }
+                refreshStorage();
+              });
+            }
+          }));
+        }
         storageInfo.appendChild(el('button.btn.small', {
-          type: 'button', text: s.linked ? 'تغییر فایل دیتابیس' : 'اتصال به فایل دیتابیس',
+          type: 'button',
+          text: s.linked ? 'تغییر فایل دیتابیس'
+            : (s.hasStored ? 'انتخاب فایل دیگر' : 'اتصال به فایل دیتابیس'),
           onclick: function () {
             w.Store.linkFile().then(function () {
               w.U.toast('از این پس تغییرات خودکار روی فایل ذخیره می‌شود.', 'good');
@@ -6805,6 +7629,74 @@ else if (typeof exports === 'object'){
     refreshStorage();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'ذخیره‌سازی' }), storageInfo
+    ]));
+
+    // پوشهٔ مستندات
+    var docsInfo = el('div.storage-info');
+    function refreshDocs() {
+      var ds = w.Docs.status();
+      w.U.clear(docsInfo);
+      if (!ds.supported) {
+        docsInfo.appendChild(el('p', {
+          text: 'این مرورگر از ذخیرهٔ مستندات در پوشه پشتیبانی نمی‌کند (فقط کروم و اج).'
+        }));
+        return;
+      }
+      docsInfo.appendChild(el('p', {
+        text: ds.linked
+          ? 'پوشهٔ مستندات: ' + ds.folderName +
+            ' — برای هر پرونده یک زیرپوشه به نام «شمارهٔ پرونده - نام و نام خانوادگی» ساخته می‌شود.'
+          : (ds.hasStored
+            ? 'پوشهٔ «' + ds.storedName + '» انتخاب شده ولی مرورگر تأیید تازه می‌خواهد.'
+            : 'هنوز پوشه‌ای انتخاب نشده است.')
+      }));
+      var st = w.Docs.stats();
+      if (st.total) {
+        docsInfo.appendChild(el('p.muted.tiny', {
+          text: w.U.toFaDigits(st.total) + ' سند در ' +
+            w.U.toFaDigits(st.casesWithDocs) + ' پرونده ثبت شده است.'
+        }));
+      }
+      if (!ds.linked && ds.hasStored) {
+        docsInfo.appendChild(el('button.btn.small.primary', {
+          type: 'button', text: 'تأیید دسترسی به پوشهٔ ' + ds.storedName,
+          onclick: function () {
+            w.Docs.relinkFolder(true).then(function (ok) {
+              w.U.toast(ok ? 'دسترسی برقرار شد.' : 'دسترسی داده نشد.', ok ? 'good' : 'bad');
+              refreshDocs();
+            });
+          }
+        }));
+      }
+      docsInfo.appendChild(el('button.btn.small', {
+        type: 'button',
+        text: ds.linked ? 'تغییر پوشهٔ مستندات'
+          : (ds.hasStored ? 'انتخاب پوشهٔ دیگر' : 'انتخاب پوشهٔ مستندات'),
+        onclick: function () {
+          w.Docs.linkFolder().then(function () {
+            w.U.toast('پوشهٔ مستندات وصل شد.', 'good');
+            refreshDocs();
+          }).catch(function (e) {
+            if (e && e.name === 'AbortError') return;
+            w.U.toast('اتصال پوشه ناموفق بود: ' + e.message, 'bad');
+          });
+        }
+      }));
+      if (ds.linked) {
+        docsInfo.appendChild(el('button.btn.small.ghost', {
+          type: 'button', text: 'قطع اتصال',
+          onclick: function () {
+            w.Docs.unlinkFolder().then(function () {
+              w.U.toast('اتصال پوشه قطع شد؛ فایل‌ها سر جایشان هستند.', 'good');
+              refreshDocs();
+            });
+          }
+        }));
+      }
+    }
+    refreshDocs();
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'پوشهٔ مستندات' }), docsInfo
     ]));
 
     var editor = listsEditor();
@@ -6867,6 +7759,458 @@ else if (typeof exports === 'object'){
     exportReportExcel: exportReportExcel,
     importExcel: importExcel, settingsDialog: settingsDialog
   };
+})(window);
+
+</script>
+<script>
+/* ==== js/ui.docs.js ==== */
+/* تب «مستندات» در پروندهٔ هر فرد */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model, D = w.Docs;
+
+  var ICONS = {
+    pdf: '📕', jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', webp: '🖼',
+    doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', zip: '🗜', rar: '🗜',
+    txt: '📄', tif: '🖼', tiff: '🖼'
+  };
+
+  function iconFor(name) {
+    var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
+    return (m && ICONS[m[1].toLowerCase()]) || '📎';
+  }
+
+  function sizeText(bytes) {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return w.U.toFaDigits(bytes) + ' بایت';
+    if (bytes < 1048576) return w.U.toFaDigits(Math.round(bytes / 1024)) + ' کیلوبایت';
+    return w.U.toFaDigits((bytes / 1048576).toFixed(1)) + ' مگابایت';
+  }
+
+  /** از نام فایل، تاریخ و شمارهٔ نامه را حدس می‌زند تا ورود سریع‌تر شود */
+  function guessFromName(name) {
+    var clean = w.U.toLatinDigits(name || '');
+    var out = {};
+    var d = /(1[34]\d{2})[-\/_.]?(\d{2})[-\/_.]?(\d{2})/.exec(clean);
+    if (d) {
+      var packed = d[1] + d[2] + d[3];
+      if (J.unpack(packed)) out.docDate = packed;
+    }
+    var l = /(\d{2,6}[\/\-]\d{2,6}(?:[\/\-][؀-ۿ\w]+)*)/.exec(clean);
+    if (l) out.letterNo = l[1];
+    return out;
+  }
+
+  function pickFiles(multiple) {
+    return new Promise(function (resolve) {
+      var input = el('input', { type: 'file', multiple: multiple ? true : null });
+      input.style.display = 'none';
+      input.addEventListener('change', function () {
+        resolve(Array.prototype.slice.call(input.files || []));
+        input.remove();
+      });
+      document.body.appendChild(input);
+      input.click();
+    });
+  }
+
+  // --------------------------------------------------- پنجرهٔ افزودن مستندات
+  /** برای هر فایل یک ردیف با نوع، تاریخ، شمارهٔ نامه و عنوان */
+  function addDialog(rec, files, onDone) {
+    var rows = files.map(function (file) {
+      var guess = guessFromName(file.name);
+      var state = {
+        file: file,
+        kind: 'سایر',
+        docDate: guess.docDate || rec.intakeDate || J.today(),
+        letterNo: guess.letterNo || '',
+        title: ''
+      };
+
+      var kindSel = el('select.input.small');
+      D.kinds().forEach(function (k) {
+        kindSel.appendChild(el('option', { value: k, text: k, selected: k === state.kind }));
+      });
+      kindSel.addEventListener('change', function () { state.kind = kindSel.value; });
+
+      var dateField = w.DatePicker.field(state.docDate, function (v) { state.docDate = v; });
+      var letterInput = el('input.input.small', {
+        type: 'text', value: state.letterNo, placeholder: 'شمارهٔ نامه'
+      });
+      letterInput.addEventListener('input', function () { state.letterNo = letterInput.value; });
+      var titleInput = el('input.input.small', {
+        type: 'text', placeholder: 'توضیح کوتاه (اختیاری)'
+      });
+      titleInput.addEventListener('input', function () { state.title = titleInput.value; });
+
+      state.node = el('div.doc-add-row', null, [
+        el('div.doc-add-file', null, [
+          el('span.doc-icon', { text: iconFor(file.name) }),
+          el('span.doc-add-name', { text: file.name, title: file.name }),
+          el('span.muted.tiny', { text: sizeText(file.size) })
+        ]),
+        el('div.doc-add-fields', null, [
+          el('label.mini', { text: 'نوع سند' }), kindSel,
+          el('label.mini', { text: 'تاریخ سند' }), dateField,
+          el('label.mini', { text: 'شمارهٔ نامه' }), letterInput,
+          el('label.mini', { text: 'توضیح' }), titleInput
+        ])
+      ]);
+      return state;
+    });
+
+    var body = el('div.doc-add', null,
+      [el('p.muted.tiny', {
+        text: 'فایل‌ها در پوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
+          '» ذخیره می‌شوند و نامشان از همین مشخصات ساخته می‌شود.'
+      })].concat(rows.map(function (r) { return r.node; })));
+
+    var m, busy = false;
+    var save = el('button.btn.primary', {
+      type: 'button', text: 'ثبت ' + w.U.toFaDigits(rows.length) + ' سند',
+      onclick: function () {
+        if (busy) return;
+        busy = true;
+        save.textContent = 'در حال ذخیره…';
+        rows.reduce(function (chain, r) {
+          return chain.then(function () {
+            return D.addFile(rec, r.file, {
+              kind: r.kind, docDate: r.docDate,
+              letterNo: r.letterNo, title: r.title
+            });
+          });
+        }, Promise.resolve()).then(function () {
+          m.close();
+          w.U.toast(w.U.toFaDigits(rows.length) + ' سند در پوشهٔ پرونده ذخیره شد.', 'good');
+          onDone();
+        }).catch(function (err) {
+          busy = false;
+          save.textContent = 'ثبت دوباره';
+          w.U.toast('ذخیرهٔ سند ناموفق بود: ' + err.message, 'bad');
+        });
+      }
+    });
+
+    m = w.U.modal('افزودن سند به پرونده', body, [
+      el('button.btn.ghost', { type: 'button', text: 'انصراف', onclick: function () { m.close(); } }),
+      save
+    ]);
+  }
+
+  // ------------------------------------------------------------ فهرست اسناد
+  function docRow(app, rec, doc, refresh) {
+    var versions = D.versionsOf(doc);
+    // نام فایل خودش تاریخ و نوع و شماره را دارد؛ در عنوان تکرارش نمی‌کنیم
+    var headline = doc.title || doc.letterNo || doc.originalName || doc.fileName;
+    var meta = [
+      doc.docDate ? J.format(doc.docDate) : null,
+      doc.title && doc.letterNo ? doc.letterNo : null,
+      sizeText(doc.size)
+    ].filter(Boolean).join(' • ');
+
+    var actions = el('div.doc-actions', null, [
+      el('button.btn.small', {
+        type: 'button', text: 'باز کردن',
+        onclick: function () {
+          D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+        }
+      }),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'نسخهٔ جدید', title: 'نسخهٔ قبلی نگه داشته می‌شود',
+        onclick: function () {
+          pickFiles(false).then(function (files) {
+            if (!files.length) return;
+            return D.addVersion(rec, doc, files[0]).then(function () {
+              w.U.toast('نسخهٔ جدید ثبت شد؛ نسخهٔ قبلی نگه داشته شد.', 'good');
+              refresh();
+            });
+          }).catch(function (e) { w.U.toast('ثبت نسخه ناموفق بود: ' + e.message, 'bad'); });
+        }
+      }),
+      el('button.btn.small.ghost.danger', {
+        type: 'button', text: 'حذف',
+        onclick: function () {
+          w.U.confirmBox('حذف سند',
+            'فایل «' + doc.fileName + '» از پوشهٔ پرونده هم پاک می‌شود. ادامه می‌دهید؟',
+            'حذف کن').then(function (ok) {
+              if (!ok) return;
+              return D.removeDoc(doc).then(function () {
+                w.U.toast('سند حذف شد.', 'good');
+                refresh();
+              });
+            }).catch(function (e) { w.U.toast('حذف ناموفق بود: ' + e.message, 'bad'); });
+        }
+      })
+    ]);
+
+    var versionNote = versions.length ? el('details.doc-versions', null, [
+      el('summary', { text: w.U.toFaDigits(versions.length) + ' نسخهٔ قبلی' }),
+      el('ul', null, versions.map(function (v) {
+        return el('li', null, [
+          el('button.linkish', {
+            type: 'button', text: 'نسخهٔ ' + w.U.toFaDigits(v.version) + ' — ' + v.fileName,
+            onclick: function () {
+              D.openDoc(v).catch(function (e) { w.U.toast(e.message, 'bad'); });
+            }
+          }),
+          el('span.muted.tiny', { text: ' • ' + v.addedAtJalali })
+        ]);
+      }))
+    ]) : null;
+
+    return el('li.doc-item' + (doc.missing ? '.missing' : ''), null, [
+      el('span.doc-icon', { text: iconFor(doc.fileName) }),
+      el('div.doc-body', null, [
+        el('div.doc-head', null, [
+          el('span.doc-kind', { text: doc.kind }),
+          doc.version > 1 ? el('span.doc-version', {
+            text: 'نسخهٔ ' + w.U.toFaDigits(doc.version)
+          }) : null,
+          el('b.doc-title', { text: headline, title: headline })
+        ]),
+        el('div.doc-meta', { text: meta }),
+        el('div.doc-file', { text: doc.fileName, title: 'نام فایل در پوشهٔ پرونده' }),
+        doc.missing ? el('div.doc-warn', {
+          text: 'این فایل در پوشه پیدا نشد؛ شاید جابه‌جا یا حذف شده است.'
+        }) : null,
+        versionNote
+      ]),
+      actions
+    ]);
+  }
+
+  /** پنل مستندات یک پرونده */
+  function render(app, rec, refresh) {
+    var st = D.status();
+
+    if (!st.supported) {
+      return el('div.doc-panel', null, [
+        el('div.warn', null, [
+          el('span', {
+            text: 'ذخیرهٔ مستندات در پوشه فقط در کروم و اج کار می‌کند. ' +
+              'این مرورگر از این قابلیت پشتیبانی نمی‌کند.'
+          })
+        ])
+      ]);
+    }
+
+    if (!st.linked) {
+      // پوشهٔ نشست قبل هنوز ثبت است و فقط اجازه‌اش لازم است
+      if (st.hasStored) {
+        return el('div.doc-panel', null, [
+          el('div.doc-empty', null, [
+            el('p', { text: 'پوشهٔ «' + st.storedName + '» از قبل انتخاب شده است.' }),
+            el('p.muted.tiny', {
+              text: 'مرورگر پس از هر بار بسته شدن، یک تأیید تازه می‌خواهد. ' +
+                'لازم نیست دوباره پوشه را انتخاب کنید.'
+            }),
+            el('button.btn.primary', {
+              type: 'button', text: 'تأیید دسترسی به پوشه',
+              onclick: function () {
+                D.relinkFolder(true).then(function (ok) {
+                  if (ok) { w.U.toast('دسترسی برقرار شد.', 'good'); refresh(); }
+                  else w.U.toast('دسترسی داده نشد.', 'bad');
+                });
+              }
+            }),
+            el('button.btn.ghost.small', {
+              type: 'button', text: 'انتخاب پوشهٔ دیگر',
+              onclick: function () {
+                D.linkFolder().then(function () {
+                  w.U.toast('پوشهٔ مستندات وصل شد.', 'good');
+                  refresh();
+                }).catch(function (e) {
+                  if (e && e.name === 'AbortError') return;
+                  w.U.toast('اتصال پوشه ناموفق بود: ' + e.message, 'bad');
+                });
+              }
+            })
+          ])
+        ]);
+      }
+      return el('div.doc-panel', null, [
+        el('div.doc-empty', null, [
+          el('p', { text: 'هنوز پوشه‌ای برای نگهداری مستندات انتخاب نشده است.' }),
+          el('p.muted.tiny', {
+            text: 'یک پوشه انتخاب کنید؛ برنامه داخلش برای هر پرونده یک زیرپوشه ' +
+              'به نام «شمارهٔ پرونده - نام و نام خانوادگی» می‌سازد.'
+          }),
+          el('button.btn.primary', {
+            type: 'button', text: 'انتخاب پوشهٔ مستندات',
+            onclick: function () {
+              D.linkFolder().then(function () {
+                w.U.toast('پوشهٔ مستندات وصل شد.', 'good');
+                refresh();
+              }).catch(function (e) {
+                if (e && e.name === 'AbortError') return;
+                w.U.toast('اتصال پوشه ناموفق بود: ' + e.message, 'bad');
+              });
+            }
+          })
+        ])
+      ]);
+    }
+
+    if (!rec) {
+      return el('div.doc-panel', null, [
+        el('p.muted', { text: 'برای افزودن سند، اول پرونده را ذخیره کنید.' })
+      ]);
+    }
+
+    var list = D.current(rec.id);
+    var panel = el('div.doc-panel');
+
+    // نوار ابزار
+    var toolbar = el('div.doc-toolbar', null, [
+      el('button.btn.primary.small', {
+        type: 'button', text: '＋ افزودن سند',
+        onclick: function () {
+          pickFiles(true).then(function (files) {
+            if (files.length) addDialog(rec, files, refresh);
+          });
+        }
+      }),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'پویش پوشه',
+        title: 'فایل‌هایی که مستقیم در پوشه گذاشته‌اید (مثلاً خروجی اسکنر)',
+        onclick: function () {
+          D.scan(rec).then(function (entries) {
+            if (!entries.length) {
+              w.U.toast('فایل ثبت‌نشده‌ای در پوشه نبود.', 'good');
+              return;
+            }
+            scanDialog(rec, entries, refresh);
+          });
+        }
+      }),
+      el('div.spacer'),
+      el('span.doc-folder', {
+        text: '📂 ' + (rec.docFolder || D.folderNameFor(rec)),
+        title: 'زیرپوشهٔ این پرونده داخل پوشهٔ ' + st.folderName
+      })
+    ]);
+    panel.appendChild(toolbar);
+
+    if (D.folderMismatch(rec)) {
+      panel.appendChild(el('div.warn', null, [
+        el('span', {
+          text: 'نام پوشه («' + rec.docFolder + '») با مشخصات فعلی پرونده نمی‌خواند. '
+        }),
+        el('button.btn.small', {
+          type: 'button', text: 'هم‌نام کردن پوشه',
+          onclick: function () {
+            D.renameFolder(rec).then(function () {
+              w.U.toast('پوشه به «' + rec.docFolder + '» تغییر نام یافت.', 'good');
+              refresh();
+            }).catch(function (e) {
+              w.U.toast('تغییر نام ناموفق بود: ' + e.message, 'bad');
+            });
+          }
+        })
+      ]));
+    }
+
+    // ناحیهٔ کشیدن‌و‌رها
+    var drop = el('div.doc-drop', null, [
+      el('span', { text: 'فایل‌ها را اینجا رها کنید' })
+    ]);
+    ['dragenter', 'dragover'].forEach(function (evt) {
+      drop.addEventListener(evt, function (e) {
+        e.preventDefault();
+        drop.classList.add('over');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (evt) {
+      drop.addEventListener(evt, function () { drop.classList.remove('over'); });
+    });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var files = Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || []);
+      if (files.length) addDialog(rec, files, refresh);
+    });
+    panel.appendChild(drop);
+
+    if (!list.length) {
+      panel.appendChild(el('p.muted', { text: 'هنوز سندی برای این پرونده ثبت نشده است.' }));
+      return panel;
+    }
+
+    // ترتیب زمانی، مثل ورق زدن پروندهٔ فیزیکی؛ هم‌تاریخ‌ها به ترتیب گردش‌کار
+    var order = D.kinds();
+    list.sort(function (a, b) {
+      var da = a.docDate || '', db = b.docDate || '';
+      if (da !== db) return da < db ? -1 : 1;
+      var oa = order.indexOf(a.kind), ob = order.indexOf(b.kind);
+      return (oa < 0 ? 999 : oa) - (ob < 0 ? 999 : ob);
+    });
+
+    panel.appendChild(el('ul.doc-list', null, list.map(function (doc) {
+      return docRow(app, rec, doc, refresh);
+    })));
+    panel.appendChild(el('p.card-note', {
+      text: w.U.toFaDigits(list.length) + ' سند جاری' +
+        (D.forCase(rec.id).length > list.length
+          ? ' • ' + w.U.toFaDigits(D.forCase(rec.id).length - list.length) + ' نسخهٔ بایگانی'
+          : '')
+    }));
+    return panel;
+  }
+
+  /** ثبت فایل‌هایی که مستقیم در پوشه گذاشته شده‌اند */
+  function scanDialog(rec, entries, refresh) {
+    var rows = entries.map(function (entry) {
+      var guess = guessFromName(entry.name);
+      var state = { entry: entry, kind: 'سایر', docDate: guess.docDate || J.today(),
+        letterNo: guess.letterNo || '', checked: true };
+      var cb = el('input', { type: 'checkbox', checked: true });
+      cb.addEventListener('change', function () { state.checked = cb.checked; });
+      var kindSel = el('select.input.small');
+      D.kinds().forEach(function (k) {
+        kindSel.appendChild(el('option', { value: k, text: k }));
+      });
+      kindSel.addEventListener('change', function () { state.kind = kindSel.value; });
+      state.node = el('label.scan-row', null, [
+        cb,
+        el('span.doc-icon', { text: iconFor(entry.name) }),
+        el('span.scan-name', { text: entry.name, title: entry.name }),
+        kindSel
+      ]);
+      return state;
+    });
+
+    var m;
+    var body = el('div.scan-dialog', null,
+      [el('p.muted.tiny', {
+        text: w.U.toFaDigits(entries.length) +
+          ' فایل در پوشهٔ این پرونده هست که در برنامه ثبت نشده. ' +
+          'فایل‌ها جابه‌جا نمی‌شوند؛ فقط ثبت می‌شوند.'
+      })].concat(rows.map(function (r) { return r.node; })));
+
+    m = w.U.modal('پویش پوشهٔ پرونده', body, [
+      el('button.btn.ghost', { type: 'button', text: 'انصراف', onclick: function () { m.close(); } }),
+      el('button.btn.primary', {
+        type: 'button', text: 'ثبت انتخاب‌شده‌ها',
+        onclick: function () {
+          var chosen = rows.filter(function (r) { return r.checked; });
+          chosen.reduce(function (chain, r) {
+            return chain.then(function () {
+              return D.register(rec, r.entry, { kind: r.kind, docDate: r.docDate,
+                letterNo: r.letterNo });
+            });
+          }, Promise.resolve()).then(function () {
+            m.close();
+            w.U.toast(w.U.toFaDigits(chosen.length) + ' فایل ثبت شد.', 'good');
+            refresh();
+          }).catch(function (e) {
+            w.U.toast('ثبت ناموفق بود: ' + e.message, 'bad');
+          });
+        }
+      })
+    ]);
+  }
+
+  w.UIDocs = { render: render, iconFor: iconFor, sizeText: sizeText };
 })(window);
 
 </script>
@@ -7354,6 +8698,22 @@ else if (typeof exports === 'object'){
       }
     }));
 
+    // مستندات — فقط وقتی سندی ثبت شده باشد
+    if (data.docKinds.length) {
+      grid.appendChild(card({
+        title: 'مستندات به تفکیک نوع',
+        subtitle: 'فقط نسخه‌های جاری شمرده می‌شوند؛ نسخه‌های بایگانی نه.',
+        chart: function () {
+          return Ch.hbar({ data: data.docKinds, labelWidth: 175 });
+        },
+        table: function () {
+          return Ch.table(['نوع سند', 'تعداد'], data.docKinds.map(function (d) {
+            return [d.label, fa(d.value)];
+          }));
+        }
+      }));
+    }
+
     // ترکیب استخدامی
     grid.appendChild(card({
       title: 'نوع محل خدمت و ماهیت شغل',
@@ -7553,8 +8913,13 @@ else if (typeof exports === 'object'){
       text = '⚠ داده ذخیره نمی‌شود';
       cls = 'chip bad';
     } else if (s.linked) {
-      text = '💾 ' + s.fileName + (s.lastSavedAt ? ' • ' + J.stamp(s.lastSavedAt).split('ساعت')[1].trim() : '');
+      text = '💾 ' + s.fileName +
+        (s.lastSavedAt ? ' • ' + J.stamp(s.lastSavedAt).split('ساعت')[1].trim() : '');
       cls = 'chip good';
+    } else if (s.hasStored) {
+      // فایل از نشست قبل هست و فقط اجازه‌اش لازم است — یک کلیک، نه انتخاب دوباره
+      text = '🔓 تأیید دسترسی به ' + s.storedName;
+      cls = 'chip warn';
     } else if (s.canLink) {
       text = '⚠ به فایلی روی دیسک وصل نیست';
       cls = 'chip warn';
@@ -7565,7 +8930,26 @@ else if (typeof exports === 'object'){
     statusChip.textContent = text;
     statusChip.className = cls;
     statusChip.title = s.error ? ('خطای ذخیره: ' + s.error)
-      : 'برای مدیریت ذخیره‌سازی کلیک کنید';
+      : (s.hasStored && !s.linked
+        ? 'برای ادامهٔ ذخیرهٔ خودکار روی همان فایل، یک بار کلیک کنید'
+        : 'برای مدیریت ذخیره‌سازی کلیک کنید');
+  }
+
+  /** کلیک روی چیپ: اگر فقط اجازه لازم است همان‌جا بگیر، وگرنه تنظیمات */
+  function onChipClick() {
+    var s = w.Store.status();
+    if (!s.linked && s.hasStored) {
+      w.Store.relinkFile(true).then(function (ok) {
+        if (ok) {
+          w.U.toast('دسترسی برقرار شد؛ تغییرات دوباره خودکار ذخیره می‌شوند.', 'good');
+          w.Store.flushNow();
+        } else {
+          w.UIMisc.settingsDialog(app);
+        }
+      });
+      return;
+    }
+    w.UIMisc.settingsDialog(app);
   }
 
   function topBar() {
@@ -7583,9 +8967,7 @@ else if (typeof exports === 'object'){
       if (e.key === 'Escape') { searchInput.value = ''; app.state.q = ''; app.render(); }
     });
 
-    statusChip = el('button.chip', {
-      type: 'button', onclick: function () { w.UIMisc.settingsDialog(app); }
-    });
+    statusChip = el('button.chip', { type: 'button', onclick: onChipClick });
 
     navButtons = {
       list: el('button.nav-btn.active', {
@@ -7701,6 +9083,8 @@ else if (typeof exports === 'object'){
           return M.load();
         });
       }
+    }).then(function () {
+      return w.Docs.load();
     }).then(function () {
       bindShortcuts();
       app.render();

@@ -480,6 +480,22 @@
       }
     }));
 
+    // مستندات — فقط وقتی سندی ثبت شده باشد
+    if (data.docKinds.length) {
+      grid.appendChild(card({
+        title: 'مستندات به تفکیک نوع',
+        subtitle: 'فقط نسخه‌های جاری شمرده می‌شوند؛ نسخه‌های بایگانی نه.',
+        chart: function () {
+          return Ch.hbar({ data: data.docKinds, labelWidth: 175 });
+        },
+        table: function () {
+          return Ch.table(['نوع سند', 'تعداد'], data.docKinds.map(function (d) {
+            return [d.label, fa(d.value)];
+          }));
+        }
+      }));
+    }
+
     // ترکیب استخدامی
     grid.appendChild(card({
       title: 'نوع محل خدمت و ماهیت شغل',

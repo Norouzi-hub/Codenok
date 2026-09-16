@@ -240,6 +240,16 @@
       widths: [26, 10, 12, 12, 20]
     });
 
+    if (data.docKinds && data.docKinds.length) {
+      sheets.push({
+        name: 'مستندات',
+        rows: [['نوع سند', 'تعداد']].concat(data.docKinds.map(function (d) {
+          return [d.label, fa(d.value)];
+        })),
+        widths: [34, 12]
+      });
+    }
+
     [['وضعیت پرونده‌ها', data.status, 'وضعیت'],
      ['نوع پرونده', data.caseTypes, 'نوع پرونده'],
      ['سن پرونده‌های باز', data.aging, 'بازهٔ سنی'],
@@ -356,6 +366,7 @@
     M.FIELDS.forEach(function (f) {
       if (f.list) titleByList[f.list] = w.UIForm.cleanLabel(f.label);
     });
+    titleByList.DocKinds = 'نوع سند (مستندات)';
 
     names.forEach(function (name) {
       var ta = el('textarea.input.area', {
@@ -412,8 +423,26 @@
             : 'این مرورگر از ذخیرهٔ مستقیم روی فایل پشتیبانی نمی‌کند؛ از «نسخهٔ پشتیبان» استفاده کنید.')
       }));
       if (s.canLink) {
+        if (!s.linked && s.hasStored) {
+          storageInfo.appendChild(el('button.btn.small.primary', {
+            type: 'button', text: 'تأیید دسترسی به ' + s.storedName,
+            onclick: function () {
+              w.Store.relinkFile(true).then(function (ok) {
+                if (ok) {
+                  w.U.toast('دسترسی برقرار شد.', 'good');
+                  w.Store.flushNow();
+                } else {
+                  w.U.toast('دسترسی داده نشد.', 'bad');
+                }
+                refreshStorage();
+              });
+            }
+          }));
+        }
         storageInfo.appendChild(el('button.btn.small', {
-          type: 'button', text: s.linked ? 'تغییر فایل دیتابیس' : 'اتصال به فایل دیتابیس',
+          type: 'button',
+          text: s.linked ? 'تغییر فایل دیتابیس'
+            : (s.hasStored ? 'انتخاب فایل دیگر' : 'اتصال به فایل دیتابیس'),
           onclick: function () {
             w.Store.linkFile().then(function () {
               w.U.toast('از این پس تغییرات خودکار روی فایل ذخیره می‌شود.', 'good');
@@ -429,6 +458,74 @@
     refreshStorage();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'ذخیره‌سازی' }), storageInfo
+    ]));
+
+    // پوشهٔ مستندات
+    var docsInfo = el('div.storage-info');
+    function refreshDocs() {
+      var ds = w.Docs.status();
+      w.U.clear(docsInfo);
+      if (!ds.supported) {
+        docsInfo.appendChild(el('p', {
+          text: 'این مرورگر از ذخیرهٔ مستندات در پوشه پشتیبانی نمی‌کند (فقط کروم و اج).'
+        }));
+        return;
+      }
+      docsInfo.appendChild(el('p', {
+        text: ds.linked
+          ? 'پوشهٔ مستندات: ' + ds.folderName +
+            ' — برای هر پرونده یک زیرپوشه به نام «شمارهٔ پرونده - نام و نام خانوادگی» ساخته می‌شود.'
+          : (ds.hasStored
+            ? 'پوشهٔ «' + ds.storedName + '» انتخاب شده ولی مرورگر تأیید تازه می‌خواهد.'
+            : 'هنوز پوشه‌ای انتخاب نشده است.')
+      }));
+      var st = w.Docs.stats();
+      if (st.total) {
+        docsInfo.appendChild(el('p.muted.tiny', {
+          text: w.U.toFaDigits(st.total) + ' سند در ' +
+            w.U.toFaDigits(st.casesWithDocs) + ' پرونده ثبت شده است.'
+        }));
+      }
+      if (!ds.linked && ds.hasStored) {
+        docsInfo.appendChild(el('button.btn.small.primary', {
+          type: 'button', text: 'تأیید دسترسی به پوشهٔ ' + ds.storedName,
+          onclick: function () {
+            w.Docs.relinkFolder(true).then(function (ok) {
+              w.U.toast(ok ? 'دسترسی برقرار شد.' : 'دسترسی داده نشد.', ok ? 'good' : 'bad');
+              refreshDocs();
+            });
+          }
+        }));
+      }
+      docsInfo.appendChild(el('button.btn.small', {
+        type: 'button',
+        text: ds.linked ? 'تغییر پوشهٔ مستندات'
+          : (ds.hasStored ? 'انتخاب پوشهٔ دیگر' : 'انتخاب پوشهٔ مستندات'),
+        onclick: function () {
+          w.Docs.linkFolder().then(function () {
+            w.U.toast('پوشهٔ مستندات وصل شد.', 'good');
+            refreshDocs();
+          }).catch(function (e) {
+            if (e && e.name === 'AbortError') return;
+            w.U.toast('اتصال پوشه ناموفق بود: ' + e.message, 'bad');
+          });
+        }
+      }));
+      if (ds.linked) {
+        docsInfo.appendChild(el('button.btn.small.ghost', {
+          type: 'button', text: 'قطع اتصال',
+          onclick: function () {
+            w.Docs.unlinkFolder().then(function () {
+              w.U.toast('اتصال پوشه قطع شد؛ فایل‌ها سر جایشان هستند.', 'good');
+              refreshDocs();
+            });
+          }
+        }));
+      }
+    }
+    refreshDocs();
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'پوشهٔ مستندات' }), docsInfo
     ]));
 
     var editor = listsEditor();
