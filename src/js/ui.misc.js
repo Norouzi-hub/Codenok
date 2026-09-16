@@ -4,6 +4,8 @@
 
   var el = w.U.el, J = w.J, M = w.Model;
 
+  function fa(n) { return w.U.toFaDigits(n); }
+
   // -------------------------------------------------------------- پنل آمار
   function statsPanel(app) {
     var s = M.stats();
@@ -167,7 +169,6 @@
 
   /** خروجی اکسل گزارش: هر جدول در یک شیت جدا */
   function exportReportExcel(data, scopeText) {
-    var fa = w.U.toFaDigits;
     var k = data.kpis;
     var sheets = [];
 
@@ -288,11 +289,18 @@
   }
 
   function exportJson() {
-    var blob = new Blob([JSON.stringify(w.Store.snapshot(), null, 1)],
-      { type: 'application/json' });
-    w.U.download('parvandeha-backup-' + J.today() + '.json', blob);
-    M.saveSettings({ changesSinceBackup: 0 });
-    w.U.toast('نسخهٔ پشتیبان ذخیره شد.', 'good');
+    // اگر رمز فعال باشد، نسخهٔ پشتیبان هم رمزشده بیرون می‌رود
+    w.Vault.sealSnapshot(w.Store.snapshot()).then(function (payload) {
+      var blob = new Blob([JSON.stringify(payload, null, payload.encrypted ? 0 : 1)],
+        { type: 'application/json' });
+      w.U.download('parvandeha-backup-' + J.today() + '.json', blob);
+      M.saveSettings({ changesSinceBackup: 0 });
+      w.U.toast(payload.encrypted
+        ? 'نسخهٔ پشتیبان رمزشده ذخیره شد.'
+        : 'نسخهٔ پشتیبان ذخیره شد.', 'good');
+    }).catch(function (e) {
+      w.U.toast('ساخت پشتیبان ناموفق بود: ' + e.message, 'bad');
+    });
   }
 
   // ------------------------------------------------------- بازیابی و ورودی
@@ -317,12 +325,25 @@
         'جایگزین کن').then(function (ok) {
           if (!ok) return;
           return file.text().then(function (text) {
-            return w.Store.restore(JSON.parse(text));
-          }).then(function () {
-            return M.reload();
-          }).then(function () {
-            w.U.toast('داده‌ها بازیابی شد.', 'good');
-            app.goList();
+            var payload = JSON.parse(text);
+            if (!payload.encrypted) return payload;
+            // نسخهٔ پشتیبان رمزشده: رمزِ زمانِ ساختنش لازم است
+            return w.UILock.askBackupPassword(file.name).then(function (pw) {
+              if (!pw) return null;
+              return w.Vault.openSnapshot(payload, pw).catch(function () {
+                throw new Error('رمز نادرست است یا فایل آسیب دیده');
+              });
+            });
+          }).then(function (snap) {
+            if (!snap) return null;
+            return w.Store.restore(snap).then(function () {
+              return M.reload();
+            }).then(function () {
+              return w.Docs.load();
+            }).then(function () {
+              w.U.toast('داده‌ها بازیابی شد.', 'good');
+              app.goList();
+            });
           });
         });
     }).catch(function (e) {
@@ -330,44 +351,173 @@
     });
   }
 
+  /** ستون‌های فایل را به فیلدهای برنامه نگاشت می‌کند */
+  function mapColumns(headerRow) {
+    var header = headerRow.map(function (h) { return w.U.normalize(h); });
+    var map = {}, matched = [], usedCols = {};
+    M.FIELDS.forEach(function (f) {
+      var i = header.indexOf(w.U.normalize(f.label));
+      if (i < 0) i = header.indexOf(w.U.normalize(w.UIForm.cleanLabel(f.label)));
+      if (i < 0 || usedCols[i]) return;
+      usedCols[i] = true;
+      map[f.key] = i;
+      matched.push({ field: f, col: i, header: headerRow[i] });
+    });
+    var ignored = [];
+    headerRow.forEach(function (h, i) {
+      if (!usedCols[i] && String(h || '').trim()) ignored.push(String(h).trim());
+    });
+    return { map: map, matched: matched, ignored: ignored };
+  }
+
+  function rowsToRecords(rows, map) {
+    return rows.slice(1).map(function (r) {
+      var rec = {};
+      Object.keys(map).forEach(function (k) {
+        var v = r[map[k]];
+        if (v != null && String(v).trim() !== '') rec[k] = String(v).trim();
+      });
+      return rec;
+    }).filter(function (r) { return Object.keys(r).length; });
+  }
+
+  function countLine(label, n, cls) {
+    return el('div.imp-row' + (cls ? '.' + cls : ''), null, [
+      el('b.imp-num', { text: fa(n) }),
+      el('span', { text: label })
+    ]);
+  }
+
+  /**
+   * پنجرهٔ ورود از اکسل: پیش از هر تغییری نشان می‌دهد چه چیزی وارد می‌شود،
+   * چه ستون‌هایی شناسایی نشده‌اند و با پرونده‌های تکراری چه می‌کند.
+   */
+  function importDialog(app, fileName, rows) {
+    var cols = mapColumns(rows[0] || []);
+    // شمارهٔ پرونده معمولاً ستون صفر است؛ بررسی باید با null مقایسه شود نه !
+    if (cols.map.caseNo == null) {
+      w.U.toast('ستون «شماره پرونده» در فایل پیدا نشد؛ ورود ممکن نیست.', 'bad');
+      return;
+    }
+    var records = rowsToRecords(rows, cols.map);
+    var an = M.analyzeImport(records);
+    var policy = 'skip';
+
+    var body = el('div.import-dialog');
+    body.appendChild(el('p.muted.tiny', {
+      text: 'فایل: ' + fileName + ' — ' + fa(rows.length - 1) + ' ردیف داده'
+    }));
+
+    // شناسایی ستون‌ها
+    var colBox = el('details.imp-block', { open: cols.ignored.length > 0 });
+    colBox.appendChild(el('summary', null, [
+      el('b', { text: 'ستون‌ها: ' + fa(cols.matched.length) + ' شناسایی شد' }),
+      cols.ignored.length
+        ? el('span.imp-warn', { text: ' • ' + fa(cols.ignored.length) + ' ستون ناشناس' })
+        : el('span.imp-ok', { text: ' • همه شناسایی شدند' })
+    ]));
+    if (cols.ignored.length) {
+      colBox.appendChild(el('p.muted.tiny', {
+        text: 'این ستون‌ها با هیچ فیلدی نخواندند و نادیده گرفته می‌شوند: ' +
+          cols.ignored.join('، ')
+      }));
+    }
+    var missing = M.FIELDS.filter(function (f) { return cols.map[f.key] == null; });
+    if (missing.length) {
+      colBox.appendChild(el('p.muted.tiny', {
+        text: fa(missing.length) + ' فیلد برنامه در فایل نبود و خالی می‌ماند: ' +
+          missing.slice(0, 12).map(function (f) {
+            return w.UIForm.cleanLabel(f.label);
+          }).join('، ') + (missing.length > 12 ? ' …' : '')
+      }));
+    }
+    body.appendChild(colBox);
+
+    // جمع‌بندی رکوردها
+    var counts = el('div.imp-counts', null, [
+      countLine('پروندهٔ تازه — ثبت می‌شود', an.fresh.length, 'good'),
+      an.existing.length
+        ? countLine('شمارهٔ پرونده از قبل در برنامه هست', an.existing.length, 'dup') : null,
+      an.insideFile.length
+        ? countLine('ردیف تکراری داخل خود فایل — همیشه رد می‌شود',
+          an.insideFile.length, 'dup') : null,
+      an.noCaseNo.length
+        ? countLine('ردیف بدون شمارهٔ پرونده — رد می‌شود', an.noCaseNo.length, 'dup') : null
+    ]);
+    body.appendChild(counts);
+
+    // سیاست برخورد با تکراری‌ها
+    if (an.existing.length) {
+      var skipRadio = el('input', { type: 'radio', name: 'imp-policy', checked: true });
+      var updateRadio = el('input', { type: 'radio', name: 'imp-policy' });
+      skipRadio.addEventListener('change', function () { policy = 'skip'; });
+      updateRadio.addEventListener('change', function () { policy = 'update'; });
+
+      body.appendChild(el('div.imp-block', null, [
+        el('b', { text: 'با پرونده‌های تکراری چه شود؟' }),
+        el('label.imp-choice', null, [skipRadio, el('span', null, [
+          el('b', { text: 'رد شوند (پیشنهاد) — ' }),
+          el('span', { text: 'پروندهٔ موجود دست‌نخورده می‌ماند و نسخهٔ تکراری ساخته نمی‌شود.' })
+        ])]),
+        el('label.imp-choice', null, [updateRadio, el('span', null, [
+          el('b', { text: 'به‌روزرسانی شوند — ' }),
+          el('span', {
+            text: 'مقادیر تازه روی پروندهٔ موجود می‌نشیند و هر تغییر در تاریخچه ثبت می‌شود' +
+              (an.changed.length
+                ? ' (' + fa(an.changed.length) + ' پرونده واقعاً تغییر می‌کند).' : '.')
+          })
+        ])]),
+        el('details.imp-dup-list', null, [
+          el('summary', { text: 'دیدن شماره‌های تکراری' }),
+          el('p.muted.tiny', {
+            text: an.existing.map(function (r) { return fa(r.caseNo); }).join('، ')
+          })
+        ])
+      ]));
+    }
+
+    var m, busy = false;
+    var go = el('button.btn.primary', {
+      type: 'button', text: 'شروع ورود',
+      onclick: function () {
+        if (busy) return;
+        busy = true;
+        go.textContent = 'در حال ورود…';
+        M.bulkImport(records, { onDuplicate: policy, note: 'ورود از ' + fileName })
+          .then(function (res) {
+            m.close();
+            w.U.toast(fa(res.added) + ' پروندهٔ تازه' +
+              (res.updated ? '، ' + fa(res.updated) + ' به‌روزرسانی' : '') +
+              (res.skipped ? '، ' + fa(res.skipped) + ' رد شد' : '') + '.', 'good');
+            app.goList();
+          }).catch(function (e) {
+            busy = false;
+            go.textContent = 'تلاش دوباره';
+            w.U.toast('ورود ناموفق بود: ' + e.message, 'bad');
+          });
+      }
+    });
+    if (!an.fresh.length && !an.existing.length) {
+      go.disabled = true;
+      go.textContent = 'چیزی برای ورود نیست';
+    }
+
+    m = w.U.modal('ورود اطلاعات از اکسل', body, [
+      el('button.btn.ghost', { type: 'button', text: 'انصراف',
+        onclick: function () { m.close(); } }),
+      go
+    ]);
+  }
+
   function importExcel(app) {
     pickFile('.xlsx').then(function (file) {
       if (!file) return;
       return file.arrayBuffer().then(w.XLSX.read).then(function (rows) {
-        if (!rows.length) throw new Error('فایل خالی است');
-        var header = rows[0].map(function (h) { return w.U.normalize(h); });
-        var map = {};
-        M.FIELDS.forEach(function (f) {
-          var i = header.indexOf(w.U.normalize(f.label));
-          if (i < 0) i = header.indexOf(w.U.normalize(w.UIForm.cleanLabel(f.label)));
-          if (i >= 0) map[f.key] = i;
-        });
-        var known = Object.keys(map).length;
-        if (!map.caseNo) throw new Error('ستون «شماره پرونده» در فایل پیدا نشد');
-        var records = rows.slice(1).map(function (r) {
-          var rec = {};
-          Object.keys(map).forEach(function (k) {
-            var v = r[map[k]];
-            if (v != null && String(v).trim() !== '') rec[k] = String(v).trim();
-          });
-          return rec;
-        }).filter(function (r) { return r.caseNo; });
-
-        return w.U.confirmBox('ورود از اکسل',
-          w.U.toFaDigits(records.length) + ' ردیف و ' + w.U.toFaDigits(known) +
-          ' ستون شناسایی شد. پرونده‌های با شمارهٔ تکراری به‌روزرسانی می‌شوند و تغییرشان ' +
-          'در تاریخچه ثبت می‌شود. ادامه می‌دهید؟', 'وارد کن')
-          .then(function (ok) {
-            if (!ok) return;
-            return M.bulkImport(records).then(function (res) {
-              w.U.toast(w.U.toFaDigits(res.added) + ' پروندهٔ جدید و ' +
-                w.U.toFaDigits(res.updated) + ' به‌روزرسانی انجام شد.', 'good');
-              app.goList();
-            });
-          });
+        if (rows.length < 2) throw new Error('فایل داده‌ای ندارد');
+        importDialog(app, file.name, rows);
       });
     }).catch(function (e) {
-      w.U.toast('ورود از اکسل ناموفق بود: ' + e.message, 'bad');
+      w.U.toast('خواندن فایل اکسل ناموفق بود: ' + e.message, 'bad');
     });
   }
 
@@ -472,6 +622,48 @@
     refreshStorage();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'ذخیره‌سازی' }), storageInfo
+    ]));
+
+    // امنیت
+    var secInfo = el('div.storage-info');
+    function refreshSec() {
+      var st = w.Store.status();
+      w.U.clear(secInfo);
+      if (!w.Vault.available()) {
+        secInfo.appendChild(el('p', {
+          text: 'این مرورگر از رمزنگاری پشتیبانی نمی‌کند.'
+        }));
+        return;
+      }
+      secInfo.appendChild(el('p', {
+        text: st.encrypted
+          ? 'رمز عبور فعال است. پرونده‌ها، تاریخچه و فهرست مستندات با AES-256 ' +
+            'رمزنگاری شده‌اند و بدون رمز خوانده نمی‌شوند.'
+          : 'رمزی تعیین نشده؛ هر کسی که این فایل را باز کند اطلاعات را می‌بیند.'
+      }));
+      secInfo.appendChild(el('div.btn-row', null, [
+        el('button.btn.small' + (st.encrypted ? '' : '.primary'), {
+          type: 'button', text: st.encrypted ? 'تغییر یا برداشتن رمز' : 'تعیین رمز عبور',
+          onclick: function () {
+            m.close();
+            w.UILock.passwordDialog(app, function () { app.render(); });
+          }
+        }),
+        st.encrypted ? el('button.btn.small.ghost', {
+          type: 'button', text: 'قفل کردن همین حالا',
+          onclick: function () { m.close(); app.lockNow(false); }
+        }) : null
+      ]));
+      if (st.encrypted) {
+        secInfo.appendChild(el('p.muted.tiny', {
+          text: 'برنامه پس از ۱۵ دقیقه بی‌کاری خودکار قفل می‌شود. ' +
+            'فایل‌های پیوست و خروجی اکسل رمز ندارند.'
+        }));
+      }
+    }
+    refreshSec();
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'امنیت و رمز عبور' }), secInfo
     ]));
 
     // پوشهٔ مستندات
@@ -600,6 +792,7 @@
     statsPanel: statsPanel, columnsDialog: columnsDialog, exportExcel: exportExcel,
     exportSqlite: exportSqlite, exportJson: exportJson, restoreJson: restoreJson,
     exportReportExcel: exportReportExcel,
-    importExcel: importExcel, settingsDialog: settingsDialog
+    importExcel: importExcel, settingsDialog: settingsDialog, mapColumns: mapColumns,
+    importDialog: importDialog
   };
 })(window);

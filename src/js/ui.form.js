@@ -261,6 +261,24 @@
         app.render();
         return;
       }
+      // جلوی ساخته شدن نسخهٔ تکراری از یک پرونده گرفته می‌شود
+      var dup = M.duplicateCaseNo(data.caseNo, existing ? existing.id : null);
+      if (dup) {
+        var name = [dup.firstName, dup.lastName].filter(Boolean).join(' ');
+        w.U.confirmBox('شمارهٔ پرونده تکراری است',
+          'پروندهٔ ' + w.U.toFaDigits(dup.caseNo) +
+          (name ? ' («' + name + '»)' : '') + ' از قبل ثبت شده است. ' +
+          'اگر واقعاً پروندهٔ جداگانه‌ای است، شماره را یکتا کنید (مثلاً ' +
+          w.U.toFaDigits(dup.caseNo) + '/۲). باز هم ذخیره شود؟',
+          'باز هم ذخیره کن').then(function (ok) {
+            if (ok) persist(data);
+          });
+        return;
+      }
+      persist(data);
+    }
+
+    function persist(data) {
       var p = existing ? M.update(existing.id, data) : M.create(data);
       p.then(function (res) {
         dirty = false;

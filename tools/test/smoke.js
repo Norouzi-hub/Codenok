@@ -39,8 +39,21 @@ function check(name, ok, extra) {
   const count = await page.evaluate(() => window.Model.state.cases.length);
   check('۳۱ پروندهٔ نمونه وارد شد', count === 31, 'count=' + count);
 
-  const fieldCount = await page.evaluate(() => window.FIELDS.length);
-  check('هر ۶۹ فیلد تعریف شده', fieldCount === 69, 'fields=' + fieldCount);
+  const schema = await page.evaluate(() => ({
+    count: window.FIELDS.length,
+    keys: window.FIELDS.map(f => f.key),
+    labels: window.FIELDS.map(f => f.label)
+  }));
+  const REMOVED = ['reportType', 'reportYear', 'verdict1', 'verdict2', 'verdict3',
+    'verdict4', 'verdict5'];
+  check('۶۲ فیلد تعریف شده (هفت فیلد حذف‌شده)', schema.count === 62,
+    'fields=' + schema.count);
+  check('فیلدهای حذف‌شده در برنامه نیستند',
+    REMOVED.every(k => schema.keys.indexOf(k) < 0),
+    REMOVED.filter(k => schema.keys.indexOf(k) >= 0).join(', ') || 'هیچ‌کدام');
+  check('«سال رسیدگی» دست‌نخورده مانده',
+    schema.keys.indexOf('year') >= 0 &&
+    schema.labels.some(l => l.indexOf('سال رسیدگی') === 0));
 
   console.log('\n— جستجو —');
   await page.fill('.search', 'حراست');
@@ -200,7 +213,7 @@ function check(name, ok, extra) {
       sample: rows[1] ? rows[1][0] : null };
   }, fs.readFileSync(xlsxPath).toString('base64'));
   check('فایل اکسل دوباره خوانده می‌شود',
-    importResult.rows === 33 && importResult.cols === 69 &&
+    importResult.rows === 33 && importResult.cols === 62 &&
     importResult.firstHeader.includes('شماره پرونده'),
     JSON.stringify(importResult));
 
@@ -229,7 +242,7 @@ function check(name, ok, extra) {
       bulk.push(rec);
     }
     const t0 = performance.now();
-    await window.Model.bulkImport(bulk, 'تست کارایی');
+    await window.Model.bulkImport(bulk, { note: 'تست کارایی' });
     const tImport = performance.now() - t0;
     const t1 = performance.now();
     for (let i = 0; i < 20; i++) {
@@ -262,6 +275,109 @@ function check(name, ok, extra) {
   const printRows = await page.evaluate(() =>
     document.querySelectorAll('#print-area .p-list tr').length);
   check('فهرست چاپی ساخته شد', printRows === 21, 'سطر=' + printRows);
+
+  console.log('\n— جلوگیری از پروندهٔ تکراری —');
+  const dupAnalysis = await page.evaluate(() => {
+    const sample = window.Model.state.cases[0];
+    const rows = [
+      { caseNo: sample.caseNo, firstName: 'تکراری', lastName: 'موجود' },
+      { caseNo: '1409001', firstName: 'تازه', lastName: 'یکم' },
+      { caseNo: '1409002', firstName: 'تازه', lastName: 'دوم' },
+      { caseNo: '1409002', firstName: 'تازه', lastName: 'دوم دوباره' },
+      { firstName: 'بدون', lastName: 'شماره' }
+    ];
+    const an = window.Model.analyzeImport(rows);
+    return {
+      fresh: an.fresh.length, existing: an.existing.length,
+      insideFile: an.insideFile.length, noCaseNo: an.noCaseNo.length
+    };
+  });
+  check('تحلیل ورود، تکراری‌ها را جدا می‌کند',
+    dupAnalysis.fresh === 2 && dupAnalysis.existing === 1 &&
+    dupAnalysis.insideFile === 1 && dupAnalysis.noCaseNo === 1,
+    JSON.stringify(dupAnalysis));
+
+  const skipped = await page.evaluate(async () => {
+    const sample = window.Model.state.cases[0];
+    const before = window.Model.state.cases.length;
+    const beforeName = sample.lastName;
+    const res = await window.Model.bulkImport([
+      { caseNo: sample.caseNo, lastName: 'نباید-جایگزین-شود' },
+      { caseNo: '1409001', firstName: 'تازه', lastName: 'یکم' },
+      { caseNo: '1409001', firstName: 'تازه', lastName: 'یکم دوباره' }
+    ], { onDuplicate: 'skip' });
+    return {
+      res: res, delta: window.Model.state.cases.length - before,
+      untouched: window.Model.get(sample.id).lastName === beforeName,
+      onlyOne: window.Model.state.cases.filter(c => c.caseNo === '1409001').length
+    };
+  });
+  check('پروندهٔ تکراری کپی نمی‌شود',
+    skipped.delta === 1 && skipped.onlyOne === 1,
+    'افزوده: ' + skipped.delta + '، با شمارهٔ ۱۴۰۹۰۰۱: ' + skipped.onlyOne);
+  check('حالت «رد کردن»، پروندهٔ موجود را دست نمی‌زند', skipped.untouched);
+  check('گزارش ورود، تعداد رد‌شده‌ها را برمی‌گرداند',
+    skipped.res.added === 1 && skipped.res.skipped === 2 && skipped.res.updated === 0,
+    JSON.stringify(skipped.res));
+
+  const updatedMode = await page.evaluate(async () => {
+    const target = window.Model.state.cases.find(c => c.caseNo === '1409001');
+    const res = await window.Model.bulkImport([
+      { caseNo: '1409001', firstName: 'تازه', lastName: 'ویرایش‌شده' }
+    ], { onDuplicate: 'update' });
+    const after = window.Model.get(target.id);
+    const hist = window.Model.historyFor(target.id);
+    return {
+      res: res, name: after.lastName,
+      count: window.Model.state.cases.filter(c => c.caseNo === '1409001').length,
+      logged: hist.some(h => h.kind === 'update' && h.changes.some(
+        c => c.field === 'lastName' && c.to === 'ویرایش‌شده'))
+    };
+  });
+  check('حالت «به‌روزرسانی» جایگزین می‌کند و کپی نمی‌سازد',
+    updatedMode.res.updated === 1 && updatedMode.count === 1 &&
+    updatedMode.name === 'ویرایش‌شده', JSON.stringify(updatedMode.res));
+  check('تغییر ناشی از ورود در تاریخچه ثبت می‌شود', updatedMode.logged);
+
+  // نگاشت ستون‌های فایل اکسل خودِ برنامه
+  const mapping = await page.evaluate(async (b64) => {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const rows = await window.XLSX.read(bytes.buffer);
+    const cols = window.UIMisc.mapColumns(rows[0]);
+    return { matched: cols.matched.length, ignored: cols.ignored.length,
+      hasCaseNo: cols.map.caseNo != null };
+  }, fs.readFileSync(xlsxPath).toString('base64'));
+  check('همهٔ ستون‌های خروجی برنامه دوباره شناسایی می‌شوند',
+    mapping.matched === 62 && mapping.ignored === 0 && mapping.hasCaseNo,
+    mapping.matched + ' ستون، ' + mapping.ignored + ' ناشناس');
+
+  // پنجرهٔ ورود واقعاً باز شود (شمارهٔ پرونده ستون صفر است؛ بررسی نباید falsy باشد)
+  const dialog = await page.evaluate(() => {
+    const rows = [
+      ['شماره پرونده(1)', 'نام(1)', 'نام خانوادگی(1)', 'ستون بی‌ربط'],
+      ['1409910', 'الف', 'ب', 'x'],
+      ['1409910', 'الف', 'ب دوباره', 'y'],
+      [window.Model.state.cases[0].caseNo, 'ج', 'د', 'z']
+    ];
+    window.UIMisc.importDialog(window.App, 'تست.xlsx', rows);
+    const box = document.querySelector('.import-dialog');
+    const out = {
+      opened: !!box,
+      counts: [...document.querySelectorAll('.imp-num')].map(n => n.textContent),
+      hasPolicy: !!document.querySelector('.imp-choice'),
+      ignored: (box && box.textContent.indexOf('ستون بی‌ربط') >= 0) || false
+    };
+    const close = document.querySelector('.modal-head .icon-btn');
+    if (close) close.click();
+    return out;
+  });
+  check('پنجرهٔ ورود از اکسل باز می‌شود', dialog.opened);
+  check('تفکیک تازه/تکراری درست شمرده می‌شود',
+    dialog.counts.length === 3, dialog.counts.join(' • '));
+  check('انتخاب سیاست تکراری‌ها ارائه می‌شود', dialog.hasPolicy);
+  check('ستون ناشناس به کاربر گزارش می‌شود', dialog.ignored);
 
   console.log('\n— بخش گزارش‌ها —');
   await page.evaluate(() => window.App.goReport());

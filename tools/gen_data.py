@@ -24,8 +24,6 @@ SCHEMA = [
     (29, 'letterNo',                   'text',     'case'),
     (30, 'letterDate',                 'date',     'case'),
     (31, 'caseType',                   'select',   'case'),
-    (60, 'reportType',                 'text',     'case'),
-    (59, 'reportYear',                 'text',     'case'),
     (32, 'reportSubject',              'textarea', 'case'),
     (33, 'priorRecord',                'textarea', 'case'),
     (67, 'pastReporters',              'textarea', 'case'),
@@ -65,11 +63,6 @@ SCHEMA = [
     (9,  'session',                    'text',     'verdict'),
     (41, 'committeeRegNo',             'text',     'verdict'),
     (35, 'verdictFull',                'textarea', 'verdict'),
-    (36, 'verdict1',                   'text',     'verdict'),
-    (37, 'verdict2',                   'text',     'verdict'),
-    (38, 'verdict3',                   'text',     'verdict'),
-    (39, 'verdict4',                   'text',     'verdict'),
-    (40, 'verdict5',                   'text',     'verdict'),
     # --- 6) ابلاغ و اجرای رأی ---------------------------------------------
     (42, 'noticeLetterNo',             'text',     'enforce'),
     (43, 'noticeLetterDate',           'date',     'enforce'),
@@ -90,6 +83,18 @@ SCHEMA = [
     (45, 'notes',                      'textarea', 'violation'),
     (68, 'updatedAtField',             'date',     'violation'),
 ]
+
+# ستون‌هایی که عمداً در برنامه نمی‌آیند (به درخواست کاربر حذف شدند).
+# در فایل مرجع هر هفت ستون خالی بودند، پس داده‌ای از دست نمی‌رود.
+EXCLUDED_COLUMNS = {
+    36: 'رای کمیته انضباطی1',
+    37: 'رای کمیته انضباطی2',
+    38: 'رای کمیته انضباطی3',
+    39: 'رای کمیته انضباطی4',
+    40: 'رای کمیته انضباطی5',
+    59: 'سال',
+    60: 'نوع گزارش',
+}
 
 GROUPS = [
     ('case',      'پرونده و گزارش'),
@@ -170,9 +175,14 @@ def main(xlsx_path):
     body = rows[1:]
 
     by_col = {col: (key, kind, group) for col, key, kind, group in SCHEMA}
-    missing = [i for i in range(len(headers)) if i not in by_col and headers[i]]
+    missing = [i for i in range(len(headers))
+               if i not in by_col and i not in EXCLUDED_COLUMNS and headers[i]]
     if missing:
         raise SystemExit('ستون نگاشت‌نشده: %s' % [headers[i] for i in missing])
+
+    dropped = [headers[i] for i in sorted(EXCLUDED_COLUMNS) if i < len(headers)]
+    if dropped:
+        print('ستون‌های حذف‌شده: %s' % '، '.join(dropped))
 
     date_keys = {key for _, key, kind, _ in SCHEMA if kind == 'date'}
 

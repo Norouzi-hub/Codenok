@@ -15,6 +15,117 @@
     return (m && ICONS[m[1].toLowerCase()]) || '📎';
   }
 
+  function extOf(name) {
+    var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  var IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif'];
+
+  function isImage(doc) {
+    return (doc.mime || '').indexOf('image/') === 0 ||
+      IMAGE_EXT.indexOf(extOf(doc.fileName)) >= 0;
+  }
+
+  function isPdf(doc) {
+    return (doc.mime || '') === 'application/pdf' || extOf(doc.fileName) === 'pdf';
+  }
+
+  // ------------------------------------------------------------- پیش‌نمایش
+  // نشانی‌های موقت فایل‌ها؛ با هر بار رندر دوبارهٔ پنل آزاد می‌شوند تا حافظه
+  // نشت نکند.
+  var thumbUrls = [];
+  var observer = null;
+  var pdfBudget = 0;
+  var PDF_LIMIT = 16;          // سقف تعداد پیش‌نمایش هم‌زمان PDF
+
+  function releaseThumbs() {
+    thumbUrls.forEach(function (u) {
+      try { URL.revokeObjectURL(u); } catch (e) { /* از قبل آزاد شده */ }
+    });
+    thumbUrls = [];
+    pdfBudget = 0;
+    if (observer) { observer.disconnect(); observer = null; }
+  }
+
+  function trackUrl(url) { thumbUrls.push(url); return url; }
+
+  var MIME_BY_EXT = {
+    pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+    bmp: 'image/bmp', avif: 'image/avif'
+  };
+
+  /**
+   * نشانی موقت با نوع MIME صریح.
+   * اگر فایل نوع نداشته باشد، مرورگر PDF را متن ساده نشان می‌دهد؛ نوع را از
+   * پسوند جبران می‌کنیم.
+   */
+  function objectUrlFor(file, doc) {
+    var wanted = MIME_BY_EXT[extOf(doc.fileName)] || '';
+    var blob = (wanted && file.type !== wanted)
+      ? new Blob([file], { type: wanted })
+      : file;
+    return trackUrl(URL.createObjectURL(blob));
+  }
+
+  function fillThumb(box, doc) {
+    if (box.dataset.loaded) return;
+    box.dataset.loaded = '1';
+    D.readFile(doc).then(function (file) {
+      if (!document.body.contains(box)) return;
+      var url = objectUrlFor(file, doc);
+      if (isImage(doc)) {
+        var img = el('img.thumb-img', { src: url, alt: doc.kind, loading: 'lazy' });
+        img.addEventListener('load', function () { box.classList.add('ready'); });
+        img.addEventListener('error', function () { box.classList.add('icon-only'); });
+        w.U.clear(box);
+        box.appendChild(img);
+        return;
+      }
+      // PDF بدون کتابخانه: نمایشگر داخلی مرورگر، کوچک‌شده و بدون نوار ابزار
+      if (pdfBudget >= PDF_LIMIT) return;
+      pdfBudget += 1;
+      var frame = el('iframe.thumb-pdf', {
+        src: url + '#toolbar=0&navpanes=0&scrollbar=0&view=FitH',
+        tabindex: '-1', 'aria-hidden': 'true', loading: 'lazy'
+      });
+      w.U.clear(box);
+      box.appendChild(frame);
+      box.classList.add('ready', 'pdf');
+    }).catch(function () {
+      box.classList.add('icon-only');
+    });
+  }
+
+  function getObserver() {
+    if (observer) return observer;
+    if (typeof w.IntersectionObserver !== 'function') return null;
+    observer = new w.IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        observer.unobserve(e.target);
+        fillThumb(e.target, e.target._doc);
+      });
+    }, { rootMargin: '200px' });
+    return observer;
+  }
+
+  /** جعبهٔ پیش‌نمایش: تصویر یا صفحهٔ اول PDF، وگرنه آیکن نوع فایل */
+  function thumb(doc, onOpen) {
+    var previewable = isImage(doc) || isPdf(doc);
+    var box = el('button.doc-thumb' + (previewable ? '' : '.icon-only'), {
+      type: 'button',
+      title: previewable ? 'باز کردن ' + doc.fileName : doc.fileName,
+      onclick: onOpen
+    }, [el('span.doc-icon', { text: iconFor(doc.fileName) })]);
+    if (!previewable || !D.status().linked) return box;
+    box._doc = doc;
+    var obs = getObserver();
+    if (obs) obs.observe(box); else fillThumb(box, doc);
+    return box;
+  }
+
   function sizeText(bytes) {
     if (!bytes && bytes !== 0) return '';
     if (bytes < 1024) return w.U.toFaDigits(bytes) + ' بایت';
@@ -173,12 +284,7 @@
     ].filter(Boolean).join(' • ');
 
     var actions = el('div.doc-actions', null, [
-      el('button.btn.small', {
-        type: 'button', text: 'باز کردن',
-        onclick: function () {
-          D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
-        }
-      }),
+      el('button.btn.small', { type: 'button', text: 'باز کردن', onclick: open }),
       doc.scope === 'person' ? null : el('button.btn.small.ghost', {
         type: 'button', text: 'نسخهٔ جدید', title: 'نسخهٔ قبلی نگه داشته می‌شود',
         onclick: function () {
@@ -225,9 +331,12 @@
       }))
     ]) : null;
 
+    var open = function () {
+      D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+    };
     return el('li.doc-item' + (doc.missing ? '.missing' : '') +
       (doc.scope === 'person' ? '.person-doc' : ''), null, [
-      el('span.doc-icon', { text: iconFor(doc.fileName) }),
+      thumb(doc, open),
       el('div.doc-body', null, [
         el('div.doc-head', null, [
           el('span.doc-kind', { text: doc.kind }),
@@ -251,6 +360,7 @@
 
   /** پنل مستندات یک پرونده */
   function render(app, rec, refresh) {
+    releaseThumbs();
     var st = D.status();
 
     if (!st.supported) {
@@ -530,5 +640,8 @@
     ]);
   }
 
-  w.UIDocs = { render: render, iconFor: iconFor, sizeText: sizeText };
+  w.UIDocs = {
+    render: render, iconFor: iconFor, sizeText: sizeText, thumb: thumb,
+    isImage: isImage, isPdf: isPdf, releaseThumbs: releaseThumbs
+  };
 })(window);

@@ -13,6 +13,10 @@
 
   var db = null;
   var mode = 'memory';          // idb | localStorage | memory
+  // این انبارها محتوای پرونده‌ای دارند و وقتی رمز فعال باشد رمز می‌شوند.
+  // انبار meta رمز نمی‌شود؛ خودِ تنظیمات قفل آنجاست.
+  var SECRET_STORES = ['cases', 'history', 'docs'];
+  var KEY_FIELD = { cases: 'id', history: 'id', docs: 'id' };
   var mem = { cases: {}, history: {}, docs: {}, meta: {} };
 
   // ---------------------------------------------------------------- IndexedDB
@@ -112,17 +116,36 @@
   // ------------------------------------------------------------------- API عام
 
   function getAll(store) {
-    if (mode === 'idb') return idbAll(store);
-    return Promise.resolve(Object.keys(mem[store]).map(function (k) { return mem[store][k]; }));
+    if (mode !== 'idb') {
+      return Promise.resolve(Object.keys(mem[store]).map(function (k) {
+        return mem[store][k];
+      }));
+    }
+    return idbAll(store).then(unsealAll);
+  }
+
+  function unsealAll(list) {
+    if (!list || !list.length) return list || [];
+    var hasSealed = list.some(function (r) { return r && r.__enc; });
+    if (!hasSealed) return list;
+    return Promise.all(list.map(function (r) { return w.Vault.openRecord(r); }));
+  }
+
+  function shouldSeal(store) {
+    return SECRET_STORES.indexOf(store) >= 0 && w.Vault.isEnabled() &&
+      w.Vault.isUnlocked();
   }
 
   function put(store, values) {
     values.forEach(function (v) {
       mem[store][store === 'meta' ? v.key : v.id] = v;
     });
-    if (mode === 'idb') return idbPut(store, values);
-    if (mode === 'localStorage') lsWrite();
-    return Promise.resolve();
+    if (mode === 'localStorage') { lsWrite(); return Promise.resolve(); }
+    if (mode !== 'idb') return Promise.resolve();
+    if (!shouldSeal(store)) return idbPut(store, values);
+    return Promise.all(values.map(function (v) {
+      return w.Vault.sealRecord(v, KEY_FIELD[store] || 'id');
+    })).then(function (sealed) { return idbPut(store, sealed); });
   }
 
   function remove(store, keys) {
@@ -171,13 +194,17 @@
       lastSavedAt: lastSavedAt,
       error: saveError,
       canLink: supportsFileSystem(),
+      locked: w.Vault.needsPassword(),
+      encrypted: w.Vault.isEnabled(),
       hasStored: hasStoredFile(),
       storedName: storedFileName()
     };
   }
 
-  // ارجاع‌های سیستم فایل قابل تبدیل به JSON نیستند و در پشتیبان نمی‌آیند
-  var HANDLE_KEYS = ['fileHandle', 'docsFolder'];
+  // ارجاع‌های سیستم فایل قابل تبدیل به JSON نیستند و در پشتیبان نمی‌آیند.
+  // تنظیم رمز هم به همان نسخه گره نمی‌خورد: نسخهٔ پشتیبان با رمز خودش بسته
+  // می‌شود و هنگام بازیابی، رمز نشست جاری اعمال می‌گردد.
+  var HANDLE_KEYS = ['fileHandle', 'docsFolder', 'security'];
 
   function snapshot() {
     return {
@@ -261,7 +288,12 @@
 
   function writeFile() {
     if (!fileHandle) return Promise.resolve(false);
-    var text = JSON.stringify(snapshot());
+    return w.Vault.sealSnapshot(snapshot()).then(function (payload) {
+      return writeText(JSON.stringify(payload));
+    });
+  }
+
+  function writeText(text) {
     return fileHandle.createWritable().then(function (wr) {
       return wr.write(new Blob([text], { type: 'application/json' })).then(function () {
         return wr.close();
@@ -301,12 +333,33 @@
 
   // -------------------------------------------------------------------- init
 
+  var dataLoaded = false;
+
+  /** بارگذاری داده‌های پرونده‌ای؛ فقط وقتی قفل باز است */
+  function loadData() {
+    if (mode !== 'idb') { dataLoaded = true; return Promise.resolve(status()); }
+    return Promise.all([idbAll('cases'), idbAll('history'), idbAll('docs')])
+      .then(function (res) {
+        return Promise.all([unsealAll(res[0]), unsealAll(res[1]), unsealAll(res[2])]);
+      })
+      .then(function (res) {
+        mem.cases = {};
+        mem.history = {};
+        mem.docs = {};
+        (res[0] || []).forEach(function (c) { mem.cases[c.id] = c; });
+        (res[1] || []).forEach(function (h) { mem.history[h.id] = h; });
+        (res[2] || []).forEach(function (d) { mem.docs[d.id] = d; });
+        dataLoaded = true;
+        return relinkFile(false);
+      })
+      .then(function () { return status(); });
+  }
+
   function init() {
     return openDb().then(function (d) {
       db = d;
       mode = 'idb';
-      return Promise.all([idbAll('cases'), idbAll('history'), idbAll('meta'),
-        idbAll('docs')]);
+      return idbAll('meta');
     }).catch(function (err) {
       // IndexedDB در دسترس نیست (مثلاً حالت ناشناس یا سیاست مرورگر)
       console.warn('IndexedDB در دسترس نبود:', err && err.message);
@@ -318,16 +371,75 @@
       } catch (e) {
         mode = 'memory';
       }
-      return [snap ? snap.cases : [], snap ? snap.history : [], snap ? snap.meta : [],
-        snap ? snap.docs : []];
-    }).then(function (res) {
-      (res[0] || []).forEach(function (c) { mem.cases[c.id] = c; });
-      (res[1] || []).forEach(function (h) { mem.history[h.id] = h; });
-      (res[2] || []).forEach(function (m) { mem.meta[m.key] = m; });
-      (res[3] || []).forEach(function (d) { mem.docs[d.id] = d; });
-      return relinkFile(false);
-    }).then(function () {
-      return status();
+      if (snap) {
+        (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+        (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+        (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+      }
+      return snap ? (snap.meta || []) : [];
+    }).then(function (metas) {
+      (metas || []).forEach(function (m) { mem.meta[m.key] = m; });
+      w.Vault.configure(metaGet('security', null));
+      if (w.Vault.needsPassword()) return status();   // منتظر رمز کاربر
+      return loadData();
+    });
+  }
+
+  /** باز کردن قفل و سپس بارگذاری داده‌ها */
+  function unlock(password) {
+    return w.Vault.unlock(password).then(function (ok) {
+      if (!ok) return false;
+      return loadData().then(function () { return true; });
+    });
+  }
+
+  /** قفل کردن: کلید و داده‌های در حافظه پاک می‌شوند */
+  function lock() {
+    return flushNow().catch(function () { }).then(function () {
+      w.Vault.lock();
+      mem.cases = {};
+      mem.history = {};
+      mem.docs = {};
+      dataLoaded = false;
+      fileHandle = null;
+      fileName = '';
+      emit();
+    });
+  }
+
+  function isLocked() { return w.Vault.needsPassword(); }
+  function isLoaded() { return dataLoaded; }
+
+  /** نوشتن دوبارهٔ همهٔ رکوردها، پس از تعیین یا برداشتن رمز */
+  function rewriteAll() {
+    if (mode !== 'idb') { lsWrite(); return Promise.resolve(); }
+    return SECRET_STORES.reduce(function (chain, store) {
+      return chain.then(function () {
+        var values = Object.keys(mem[store]).map(function (k) { return mem[store][k]; });
+        if (!values.length) return null;
+        return idbClear([store]).then(function () { return put(store, values); });
+      });
+    }, Promise.resolve());
+  }
+
+  /** تعیین رمز تازه و رمزگذاری دوبارهٔ داده‌های موجود */
+  function setPassword(password) {
+    return w.Vault.setPassword(password).then(function (cfg) {
+      return metaSet('security', cfg);
+    }).then(rewriteAll).then(function () {
+      scheduleSave();
+      emit();
+      return true;
+    });
+  }
+
+  /** برداشتن رمز و بازنویسی داده‌ها به شکل ساده */
+  function clearPassword() {
+    w.Vault.clearPassword();
+    return metaSet('security', null).then(rewriteAll).then(function () {
+      scheduleSave();
+      emit();
+      return true;
     });
   }
 
@@ -357,6 +469,8 @@
     hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,
     status: status, onStatusChange: onStatusChange,
-    supportsFileSystem: supportsFileSystem
+    supportsFileSystem: supportsFileSystem,
+    unlock: unlock, lock: lock, isLocked: isLocked, isLoaded: isLoaded,
+    setPassword: setPassword, clearPassword: clearPassword, loadData: loadData
   };
 })(window);

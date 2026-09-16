@@ -613,6 +613,91 @@ select.input { cursor: pointer; }
 .lists-editor { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* ------------------------------------------------------------ ورود از اکسل */
+.import-dialog { font-size: 13px; }
+.imp-block {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+.imp-block summary { cursor: pointer; }
+.imp-ok { color: var(--good); font-size: 12px; }
+.imp-warn { color: var(--warn); font-size: 12px; }
+.imp-counts { display: grid; gap: 6px; margin: 12px 0; }
+.imp-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 11px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: #fcfcfb;
+}
+.imp-row.good { border-color: #bfe0cd; background: #f1f9f4; }
+.imp-row.dup { border-color: #e8d3a8; background: #fdf7ec; }
+.imp-num { font-size: 17px; min-width: 34px; text-align: center; font-variant-numeric: tabular-nums; }
+.imp-choice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 7px 2px;
+  cursor: pointer;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.imp-dup-list { margin-top: 6px; font-size: 12px; }
+.imp-dup-list summary { color: var(--muted); }
+
+/* ------------------------------------------------------------ قفل و رمز */
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: linear-gradient(160deg, #1f4e79, #16324d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.lock-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 30px 28px 24px;
+  width: min(380px, 100%);
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .3);
+}
+.lock-logo { font-size: 38px; line-height: 1; }
+.lock-box h1 { font-size: 19px; margin: 10px 0 4px; }
+.lock-box .muted { font-size: 13px; margin-bottom: 16px; }
+.lock-input { text-align: center; letter-spacing: 3px; font-size: 15px; padding: 10px; }
+.lock-msg { font-size: 12.5px; min-height: 18px; margin: 7px 0; color: var(--muted); }
+.lock-msg.bad { color: var(--bad); }
+.lock-note {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  line-height: 1.8;
+}
+
+.pw-dialog .field { margin-bottom: 10px; }
+.pw-meter { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; }
+.pw-bar {
+  flex: 1;
+  height: 5px;
+  background: #eef1f5;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pw-fill { display: block; height: 100%; background: var(--bad); transition: width .15s; }
+.pw-fill.s2 { background: var(--warn); }
+.pw-fill.s3 { background: #b0a000; }
+.pw-fill.s4, .pw-fill.s5 { background: var(--good); }
+.pw-label { font-size: 11.5px; color: var(--muted); min-width: 56px; }
+
 /* ---------------------------------------------------------------- توست */
 .toast {
   position: fixed;
@@ -978,6 +1063,55 @@ select.input { cursor: pointer; }
 }
 .doc-item.missing { border-color: #e9bdb9; background: #fdf7f6; }
 .doc-icon { font-size: 17px; line-height: 1.4; flex: 0 0 auto; }
+
+/* پیش‌نمایش سند: تصویر یا صفحهٔ اول PDF */
+.doc-thumb {
+  flex: 0 0 auto;
+  width: 62px;
+  height: 80px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.doc-thumb:hover { border-color: var(--brand); }
+.doc-thumb.icon-only { background: #f5f7fa; }
+.doc-thumb .doc-icon { font-size: 22px; opacity: .65; }
+.thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* نمایشگر PDF مرورگر در اندازهٔ واقعی رندر و سپس کوچک می‌شود تا خوانا بماند */
+.thumb-pdf {
+  position: absolute;
+  /* مختصات فیزیکی، نه منطقی: در چیدمان راست‌به‌چپ، inset-inline-start لبهٔ
+     راست است و قاب با مقیاسِ گوشهٔ چپ-بالا از کادر بیرون می‌افتد. */
+  top: 0;
+  left: 0;
+  width: 310px;
+  height: 400px;
+  border: 0;
+  transform: scale(.2);
+  transform-origin: top left;
+  pointer-events: none;
+  background: #fff;
+}
+.doc-thumb.pdf::after {
+  content: 'PDF';
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  font-size: 9px;
+  text-align: center;
+  background: rgba(27, 36, 48, .72);
+  color: #fff;
+  letter-spacing: .5px;
+}
+.doc-item { align-items: center; }
+.tl-doc .doc-icon { font-size: 14px; }
 .doc-body { flex: 1; min-width: 0; }
 .doc-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .doc-kind {
@@ -1232,20 +1366,6 @@ window.FIELDS = [
     "list": "NoeParvande"
   },
   {
-    "key": "reportType",
-    "label": "نوع گزارش",
-    "type": "text",
-    "group": "case",
-    "col": 60
-  },
-  {
-    "key": "reportYear",
-    "label": "سال",
-    "type": "text",
-    "group": "case",
-    "col": 59
-  },
-  {
     "key": "reportSubject",
     "label": "موضوع گزارش پرونده(1)",
     "type": "textarea",
@@ -1496,41 +1616,6 @@ window.FIELDS = [
     "type": "textarea",
     "group": "verdict",
     "col": 35
-  },
-  {
-    "key": "verdict1",
-    "label": "رای کمیته انضباطی1(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 36
-  },
-  {
-    "key": "verdict2",
-    "label": "رای کمیته انضباطی2(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 37
-  },
-  {
-    "key": "verdict3",
-    "label": "رای کمیته انضباطی3(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 38
-  },
-  {
-    "key": "verdict4",
-    "label": "رای کمیته انضباطی4(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 39
-  },
-  {
-    "key": "verdict5",
-    "label": "رای کمیته انضباطی5(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 40
   },
   {
     "key": "noticeLetterNo",
@@ -3056,6 +3141,176 @@ window.SEED_CASES = [
 
 </script>
 <script>
+/* ==== js/vault.js ==== */
+/*
+ * رمزنگاری داده‌ها با کلید برگرفته از رمز عبور کاربر.
+ *
+ * قفل صرفاً ظاهری روی یک فایل محلی امنیت نیست؛ هر کسی می‌تواند دیتابیس
+ * مرورگر را باز کند. پس خودِ رکوردها رمز می‌شوند:
+ *   PBKDF2-SHA256 (۳۱۰٬۰۰۰ دور) → کلید AES-GCM ۲۵۶ بیتی
+ * رکوردهای پرونده، تاریخچه و فرادادهٔ مستندات رمز ذخیره می‌شوند.
+ * تنظیمات و لیست‌های کشویی رمز نمی‌شوند (حساس نیستند و برای باز کردن قفل لازم‌اند).
+ * فایل‌های پیوست روی دیسک رمز نمی‌شوند؛ آنها را سیستم‌عامل محافظت می‌کند.
+ */
+(function (w) {
+  'use strict';
+
+  var ITERATIONS = 310000;
+  var subtle = (w.crypto && w.crypto.subtle) || null;
+
+  var config = null;   // { salt, iterations, verifier }
+  var key = null;      // CryptoKey پس از باز شدن قفل
+
+  function available() { return !!subtle && !!w.TextEncoder; }
+
+  function b64(buf) {
+    var bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    var out = '';
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      out += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return w.btoa(out);
+  }
+
+  function unb64(str) {
+    var bin = w.atob(str);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  function randomBytes(n) {
+    return w.crypto.getRandomValues(new Uint8Array(n));
+  }
+
+  function deriveKey(password, saltB64, iterations) {
+    var enc = new TextEncoder();
+    return subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey'])
+      .then(function (base) {
+        return subtle.deriveKey({
+          name: 'PBKDF2', salt: unb64(saltB64),
+          iterations: iterations || ITERATIONS, hash: 'SHA-256'
+        }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      });
+  }
+
+  function encryptWith(k, value) {
+    var iv = randomBytes(12);
+    var data = new TextEncoder().encode(JSON.stringify(value));
+    return subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, data).then(function (ct) {
+      return { iv: b64(iv), ct: b64(ct) };
+    });
+  }
+
+  function decryptWith(k, payload) {
+    return subtle.decrypt({ name: 'AES-GCM', iv: unb64(payload.iv) }, k, unb64(payload.ct))
+      .then(function (buf) {
+        return JSON.parse(new TextDecoder().decode(buf));
+      });
+  }
+
+  // ------------------------------------------------------------------ وضعیت
+  /** پیکربندی ذخیره‌شده را می‌گیرد (از انبار meta) */
+  function configure(saved) {
+    config = saved && saved.salt ? saved : null;
+    key = null;
+  }
+
+  function isEnabled() { return !!config; }
+  function isUnlocked() { return !!key || !config; }
+  function needsPassword() { return !!config && !key; }
+
+  /** تلاش برای باز کردن قفل؛ در صورت رمز نادرست false برمی‌گرداند */
+  function unlock(password) {
+    if (!config) return Promise.resolve(true);
+    return deriveKey(password, config.salt, config.iterations)
+      .then(function (k) {
+        return decryptWith(k, config.verifier).then(function (probe) {
+          if (probe !== 'parvandeha') throw new Error('mismatch');
+          key = k;
+          return true;
+        });
+      })
+      .catch(function () { return false; });
+  }
+
+  function lock() { key = null; }
+
+  /**
+   * تعیین رمز تازه. پیکربندی جدید برمی‌گردد تا فراخوان ذخیره‌اش کند.
+   * پس از این، داده‌های موجود باید دوباره نوشته شوند.
+   */
+  function setPassword(password) {
+    if (!available()) {
+      return Promise.reject(new Error('این مرورگر از رمزنگاری پشتیبانی نمی‌کند'));
+    }
+    var salt = b64(randomBytes(16));
+    return deriveKey(password, salt, ITERATIONS).then(function (k) {
+      return encryptWith(k, 'parvandeha').then(function (verifier) {
+        config = { salt: salt, iterations: ITERATIONS, verifier: verifier };
+        key = k;
+        return config;
+      });
+    });
+  }
+
+  function clearPassword() {
+    config = null;
+    key = null;
+  }
+
+  // ------------------------------------------------------- رمزگذاری رکوردها
+  /** رکورد را به پوستهٔ رمزشده تبدیل می‌کند؛ کلید اصلی بیرون می‌ماند */
+  function sealRecord(record, keyField) {
+    if (!key) return Promise.resolve(record);
+    var out = {};
+    out[keyField] = record[keyField];
+    return encryptWith(key, record).then(function (enc) {
+      out.__enc = enc;
+      return out;
+    });
+  }
+
+  function openRecord(record) {
+    if (!record || !record.__enc) return Promise.resolve(record);
+    if (!key) return Promise.reject(new Error('قفل است'));
+    return decryptWith(key, record.__enc);
+  }
+
+  /** بستهٔ رمزشده برای فایل روی دیسک یا نسخهٔ پشتیبان */
+  function sealSnapshot(snapshot) {
+    if (!key || !config) return Promise.resolve(snapshot);
+    return encryptWith(key, snapshot).then(function (enc) {
+      return {
+        app: 'parvandeha', encrypted: true,
+        kdf: { salt: config.salt, iterations: config.iterations },
+        verifier: config.verifier,
+        iv: enc.iv, data: enc.ct
+      };
+    });
+  }
+
+  /** باز کردن بستهٔ رمزشده با رمزی که کاربر می‌دهد */
+  function openSnapshot(payload, password) {
+    if (!payload || !payload.encrypted) return Promise.resolve(payload);
+    return deriveKey(password, payload.kdf.salt, payload.kdf.iterations)
+      .then(function (k) {
+        return decryptWith(k, { iv: payload.iv, ct: payload.data });
+      });
+  }
+
+  w.Vault = {
+    available: available, configure: configure, isEnabled: isEnabled,
+    isUnlocked: isUnlocked, needsPassword: needsPassword,
+    unlock: unlock, lock: lock, setPassword: setPassword,
+    clearPassword: clearPassword, sealRecord: sealRecord, openRecord: openRecord,
+    sealSnapshot: sealSnapshot, openSnapshot: openSnapshot,
+    getConfig: function () { return config; }
+  };
+})(window);
+
+</script>
+<script>
 /* ==== js/store.js ==== */
 /*
  * لایهٔ داده: IndexedDB به‌عنوان انبار کاری + ذخیرهٔ خودکار روی یک فایل
@@ -3072,6 +3327,10 @@ window.SEED_CASES = [
 
   var db = null;
   var mode = 'memory';          // idb | localStorage | memory
+  // این انبارها محتوای پرونده‌ای دارند و وقتی رمز فعال باشد رمز می‌شوند.
+  // انبار meta رمز نمی‌شود؛ خودِ تنظیمات قفل آنجاست.
+  var SECRET_STORES = ['cases', 'history', 'docs'];
+  var KEY_FIELD = { cases: 'id', history: 'id', docs: 'id' };
   var mem = { cases: {}, history: {}, docs: {}, meta: {} };
 
   // ---------------------------------------------------------------- IndexedDB
@@ -3171,17 +3430,36 @@ window.SEED_CASES = [
   // ------------------------------------------------------------------- API عام
 
   function getAll(store) {
-    if (mode === 'idb') return idbAll(store);
-    return Promise.resolve(Object.keys(mem[store]).map(function (k) { return mem[store][k]; }));
+    if (mode !== 'idb') {
+      return Promise.resolve(Object.keys(mem[store]).map(function (k) {
+        return mem[store][k];
+      }));
+    }
+    return idbAll(store).then(unsealAll);
+  }
+
+  function unsealAll(list) {
+    if (!list || !list.length) return list || [];
+    var hasSealed = list.some(function (r) { return r && r.__enc; });
+    if (!hasSealed) return list;
+    return Promise.all(list.map(function (r) { return w.Vault.openRecord(r); }));
+  }
+
+  function shouldSeal(store) {
+    return SECRET_STORES.indexOf(store) >= 0 && w.Vault.isEnabled() &&
+      w.Vault.isUnlocked();
   }
 
   function put(store, values) {
     values.forEach(function (v) {
       mem[store][store === 'meta' ? v.key : v.id] = v;
     });
-    if (mode === 'idb') return idbPut(store, values);
-    if (mode === 'localStorage') lsWrite();
-    return Promise.resolve();
+    if (mode === 'localStorage') { lsWrite(); return Promise.resolve(); }
+    if (mode !== 'idb') return Promise.resolve();
+    if (!shouldSeal(store)) return idbPut(store, values);
+    return Promise.all(values.map(function (v) {
+      return w.Vault.sealRecord(v, KEY_FIELD[store] || 'id');
+    })).then(function (sealed) { return idbPut(store, sealed); });
   }
 
   function remove(store, keys) {
@@ -3230,13 +3508,17 @@ window.SEED_CASES = [
       lastSavedAt: lastSavedAt,
       error: saveError,
       canLink: supportsFileSystem(),
+      locked: w.Vault.needsPassword(),
+      encrypted: w.Vault.isEnabled(),
       hasStored: hasStoredFile(),
       storedName: storedFileName()
     };
   }
 
-  // ارجاع‌های سیستم فایل قابل تبدیل به JSON نیستند و در پشتیبان نمی‌آیند
-  var HANDLE_KEYS = ['fileHandle', 'docsFolder'];
+  // ارجاع‌های سیستم فایل قابل تبدیل به JSON نیستند و در پشتیبان نمی‌آیند.
+  // تنظیم رمز هم به همان نسخه گره نمی‌خورد: نسخهٔ پشتیبان با رمز خودش بسته
+  // می‌شود و هنگام بازیابی، رمز نشست جاری اعمال می‌گردد.
+  var HANDLE_KEYS = ['fileHandle', 'docsFolder', 'security'];
 
   function snapshot() {
     return {
@@ -3320,7 +3602,12 @@ window.SEED_CASES = [
 
   function writeFile() {
     if (!fileHandle) return Promise.resolve(false);
-    var text = JSON.stringify(snapshot());
+    return w.Vault.sealSnapshot(snapshot()).then(function (payload) {
+      return writeText(JSON.stringify(payload));
+    });
+  }
+
+  function writeText(text) {
     return fileHandle.createWritable().then(function (wr) {
       return wr.write(new Blob([text], { type: 'application/json' })).then(function () {
         return wr.close();
@@ -3360,12 +3647,33 @@ window.SEED_CASES = [
 
   // -------------------------------------------------------------------- init
 
+  var dataLoaded = false;
+
+  /** بارگذاری داده‌های پرونده‌ای؛ فقط وقتی قفل باز است */
+  function loadData() {
+    if (mode !== 'idb') { dataLoaded = true; return Promise.resolve(status()); }
+    return Promise.all([idbAll('cases'), idbAll('history'), idbAll('docs')])
+      .then(function (res) {
+        return Promise.all([unsealAll(res[0]), unsealAll(res[1]), unsealAll(res[2])]);
+      })
+      .then(function (res) {
+        mem.cases = {};
+        mem.history = {};
+        mem.docs = {};
+        (res[0] || []).forEach(function (c) { mem.cases[c.id] = c; });
+        (res[1] || []).forEach(function (h) { mem.history[h.id] = h; });
+        (res[2] || []).forEach(function (d) { mem.docs[d.id] = d; });
+        dataLoaded = true;
+        return relinkFile(false);
+      })
+      .then(function () { return status(); });
+  }
+
   function init() {
     return openDb().then(function (d) {
       db = d;
       mode = 'idb';
-      return Promise.all([idbAll('cases'), idbAll('history'), idbAll('meta'),
-        idbAll('docs')]);
+      return idbAll('meta');
     }).catch(function (err) {
       // IndexedDB در دسترس نیست (مثلاً حالت ناشناس یا سیاست مرورگر)
       console.warn('IndexedDB در دسترس نبود:', err && err.message);
@@ -3377,16 +3685,75 @@ window.SEED_CASES = [
       } catch (e) {
         mode = 'memory';
       }
-      return [snap ? snap.cases : [], snap ? snap.history : [], snap ? snap.meta : [],
-        snap ? snap.docs : []];
-    }).then(function (res) {
-      (res[0] || []).forEach(function (c) { mem.cases[c.id] = c; });
-      (res[1] || []).forEach(function (h) { mem.history[h.id] = h; });
-      (res[2] || []).forEach(function (m) { mem.meta[m.key] = m; });
-      (res[3] || []).forEach(function (d) { mem.docs[d.id] = d; });
-      return relinkFile(false);
-    }).then(function () {
-      return status();
+      if (snap) {
+        (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+        (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+        (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+      }
+      return snap ? (snap.meta || []) : [];
+    }).then(function (metas) {
+      (metas || []).forEach(function (m) { mem.meta[m.key] = m; });
+      w.Vault.configure(metaGet('security', null));
+      if (w.Vault.needsPassword()) return status();   // منتظر رمز کاربر
+      return loadData();
+    });
+  }
+
+  /** باز کردن قفل و سپس بارگذاری داده‌ها */
+  function unlock(password) {
+    return w.Vault.unlock(password).then(function (ok) {
+      if (!ok) return false;
+      return loadData().then(function () { return true; });
+    });
+  }
+
+  /** قفل کردن: کلید و داده‌های در حافظه پاک می‌شوند */
+  function lock() {
+    return flushNow().catch(function () { }).then(function () {
+      w.Vault.lock();
+      mem.cases = {};
+      mem.history = {};
+      mem.docs = {};
+      dataLoaded = false;
+      fileHandle = null;
+      fileName = '';
+      emit();
+    });
+  }
+
+  function isLocked() { return w.Vault.needsPassword(); }
+  function isLoaded() { return dataLoaded; }
+
+  /** نوشتن دوبارهٔ همهٔ رکوردها، پس از تعیین یا برداشتن رمز */
+  function rewriteAll() {
+    if (mode !== 'idb') { lsWrite(); return Promise.resolve(); }
+    return SECRET_STORES.reduce(function (chain, store) {
+      return chain.then(function () {
+        var values = Object.keys(mem[store]).map(function (k) { return mem[store][k]; });
+        if (!values.length) return null;
+        return idbClear([store]).then(function () { return put(store, values); });
+      });
+    }, Promise.resolve());
+  }
+
+  /** تعیین رمز تازه و رمزگذاری دوبارهٔ داده‌های موجود */
+  function setPassword(password) {
+    return w.Vault.setPassword(password).then(function (cfg) {
+      return metaSet('security', cfg);
+    }).then(rewriteAll).then(function () {
+      scheduleSave();
+      emit();
+      return true;
+    });
+  }
+
+  /** برداشتن رمز و بازنویسی داده‌ها به شکل ساده */
+  function clearPassword() {
+    w.Vault.clearPassword();
+    return metaSet('security', null).then(rewriteAll).then(function () {
+      scheduleSave();
+      emit();
+      return true;
     });
   }
 
@@ -3416,7 +3783,9 @@ window.SEED_CASES = [
     hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,
     status: status, onStatusChange: onStatusChange,
-    supportsFileSystem: supportsFileSystem
+    supportsFileSystem: supportsFileSystem,
+    unlock: unlock, lock: lock, isLocked: isLocked, isLoaded: isLoaded,
+    setPassword: setPassword, clearPassword: clearPassword, loadData: loadData
   };
 })(window);
 
@@ -3809,48 +4178,100 @@ window.SEED_CASES = [
     ]).then(function () { return records.length; });
   }
 
-  /** افزودن دسته‌ای رکورد (ورود از اکسل) */
-  function bulkImport(records, note) {
-    var now = new Date().toISOString();
-    var added = [], entries = [], updated = 0;
-    records.forEach(function (raw) {
+  /**
+   * تحلیل یک دسته رکورد پیش از ورود، بدون تغییر دادن چیزی.
+   * سه دسته برمی‌گرداند: تازه، تکراری با پروندهٔ موجود، و تکراری داخل خود فایل.
+   */
+  function analyzeImport(records) {
+    var fresh = [], existing = [], insideFile = [], noCaseNo = [];
+    var seen = Object.create(null);
+    records.forEach(function (raw, i) {
       var rec = normalizeRecord(raw);
-      var existing = rec.caseNo ? duplicateCaseNo(rec.caseNo, null) : null;
-      if (existing) {
-        var changes = diff(existing, Object.assign({}, existing, rec));
-        if (!changes.length) return;
-        Object.keys(rec).forEach(function (k) { if (k !== 'id') existing[k] = rec[k]; });
-        existing.updatedAt = now;
-        index(existing);
-        entries.push({
-          id: w.U.uid(), caseId: existing.id, caseNo: existing.caseNo, at: now,
-          atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'update',
-          changes: changes, note: note || 'به‌روزرسانی از فایل اکسل'
-        });
-        added.push(existing);
-        updated++;
+      var row = { index: i, rec: rec, caseNo: rec.caseNo || '' };
+      if (!row.caseNo) { noCaseNo.push(row); return; }
+      var norm = w.U.normalize(row.caseNo);
+      if (seen[norm]) {
+        row.firstRow = seen[norm];
+        insideFile.push(row);
         return;
       }
+      seen[norm] = row;
+      var dup = duplicateCaseNo(row.caseNo, null);
+      if (dup) {
+        row.existing = dup;
+        row.changes = diff(dup, Object.assign({}, dup, rec));
+        existing.push(row);
+        return;
+      }
+      fresh.push(row);
+    });
+    return {
+      total: records.length, fresh: fresh, existing: existing,
+      insideFile: insideFile, noCaseNo: noCaseNo,
+      changed: existing.filter(function (r) { return r.changes.length; })
+    };
+  }
+
+  /**
+   * ورود دسته‌ای. onDuplicate:
+   *   'skip'   — پروندهٔ تکراری رد می‌شود (پیش‌فرض، جلوی کپی شدن را می‌گیرد)
+   *   'update' — پروندهٔ موجود با مقادیر تازه به‌روز می‌شود و تغییرش ثبت می‌گردد
+   */
+  function bulkImport(records, opts) {
+    opts = opts || {};
+    var onDuplicate = opts.onDuplicate || 'skip';
+    var note = opts.note;
+    var analysis = analyzeImport(records);
+    var now = new Date().toISOString();
+    var touched = [], entries = [], updated = 0, skipped = 0;
+
+    analysis.fresh.forEach(function (row) {
+      var rec = row.rec;
       rec.id = w.U.uid();
       rec.createdAt = now;
       rec.updatedAt = now;
       index(rec);
       state.cases.push(rec);
-      added.push(rec);
+      touched.push(rec);
       entries.push({
         id: w.U.uid(), caseId: rec.id, caseNo: rec.caseNo || '', at: now,
         atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'import',
         changes: [], note: note || 'ورود از فایل اکسل'
       });
     });
+
+    analysis.existing.forEach(function (row) {
+      if (onDuplicate !== 'update' || !row.changes.length) { skipped++; return; }
+      var target = row.existing;
+      Object.keys(row.rec).forEach(function (k) {
+        if (k !== 'id') target[k] = row.rec[k];
+      });
+      target.updatedAt = now;
+      index(target);
+      touched.push(target);
+      entries.push({
+        id: w.U.uid(), caseId: target.id, caseNo: target.caseNo, at: now,
+        atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'update',
+        changes: row.changes, note: note || 'به‌روزرسانی از فایل اکسل'
+      });
+      updated++;
+    });
+
+    // ردیف‌های تکراری داخل خود فایل هرگز دو بار ثبت نمی‌شوند
+    skipped += analysis.insideFile.length + analysis.noCaseNo.length;
+
     state.history = state.history.concat(entries);
     reindexHistory();
     return Promise.all([
-      w.Store.put('cases', added.map(strip)),
-      w.Store.put('history', entries)
+      touched.length ? w.Store.put('cases', touched.map(strip)) : null,
+      entries.length ? w.Store.put('history', entries) : null
     ]).then(function () {
       markChange();
-      return { added: added.length - updated, updated: updated };
+      return {
+        added: analysis.fresh.length, updated: updated, skipped: skipped,
+        duplicatesInFile: analysis.insideFile.length,
+        withoutCaseNo: analysis.noCaseNo.length
+      };
     });
   }
 
@@ -3874,10 +4295,25 @@ window.SEED_CASES = [
     return load();
   }
 
+  /**
+   * پاک کردن همهٔ داده‌های رمزگشایی‌شده از حافظه.
+   * هنگام قفل کردن لازم است؛ وگرنه محتوای پرونده‌ها در حافظهٔ صفحه می‌ماند و
+   * قفل فقط ظاهری می‌شود.
+   */
+  function clearMemory() {
+    state.cases = [];
+    state.history = [];
+    byId = {};
+    historyByCase = {};
+    invalidatePeople();
+  }
+
   w.Model = {
     state: state, FIELDS: FIELDS, FIELD_BY_KEY: FIELD_BY_KEY, DATE_KEYS: DATE_KEYS,
-    load: load, reload: reload, seed: seed, bulkImport: bulkImport,
+    load: load, reload: reload, clearMemory: clearMemory, seed: seed,
+    bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
+    analyzeImport: analyzeImport,
     idSet: idSet, reindex: index, addHistory: logEvent,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
@@ -6549,14 +6985,25 @@ else if (typeof exports === 'object'){
     return caseFolder(M.get(doc.caseId), false);
   }
 
+  /** فایل یک سند را از پوشه می‌خواند (برای پیش‌نمایش یا باز کردن) */
+  function readFile(doc) {
+    return folderOf(doc)
+      .then(function (dir) { return dir.getFileHandle(doc.fileName); })
+      .then(function (fh) { return fh.getFile(); });
+  }
+
   function openDoc(doc) {
     return folderOf(doc)
       .then(function (dir) { return dir.getFileHandle(doc.fileName); })
       .then(function (fh) { return fh.getFile(); })
       .then(function (file) {
-        var url = URL.createObjectURL(file);
+        // بدون نوع MIME درست، مرورگر PDF را به‌جای نمایش، متن خام نشان می‌دهد
+        var blob = (doc.mime && file.type !== doc.mime)
+          ? new Blob([file], { type: doc.mime })
+          : file;
+        var url = URL.createObjectURL(blob);
         var win = w.open(url, '_blank');
-        if (!win) w.U.download(doc.fileName, file);
+        if (!win) w.U.download(doc.fileName, blob);
         setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
         return true;
       })
@@ -6694,6 +7141,15 @@ else if (typeof exports === 'object'){
 
   function all() { return docs; }
 
+  /** پاک کردن فرادادهٔ مستندات از حافظه، هنگام قفل شدن برنامه */
+  function clearMemory() {
+    docs = [];
+    byCase = {};
+    byPerson = {};
+    root = null;
+    rootName = '';
+  }
+
   function stats() {
     var byKind = {};
     docs.forEach(function (d) {
@@ -6713,6 +7169,7 @@ else if (typeof exports === 'object'){
     linkFolder: linkFolder, unlinkFolder: unlinkFolder, relinkFolder: relinkFolder,
     load: load, all: all, forCase: forCase, current: current, versionsOf: versionsOf,
     addFile: addFile, addVersion: addVersion, openDoc: openDoc, removeDoc: removeDoc,
+    readFile: readFile,
     scan: scan, register: register, renameFolder: renameFolder,
     hasStoredFolder: hasStoredFolder, storedFolderName: storedFolderName,
     PERSON_KINDS: PERSON_KINDS, PERSON_ROOT: PERSON_ROOT,
@@ -6721,7 +7178,7 @@ else if (typeof exports === 'object'){
     personFolderNameFor: personFolderNameFor,
     folderMismatch: folderMismatch, folderNameFor: folderNameFor,
     fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
-    indexDocs: indexDocs
+    indexDocs: indexDocs, clearMemory: clearMemory
   };
 })(window);
 
@@ -6948,6 +7405,11 @@ else if (typeof exports === 'object'){
           (rows.length !== total ? ' از ' + w.U.toFaDigits(total) : '')
       }),
       el('div.spacer'),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'ورود از اکسل',
+        title: 'خواندن فایل اکسل با همین قالب و پر کردن خودکار فیلدها',
+        onclick: function () { w.UIMisc.importExcel(app); }
+      }),
       el('button.btn.small.ghost', {
         type: 'button', text: 'ستون‌های جدول',
         onclick: function () { w.UIMisc.columnsDialog(app); }
@@ -7264,6 +7726,24 @@ else if (typeof exports === 'object'){
         app.render();
         return;
       }
+      // جلوی ساخته شدن نسخهٔ تکراری از یک پرونده گرفته می‌شود
+      var dup = M.duplicateCaseNo(data.caseNo, existing ? existing.id : null);
+      if (dup) {
+        var name = [dup.firstName, dup.lastName].filter(Boolean).join(' ');
+        w.U.confirmBox('شمارهٔ پرونده تکراری است',
+          'پروندهٔ ' + w.U.toFaDigits(dup.caseNo) +
+          (name ? ' («' + name + '»)' : '') + ' از قبل ثبت شده است. ' +
+          'اگر واقعاً پروندهٔ جداگانه‌ای است، شماره را یکتا کنید (مثلاً ' +
+          w.U.toFaDigits(dup.caseNo) + '/۲). باز هم ذخیره شود؟',
+          'باز هم ذخیره کن').then(function (ok) {
+            if (ok) persist(data);
+          });
+        return;
+      }
+      persist(data);
+    }
+
+    function persist(data) {
       var p = existing ? M.update(existing.id, data) : M.create(data);
       p.then(function (res) {
         dirty = false;
@@ -7789,12 +8269,245 @@ else if (typeof exports === 'object'){
 
 </script>
 <script>
+/* ==== js/ui.lock.js ==== */
+/* صفحهٔ قفل و مدیریت رمز عبور */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el;
+  var overlay = null;
+
+  function strength(pw) {
+    var score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^\w\s]/.test(pw)) score++;
+    return score;
+  }
+
+  function strengthLabel(score) {
+    return ['خیلی ضعیف', 'ضعیف', 'متوسط', 'خوب', 'قوی', 'خیلی قوی'][score] || '';
+  }
+
+  /** صفحهٔ قفل تمام‌صفحه؛ تا رمز درست وارد نشود چیزی از داده‌ها دیده نمی‌شود */
+  function showLock(onUnlock) {
+    hide();
+    var input = el('input.input.lock-input', {
+      type: 'password', autocomplete: 'current-password',
+      placeholder: 'رمز عبور', autofocus: true
+    });
+    var msg = el('div.lock-msg');
+    var busy = false;
+
+    function attempt() {
+      if (busy) return;
+      var pw = input.value;
+      if (!pw) { input.focus(); return; }
+      busy = true;
+      btn.textContent = 'در حال بررسی…';
+      msg.textContent = '';
+      msg.className = 'lock-msg';
+      // بررسی رمز عمداً کند است (۳۱۰٬۰۰۰ دور PBKDF2) تا حدس زدن سخت شود
+      w.Store.unlock(pw).then(function (ok) {
+        busy = false;
+        btn.textContent = 'ورود';
+        if (ok) { hide(); onUnlock(); return; }
+        msg.textContent = 'رمز عبور نادرست است.';
+        msg.className = 'lock-msg bad';
+        input.value = '';
+        input.focus();
+      }).catch(function (e) {
+        busy = false;
+        btn.textContent = 'ورود';
+        msg.textContent = 'خطا: ' + e.message;
+        msg.className = 'lock-msg bad';
+      });
+    }
+
+    var btn = el('button.btn.primary.block', {
+      type: 'button', text: 'ورود', onclick: attempt
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); attempt(); }
+    });
+
+    overlay = el('div.lock-screen', null, [
+      el('div.lock-box', null, [
+        el('div.lock-logo', { text: '🔒' }),
+        el('h1', { text: 'سامانهٔ پرونده‌ها' }),
+        el('p.muted', { text: 'برای دیدن اطلاعات، رمز عبور را وارد کنید.' }),
+        input, msg, btn,
+        el('p.lock-note', {
+          text: 'اطلاعات با همین رمز رمزنگاری شده‌اند. اگر رمز را فراموش کنید ' +
+            'هیچ راهی برای بازیابی وجود ندارد.'
+        })
+      ])
+    ]);
+    document.body.appendChild(overlay);
+    setTimeout(function () { input.focus(); }, 50);
+  }
+
+  function hide() {
+    if (overlay) { overlay.remove(); overlay = null; }
+  }
+
+  function isShowing() { return !!overlay; }
+
+  // ------------------------------------------------------ تعیین/تغییر رمز
+  function passwordDialog(app, onDone) {
+    var enabled = w.Store.status().encrypted;
+    var current = el('input.input', { type: 'password', autocomplete: 'current-password' });
+    var pw1 = el('input.input', { type: 'password', autocomplete: 'new-password' });
+    var pw2 = el('input.input', { type: 'password', autocomplete: 'new-password' });
+    var meter = el('div.pw-meter');
+    var msg = el('div.lock-msg');
+
+    pw1.addEventListener('input', function () {
+      var sc = strength(pw1.value);
+      w.U.clear(meter);
+      if (!pw1.value) return;
+      meter.appendChild(el('span.pw-bar', null, [
+        el('span.pw-fill.s' + sc, { style: 'width:' + ((sc / 5) * 100) + '%' })
+      ]));
+      meter.appendChild(el('span.pw-label', { text: strengthLabel(sc) }));
+    });
+
+    var body = el('div.pw-dialog');
+    if (enabled) {
+      body.appendChild(el('label.field', null, [
+        el('span.field-label', { text: 'رمز فعلی' }), current
+      ]));
+    }
+    body.appendChild(el('label.field', null, [
+      el('span.field-label', { text: enabled ? 'رمز جدید' : 'رمز عبور' }), pw1
+    ]));
+    body.appendChild(meter);
+    body.appendChild(el('label.field', null, [
+      el('span.field-label', { text: 'تکرار رمز' }), pw2
+    ]));
+    body.appendChild(msg);
+    body.appendChild(el('div.warn', null, [
+      el('span', null, [
+        el('b', { text: 'این رمز قابل بازیابی نیست. ' }),
+        el('span', {
+          text: 'پرونده‌ها، تاریخچه و فهرست مستندات با آن رمزنگاری می‌شوند. ' +
+            'اگر فراموشش کنید، داده‌ها از دست می‌روند. جایی امن یادداشتش کنید.'
+        })
+      ])
+    ]));
+    body.appendChild(el('p.muted.tiny', {
+      text: 'توجه: فایل‌های پیوست (PDF و تصویر) داخل پوشهٔ مستندات رمز نمی‌شوند؛ ' +
+        'حفاظت از آنها با دسترسی‌های ویندوز یا مک است. خروجی اکسل هم رمز ندارد.'
+    }));
+
+    var m, busy = false;
+    function fail(text) {
+      msg.textContent = text;
+      msg.className = 'lock-msg bad';
+      busy = false;
+      save.textContent = 'ذخیرهٔ رمز';
+    }
+
+    var save = el('button.btn.primary', {
+      type: 'button', text: 'ذخیرهٔ رمز',
+      onclick: function () {
+        if (busy) return;
+        if (pw1.value.length < 6) { fail('رمز باید دست‌کم ۶ نویسه باشد.'); return; }
+        if (pw1.value !== pw2.value) { fail('رمز و تکرارش یکی نیستند.'); return; }
+        busy = true;
+        save.textContent = 'در حال رمزنگاری…';
+        var check = enabled
+          ? w.Vault.unlock(current.value)
+          : Promise.resolve(true);
+        check.then(function (ok) {
+          if (!ok) { fail('رمز فعلی نادرست است.'); return null; }
+          return w.Store.setPassword(pw1.value).then(function () {
+            m.close();
+            w.U.toast('رمز عبور تنظیم شد و داده‌ها رمزنگاری شدند.', 'good');
+            if (onDone) onDone();
+          });
+        }).catch(function (e) { fail('خطا: ' + e.message); });
+      }
+    });
+
+    var footer = [
+      el('button.btn.ghost', { type: 'button', text: 'انصراف',
+        onclick: function () { m.close(); } })
+    ];
+    if (enabled) {
+      footer.push(el('button.btn.ghost.danger', {
+        type: 'button', text: 'برداشتن رمز',
+        onclick: function () {
+          w.Vault.unlock(current.value).then(function (ok) {
+            if (!ok) { fail('رمز فعلی نادرست است.'); return; }
+            return w.U.confirmBox('برداشتن رمز عبور',
+              'پس از این، هر کسی که به این رایانه دسترسی داشته باشد می‌تواند ' +
+              'اطلاعات را ببیند. مطمئنید؟', 'بردار').then(function (yes) {
+                if (!yes) return;
+                return w.Store.clearPassword().then(function () {
+                  m.close();
+                  w.U.toast('رمز برداشته شد و داده‌ها رمزگشایی شدند.', 'good');
+                  if (onDone) onDone();
+                });
+              });
+          });
+        }
+      }));
+    }
+    footer.push(save);
+
+    m = w.U.modal(enabled ? 'تغییر رمز عبور' : 'تعیین رمز عبور', body, footer);
+    setTimeout(function () { (enabled ? current : pw1).focus(); }, 50);
+  }
+
+  /** درخواست رمز برای باز کردن یک نسخهٔ پشتیبان رمزشده */
+  function askBackupPassword(fileName) {
+    return new Promise(function (resolve) {
+      var input = el('input.input', { type: 'password', autocomplete: 'off' });
+      var msg = el('div.lock-msg');
+      var m;
+      function done(v) { m.close(); resolve(v); }
+      var ok = el('button.btn.primary', {
+        type: 'button', text: 'باز کردن',
+        onclick: function () {
+          if (!input.value) { msg.textContent = 'رمز را وارد کنید.'; return; }
+          done(input.value);
+        }
+      });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); ok.click(); }
+      });
+      m = w.U.modal('نسخهٔ پشتیبان رمز دارد',
+        el('div', null, [
+          el('p', { text: 'فایل «' + fileName + '» رمزنگاری شده است. ' +
+            'رمزی که هنگام ساختنش فعال بوده وارد کنید.' }),
+          input, msg
+        ]),
+        [el('button.btn.ghost', { type: 'button', text: 'انصراف',
+          onclick: function () { done(null); } }), ok]);
+      setTimeout(function () { input.focus(); }, 50);
+    });
+  }
+
+  w.UILock = {
+    showLock: showLock, hide: hide, isShowing: isShowing,
+    passwordDialog: passwordDialog, askBackupPassword: askBackupPassword,
+    strength: strength
+  };
+})(window);
+
+</script>
+<script>
 /* ==== js/ui.misc.js ==== */
 /* پنل آمار، ستون‌ها، خروجی‌ها، پشتیبان‌گیری، ورود از اکسل و تنظیمات */
 (function (w) {
   'use strict';
 
   var el = w.U.el, J = w.J, M = w.Model;
+
+  function fa(n) { return w.U.toFaDigits(n); }
 
   // -------------------------------------------------------------- پنل آمار
   function statsPanel(app) {
@@ -7959,7 +8672,6 @@ else if (typeof exports === 'object'){
 
   /** خروجی اکسل گزارش: هر جدول در یک شیت جدا */
   function exportReportExcel(data, scopeText) {
-    var fa = w.U.toFaDigits;
     var k = data.kpis;
     var sheets = [];
 
@@ -8080,11 +8792,18 @@ else if (typeof exports === 'object'){
   }
 
   function exportJson() {
-    var blob = new Blob([JSON.stringify(w.Store.snapshot(), null, 1)],
-      { type: 'application/json' });
-    w.U.download('parvandeha-backup-' + J.today() + '.json', blob);
-    M.saveSettings({ changesSinceBackup: 0 });
-    w.U.toast('نسخهٔ پشتیبان ذخیره شد.', 'good');
+    // اگر رمز فعال باشد، نسخهٔ پشتیبان هم رمزشده بیرون می‌رود
+    w.Vault.sealSnapshot(w.Store.snapshot()).then(function (payload) {
+      var blob = new Blob([JSON.stringify(payload, null, payload.encrypted ? 0 : 1)],
+        { type: 'application/json' });
+      w.U.download('parvandeha-backup-' + J.today() + '.json', blob);
+      M.saveSettings({ changesSinceBackup: 0 });
+      w.U.toast(payload.encrypted
+        ? 'نسخهٔ پشتیبان رمزشده ذخیره شد.'
+        : 'نسخهٔ پشتیبان ذخیره شد.', 'good');
+    }).catch(function (e) {
+      w.U.toast('ساخت پشتیبان ناموفق بود: ' + e.message, 'bad');
+    });
   }
 
   // ------------------------------------------------------- بازیابی و ورودی
@@ -8109,12 +8828,25 @@ else if (typeof exports === 'object'){
         'جایگزین کن').then(function (ok) {
           if (!ok) return;
           return file.text().then(function (text) {
-            return w.Store.restore(JSON.parse(text));
-          }).then(function () {
-            return M.reload();
-          }).then(function () {
-            w.U.toast('داده‌ها بازیابی شد.', 'good');
-            app.goList();
+            var payload = JSON.parse(text);
+            if (!payload.encrypted) return payload;
+            // نسخهٔ پشتیبان رمزشده: رمزِ زمانِ ساختنش لازم است
+            return w.UILock.askBackupPassword(file.name).then(function (pw) {
+              if (!pw) return null;
+              return w.Vault.openSnapshot(payload, pw).catch(function () {
+                throw new Error('رمز نادرست است یا فایل آسیب دیده');
+              });
+            });
+          }).then(function (snap) {
+            if (!snap) return null;
+            return w.Store.restore(snap).then(function () {
+              return M.reload();
+            }).then(function () {
+              return w.Docs.load();
+            }).then(function () {
+              w.U.toast('داده‌ها بازیابی شد.', 'good');
+              app.goList();
+            });
           });
         });
     }).catch(function (e) {
@@ -8122,44 +8854,173 @@ else if (typeof exports === 'object'){
     });
   }
 
+  /** ستون‌های فایل را به فیلدهای برنامه نگاشت می‌کند */
+  function mapColumns(headerRow) {
+    var header = headerRow.map(function (h) { return w.U.normalize(h); });
+    var map = {}, matched = [], usedCols = {};
+    M.FIELDS.forEach(function (f) {
+      var i = header.indexOf(w.U.normalize(f.label));
+      if (i < 0) i = header.indexOf(w.U.normalize(w.UIForm.cleanLabel(f.label)));
+      if (i < 0 || usedCols[i]) return;
+      usedCols[i] = true;
+      map[f.key] = i;
+      matched.push({ field: f, col: i, header: headerRow[i] });
+    });
+    var ignored = [];
+    headerRow.forEach(function (h, i) {
+      if (!usedCols[i] && String(h || '').trim()) ignored.push(String(h).trim());
+    });
+    return { map: map, matched: matched, ignored: ignored };
+  }
+
+  function rowsToRecords(rows, map) {
+    return rows.slice(1).map(function (r) {
+      var rec = {};
+      Object.keys(map).forEach(function (k) {
+        var v = r[map[k]];
+        if (v != null && String(v).trim() !== '') rec[k] = String(v).trim();
+      });
+      return rec;
+    }).filter(function (r) { return Object.keys(r).length; });
+  }
+
+  function countLine(label, n, cls) {
+    return el('div.imp-row' + (cls ? '.' + cls : ''), null, [
+      el('b.imp-num', { text: fa(n) }),
+      el('span', { text: label })
+    ]);
+  }
+
+  /**
+   * پنجرهٔ ورود از اکسل: پیش از هر تغییری نشان می‌دهد چه چیزی وارد می‌شود،
+   * چه ستون‌هایی شناسایی نشده‌اند و با پرونده‌های تکراری چه می‌کند.
+   */
+  function importDialog(app, fileName, rows) {
+    var cols = mapColumns(rows[0] || []);
+    // شمارهٔ پرونده معمولاً ستون صفر است؛ بررسی باید با null مقایسه شود نه !
+    if (cols.map.caseNo == null) {
+      w.U.toast('ستون «شماره پرونده» در فایل پیدا نشد؛ ورود ممکن نیست.', 'bad');
+      return;
+    }
+    var records = rowsToRecords(rows, cols.map);
+    var an = M.analyzeImport(records);
+    var policy = 'skip';
+
+    var body = el('div.import-dialog');
+    body.appendChild(el('p.muted.tiny', {
+      text: 'فایل: ' + fileName + ' — ' + fa(rows.length - 1) + ' ردیف داده'
+    }));
+
+    // شناسایی ستون‌ها
+    var colBox = el('details.imp-block', { open: cols.ignored.length > 0 });
+    colBox.appendChild(el('summary', null, [
+      el('b', { text: 'ستون‌ها: ' + fa(cols.matched.length) + ' شناسایی شد' }),
+      cols.ignored.length
+        ? el('span.imp-warn', { text: ' • ' + fa(cols.ignored.length) + ' ستون ناشناس' })
+        : el('span.imp-ok', { text: ' • همه شناسایی شدند' })
+    ]));
+    if (cols.ignored.length) {
+      colBox.appendChild(el('p.muted.tiny', {
+        text: 'این ستون‌ها با هیچ فیلدی نخواندند و نادیده گرفته می‌شوند: ' +
+          cols.ignored.join('، ')
+      }));
+    }
+    var missing = M.FIELDS.filter(function (f) { return cols.map[f.key] == null; });
+    if (missing.length) {
+      colBox.appendChild(el('p.muted.tiny', {
+        text: fa(missing.length) + ' فیلد برنامه در فایل نبود و خالی می‌ماند: ' +
+          missing.slice(0, 12).map(function (f) {
+            return w.UIForm.cleanLabel(f.label);
+          }).join('، ') + (missing.length > 12 ? ' …' : '')
+      }));
+    }
+    body.appendChild(colBox);
+
+    // جمع‌بندی رکوردها
+    var counts = el('div.imp-counts', null, [
+      countLine('پروندهٔ تازه — ثبت می‌شود', an.fresh.length, 'good'),
+      an.existing.length
+        ? countLine('شمارهٔ پرونده از قبل در برنامه هست', an.existing.length, 'dup') : null,
+      an.insideFile.length
+        ? countLine('ردیف تکراری داخل خود فایل — همیشه رد می‌شود',
+          an.insideFile.length, 'dup') : null,
+      an.noCaseNo.length
+        ? countLine('ردیف بدون شمارهٔ پرونده — رد می‌شود', an.noCaseNo.length, 'dup') : null
+    ]);
+    body.appendChild(counts);
+
+    // سیاست برخورد با تکراری‌ها
+    if (an.existing.length) {
+      var skipRadio = el('input', { type: 'radio', name: 'imp-policy', checked: true });
+      var updateRadio = el('input', { type: 'radio', name: 'imp-policy' });
+      skipRadio.addEventListener('change', function () { policy = 'skip'; });
+      updateRadio.addEventListener('change', function () { policy = 'update'; });
+
+      body.appendChild(el('div.imp-block', null, [
+        el('b', { text: 'با پرونده‌های تکراری چه شود؟' }),
+        el('label.imp-choice', null, [skipRadio, el('span', null, [
+          el('b', { text: 'رد شوند (پیشنهاد) — ' }),
+          el('span', { text: 'پروندهٔ موجود دست‌نخورده می‌ماند و نسخهٔ تکراری ساخته نمی‌شود.' })
+        ])]),
+        el('label.imp-choice', null, [updateRadio, el('span', null, [
+          el('b', { text: 'به‌روزرسانی شوند — ' }),
+          el('span', {
+            text: 'مقادیر تازه روی پروندهٔ موجود می‌نشیند و هر تغییر در تاریخچه ثبت می‌شود' +
+              (an.changed.length
+                ? ' (' + fa(an.changed.length) + ' پرونده واقعاً تغییر می‌کند).' : '.')
+          })
+        ])]),
+        el('details.imp-dup-list', null, [
+          el('summary', { text: 'دیدن شماره‌های تکراری' }),
+          el('p.muted.tiny', {
+            text: an.existing.map(function (r) { return fa(r.caseNo); }).join('، ')
+          })
+        ])
+      ]));
+    }
+
+    var m, busy = false;
+    var go = el('button.btn.primary', {
+      type: 'button', text: 'شروع ورود',
+      onclick: function () {
+        if (busy) return;
+        busy = true;
+        go.textContent = 'در حال ورود…';
+        M.bulkImport(records, { onDuplicate: policy, note: 'ورود از ' + fileName })
+          .then(function (res) {
+            m.close();
+            w.U.toast(fa(res.added) + ' پروندهٔ تازه' +
+              (res.updated ? '، ' + fa(res.updated) + ' به‌روزرسانی' : '') +
+              (res.skipped ? '، ' + fa(res.skipped) + ' رد شد' : '') + '.', 'good');
+            app.goList();
+          }).catch(function (e) {
+            busy = false;
+            go.textContent = 'تلاش دوباره';
+            w.U.toast('ورود ناموفق بود: ' + e.message, 'bad');
+          });
+      }
+    });
+    if (!an.fresh.length && !an.existing.length) {
+      go.disabled = true;
+      go.textContent = 'چیزی برای ورود نیست';
+    }
+
+    m = w.U.modal('ورود اطلاعات از اکسل', body, [
+      el('button.btn.ghost', { type: 'button', text: 'انصراف',
+        onclick: function () { m.close(); } }),
+      go
+    ]);
+  }
+
   function importExcel(app) {
     pickFile('.xlsx').then(function (file) {
       if (!file) return;
       return file.arrayBuffer().then(w.XLSX.read).then(function (rows) {
-        if (!rows.length) throw new Error('فایل خالی است');
-        var header = rows[0].map(function (h) { return w.U.normalize(h); });
-        var map = {};
-        M.FIELDS.forEach(function (f) {
-          var i = header.indexOf(w.U.normalize(f.label));
-          if (i < 0) i = header.indexOf(w.U.normalize(w.UIForm.cleanLabel(f.label)));
-          if (i >= 0) map[f.key] = i;
-        });
-        var known = Object.keys(map).length;
-        if (!map.caseNo) throw new Error('ستون «شماره پرونده» در فایل پیدا نشد');
-        var records = rows.slice(1).map(function (r) {
-          var rec = {};
-          Object.keys(map).forEach(function (k) {
-            var v = r[map[k]];
-            if (v != null && String(v).trim() !== '') rec[k] = String(v).trim();
-          });
-          return rec;
-        }).filter(function (r) { return r.caseNo; });
-
-        return w.U.confirmBox('ورود از اکسل',
-          w.U.toFaDigits(records.length) + ' ردیف و ' + w.U.toFaDigits(known) +
-          ' ستون شناسایی شد. پرونده‌های با شمارهٔ تکراری به‌روزرسانی می‌شوند و تغییرشان ' +
-          'در تاریخچه ثبت می‌شود. ادامه می‌دهید؟', 'وارد کن')
-          .then(function (ok) {
-            if (!ok) return;
-            return M.bulkImport(records).then(function (res) {
-              w.U.toast(w.U.toFaDigits(res.added) + ' پروندهٔ جدید و ' +
-                w.U.toFaDigits(res.updated) + ' به‌روزرسانی انجام شد.', 'good');
-              app.goList();
-            });
-          });
+        if (rows.length < 2) throw new Error('فایل داده‌ای ندارد');
+        importDialog(app, file.name, rows);
       });
     }).catch(function (e) {
-      w.U.toast('ورود از اکسل ناموفق بود: ' + e.message, 'bad');
+      w.U.toast('خواندن فایل اکسل ناموفق بود: ' + e.message, 'bad');
     });
   }
 
@@ -8264,6 +9125,48 @@ else if (typeof exports === 'object'){
     refreshStorage();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'ذخیره‌سازی' }), storageInfo
+    ]));
+
+    // امنیت
+    var secInfo = el('div.storage-info');
+    function refreshSec() {
+      var st = w.Store.status();
+      w.U.clear(secInfo);
+      if (!w.Vault.available()) {
+        secInfo.appendChild(el('p', {
+          text: 'این مرورگر از رمزنگاری پشتیبانی نمی‌کند.'
+        }));
+        return;
+      }
+      secInfo.appendChild(el('p', {
+        text: st.encrypted
+          ? 'رمز عبور فعال است. پرونده‌ها، تاریخچه و فهرست مستندات با AES-256 ' +
+            'رمزنگاری شده‌اند و بدون رمز خوانده نمی‌شوند.'
+          : 'رمزی تعیین نشده؛ هر کسی که این فایل را باز کند اطلاعات را می‌بیند.'
+      }));
+      secInfo.appendChild(el('div.btn-row', null, [
+        el('button.btn.small' + (st.encrypted ? '' : '.primary'), {
+          type: 'button', text: st.encrypted ? 'تغییر یا برداشتن رمز' : 'تعیین رمز عبور',
+          onclick: function () {
+            m.close();
+            w.UILock.passwordDialog(app, function () { app.render(); });
+          }
+        }),
+        st.encrypted ? el('button.btn.small.ghost', {
+          type: 'button', text: 'قفل کردن همین حالا',
+          onclick: function () { m.close(); app.lockNow(false); }
+        }) : null
+      ]));
+      if (st.encrypted) {
+        secInfo.appendChild(el('p.muted.tiny', {
+          text: 'برنامه پس از ۱۵ دقیقه بی‌کاری خودکار قفل می‌شود. ' +
+            'فایل‌های پیوست و خروجی اکسل رمز ندارند.'
+        }));
+      }
+    }
+    refreshSec();
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'امنیت و رمز عبور' }), secInfo
     ]));
 
     // پوشهٔ مستندات
@@ -8392,7 +9295,8 @@ else if (typeof exports === 'object'){
     statsPanel: statsPanel, columnsDialog: columnsDialog, exportExcel: exportExcel,
     exportSqlite: exportSqlite, exportJson: exportJson, restoreJson: restoreJson,
     exportReportExcel: exportReportExcel,
-    importExcel: importExcel, settingsDialog: settingsDialog
+    importExcel: importExcel, settingsDialog: settingsDialog, mapColumns: mapColumns,
+    importDialog: importDialog
   };
 })(window);
 
@@ -8414,6 +9318,117 @@ else if (typeof exports === 'object'){
   function iconFor(name) {
     var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
     return (m && ICONS[m[1].toLowerCase()]) || '📎';
+  }
+
+  function extOf(name) {
+    var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  var IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif'];
+
+  function isImage(doc) {
+    return (doc.mime || '').indexOf('image/') === 0 ||
+      IMAGE_EXT.indexOf(extOf(doc.fileName)) >= 0;
+  }
+
+  function isPdf(doc) {
+    return (doc.mime || '') === 'application/pdf' || extOf(doc.fileName) === 'pdf';
+  }
+
+  // ------------------------------------------------------------- پیش‌نمایش
+  // نشانی‌های موقت فایل‌ها؛ با هر بار رندر دوبارهٔ پنل آزاد می‌شوند تا حافظه
+  // نشت نکند.
+  var thumbUrls = [];
+  var observer = null;
+  var pdfBudget = 0;
+  var PDF_LIMIT = 16;          // سقف تعداد پیش‌نمایش هم‌زمان PDF
+
+  function releaseThumbs() {
+    thumbUrls.forEach(function (u) {
+      try { URL.revokeObjectURL(u); } catch (e) { /* از قبل آزاد شده */ }
+    });
+    thumbUrls = [];
+    pdfBudget = 0;
+    if (observer) { observer.disconnect(); observer = null; }
+  }
+
+  function trackUrl(url) { thumbUrls.push(url); return url; }
+
+  var MIME_BY_EXT = {
+    pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+    bmp: 'image/bmp', avif: 'image/avif'
+  };
+
+  /**
+   * نشانی موقت با نوع MIME صریح.
+   * اگر فایل نوع نداشته باشد، مرورگر PDF را متن ساده نشان می‌دهد؛ نوع را از
+   * پسوند جبران می‌کنیم.
+   */
+  function objectUrlFor(file, doc) {
+    var wanted = MIME_BY_EXT[extOf(doc.fileName)] || '';
+    var blob = (wanted && file.type !== wanted)
+      ? new Blob([file], { type: wanted })
+      : file;
+    return trackUrl(URL.createObjectURL(blob));
+  }
+
+  function fillThumb(box, doc) {
+    if (box.dataset.loaded) return;
+    box.dataset.loaded = '1';
+    D.readFile(doc).then(function (file) {
+      if (!document.body.contains(box)) return;
+      var url = objectUrlFor(file, doc);
+      if (isImage(doc)) {
+        var img = el('img.thumb-img', { src: url, alt: doc.kind, loading: 'lazy' });
+        img.addEventListener('load', function () { box.classList.add('ready'); });
+        img.addEventListener('error', function () { box.classList.add('icon-only'); });
+        w.U.clear(box);
+        box.appendChild(img);
+        return;
+      }
+      // PDF بدون کتابخانه: نمایشگر داخلی مرورگر، کوچک‌شده و بدون نوار ابزار
+      if (pdfBudget >= PDF_LIMIT) return;
+      pdfBudget += 1;
+      var frame = el('iframe.thumb-pdf', {
+        src: url + '#toolbar=0&navpanes=0&scrollbar=0&view=FitH',
+        tabindex: '-1', 'aria-hidden': 'true', loading: 'lazy'
+      });
+      w.U.clear(box);
+      box.appendChild(frame);
+      box.classList.add('ready', 'pdf');
+    }).catch(function () {
+      box.classList.add('icon-only');
+    });
+  }
+
+  function getObserver() {
+    if (observer) return observer;
+    if (typeof w.IntersectionObserver !== 'function') return null;
+    observer = new w.IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        observer.unobserve(e.target);
+        fillThumb(e.target, e.target._doc);
+      });
+    }, { rootMargin: '200px' });
+    return observer;
+  }
+
+  /** جعبهٔ پیش‌نمایش: تصویر یا صفحهٔ اول PDF، وگرنه آیکن نوع فایل */
+  function thumb(doc, onOpen) {
+    var previewable = isImage(doc) || isPdf(doc);
+    var box = el('button.doc-thumb' + (previewable ? '' : '.icon-only'), {
+      type: 'button',
+      title: previewable ? 'باز کردن ' + doc.fileName : doc.fileName,
+      onclick: onOpen
+    }, [el('span.doc-icon', { text: iconFor(doc.fileName) })]);
+    if (!previewable || !D.status().linked) return box;
+    box._doc = doc;
+    var obs = getObserver();
+    if (obs) obs.observe(box); else fillThumb(box, doc);
+    return box;
   }
 
   function sizeText(bytes) {
@@ -8574,12 +9589,7 @@ else if (typeof exports === 'object'){
     ].filter(Boolean).join(' • ');
 
     var actions = el('div.doc-actions', null, [
-      el('button.btn.small', {
-        type: 'button', text: 'باز کردن',
-        onclick: function () {
-          D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
-        }
-      }),
+      el('button.btn.small', { type: 'button', text: 'باز کردن', onclick: open }),
       doc.scope === 'person' ? null : el('button.btn.small.ghost', {
         type: 'button', text: 'نسخهٔ جدید', title: 'نسخهٔ قبلی نگه داشته می‌شود',
         onclick: function () {
@@ -8626,9 +9636,12 @@ else if (typeof exports === 'object'){
       }))
     ]) : null;
 
+    var open = function () {
+      D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+    };
     return el('li.doc-item' + (doc.missing ? '.missing' : '') +
       (doc.scope === 'person' ? '.person-doc' : ''), null, [
-      el('span.doc-icon', { text: iconFor(doc.fileName) }),
+      thumb(doc, open),
       el('div.doc-body', null, [
         el('div.doc-head', null, [
           el('span.doc-kind', { text: doc.kind }),
@@ -8652,6 +9665,7 @@ else if (typeof exports === 'object'){
 
   /** پنل مستندات یک پرونده */
   function render(app, rec, refresh) {
+    releaseThumbs();
     var st = D.status();
 
     if (!st.supported) {
@@ -8931,7 +9945,10 @@ else if (typeof exports === 'object'){
     ]);
   }
 
-  w.UIDocs = { render: render, iconFor: iconFor, sizeText: sizeText };
+  w.UIDocs = {
+    render: render, iconFor: iconFor, sizeText: sizeText, thumb: thumb,
+    isImage: isImage, isPdf: isPdf, releaseThumbs: releaseThumbs
+  };
 })(window);
 
 </script>
@@ -10141,6 +11158,13 @@ else if (typeof exports === 'object'){
           onclick: function () { w.UIMisc.exportJson(); }
         }),
         el('button.icon-btn', {
+          type: 'button', text: '🔒', title: 'قفل کردن برنامه (Ctrl+L)',
+          onclick: function () {
+            if (w.Store.status().encrypted) lockNow(false);
+            else w.UILock.passwordDialog(app);
+          }
+        }),
+        el('button.icon-btn', {
           type: 'button', text: '⚙', title: 'تنظیمات',
           onclick: function () { w.UIMisc.settingsDialog(app); }
         }),
@@ -10164,6 +11188,10 @@ else if (typeof exports === 'object'){
         e.preventDefault();
         if (app.state.view === 'case' && app.saveCurrentForm) app.saveCurrentForm();
         else w.UIMisc.exportJson();
+      } else if (ctrl && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        if (w.Store.status().encrypted) lockNow(false);
+        else w.U.toast('اول از تنظیمات یک رمز عبور تعیین کنید.', 'warn');
       } else if (ctrl && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         app.goPeople();
@@ -10198,16 +11226,57 @@ else if (typeof exports === 'object'){
       ' تغییر ثبت شده؛ بهتر است نسخهٔ پشتیبان بگیرید.', 'warn');
   }
 
+  // ------------------------------------------------------------- قفل خودکار
+  var IDLE_MS = 15 * 60 * 1000;
+  var idleTimer = null;
+
+  function resetIdle() {
+    if (!w.Store.status().encrypted) return;
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () {
+      if (w.UILock.isShowing()) return;
+      lockNow(true);
+    }, IDLE_MS);
+  }
+
+  function lockNow(automatic) {
+    clearTimeout(idleTimer);
+    w.Store.lock().then(function () {
+      // داده‌های رمزگشایی‌شده باید از حافظهٔ صفحه هم پاک شوند، نه فقط از انبار
+      M.clearMemory();
+      w.Docs.clearMemory();
+      w.Charts.reset();
+      if (w.UIDocs) w.UIDocs.releaseThumbs();
+      app.state.reportData = null;
+      app.state.lastResult = [];
+      app.state.view = 'list';
+      app.state.caseId = null;
+      app.state.personKey = null;
+      app.state.dirty = false;
+      app.state.q = '';
+      app.state.filters = {};
+      w.U.clear(mount);
+      w.UILock.showLock(afterUnlock);
+      if (automatic) {
+        setTimeout(function () {
+          w.U.toast('به‌خاطر بی‌کاری، برنامه قفل شد.', 'warn');
+        }, 400);
+      }
+    });
+  }
+
+  app.lockNow = lockNow;
+
+  function bindIdle() {
+    ['mousedown', 'keydown', 'wheel', 'touchstart'].forEach(function (evt) {
+      document.addEventListener(evt, resetIdle, { passive: true });
+    });
+    resetIdle();
+  }
+
   // ----------------------------------------------------------------- شروع
-  function boot() {
-    mount = $('#main');
-    document.body.insertBefore(topBar(), mount);
-
-    w.Store.onStatusChange(updateStatusChip);
-
-    w.Store.init().then(function () {
-      return M.load();
-    }).then(function () {
+  function afterUnlock() {
+    return M.load().then(function () {
       if (!M.state.cases.length) {
         return M.seed().then(function (n) {
           if (n) w.U.toast(w.U.toFaDigits(n) + ' پروندهٔ نمونه از فایل اکسل وارد شد.', 'good');
@@ -10217,13 +11286,38 @@ else if (typeof exports === 'object'){
     }).then(function () {
       return w.Docs.load();
     }).then(function () {
-      bindShortcuts();
+      if (topBarNode.parentNode !== document.body) {
+        document.body.insertBefore(topBarNode, mount);
+      }
+      topBarNode.style.display = '';
       app.render();
+      resetIdle();
       setTimeout(backupReminder, 2500);
       var s = w.Store.status();
       if (s.mode === 'memory') {
         w.U.toast('مرورگر اجازهٔ ذخیره‌سازی نداده است؛ داده‌ها با بستن صفحه از بین می‌رود.', 'bad');
       }
+    });
+  }
+
+  var topBarNode = null;
+
+  function boot() {
+    mount = $('#main');
+    topBarNode = topBar();
+    document.body.insertBefore(topBarNode, mount);
+
+    w.Store.onStatusChange(updateStatusChip);
+
+    w.Store.init().then(function () {
+      bindShortcuts();
+      bindIdle();
+      if (w.Store.isLocked()) {
+        topBarNode.style.display = 'none';
+        w.UILock.showLock(afterUnlock);
+        return null;
+      }
+      return afterUnlock();
     }).catch(function (err) {
       mount.appendChild(el('div.fatal', null, [
         el('h2', { text: 'راه‌اندازی ناموفق بود' }),

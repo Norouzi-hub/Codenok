@@ -76,20 +76,6 @@ window.FIELDS = [
     "list": "NoeParvande"
   },
   {
-    "key": "reportType",
-    "label": "نوع گزارش",
-    "type": "text",
-    "group": "case",
-    "col": 60
-  },
-  {
-    "key": "reportYear",
-    "label": "سال",
-    "type": "text",
-    "group": "case",
-    "col": 59
-  },
-  {
     "key": "reportSubject",
     "label": "موضوع گزارش پرونده(1)",
     "type": "textarea",
@@ -340,41 +326,6 @@ window.FIELDS = [
     "type": "textarea",
     "group": "verdict",
     "col": 35
-  },
-  {
-    "key": "verdict1",
-    "label": "رای کمیته انضباطی1(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 36
-  },
-  {
-    "key": "verdict2",
-    "label": "رای کمیته انضباطی2(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 37
-  },
-  {
-    "key": "verdict3",
-    "label": "رای کمیته انضباطی3(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 38
-  },
-  {
-    "key": "verdict4",
-    "label": "رای کمیته انضباطی4(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 39
-  },
-  {
-    "key": "verdict5",
-    "label": "رای کمیته انضباطی5(2)",
-    "type": "text",
-    "group": "verdict",
-    "col": 40
   },
   {
     "key": "noticeLetterNo",

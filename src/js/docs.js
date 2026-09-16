@@ -416,14 +416,25 @@
     return caseFolder(M.get(doc.caseId), false);
   }
 
+  /** فایل یک سند را از پوشه می‌خواند (برای پیش‌نمایش یا باز کردن) */
+  function readFile(doc) {
+    return folderOf(doc)
+      .then(function (dir) { return dir.getFileHandle(doc.fileName); })
+      .then(function (fh) { return fh.getFile(); });
+  }
+
   function openDoc(doc) {
     return folderOf(doc)
       .then(function (dir) { return dir.getFileHandle(doc.fileName); })
       .then(function (fh) { return fh.getFile(); })
       .then(function (file) {
-        var url = URL.createObjectURL(file);
+        // بدون نوع MIME درست، مرورگر PDF را به‌جای نمایش، متن خام نشان می‌دهد
+        var blob = (doc.mime && file.type !== doc.mime)
+          ? new Blob([file], { type: doc.mime })
+          : file;
+        var url = URL.createObjectURL(blob);
         var win = w.open(url, '_blank');
-        if (!win) w.U.download(doc.fileName, file);
+        if (!win) w.U.download(doc.fileName, blob);
         setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
         return true;
       })
@@ -561,6 +572,15 @@
 
   function all() { return docs; }
 
+  /** پاک کردن فرادادهٔ مستندات از حافظه، هنگام قفل شدن برنامه */
+  function clearMemory() {
+    docs = [];
+    byCase = {};
+    byPerson = {};
+    root = null;
+    rootName = '';
+  }
+
   function stats() {
     var byKind = {};
     docs.forEach(function (d) {
@@ -580,6 +600,7 @@
     linkFolder: linkFolder, unlinkFolder: unlinkFolder, relinkFolder: relinkFolder,
     load: load, all: all, forCase: forCase, current: current, versionsOf: versionsOf,
     addFile: addFile, addVersion: addVersion, openDoc: openDoc, removeDoc: removeDoc,
+    readFile: readFile,
     scan: scan, register: register, renameFolder: renameFolder,
     hasStoredFolder: hasStoredFolder, storedFolderName: storedFolderName,
     PERSON_KINDS: PERSON_KINDS, PERSON_ROOT: PERSON_ROOT,
@@ -588,6 +609,6 @@
     personFolderNameFor: personFolderNameFor,
     folderMismatch: folderMismatch, folderNameFor: folderNameFor,
     fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
-    indexDocs: indexDocs
+    indexDocs: indexDocs, clearMemory: clearMemory
   };
 })(window);

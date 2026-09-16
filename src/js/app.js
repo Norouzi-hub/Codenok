@@ -297,6 +297,13 @@
           onclick: function () { w.UIMisc.exportJson(); }
         }),
         el('button.icon-btn', {
+          type: 'button', text: '🔒', title: 'قفل کردن برنامه (Ctrl+L)',
+          onclick: function () {
+            if (w.Store.status().encrypted) lockNow(false);
+            else w.UILock.passwordDialog(app);
+          }
+        }),
+        el('button.icon-btn', {
           type: 'button', text: '⚙', title: 'تنظیمات',
           onclick: function () { w.UIMisc.settingsDialog(app); }
         }),
@@ -320,6 +327,10 @@
         e.preventDefault();
         if (app.state.view === 'case' && app.saveCurrentForm) app.saveCurrentForm();
         else w.UIMisc.exportJson();
+      } else if (ctrl && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        if (w.Store.status().encrypted) lockNow(false);
+        else w.U.toast('اول از تنظیمات یک رمز عبور تعیین کنید.', 'warn');
       } else if (ctrl && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         app.goPeople();
@@ -354,16 +365,57 @@
       ' تغییر ثبت شده؛ بهتر است نسخهٔ پشتیبان بگیرید.', 'warn');
   }
 
+  // ------------------------------------------------------------- قفل خودکار
+  var IDLE_MS = 15 * 60 * 1000;
+  var idleTimer = null;
+
+  function resetIdle() {
+    if (!w.Store.status().encrypted) return;
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () {
+      if (w.UILock.isShowing()) return;
+      lockNow(true);
+    }, IDLE_MS);
+  }
+
+  function lockNow(automatic) {
+    clearTimeout(idleTimer);
+    w.Store.lock().then(function () {
+      // داده‌های رمزگشایی‌شده باید از حافظهٔ صفحه هم پاک شوند، نه فقط از انبار
+      M.clearMemory();
+      w.Docs.clearMemory();
+      w.Charts.reset();
+      if (w.UIDocs) w.UIDocs.releaseThumbs();
+      app.state.reportData = null;
+      app.state.lastResult = [];
+      app.state.view = 'list';
+      app.state.caseId = null;
+      app.state.personKey = null;
+      app.state.dirty = false;
+      app.state.q = '';
+      app.state.filters = {};
+      w.U.clear(mount);
+      w.UILock.showLock(afterUnlock);
+      if (automatic) {
+        setTimeout(function () {
+          w.U.toast('به‌خاطر بی‌کاری، برنامه قفل شد.', 'warn');
+        }, 400);
+      }
+    });
+  }
+
+  app.lockNow = lockNow;
+
+  function bindIdle() {
+    ['mousedown', 'keydown', 'wheel', 'touchstart'].forEach(function (evt) {
+      document.addEventListener(evt, resetIdle, { passive: true });
+    });
+    resetIdle();
+  }
+
   // ----------------------------------------------------------------- شروع
-  function boot() {
-    mount = $('#main');
-    document.body.insertBefore(topBar(), mount);
-
-    w.Store.onStatusChange(updateStatusChip);
-
-    w.Store.init().then(function () {
-      return M.load();
-    }).then(function () {
+  function afterUnlock() {
+    return M.load().then(function () {
       if (!M.state.cases.length) {
         return M.seed().then(function (n) {
           if (n) w.U.toast(w.U.toFaDigits(n) + ' پروندهٔ نمونه از فایل اکسل وارد شد.', 'good');
@@ -373,13 +425,38 @@
     }).then(function () {
       return w.Docs.load();
     }).then(function () {
-      bindShortcuts();
+      if (topBarNode.parentNode !== document.body) {
+        document.body.insertBefore(topBarNode, mount);
+      }
+      topBarNode.style.display = '';
       app.render();
+      resetIdle();
       setTimeout(backupReminder, 2500);
       var s = w.Store.status();
       if (s.mode === 'memory') {
         w.U.toast('مرورگر اجازهٔ ذخیره‌سازی نداده است؛ داده‌ها با بستن صفحه از بین می‌رود.', 'bad');
       }
+    });
+  }
+
+  var topBarNode = null;
+
+  function boot() {
+    mount = $('#main');
+    topBarNode = topBar();
+    document.body.insertBefore(topBarNode, mount);
+
+    w.Store.onStatusChange(updateStatusChip);
+
+    w.Store.init().then(function () {
+      bindShortcuts();
+      bindIdle();
+      if (w.Store.isLocked()) {
+        topBarNode.style.display = 'none';
+        w.UILock.showLock(afterUnlock);
+        return null;
+      }
+      return afterUnlock();
     }).catch(function (err) {
       mount.appendChild(el('div.fatal', null, [
         el('h2', { text: 'راه‌اندازی ناموفق بود' }),

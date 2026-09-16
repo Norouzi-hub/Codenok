@@ -219,6 +219,11 @@
       }),
       el('div.spacer'),
       el('button.btn.small.ghost', {
+        type: 'button', text: 'ورود از اکسل',
+        title: 'خواندن فایل اکسل با همین قالب و پر کردن خودکار فیلدها',
+        onclick: function () { w.UIMisc.importExcel(app); }
+      }),
+      el('button.btn.small.ghost', {
         type: 'button', text: 'ستون‌های جدول',
         onclick: function () { w.UIMisc.columnsDialog(app); }
       }),

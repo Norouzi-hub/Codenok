@@ -384,48 +384,100 @@
     ]).then(function () { return records.length; });
   }
 
-  /** افزودن دسته‌ای رکورد (ورود از اکسل) */
-  function bulkImport(records, note) {
-    var now = new Date().toISOString();
-    var added = [], entries = [], updated = 0;
-    records.forEach(function (raw) {
+  /**
+   * تحلیل یک دسته رکورد پیش از ورود، بدون تغییر دادن چیزی.
+   * سه دسته برمی‌گرداند: تازه، تکراری با پروندهٔ موجود، و تکراری داخل خود فایل.
+   */
+  function analyzeImport(records) {
+    var fresh = [], existing = [], insideFile = [], noCaseNo = [];
+    var seen = Object.create(null);
+    records.forEach(function (raw, i) {
       var rec = normalizeRecord(raw);
-      var existing = rec.caseNo ? duplicateCaseNo(rec.caseNo, null) : null;
-      if (existing) {
-        var changes = diff(existing, Object.assign({}, existing, rec));
-        if (!changes.length) return;
-        Object.keys(rec).forEach(function (k) { if (k !== 'id') existing[k] = rec[k]; });
-        existing.updatedAt = now;
-        index(existing);
-        entries.push({
-          id: w.U.uid(), caseId: existing.id, caseNo: existing.caseNo, at: now,
-          atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'update',
-          changes: changes, note: note || 'به‌روزرسانی از فایل اکسل'
-        });
-        added.push(existing);
-        updated++;
+      var row = { index: i, rec: rec, caseNo: rec.caseNo || '' };
+      if (!row.caseNo) { noCaseNo.push(row); return; }
+      var norm = w.U.normalize(row.caseNo);
+      if (seen[norm]) {
+        row.firstRow = seen[norm];
+        insideFile.push(row);
         return;
       }
+      seen[norm] = row;
+      var dup = duplicateCaseNo(row.caseNo, null);
+      if (dup) {
+        row.existing = dup;
+        row.changes = diff(dup, Object.assign({}, dup, rec));
+        existing.push(row);
+        return;
+      }
+      fresh.push(row);
+    });
+    return {
+      total: records.length, fresh: fresh, existing: existing,
+      insideFile: insideFile, noCaseNo: noCaseNo,
+      changed: existing.filter(function (r) { return r.changes.length; })
+    };
+  }
+
+  /**
+   * ورود دسته‌ای. onDuplicate:
+   *   'skip'   — پروندهٔ تکراری رد می‌شود (پیش‌فرض، جلوی کپی شدن را می‌گیرد)
+   *   'update' — پروندهٔ موجود با مقادیر تازه به‌روز می‌شود و تغییرش ثبت می‌گردد
+   */
+  function bulkImport(records, opts) {
+    opts = opts || {};
+    var onDuplicate = opts.onDuplicate || 'skip';
+    var note = opts.note;
+    var analysis = analyzeImport(records);
+    var now = new Date().toISOString();
+    var touched = [], entries = [], updated = 0, skipped = 0;
+
+    analysis.fresh.forEach(function (row) {
+      var rec = row.rec;
       rec.id = w.U.uid();
       rec.createdAt = now;
       rec.updatedAt = now;
       index(rec);
       state.cases.push(rec);
-      added.push(rec);
+      touched.push(rec);
       entries.push({
         id: w.U.uid(), caseId: rec.id, caseNo: rec.caseNo || '', at: now,
         atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'import',
         changes: [], note: note || 'ورود از فایل اکسل'
       });
     });
+
+    analysis.existing.forEach(function (row) {
+      if (onDuplicate !== 'update' || !row.changes.length) { skipped++; return; }
+      var target = row.existing;
+      Object.keys(row.rec).forEach(function (k) {
+        if (k !== 'id') target[k] = row.rec[k];
+      });
+      target.updatedAt = now;
+      index(target);
+      touched.push(target);
+      entries.push({
+        id: w.U.uid(), caseId: target.id, caseNo: target.caseNo, at: now,
+        atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'update',
+        changes: row.changes, note: note || 'به‌روزرسانی از فایل اکسل'
+      });
+      updated++;
+    });
+
+    // ردیف‌های تکراری داخل خود فایل هرگز دو بار ثبت نمی‌شوند
+    skipped += analysis.insideFile.length + analysis.noCaseNo.length;
+
     state.history = state.history.concat(entries);
     reindexHistory();
     return Promise.all([
-      w.Store.put('cases', added.map(strip)),
-      w.Store.put('history', entries)
+      touched.length ? w.Store.put('cases', touched.map(strip)) : null,
+      entries.length ? w.Store.put('history', entries) : null
     ]).then(function () {
       markChange();
-      return { added: added.length - updated, updated: updated };
+      return {
+        added: analysis.fresh.length, updated: updated, skipped: skipped,
+        duplicatesInFile: analysis.insideFile.length,
+        withoutCaseNo: analysis.noCaseNo.length
+      };
     });
   }
 
@@ -449,10 +501,25 @@
     return load();
   }
 
+  /**
+   * پاک کردن همهٔ داده‌های رمزگشایی‌شده از حافظه.
+   * هنگام قفل کردن لازم است؛ وگرنه محتوای پرونده‌ها در حافظهٔ صفحه می‌ماند و
+   * قفل فقط ظاهری می‌شود.
+   */
+  function clearMemory() {
+    state.cases = [];
+    state.history = [];
+    byId = {};
+    historyByCase = {};
+    invalidatePeople();
+  }
+
   w.Model = {
     state: state, FIELDS: FIELDS, FIELD_BY_KEY: FIELD_BY_KEY, DATE_KEYS: DATE_KEYS,
-    load: load, reload: reload, seed: seed, bulkImport: bulkImport,
+    load: load, reload: reload, clearMemory: clearMemory, seed: seed,
+    bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
+    analyzeImport: analyzeImport,
     idSet: idSet, reindex: index, addHistory: logEvent,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
