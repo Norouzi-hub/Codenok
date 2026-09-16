@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>سامانهٔ پرونده‌ها — کمیتهٔ انضباطی</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📁</text></svg>">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<main id="main"></main>
+<div id="print-area"></div>
+<div id="toast" class="toast"></div>
+
+<!-- موتور SQLite (هنگام ساخت نسخهٔ تک‌فایلی اینجا جاسازی می‌شود) -->
+<script id="sqljs-wasm" type="text/plain"></script>
+
+<script src="js/fields.js"></script>
+<script src="js/seed.js"></script>
+<script src="js/util.js"></script>
+<script src="js/jalali.js"></script>
+<script src="js/store.js"></script>
+<script src="js/model.js"></script>
+<script src="js/datepicker.js"></script>
+<script src="js/xlsx.js"></script>
+<script src="vendor/sql-wasm.js"></script>
+<script src="js/sqlite.js"></script>
+<script src="js/ui.list.js"></script>
+<script src="js/ui.form.js"></script>
+<script src="js/ui.print.js"></script>
+<script src="js/ui.misc.js"></script>
+<script src="js/app.js"></script>
+
+<!-- DEV-ONLY: در حالت توسعه، باینری SQLite جداگانه خوانده می‌شود -->
+<script>
+(function () {
+  var holder = document.getElementById('sqljs-wasm');
+  if (holder.textContent.trim()) return;
+  fetch('vendor/sql-wasm.wasm.b64')
+    .then(function (r) { return r.text(); })
+    .then(function (t) { holder.textContent = t; })
+    .catch(function () { /* در حالت file:// در دسترس نیست */ });
+})();
+</script>
+<!-- /DEV-ONLY -->
+
+</body>
+</html>
