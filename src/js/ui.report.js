@@ -51,6 +51,7 @@
           el('h3', { text: opts.title }),
           opts.subtitle ? el('p.card-sub', { text: opts.subtitle }) : null
         ]),
+        opts.control ? opts.control() : null,
         toggle
       ]),
       body
@@ -64,9 +65,9 @@
   function filterRow(app, data) {
     var s = app.state.report;
 
-    function sel(label, value, options, onChange) {
-      var select = el('select.input.small');
-      select.appendChild(el('option', { value: '', text: label }));
+    function sel(label, value, options, onChange, title) {
+      var select = el('select.input.small', { title: title || label });
+      if (label) select.appendChild(el('option', { value: '', text: label }));
       options.forEach(function (o) {
         select.appendChild(el('option', {
           value: o.value, text: o.label, selected: o.value === value
@@ -77,40 +78,42 @@
       return select;
     }
 
-    var presetSel = el('select.input.small');
-    R.PRESETS.concat([{ key: 'custom', label: 'بازهٔ دلخواه…' }]).forEach(function (p) {
-      presetSel.appendChild(el('option', {
-        value: p.key, text: p.label, selected: p.key === s.preset
-      }));
-    });
-    presetSel.addEventListener('change', function () {
-      s.preset = presetSel.value;
-      app.render();
-    });
+    var row = el('div.report-filters');
 
-    var row = el('div.report-filters', null, [
-      el('span.filter-lead', { text: 'بازهٔ گزارش' }),
-      presetSel
-    ]);
+    // تاریخ مبنا — بازه روی همین فیلد اعمال می‌شود
+    row.appendChild(el('span.filter-lead', { text: 'بازه بر پایهٔ' }));
+    row.appendChild(sel('', s.baseField || 'intakeDate',
+      R.DATE_BASES.map(function (b) { return { value: b.key, label: b.label }; }),
+      function (v) {
+        s.baseField = v;
+        // اگر پیش‌تنظیم سال/فصل بود و در فیلد جدید وجود ندارد، به «همه» برگرد
+        var keys = R.presets(v).map(function (p) { return p.key; });
+        if (keys.indexOf(s.preset) < 0) s.preset = 'all';
+        app.render();
+      }, 'بازهٔ زمانی روی این فیلد تاریخ اعمال می‌شود'));
+
+    var presetList = R.presets(s.baseField || 'intakeDate');
+    row.appendChild(el('span.filter-lead', { text: 'در بازهٔ' }));
+    row.appendChild(sel('', s.preset,
+      presetList.map(function (p) { return { value: p.key, label: p.label }; }),
+      function (v) { s.preset = v; app.render(); }));
 
     if (s.preset === 'custom') {
-      var from = w.DatePicker.field(s.custom.from || '', function (v) {
-        s.custom.from = v; app.render();
-      });
-      var to = w.DatePicker.field(s.custom.to || '', function (v) {
-        s.custom.to = v; app.render();
-      });
       row.appendChild(el('span.filter-lead', { text: 'از' }));
-      row.appendChild(from);
+      row.appendChild(w.DatePicker.field(s.custom.from || '', function (v) {
+        s.custom.from = v; app.render();
+      }));
       row.appendChild(el('span.filter-lead', { text: 'تا' }));
-      row.appendChild(to);
+      row.appendChild(w.DatePicker.field(s.custom.to || '', function (v) {
+        s.custom.to = v; app.render();
+      }));
     }
 
     row.appendChild(sel('همهٔ کارشناسان', s.expert,
       M.distinct('expert').map(function (v) { return { value: v, label: v }; }),
       function (v) { s.expert = v; app.render(); }));
 
-    row.appendChild(sel('همهٔ سال‌ها', s.year,
+    row.appendChild(sel('همهٔ سال‌های رسیدگی', s.year,
       M.distinct('year').map(function (v) { return { value: v, label: fa(v) }; }),
       function (v) { s.year = v; app.render(); }));
 
@@ -127,17 +130,45 @@
       type: 'button', text: 'خروجی اکسل گزارش',
       onclick: function () { w.UIMisc.exportReportExcel(data, describe(s, data)); }
     }));
-    return row;
+
+    // خط دوم: بازهٔ حل‌شده و پرونده‌های کنارگذاشته‌شده، شفاف و قابل خواندن
+    var resolved = el('div.range-line');
+    if (data.range.from || data.range.to) {
+      resolved.appendChild(el('span.range-chip', {
+        text: 'از ' + (data.range.from ? J.format(data.range.from) : 'ابتدا') +
+          ' تا ' + (data.range.to ? J.format(data.range.to) : 'امروز') +
+          ' • ' + data.baseLabel
+      }));
+      if (data.prevRange) {
+        resolved.appendChild(el('span.range-note', {
+          text: 'مقایسه با دورهٔ قبل: ' + J.format(data.prevRange.from) +
+            ' تا ' + J.format(data.prevRange.to)
+        }));
+      }
+      if (data.undated) {
+        resolved.appendChild(el('span.range-note.warn-text', {
+          text: fa(data.undated) + ' پرونده «' + data.baseLabel +
+            '» ندارند و در این برش نیامده‌اند.'
+        }));
+      }
+    } else {
+      resolved.appendChild(el('span.range-note', {
+        text: 'بدون محدودیت زمانی — همهٔ ' + fa(data.cases.length) + ' پرونده.'
+      }));
+    }
+
+    return el('div.filter-block', null, [row, resolved]);
   }
 
   function describe(s, data) {
     var parts = [];
-    var preset = R.PRESETS.concat([{ key: 'custom', label: 'بازهٔ دلخواه' }])
+    var preset = R.presets(data.baseField)
       .filter(function (p) { return p.key === s.preset; })[0];
     parts.push(preset ? preset.label : 'همهٔ پرونده‌ها');
     if (data.range.from || data.range.to) {
       parts.push('از ' + (data.range.from ? J.format(data.range.from) : '—') +
-        ' تا ' + (data.range.to ? J.format(data.range.to) : '—'));
+        ' تا ' + (data.range.to ? J.format(data.range.to) : '—') +
+        ' بر پایهٔ ' + data.baseLabel);
     }
     if (s.expert) parts.push('کارشناس: ' + s.expert);
     if (s.year) parts.push('سال رسیدگی: ' + fa(s.year));
@@ -242,13 +273,32 @@
 
     var grid = el('div.chart-grid');
 
-    // روند ماهانه — دو سری، یک محور، راهنما همیشه حاضر
+    // روند زمانی — دو سری، یک محور، راهنما همیشه حاضر
     if (data.trend.x.length) {
+      var granLabel = (R.GRANULARITY.filter(function (g) {
+        return g.key === data.trend.granularity;
+      })[0] || {}).label;
       grid.appendChild(card({
         wide: true,
-        title: 'روند ماهانهٔ ورود و اختتام پرونده',
+        title: 'روند ' + granLabel + ' ورود و اختتام پرونده',
         subtitle: 'محور زمان از راست (قدیمی‌تر) به چپ (تازه‌تر). ' +
-          'ماه اختتام بر پایهٔ تاریخ ابلاغ رأی یا در نبودش تاریخ طرح در کمیته است.',
+          'دورهٔ اختتام بر پایهٔ تاریخ ابلاغ رأی یا در نبودش تاریخ طرح در کمیته است.',
+        control: function () {
+          var g = el('select.input.small', { title: 'تفکیک زمانی نمودار' });
+          g.appendChild(el('option', { value: 'auto', text: 'تفکیک خودکار' }));
+          R.GRANULARITY.forEach(function (o) {
+            g.appendChild(el('option', {
+              value: o.key, text: o.label,
+              selected: o.key === app.state.report.granularity
+            }));
+          });
+          g.value = app.state.report.granularity || 'auto';
+          g.addEventListener('change', function () {
+            app.state.report.granularity = g.value;
+            app.render();
+          });
+          return g;
+        },
         legend: function () {
           return Ch.legend([
             { name: 'وارده', color: Ch.C.series[0] },
@@ -265,7 +315,7 @@
           });
         },
         table: function () {
-          return Ch.table(['ماه', 'وارده', 'مختومه', 'تراز'],
+          return Ch.table(['دوره', 'وارده', 'مختومه', 'تراز'],
             data.trend.x.map(function (label, i) {
               var diff = data.trend.intake[i] - data.trend.closed[i];
               return [label, fa(data.trend.intake[i]), fa(data.trend.closed[i]),
@@ -278,7 +328,8 @@
     // قیف گردش‌کار — رستهٔ ترتیبی، رمپ تک‌رنگ
     grid.appendChild(card({
       title: 'قیف گردش‌کار',
-      subtitle: 'مرحله‌ها از روی تاریخ‌های ثبت‌شده استخراج می‌شوند، نه از متن وضعیت.',
+      subtitle: 'مرحله‌ها از روی تاریخ‌های ثبت‌شده استخراج می‌شوند، نه از متن وضعیت. ' +
+        'هر عدد یعنی «به این مرحله رسیده یا از آن گذشته».',
       chart: function () {
         return Ch.hbar({
           data: data.funnel.map(function (f) {

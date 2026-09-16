@@ -182,8 +182,11 @@
     return w.U.normalize(q).split(' ').filter(Boolean);
   }
 
-  var STAGE_FIELD = {
-    assigned: 'deliveryDate', committee: 'committeeDate', notified: 'noticeLetterDate'
+  // «رسیده به این مرحله یا فراتر» — هم‌معنا با قیف گزارش
+  var STAGE_FIELDS = {
+    assigned: ['deliveryDate', 'committeeDate', 'noticeLetterDate'],
+    committee: ['committeeDate', 'noticeLetterDate'],
+    notified: ['noticeLetterDate']
   };
 
   function matches(rec, tokens, filters) {
@@ -193,12 +196,16 @@
       if (!filters[k] || !filters[k].length) continue;
       if (filters[k].indexOf(rec[k] || '') < 0) return false;
     }
-    if (filters._from && (!rec.intakeDate || rec.intakeDate < filters._from)) return false;
-    if (filters._to && (!rec.intakeDate || rec.intakeDate > filters._to)) return false;
+    if (filters._from || filters._to) {
+      var dv = rec[filters._dateField || 'intakeDate'];
+      if (!dv) return false;
+      if (filters._from && dv < filters._from) return false;
+      if (filters._to && dv > filters._to) return false;
+    }
     if (filters._idSet && !filters._idSet[rec.id]) return false;
     if (filters._stage && filters._stage !== 'all') {
-      var f = STAGE_FIELD[filters._stage];
-      if (f && !rec[f]) return false;
+      var fields = STAGE_FIELDS[filters._stage];
+      if (fields && !fields.some(function (f) { return !!rec[f]; })) return false;
     }
     for (var i = 0; i < tokens.length; i++) {
       if (rec._blob.indexOf(tokens[i]) < 0) return false;

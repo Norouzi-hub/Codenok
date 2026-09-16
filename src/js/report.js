@@ -66,22 +66,96 @@
   }
 
   // ------------------------------------------------------------ بازهٔ گزارش
-  var PRESETS = [
+
+  /** فیلدهای تاریخی که بازه می‌تواند بر مبنای آنها اعمال شود */
+  var DATE_BASES = [
+    { key: 'intakeDate', label: 'تاریخ ورود به دبیرخانه' },
+    { key: 'deliveryDate', label: 'تاریخ تحویل به کارشناس' },
+    { key: 'committeeDate', label: 'تاریخ طرح در کمیته' },
+    { key: 'noticeLetterDate', label: 'تاریخ ابلاغ رأی' },
+    { key: 'letterDate', label: 'تاریخ نامهٔ گزارش' }
+  ];
+
+  var STATIC_PRESETS = [
     { key: 'all', label: 'همهٔ پرونده‌ها' },
+    { key: 'month', label: 'ماه جاری' },
+    { key: 'quarter', label: 'فصل جاری' },
+    { key: 'ytd', label: 'از ابتدای سال جاری' },
     { key: '30', label: '۳۰ روز اخیر', days: 30 },
     { key: '90', label: '۹۰ روز اخیر', days: 90 },
     { key: '180', label: '۶ ماه اخیر', days: 180 },
     { key: '365', label: 'یک سال اخیر', days: 365 }
   ];
 
-  function rangeOf(preset, custom) {
+  var QUARTERS = ['بهار', 'تابستان', 'پاییز', 'زمستان'];
+
+  /** سال‌هایی که واقعاً در داده وجود دارند، بر مبنای فیلد تاریخ انتخابی */
+  function yearsInData(baseField) {
+    var seen = {};
+    M.state.cases.forEach(function (c) {
+      var d = c[baseField || 'intakeDate'];
+      if (d && J.unpack(d)) seen[d.slice(0, 4)] = true;
+    });
+    return Object.keys(seen).sort().reverse();
+  }
+
+  /**
+   * فهرست کامل پیش‌تنظیم‌ها. پیش‌تنظیم‌های نسبی («۳۰ روز اخیر») روی دادهٔ
+   * تاریخی کم‌فایده‌اند، پس سال‌ها و فصل‌های موجود در داده هم اضافه می‌شوند.
+   */
+  function presets(baseField) {
+    var list = STATIC_PRESETS.slice();
+    yearsInData(baseField).forEach(function (y) {
+      list.push({ key: 'y' + y, label: 'سال ' + w.U.toFaDigits(y), year: y });
+      QUARTERS.forEach(function (qLabel, qi) {
+        list.push({
+          key: 'q' + y + (qi + 1),
+          label: qLabel + ' ' + w.U.toFaDigits(y),
+          year: y, quarter: qi + 1
+        });
+      });
+    });
+    list.push({ key: 'custom', label: 'بازهٔ دلخواه…' });
+    return list;
+  }
+
+  function lastDayOf(jy, jm) {
+    return J.pack(jy, jm, J.monthLength(jy, jm));
+  }
+
+  function rangeOf(preset, custom, baseField) {
     if (preset === 'custom') {
       return { from: (custom && custom.from) || '', to: (custom && custom.to) || '' };
     }
-    var p = PRESETS.filter(function (x) { return x.key === preset; })[0];
-    if (!p || !p.days) return { from: '', to: '' };
-    var today = J.today();
-    return { from: addDays(today, -p.days), to: today };
+    var t = J.unpack(J.today());
+    var p = presets(baseField).filter(function (x) { return x.key === preset; })[0];
+    if (!p) return { from: '', to: '' };
+
+    if (p.days) {
+      var today = J.today();
+      return { from: addDays(today, -p.days), to: today };
+    }
+    if (p.key === 'month') {
+      return { from: J.pack(t.jy, t.jm, 1), to: lastDayOf(t.jy, t.jm) };
+    }
+    if (p.key === 'quarter') {
+      var q = Math.ceil(t.jm / 3);
+      return { from: J.pack(t.jy, (q - 1) * 3 + 1, 1), to: lastDayOf(t.jy, q * 3) };
+    }
+    if (p.key === 'ytd') {
+      return { from: J.pack(t.jy, 1, 1), to: J.today() };
+    }
+    if (p.quarter) {
+      var y = +p.year;
+      return {
+        from: J.pack(y, (p.quarter - 1) * 3 + 1, 1),
+        to: lastDayOf(y, p.quarter * 3)
+      };
+    }
+    if (p.year) {
+      return { from: J.pack(+p.year, 1, 1), to: lastDayOf(+p.year, 12) };
+    }
+    return { from: '', to: '' };
   }
 
   function previousRange(range) {
@@ -91,20 +165,29 @@
     return { from: addDays(range.from, -(span + 1)), to: addDays(range.from, -1) };
   }
 
-  /** برش داده بر اساس بازه و فیلترهای گزارش */
+  /**
+   * برش داده بر اساس بازه و فیلترهای گزارش.
+   * بازه روی «تاریخ مبنا» اعمال می‌شود؛ پرونده‌هایی که آن تاریخ را ندارند
+   * قابل قضاوت نیستند و کنار گذاشته می‌شوند — تعدادشان در نتیجه برمی‌گردد
+   * تا در رابط کاربری صادقانه نشان داده شود.
+   */
   function scope(opts) {
     var range = opts.range || { from: '', to: '' };
-    return M.state.cases.filter(function (c) {
+    var baseField = opts.baseField || 'intakeDate';
+    var undated = 0;
+    var cases = M.state.cases.filter(function (c) {
       if (opts.expert && (c.expert || '') !== opts.expert) return false;
       if (opts.year && (c.year || '') !== opts.year) return false;
       if (opts.placeType && (c.servicePlaceType || '') !== opts.placeType) return false;
       if (!range.from && !range.to) return true;
-      var d = c.intakeDate;
-      if (!d || !J.unpack(d)) return false;
+      var d = c[baseField];
+      if (!d || !J.unpack(d)) { undated++; return false; }
       if (range.from && d < range.from) return false;
       if (range.to && d > range.to) return false;
       return true;
     });
+    cases.undated = undated;
+    return cases;
   }
 
   // ------------------------------------------------------------------ سنجه‌ها
@@ -139,47 +222,125 @@
     };
   }
 
-  /** روند ماهانه: پرونده‌های وارده در برابر مختومه‌شده */
-  function monthlyTrend(cases) {
-    var keys = {};
-    cases.forEach(function (c) {
-      var k = monthKey(c.intakeDate);
-      if (k) keys[k] = true;
-      var ck = monthKey(closeDate(c));
-      if (ck) keys[ck] = true;
-    });
-    var all = Object.keys(keys).sort();
-    if (!all.length) return { x: [], intake: [], closed: [], months: [] };
-    var months = monthRange(all[0] + '01', all[all.length - 1] + '01');
-    if (months.length > 24) months = months.slice(months.length - 24);
+  var GRANULARITY = [
+    { key: 'month', label: 'ماهانه' },
+    { key: 'quarter', label: 'فصلی' },
+    { key: 'year', label: 'سالانه' }
+  ];
 
-    var intake = months.map(function () { return 0; });
-    var closed = months.map(function () { return 0; });
-    var pos = {};
-    months.forEach(function (k, i) { pos[k] = i; });
-    cases.forEach(function (c) {
-      var k = monthKey(c.intakeDate);
-      if (k && pos[k] != null) intake[pos[k]]++;
-      var ck = monthKey(closeDate(c));
-      if (ck && pos[ck] != null) closed[pos[ck]]++;
-    });
-    return { x: months.map(monthLabel), intake: intake, closed: closed, months: months };
+  /** کلید سطل زمانی یک تاریخ، بسته به تفکیک انتخابی */
+  function bucketKey(j8, granularity) {
+    if (!j8 || !J.unpack(j8)) return null;
+    if (granularity === 'year') return j8.slice(0, 4);
+    if (granularity === 'quarter') {
+      return j8.slice(0, 4) + 'Q' + Math.ceil(+j8.slice(4, 6) / 3);
+    }
+    return j8.slice(0, 6);
   }
 
-  /** قیف گردش‌کار — مرحله‌ها از روی تاریخ‌ها استخراج می‌شوند، نه متن وضعیت */
+  function bucketLabel(key, granularity) {
+    if (granularity === 'year') return w.U.toFaDigits(key);
+    if (granularity === 'quarter') {
+      var q = +key.slice(5);
+      return QUARTERS[q - 1] + ' ' + w.U.toFaDigits(key.slice(2, 4));
+    }
+    return monthLabel(key);
+  }
+
+  /** همهٔ سطل‌های پیوستهٔ بین دو کلید (تا جای خالی در محور نیفتد) */
+  function bucketRange(first, last, granularity) {
+    var out = [], guard = 0;
+    if (granularity === 'year') {
+      for (var y = +first; y <= +last && guard++ < 200; y++) out.push(String(y));
+      return out;
+    }
+    if (granularity === 'quarter') {
+      var cy = +first.slice(0, 4), cq = +first.slice(5);
+      var ey = +last.slice(0, 4), eq = +last.slice(5);
+      while ((cy < ey || (cy === ey && cq <= eq)) && guard++ < 400) {
+        out.push(String(cy) + 'Q' + cq);
+        cq += 1;
+        if (cq > 4) { cq = 1; cy += 1; }
+      }
+      return out;
+    }
+    return monthRange(first + '01', last + '01');
+  }
+
+  /**
+   * روند ورود در برابر اختتام، با تفکیک زمانی دلخواه.
+   * اگر تفکیک داده نشود، از طول بازه حدس زده می‌شود تا محور شلوغ نشود.
+   */
+  function trend(cases, granularity) {
+    var keysSeen = {};
+    var probe = [];
+    cases.forEach(function (c) {
+      if (c.intakeDate && J.unpack(c.intakeDate)) probe.push(c.intakeDate);
+      var cd = closeDate(c);
+      if (cd && J.unpack(cd)) probe.push(cd);
+    });
+    if (!probe.length) return { x: [], intake: [], closed: [], keys: [], granularity: 'month' };
+
+    if (!granularity || granularity === 'auto') {
+      probe.sort();
+      var months = monthRange(probe[0].slice(0, 6) + '01',
+        probe[probe.length - 1].slice(0, 6) + '01').length;
+      granularity = months > 36 ? 'year' : (months > 18 ? 'quarter' : 'month');
+    }
+
+    cases.forEach(function (c) {
+      var k = bucketKey(c.intakeDate, granularity);
+      if (k) keysSeen[k] = true;
+      var ck = bucketKey(closeDate(c), granularity);
+      if (ck) keysSeen[ck] = true;
+    });
+    var all = Object.keys(keysSeen).sort();
+    var keys = bucketRange(all[0], all[all.length - 1], granularity);
+    if (keys.length > 24) keys = keys.slice(keys.length - 24);
+
+    var pos = {};
+    keys.forEach(function (k, i) { pos[k] = i; });
+    var intake = keys.map(function () { return 0; });
+    var closed = keys.map(function () { return 0; });
+    cases.forEach(function (c) {
+      var k = bucketKey(c.intakeDate, granularity);
+      if (k && pos[k] != null) intake[pos[k]]++;
+      var ck = bucketKey(closeDate(c), granularity);
+      if (ck && pos[ck] != null) closed[pos[ck]]++;
+    });
+    return {
+      x: keys.map(function (k) { return bucketLabel(k, granularity); }),
+      intake: intake, closed: closed, keys: keys, granularity: granularity
+    };
+  }
+
+  /**
+   * قیف گردش‌کار. هر مرحله یعنی «به این مرحله رسیده یا از آن گذشته»، نه
+   * «دقیقاً این تاریخ را دارد» — وگرنه پرونده‌ای که تاریخ ارجاعش ثبت نشده
+   * ولی در کمیته مطرح شده، ترتیب قیف را می‌شکند.
+   */
+  var STAGES = [
+    { key: 'all', label: 'ثبت‌شده در دبیرخانه', fields: [] },
+    { key: 'assigned', label: 'ارجاع به کارشناس',
+      fields: ['deliveryDate', 'committeeDate', 'noticeLetterDate'] },
+    { key: 'committee', label: 'طرح در کمیته',
+      fields: ['committeeDate', 'noticeLetterDate'] },
+    { key: 'notified', label: 'ابلاغ رأی', fields: ['noticeLetterDate'] }
+  ];
+
+  function reachedStage(rec, stage) {
+    if (!stage.fields.length) return true;
+    return stage.fields.some(function (f) { return !!rec[f]; });
+  }
+
   function funnel(cases) {
     var total = cases.length;
-    var assigned = cases.filter(function (c) { return !!c.deliveryDate; }).length;
-    var committee = cases.filter(function (c) { return !!c.committeeDate; }).length;
-    var notified = cases.filter(function (c) { return !!c.noticeLetterDate; }).length;
-    return [
-      { label: 'ثبت‌شده در دبیرخانه', value: total, key: 'all' },
-      { label: 'ارجاع به کارشناس', value: assigned, key: 'assigned' },
-      { label: 'طرح در کمیته', value: committee, key: 'committee' },
-      { label: 'ابلاغ رأی', value: notified, key: 'notified' }
-    ].map(function (s) {
-      s.pct = total ? Math.round((s.value / total) * 100) : 0;
-      return s;
+    return STAGES.map(function (stage) {
+      var value = cases.filter(function (c) { return reachedStage(c, stage); }).length;
+      return {
+        label: stage.label, key: stage.key, value: value,
+        pct: total ? Math.round((value / total) * 100) : 0
+      };
     });
   }
 
@@ -407,22 +568,30 @@
 
   /** همهٔ داده‌های یک گزارش، یکجا */
   function build(opts) {
-    var range = rangeOf(opts.preset, opts.custom);
-    var cases = scope({
-      range: range, expert: opts.expert, year: opts.year, placeType: opts.placeType
-    });
+    var baseField = opts.baseField || 'intakeDate';
+    var range = rangeOf(opts.preset, opts.custom, baseField);
+    var scopeOpts = {
+      range: range, baseField: baseField, expert: opts.expert,
+      year: opts.year, placeType: opts.placeType
+    };
+    var cases = scope(scopeOpts);
     var prev = null;
     var pr = previousRange(range);
     if (pr) {
       prev = scope({
-        range: pr, expert: opts.expert, year: opts.year, placeType: opts.placeType
+        range: pr, baseField: baseField, expert: opts.expert,
+        year: opts.year, placeType: opts.placeType
       });
     }
     return {
       range: range,
+      baseField: baseField,
+      baseLabel: (DATE_BASES.filter(function (b) { return b.key === baseField; })[0] || {}).label,
+      prevRange: pr,
+      undated: cases.undated || 0,
       cases: cases,
       kpis: kpis(cases, prev),
-      trend: monthlyTrend(cases),
+      trend: trend(cases, opts.granularity),
       funnel: funnel(cases),
       status: byField(cases, 'status', 8),
       caseTypes: byField(cases, 'caseType', 4),
@@ -438,10 +607,13 @@
   }
 
   w.Report = {
-    PRESETS: PRESETS, build: build, rangeOf: rangeOf, previousRange: previousRange,
-    scope: scope, kpis: kpis, monthlyTrend: monthlyTrend, funnel: funnel,
+    DATE_BASES: DATE_BASES, GRANULARITY: GRANULARITY, presets: presets,
+    build: build, rangeOf: rangeOf, previousRange: previousRange,
+    scope: scope, kpis: kpis, trend: trend, funnel: funnel,
     byField: byField, durations: durations, aging: aging, experts: experts,
     findings: findings, isClosed: isClosed, closeDate: closeDate,
-    addDays: addDays, median: median, mean: mean, monthLabel: monthLabel
+    STAGES: STAGES, reachedStage: reachedStage,
+    addDays: addDays, median: median, mean: mean, monthLabel: monthLabel,
+    yearsInData: yearsInData
   };
 })(window);

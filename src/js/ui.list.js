@@ -78,9 +78,23 @@
       box.appendChild(details);
     });
 
-    // بازهٔ تاریخ ورود
+    // بازهٔ تاریخ، روی فیلد تاریخ انتخابی
     var range = el('div.filter-group.range');
-    range.appendChild(el('h4', { text: 'بازهٔ تاریخ ورود به دبیرخانه' }));
+    range.appendChild(el('h4', { text: 'بازهٔ زمانی' }));
+    var baseSel = el('select.input.small');
+    w.Report.DATE_BASES.forEach(function (b) {
+      baseSel.appendChild(el('option', {
+        value: b.key, text: b.label,
+        selected: b.key === (app.state.filters._dateField || 'intakeDate')
+      }));
+    });
+    baseSel.value = app.state.filters._dateField || 'intakeDate';
+    baseSel.addEventListener('change', function () {
+      app.state.filters._dateField = baseSel.value;
+      app.refresh();
+    });
+    range.appendChild(el('label.mini', { text: 'بر پایهٔ' }));
+    range.appendChild(baseSel);
     var from = w.DatePicker.field(app.state.filters._from || '', function (v) {
       if (v) app.state.filters._from = v; else delete app.state.filters._from;
       app.refresh();

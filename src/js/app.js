@@ -18,6 +18,7 @@
       lastResult: [],
       report: {
         preset: 'all', custom: { from: '', to: '' },
+        baseField: 'intakeDate', granularity: 'auto',
         expert: '', year: '', placeType: ''
       },
       reportData: null
@@ -85,8 +86,10 @@
   function applyReportScope(filters) {
     var data = app.state.reportData;
     if (!data || !data.range) return;
+    if (!data.range.from && !data.range.to) return;
     if (data.range.from) filters._from = data.range.from;
     if (data.range.to) filters._to = data.range.to;
+    filters._dateField = data.baseField || 'intakeDate';
   }
 
   app.clearFilterNote = function () {

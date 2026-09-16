@@ -289,8 +289,8 @@ function check(name, ok, extra) {
   check('دقیقاً یک عدد قهرمان در نما', rep.heroes === 1, 'hero=' + rep.heroes);
   check('کل سنجه با تعداد پرونده‌های برش می‌خواند', rep.total === rep.cases,
     rep.total + ' == ' + rep.cases);
-  check('قیف گردش‌کار نزولی است',
-    rep.funnel[0] >= rep.funnel[1] && rep.funnel[0] >= rep.funnel[2],
+  check('قیف گردش‌کار کاملاً نزولی است',
+    rep.funnel.every((v, i) => i === 0 || v <= rep.funnel[i - 1]),
     JSON.stringify(rep.funnel));
   check('جمع سطل‌های سنی برابر پرونده‌های باز تاریخ‌دار است',
     rep.agingSum === rep.openWithDate, rep.agingSum + ' == ' + rep.openWithDate);
@@ -383,6 +383,132 @@ function check(name, ok, extra) {
     Math.round(beforeW) + ' → ' + Math.round(afterW));
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.waitForTimeout(400);
+
+  console.log('\n— بازهٔ زمانی گزارش —');
+
+  const yearPreset = await page.evaluate(() => {
+    const years = window.Report.yearsInData('intakeDate');
+    const y = years[years.length - 1];              // قدیمی‌ترین سال موجود
+    window.App.state.report.preset = 'y' + y;
+    window.App.render();
+    const d = window.App.state.reportData;
+    return {
+      year: y, from: d.range.from, to: d.range.to,
+      total: d.kpis.total,
+      allInYear: d.cases.every(c => c.intakeDate.slice(0, 4) === y),
+      expected: window.Model.state.cases.filter(
+        c => c.intakeDate && c.intakeDate.slice(0, 4) === y).length
+    };
+  });
+  check('پیش‌تنظیم سال، بازهٔ درست شمسی می‌سازد',
+    yearPreset.from === yearPreset.year + '0101' &&
+    /^\d{4}12(29|30)$/.test(yearPreset.to),
+    yearPreset.from + ' تا ' + yearPreset.to);
+  check('برش سال فقط پرونده‌های همان سال را دارد',
+    yearPreset.allInYear && yearPreset.total === yearPreset.expected,
+    yearPreset.total + ' == ' + yearPreset.expected);
+
+  const quarterPreset = await page.evaluate(() => {
+    const years = window.Report.yearsInData('intakeDate');
+    const y = years[years.length - 1];
+    window.App.state.report.preset = 'q' + y + '2';   // تابستان
+    window.App.render();
+    const d = window.App.state.reportData;
+    return { from: d.range.from, to: d.range.to, y: y,
+      inRange: d.cases.every(c => c.intakeDate >= d.range.from &&
+        c.intakeDate <= d.range.to) };
+  });
+  check('پیش‌تنظیم فصل، سه ماه درست را می‌گیرد',
+    quarterPreset.from === quarterPreset.y + '0401' &&
+    quarterPreset.to === quarterPreset.y + '0631' && quarterPreset.inRange,
+    quarterPreset.from + ' تا ' + quarterPreset.to);
+
+  // تغییر تاریخ مبنا باید برش را عوض کند و بی‌تاریخ‌ها را گزارش کند
+  const baseSwitch = await page.evaluate(() => {
+    const st = window.App.state.report;
+    st.preset = 'all';
+    st.baseField = 'intakeDate';
+    window.App.render();
+    const onIntake = window.App.state.reportData.kpis.total;
+
+    const years = window.Report.yearsInData('committeeDate');
+    st.baseField = 'committeeDate';
+    st.preset = years.length ? 'y' + years[0] : 'all';
+    window.App.render();
+    const d = window.App.state.reportData;
+    return {
+      onIntake: onIntake, onCommittee: d.kpis.total, undated: d.undated,
+      label: d.baseLabel,
+      allHaveField: d.cases.every(c => !!c.committeeDate),
+      noCommittee: window.Model.state.cases.filter(c => !c.committeeDate).length
+    };
+  });
+  check('بازه روی «تاریخ طرح در کمیته» اعمال می‌شود',
+    baseSwitch.allHaveField && baseSwitch.label === 'تاریخ طرح در کمیته',
+    baseSwitch.onCommittee + ' پرونده، مبنا: ' + baseSwitch.label);
+  check('پرونده‌های فاقد تاریخ مبنا شمرده و گزارش می‌شوند',
+    baseSwitch.undated === baseSwitch.noCommittee && baseSwitch.undated > 0,
+    baseSwitch.undated + ' == ' + baseSwitch.noCommittee);
+  const rangeChip = await page.evaluate(() =>
+    (document.querySelector('.range-chip') || {}).textContent || '');
+  check('بازهٔ حل‌شده روی صفحه نوشته می‌شود',
+    rangeChip.includes('تاریخ طرح در کمیته'), rangeChip.trim());
+
+  // تفکیک زمانی نمودار روند
+  const gran = await page.evaluate(() => {
+    const st = window.App.state.report;
+    st.baseField = 'intakeDate';
+    st.preset = 'all';
+    const out = {};
+    ['month', 'quarter', 'year'].forEach(g => {
+      st.granularity = g;
+      window.App.render();
+      const t = window.App.state.reportData.trend;
+      out[g] = { n: t.x.length, first: t.x[0], sum: t.intake.reduce((a, b) => a + b, 0) };
+    });
+    st.granularity = 'auto';
+    window.App.render();
+    out.auto = window.App.state.reportData.trend.granularity;
+    return out;
+  });
+  check('تفکیک زمانی سطل‌ها را درشت‌تر می‌کند',
+    gran.month.n > gran.quarter.n && gran.quarter.n >= gran.year.n,
+    'ماهانه ' + gran.month.n + ' • فصلی ' + gran.quarter.n + ' • سالانه ' + gran.year.n);
+  check('مجموع در هر تفکیک ثابت می‌ماند',
+    gran.month.sum === gran.quarter.sum && gran.quarter.sum === gran.year.sum,
+    gran.month.sum + ' = ' + gran.quarter.sum + ' = ' + gran.year.sum);
+  check('تفکیک خودکار انتخاب معقول می‌کند',
+    ['month', 'quarter', 'year'].indexOf(gran.auto) >= 0, gran.auto);
+
+  // بازه باید به فهرست هم منتقل شود
+  const carried = await page.evaluate(() => {
+    const st = window.App.state.report;
+    const years = window.Report.yearsInData('intakeDate');
+    st.preset = 'y' + years[years.length - 1];
+    st.baseField = 'intakeDate';
+    window.App.render();
+    const d = window.App.state.reportData;
+    const target = d.status[0];
+    window.App.showCasesByField('status', target.key, target.label);
+    return {
+      from: window.App.state.filters._from,
+      field: window.App.state.filters._dateField,
+      rows: window.App.state.lastResult.length,
+      expected: d.cases.filter(c => (c.status || '') === target.key).length
+    };
+  });
+  check('بازهٔ گزارش به فهرست پرونده‌ها منتقل می‌شود',
+    !!carried.from && carried.field === 'intakeDate' &&
+    carried.rows === carried.expected,
+    carried.rows + ' == ' + carried.expected + '، مبنا ' + carried.field);
+
+  await page.evaluate(() => {
+    window.App.state.report.preset = 'all';
+    window.App.state.report.baseField = 'intakeDate';
+    window.App.goReport();
+  });
+  await page.waitForSelector('.chart-card');
+  await page.waitForTimeout(300);
 
   console.log('\n— خروجی و چاپ گزارش —');
   const dlRep = await Promise.all([
