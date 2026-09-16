@@ -255,6 +255,98 @@ function overflow(page) {
   check('هر چهار مقصد با نوار پایین باز می‌شوند و نشان‌دار می‌مانند',
     nav.every(Boolean), nav.filter(Boolean).length + ' از ۴');
 
+  console.log('\n— کار با لمس واقعی —');
+  // تا اینجا بیشتر با evaluate کار شد؛ اینجا همه‌چیز با tap انجام می‌شود
+  await page.tap('.tab-btn[data-nav="list"]');
+  await page.waitForSelector('.case-card');
+  await page.waitForTimeout(400);
+  const cardNo = await page.$eval('.case-card .reg-no', n => n.textContent);
+  await page.tap('.case-card');
+  await page.waitForSelector('.case-view');
+  await page.waitForTimeout(400);
+  const openedTitle = await page.$eval('.case-title', n => n.textContent);
+  check('لمس کارت، همان پرونده را باز می‌کند',
+    openedTitle.indexOf(cardNo) >= 0, openedTitle.trim());
+
+  // ویرایش و ذخیره با لمس
+  await page.evaluate(() => { window.App.state.formTab = 'person'; window.App.render(); });
+  await page.waitForSelector('.form-panel input.input');
+  const nameInput = await page.$('.form-panel input.input');
+  await nameInput.tap();
+  await nameInput.fill('آزمون لمسی');
+  await page.tap('.case-actions .btn.primary');
+  await page.waitForTimeout(700);
+  const savedTouch = await page.evaluate(() =>
+    JSON.stringify(window.Model.get(window.App.state.caseId)).indexOf('آزمون لمسی') >= 0);
+  check('ویرایش با لمس ذخیره می‌شود', savedTouch);
+
+  // تقویم با لمس: باز، انتخاب روز، بسته (تب پرونده، که فیلد تاریخ دارد)
+  await page.evaluate(() => { window.App.state.formTab = 'case'; window.App.render(); });
+  await page.waitForSelector('.date-field .date-btn');
+  await page.waitForTimeout(300);
+  await page.tap('.date-field .date-btn');
+  await page.waitForSelector('.dp-pop');
+  await page.waitForTimeout(400);
+  const days = await page.$$('.dp-cell:not(.empty)');
+  await days[10].tap();
+  await page.waitForTimeout(400);
+  const picked = await page.evaluate(() => ({
+    closed: document.querySelectorAll('.dp-pop').length === 0,
+    value: document.querySelector('.date-field .date-input').value
+  }));
+  check('تقویم با لمس باز می‌شود، تاریخ می‌نشیند و بسته می‌شود',
+    picked.closed && !!picked.value, picked.value);
+
+  // انتخاب دو کارت و اقدام دسته‌ای، تا آخر، با لمس
+  await page.tap('.tab-btn[data-nav="list"]');
+  await page.waitForSelector('.case-card');
+  await page.evaluate(() => { window.App.clearSelection(); window.App.render(); });
+  await page.waitForTimeout(400);
+  const boxes = await page.$$('.case-card .card-pick');
+  await boxes[0].tap();
+  await boxes[1].tap();
+  await page.waitForTimeout(300);
+  await page.tap('.sel-bar .btn.primary');
+  await page.waitForSelector('.bulk-dialog');
+  await page.waitForTimeout(400);
+  await page.selectOption('.bulk-row select', 'session');
+  await page.waitForTimeout(300);
+  const valueInput = await page.$('.bulk-value input');
+  await valueInput.tap();
+  await valueInput.fill('۹۹');
+  await valueInput.dispatchEvent('input');
+  await page.waitForTimeout(300);
+  const applyReady = await page.evaluate(() =>
+    ![...document.querySelectorAll('.modal-foot .btn')].pop().disabled);
+  check('دکمهٔ اعمال تا مقدار وارد نشود فعال نمی‌شود', applyReady);
+  await page.evaluate(() =>
+    [...document.querySelectorAll('.modal-foot .btn')].pop().click());
+  await page.waitForSelector('.btn.danger');
+  await page.waitForTimeout(400);
+  const confirmText = await page.$eval('.overlay:last-of-type .modal-body', n => n.textContent);
+  check('پیش از اعمال دسته‌ای، تأیید می‌خواهد',
+    confirmText.indexOf('پرونده ثبت می‌شود') >= 0);
+  await page.tap('.btn.danger');
+  await page.waitForTimeout(900);
+  const bulkTouch = await page.evaluate(() =>
+    window.Model.state.cases.filter(c => c.session === '۹۹').length);
+  check('اقدام دسته‌ای با لمس تا آخر انجام می‌شود', bulkTouch === 2,
+    bulkTouch + ' پرونده');
+
+  // ماندگاری همهٔ این کارها پس از رفرش
+  await page.reload();
+  await page.waitForSelector('.worklist');
+  await page.waitForTimeout(900);
+  const persistedTouch = await page.evaluate(() => ({
+    sessions: window.Model.state.cases.filter(c => c.session === '۹۹').length,
+    name: window.Model.state.cases.some(
+      c => JSON.stringify(c).indexOf('آزمون لمسی') >= 0),
+    notes: window.Notes.all().length
+  }));
+  check('کارهای انجام‌شده روی گوشی پس از رفرش می‌مانند',
+    persistedTouch.sessions === 2 && persistedTouch.name && persistedTouch.notes === 1,
+    JSON.stringify(persistedTouch));
+
   console.log('\n— چرخاندن گوشی و بازگشت به رایانه —');
   await page.setViewportSize({ width: 780, height: 390 });
   await page.waitForTimeout(500);

@@ -422,7 +422,7 @@ tools/
   test/person.js      تست لایهٔ شخص و چندپرونده‌ای بودن یک کارمند
   test/lock.js        تست رمز عبور و رمزنگاری داده‌ها
   test/workflow.js    تست یادداشت و پیگیری، و اقدام دسته‌ای
-  test/mobile.js      تست چیدمان موبایل روی صفحهٔ ۳۹۰ پیکسلی
+  test/mobile.js      تست چیدمان و کار با لمس روی صفحهٔ ۳۹۰ پیکسلی
 dist/
   parvandeha.html     ← فایل نهایی؛ همین را استفاده کنید
 ```
@@ -437,7 +437,7 @@ node tools/test/docs.js                  # تست مستندات
 node tools/test/person.js                # تست لایهٔ شخص
 node tools/test/lock.js                  # تست رمزنگاری
 node tools/test/workflow.js              # تست یادداشت/پیگیری و اقدام دسته‌ای
-node tools/test/mobile.js                # تست چیدمان موبایل
+node tools/test/mobile.js                # تست چیدمان و لمس روی موبایل
 ```
 
 ---
