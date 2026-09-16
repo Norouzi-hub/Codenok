@@ -29,8 +29,9 @@
       parts.push(v);
       if (f.type === 'date') parts.push(w.J.format(v, { latin: true }));
     });
-    // نام و نوع مستندات پیوست هم باید با جستجوی سراسری پیدا شوند
+    // نام مستندات و متن یادداشت‌ها هم باید با جستجوی سراسری پیدا شوند
     if (rec._docText) parts.push(rec._docText);
+    if (rec._noteText) parts.push(rec._noteText);
     return w.U.normalize(parts.join(' '));
   }
 
@@ -201,6 +202,75 @@
       w.Store.remove('cases', [id]),
       w.Store.put('history', [entry])
     ]).then(function () { markChange(); return true; });
+  }
+
+  /**
+   * اعمال یک تغییر روی چند پرونده با هم.
+   * مثلاً بعد از جلسهٔ کمیته، ثبت یک تاریخ برای پانزده پرونده.
+   * هر پرونده تغییر خودش را در تاریخچه می‌گیرد، پس بعداً معلوم است چه شد.
+   */
+  function bulkUpdate(ids, patch, note) {
+    var now = new Date().toISOString();
+    var touched = [], entries = [], unchanged = 0;
+
+    ids.forEach(function (id) {
+      var before = byId[id];
+      if (!before) return;
+      var merged = Object.assign({}, strip(before));
+      Object.keys(patch).forEach(function (k) {
+        var v = patch[k];
+        if (v === '' || v == null) delete merged[k]; else merged[k] = v;
+      });
+      var after = normalizeRecord(merged);
+      after.id = id;
+      after.createdAt = before.createdAt;
+      SYSTEM_KEYS.forEach(function (k) {
+        if (after[k] == null && before[k] != null) after[k] = before[k];
+      });
+      var changes = diff(before, after);
+      if (!changes.length) { unchanged++; return; }
+      after.updatedAt = now;
+      var idx = state.cases.indexOf(before);
+      index(after);
+      if (idx >= 0) state.cases[idx] = after; else state.cases.push(after);
+      touched.push(after);
+      entries.push({
+        id: w.U.uid(), caseId: id, caseNo: after.caseNo || '', at: now,
+        atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'bulk',
+        changes: changes, note: note || 'اقدام دسته‌ای'
+      });
+    });
+
+    state.history = state.history.concat(entries);
+    reindexHistory();
+    return Promise.all([
+      touched.length ? w.Store.put('cases', touched.map(strip)) : null,
+      entries.length ? w.Store.put('history', entries) : null
+    ]).then(function () {
+      if (touched.length) markChange();
+      return { changed: touched.length, unchanged: unchanged, total: ids.length };
+    });
+  }
+
+  /**
+   * پیش‌نمایش یک اقدام دسته‌ای، بدون تغییر دادن چیزی.
+   * می‌گوید روی چند پرونده اثر دارد و چندتا از قبل همین مقدار را دارند.
+   */
+  function previewBulk(ids, patch) {
+    var willChange = 0, already = 0, missing = 0;
+    ids.forEach(function (id) {
+      var before = byId[id];
+      if (!before) { missing++; return; }
+      var same = Object.keys(patch).every(function (k) {
+        var field = FIELD_BY_KEY[k];
+        var v = patch[k];
+        if (v === '' || v == null) return !before[k];
+        var normalized = field && field.type === 'date' ? w.J.parse(String(v)) : String(v).trim();
+        return String(before[k] || '') === normalized;
+      });
+      if (same) already++; else willChange++;
+    });
+    return { willChange: willChange, already: already, missing: missing, total: ids.length };
   }
 
   /** نسخهٔ قابل ذخیره (بدون فیلدهای کمکی) */
@@ -519,7 +589,7 @@
     load: load, reload: reload, clearMemory: clearMemory, seed: seed,
     bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
-    analyzeImport: analyzeImport,
+    analyzeImport: analyzeImport, bulkUpdate: bulkUpdate, previewBulk: previewBulk,
     idSet: idSet, reindex: index, addHistory: logEvent,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,

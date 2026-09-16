@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'parvandeha';
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
   var LS_KEY = 'parvandeha:snapshot';
   var SCHEMA_VERSION = 1;
 
@@ -15,9 +15,9 @@
   var mode = 'memory';          // idb | localStorage | memory
   // این انبارها محتوای پرونده‌ای دارند و وقتی رمز فعال باشد رمز می‌شوند.
   // انبار meta رمز نمی‌شود؛ خودِ تنظیمات قفل آنجاست.
-  var SECRET_STORES = ['cases', 'history', 'docs'];
-  var KEY_FIELD = { cases: 'id', history: 'id', docs: 'id' };
-  var mem = { cases: {}, history: {}, docs: {}, meta: {} };
+  var SECRET_STORES = ['cases', 'history', 'docs', 'notes'];
+  var KEY_FIELD = { cases: 'id', history: 'id', docs: 'id', notes: 'id' };
+  var mem = { cases: {}, history: {}, docs: {}, notes: {}, meta: {} };
 
   // ---------------------------------------------------------------- IndexedDB
 
@@ -44,6 +44,11 @@
           var ds = d.createObjectStore('docs', { keyPath: 'id' });
           ds.createIndex('caseId', 'caseId', { unique: false });
           ds.createIndex('chain', 'chain', { unique: false });
+        }
+        if (!d.objectStoreNames.contains('notes')) {
+          var ns = d.createObjectStore('notes', { keyPath: 'id' });
+          ns.createIndex('caseId', 'caseId', { unique: false });
+          ns.createIndex('followUp', 'followUp', { unique: false });
         }
       };
       req.onsuccess = function () { resolve(req.result); };
@@ -107,6 +112,7 @@
         cases: Object.keys(mem.cases).map(function (k) { return mem.cases[k]; }),
         history: Object.keys(mem.history).map(function (k) { return mem.history[k]; }),
         docs: Object.keys(mem.docs).map(function (k) { return mem.docs[k]; }),
+        notes: Object.keys(mem.notes).map(function (k) { return mem.notes[k]; }),
         meta: Object.keys(mem.meta).map(function (k) { return mem.meta[k]; })
       }));
       return true;
@@ -173,7 +179,7 @@
 
       if (db) { try { db.close(); } catch (e) { /* از قبل بسته */ } }
       db = null;
-      mem = { cases: {}, history: {}, docs: {}, meta: {} };
+      mem = { cases: {}, history: {}, docs: {}, notes: {}, meta: {} };
       dataLoaded = false;
       fileHandle = null;
       fileName = '';
@@ -195,8 +201,8 @@
   function dbName() { return DB_NAME; }
 
   function clearAll() {
-    mem = { cases: {}, history: {}, docs: {}, meta: mem.meta };
-    if (mode === 'idb') return idbClear(['cases', 'history', 'docs']);
+    mem = { cases: {}, history: {}, docs: {}, notes: {}, meta: mem.meta };
+    if (mode === 'idb') return idbClear(['cases', 'history', 'docs', 'notes']);
     if (mode === 'localStorage') lsWrite();
     return Promise.resolve();
   }
@@ -253,6 +259,7 @@
       cases: Object.keys(mem.cases).map(function (k) { return mem.cases[k]; }),
       history: Object.keys(mem.history).map(function (k) { return mem.history[k]; }),
       docs: Object.keys(mem.docs).map(function (k) { return mem.docs[k]; }),
+      notes: Object.keys(mem.notes).map(function (k) { return mem.notes[k]; }),
       meta: Object.keys(mem.meta)
         .filter(function (k) { return HANDLE_KEYS.indexOf(k) < 0; })
         .map(function (k) { return mem.meta[k]; })
@@ -377,17 +384,21 @@
   /** بارگذاری داده‌های پرونده‌ای؛ فقط وقتی قفل باز است */
   function loadData() {
     if (mode !== 'idb') { dataLoaded = true; return Promise.resolve(status()); }
-    return Promise.all([idbAll('cases'), idbAll('history'), idbAll('docs')])
+    return Promise.all([idbAll('cases'), idbAll('history'), idbAll('docs'),
+      idbAll('notes')])
       .then(function (res) {
-        return Promise.all([unsealAll(res[0]), unsealAll(res[1]), unsealAll(res[2])]);
+        return Promise.all([unsealAll(res[0]), unsealAll(res[1]), unsealAll(res[2]),
+          unsealAll(res[3])]);
       })
       .then(function (res) {
         mem.cases = {};
         mem.history = {};
         mem.docs = {};
+        mem.notes = {};
         (res[0] || []).forEach(function (c) { mem.cases[c.id] = c; });
         (res[1] || []).forEach(function (h) { mem.history[h.id] = h; });
         (res[2] || []).forEach(function (d) { mem.docs[d.id] = d; });
+        (res[3] || []).forEach(function (n) { mem.notes[n.id] = n; });
         dataLoaded = true;
         return relinkFile(false);
       })
@@ -414,6 +425,7 @@
         (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
         (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
         (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+        (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
       }
       return snap ? (snap.meta || []) : [];
     }).then(function (metas) {
@@ -439,6 +451,7 @@
       mem.cases = {};
       mem.history = {};
       mem.docs = {};
+      mem.notes = {};
       dataLoaded = false;
       fileHandle = null;
       fileName = '';
@@ -493,6 +506,8 @@
       return put('history', snap.history || []);
     }).then(function () {
       return (snap.docs && snap.docs.length) ? put('docs', snap.docs) : null;
+    }).then(function () {
+      return (snap.notes && snap.notes.length) ? put('notes', snap.notes) : null;
     }).then(function () {
       var metas = (snap.meta || []).filter(function (m) {
         return HANDLE_KEYS.indexOf(m.key) < 0;

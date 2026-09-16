@@ -16,6 +16,7 @@
       formTab: null,
       dirty: false,
       lastResult: [],
+      selected: {},
       report: {
         preset: 'all', custom: { from: '', to: '' },
         baseField: 'intakeDate', granularity: 'auto',
@@ -125,6 +126,22 @@
     if (data.range.to) filters._to = data.range.to;
     filters._dateField = data.baseField || 'intakeDate';
   }
+
+  /** انتخاب چندتایی برای اقدام دسته‌ای */
+  app.selectedIds = function () {
+    return Object.keys(app.state.selected).filter(function (k) {
+      return app.state.selected[k];
+    });
+  };
+
+  app.toggleSelect = function (id, on) {
+    if (on) app.state.selected[id] = true;
+    else delete app.state.selected[id];
+  };
+
+  app.clearSelection = function () {
+    app.state.selected = {};
+  };
 
   app.clearFilterNote = function () {
     app.state.filters = {};
@@ -333,6 +350,12 @@
   }
 
   // ------------------------------------------------------------- میان‌برها
+  function isTyping(t) {
+    if (!t) return false;
+    var tag = (t.tagName || '').toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select' || t.isContentEditable;
+  }
+
   function bindShortcuts() {
     document.addEventListener('keydown', function (e) {
       var ctrl = e.ctrlKey || e.metaKey;
@@ -360,6 +383,12 @@
       } else if (ctrl && e.key.toLowerCase() === 'g') {
         e.preventDefault();
         app.goReport();
+      } else if (ctrl && e.key.toLowerCase() === 'a' && app.state.view === 'list'
+        && !isTyping(e.target)) {
+        // انتخاب همهٔ نتیجه‌های همین جستجو، برای اقدام دسته‌ای
+        e.preventDefault();
+        (app.state.lastResult || []).forEach(function (r) { app.toggleSelect(r.id, true); });
+        app.render();
       } else if (e.key === 'Escape' && app.state.view === 'case' && !app.state.dirty) {
         app.goList();
       }
@@ -412,6 +441,7 @@
       // داده‌های رمزگشایی‌شده باید از حافظهٔ صفحه هم پاک شوند، نه فقط از انبار
       M.clearMemory();
       w.Docs.clearMemory();
+      w.Notes.clearMemory();
       w.Charts.reset();
       if (w.UIDocs) w.UIDocs.releaseThumbs();
       app.state.reportData = null;
@@ -453,6 +483,8 @@
       }
     }).then(function () {
       return w.Docs.load();
+    }).then(function () {
+      return w.Notes.load();
     }).then(function () {
       if (topBarNode.parentNode !== document.body) {
         document.body.insertBefore(topBarNode, mount);

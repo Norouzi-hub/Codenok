@@ -126,12 +126,25 @@
     var fields = M.state.columns.map(function (k) { return M.FIELD_BY_KEY[k]; })
       .filter(Boolean);
     // ستون ثابت گردش‌کار، پیش از ستون‌های انتخابی کاربر
-    var template = '104px ' + fields.map(function (f) {
+    var template = '38px 104px ' + fields.map(function (f) {
       return colWidth(f) + 'px';
     }).join(' ');
 
     var header = el('div.trow.thead');
     header.style.gridTemplateColumns = template;
+
+    // انتخاب همهٔ نتیجهٔ جاری، برای اقدام دسته‌ای
+    var allBox = el('input', {
+      type: 'checkbox', title: 'انتخاب همهٔ نتیجهٔ این جستجو',
+      checked: rows.length > 0 && rows.every(function (r) {
+        return app.state.selected[r.id];
+      })
+    });
+    allBox.addEventListener('change', function () {
+      rows.forEach(function (r) { app.toggleSelect(r.id, allBox.checked); });
+      app.render();
+    });
+    header.appendChild(el('div.th.th-pick', null, [allBox]));
     header.appendChild(el('div.th', { text: 'گردش‌کار', title: 'مرحله‌ای که پرونده در آن است' }));
     fields.forEach(function (f) {
       var active = app.state.sortKey === f.key;
@@ -203,6 +216,20 @@
       }
     });
     row.style.gridTemplateColumns = template;
+
+    var pick = el('input', {
+      type: 'checkbox', checked: !!app.state.selected[rec.id],
+      'aria-label': 'انتخاب پروندهٔ ' + (rec.caseNo || '')
+    });
+    pick.addEventListener('click', function (e) { e.stopPropagation(); });
+    pick.addEventListener('change', function () {
+      app.toggleSelect(rec.id, pick.checked);
+      row.classList.toggle('picked', pick.checked);
+      app.refreshSelectionBar();
+    });
+    if (pick.checked) row.classList.add('picked');
+    row.appendChild(el('div.td.td-pick', null, [pick]));
+
     row.appendChild(el('div.td.td-rail', null, [w.UIWorklist.rail(rec, 'mini')]));
     fields.forEach(function (f) {
       var text = cellText(rec, f);
@@ -279,11 +306,44 @@
         })
       ]);
 
+    // نوار اقدام دسته‌ای — فقط وقتی چیزی انتخاب شده باشد
+    var selBar = el('div.sel-bar');
+    app.refreshSelectionBar = function () {
+      var ids = app.selectedIds();
+      w.U.clear(selBar);
+      selBar.classList.toggle('on', ids.length > 0);
+      if (!ids.length) return;
+      selBar.appendChild(el('b.sel-count', {
+        text: w.U.toFaDigits(ids.length) + ' پرونده انتخاب شده'
+      }));
+      selBar.appendChild(el('div.spacer'));
+      selBar.appendChild(el('button.btn.small.ghost', {
+        type: 'button', text: 'خروجی اکسل از انتخاب‌شده‌ها',
+        onclick: function () {
+          w.UIMisc.exportExcel(ids.map(function (id) { return M.get(id); }));
+        }
+      }));
+      selBar.appendChild(el('button.btn.small.ghost', {
+        type: 'button', text: 'برداشتن انتخاب',
+        onclick: function () { app.clearSelection(); app.render(); }
+      }));
+      selBar.appendChild(el('button.btn.small.primary', {
+        type: 'button', text: 'اقدام دسته‌ای',
+        onclick: function () {
+          w.UIBulk.dialog(app, ids, 'انتخاب از فهرست', function () {
+            app.clearSelection();
+            app.render();
+          });
+        }
+      }));
+    };
+
     w.U.clear(mount);
     mount.appendChild(el('div.list-layout', null, [
       el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
-      el('section.list-main', null, [note, summary, body])
+      el('section.list-main', null, [note, summary, body, selBar])
     ]));
+    app.refreshSelectionBar();
   }
 
   w.UIList = { render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth };

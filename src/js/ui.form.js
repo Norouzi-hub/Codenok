@@ -86,7 +86,9 @@
     create: 'ثبت پرونده', update: 'ویرایش', delete: 'حذف',
     import: 'ورود از فایل', restore: 'بازیابی پشتیبان',
     'doc-add': 'افزودن سند', 'doc-version': 'نسخهٔ تازهٔ سند',
-    'doc-remove': 'حذف سند', 'doc-folder': 'تغییر پوشهٔ مستندات'
+    'doc-remove': 'حذف سند', 'doc-folder': 'تغییر پوشهٔ مستندات',
+    'doc-person': 'مدرک شخص', 'note-add': 'یادداشت', 'note-done': 'پیگیری انجام شد',
+    'note-remove': 'حذف یادداشت', 'bulk': 'اقدام دسته‌ای'
   };
 
   function kindLabel(kind) {
@@ -341,6 +343,10 @@
         return f.group === g.key && draft[f.key];
       }).length);
     });
+    makeTab('__notes', 'یادداشت و پیگیری',
+      existing ? w.Notes.forCase(existing.id).filter(function (n) {
+        return !n.done;
+      }).length : 0);
     makeTab('__docs', 'مستندات',
       existing ? w.Docs.current(existing.id).length : 0);
     makeTab('__history', 'تاریخچه و رویدادها',
@@ -363,6 +369,17 @@
 
     function renderPanel() {
       w.U.clear(panel);
+      if (activeTab === '__notes') {
+        panel.appendChild(w.UINotes.render(app, existing, function () {
+          renderPanel();
+          if (existing) {
+            setTabCount('__notes', w.Notes.forCase(existing.id).filter(function (n) {
+              return !n.done;
+            }).length);
+          }
+        }));
+        return;
+      }
       if (activeTab === '__docs') {
         panel.appendChild(w.UIDocs.render(app, existing, function () {
           renderPanel();
@@ -462,9 +479,35 @@
           })
         ]);
       }
+      // پیگیری دستی، اگر گذاشته شده، کنار اقدام خودکار می‌آید
+      var followUp = w.Notes.openFollowUp(existing.id);
+      var followNode = null;
+      if (followUp) {
+        var late = J.diffDays(J.today(), followUp.followUp) > 0;
+        followNode = el('div.case-next.follow' + (late ? '.late' : ''), null, [
+          el('span.case-next-label', {
+            text: 'پیگیری ' + J.format(followUp.followUp)
+          }),
+          el('span.case-next-meta', {
+            text: w.Notes.preview(followUp.text) + ' • ' +
+              w.UINotes.relativeDay(followUp.followUp)
+          }),
+          el('div.spacer'),
+          el('button.btn.small', {
+            type: 'button', text: 'انجام شد',
+            onclick: function () {
+              w.Notes.complete(followUp).then(function () {
+                app.state.formTab = activeTab;
+                app.render();
+              });
+            }
+          })
+        ]);
+      }
       return el('div.case-rail', null, [
         w.UIWorklist.rail(existing, 'full'),
-        next
+        next,
+        followNode
       ]);
     }
 

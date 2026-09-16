@@ -86,6 +86,16 @@
       el('span.wl-title', { text: bucket.label }),
       el('span.wl-owner', { text: bucket.owner }),
       el('span.spacer'),
+      el('button.btn.small.ghost.bucket-bulk', {
+        type: 'button', text: 'اقدام دسته‌ای',
+        title: 'یک تغییر روی همهٔ پرونده‌های این دسته',
+        onclick: function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          w.UIBulk.dialog(app, bucket.items.map(function (i) { return i.rec.id; }),
+            bucket.label, function () { app.render(); });
+        }
+      }),
       bucket.overdue ? el('span.wl-badge.late', {
         text: fa(bucket.overdue) + ' از مهلت گذشته'
       }) : null,
@@ -156,12 +166,53 @@
         el('span.wl-stat-label', { text: 'منتظر پاسخ دیگران' })
       ]),
       el('div.wl-stat', null, [
+        el('span.wl-stat-num', { text: fa(w.Notes.stats().openFollowUps) }),
+        el('span.wl-stat-label', { text: 'پیگیری باز' })
+      ]),
+      el('div.wl-stat', null, [
         el('span.wl-stat-num', { text: fa(sum.closed) }),
         el('span.wl-stat-label', { text: 'مختومه' })
       ])
     ]);
 
     var sections = [];
+
+    // پیگیری‌های دستی — اول از همه، چون قرارِ خودتان است نه حدسِ برنامه
+    var follow = w.Notes.dueFollowUps(true);
+    if (follow.length) {
+      sections.push(el('section.wl-section', null, [
+        el('div.wl-section-head', null, [
+          el('h2', { text: 'پیگیری‌های امروز' }),
+          el('p.wl-sub', { text: 'قرارهایی که خودتان روی پرونده‌ها گذاشته‌اید.' })
+        ]),
+        el('div.wl-rows.follow-rows', null, follow.map(function (f) {
+          return el('div.wl-row.follow-row' + (f.overdue ? '.overdue' : ''), null, [
+            el('button.follow-open', {
+              type: 'button',
+              onclick: function () {
+                app.state.formTab = '__notes';
+                app.openCase(f.rec.id);
+              }
+            }, [
+              caseNumber(f.rec),
+              el('span.wl-person', {
+                text: [f.rec.firstName, f.rec.lastName].filter(Boolean).join(' ') || 'بدون نام'
+              }),
+              el('span.follow-text', { text: w.Notes.preview(f.note.text) }),
+              el('span.wl-wait' + (f.overdue ? '.late' : ''), {
+                text: w.UINotes.relativeDay(f.note.followUp)
+              })
+            ]),
+            el('button.btn.small', {
+              type: 'button', text: 'انجام شد',
+              onclick: function () {
+                w.Notes.complete(f.note).then(function () { app.render(); });
+              }
+            })
+          ]);
+        }))
+      ]));
+    }
 
     sections.push(el('section.wl-pipe-card', null, [
       el('div.wl-section-head', null, [
@@ -189,9 +240,17 @@
             text: 'دفاعیه گرفته شده و استعلامی معطل نیست؛ فقط باید در دستور کار بیایند.'
           }),
           el('span.spacer'),
-          el('button.btn.small', {
+          el('button.btn.small.ghost', {
             type: 'button', text: 'چاپ دستور کار',
             onclick: function () { w.UIPrint.printAgenda(ready); }
+          }),
+          el('button.btn.small.primary', {
+            type: 'button', text: 'ثبت نتیجهٔ جلسه',
+            title: 'ثبت تاریخ و شمارهٔ جلسه برای همهٔ این پرونده‌ها با هم',
+            onclick: function () {
+              w.UIBulk.dialog(app, ready.map(function (r) { return r.id; }),
+                'آمادهٔ طرح در جلسه', function () { app.render(); });
+            }
           })
         ]),
         el('div.wl-rows', null, ready.map(function (rec) {
