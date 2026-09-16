@@ -837,6 +837,7 @@ select.input { cursor: pointer; }
 .finding-advice { font-size: 12.5px; color: var(--muted); margin: 2px 0 0; }
 .finding-count { font-size: 12px; color: var(--ink2); font-variant-numeric: tabular-nums; }
 /* شدت با آیکن و برچسب متنی همراه است؛ رنگ هرگز تنها حامل معنا نیست */
+.finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
 .sev-tag {
   font-size: 11px;
   padding: 1px 8px;
@@ -845,13 +846,87 @@ select.input { cursor: pointer; }
   white-space: nowrap;
 }
 .sev-critical { border-color: #eab6b6; }
-.sev-critical .sev-tag { color: #8f2020; border-color: #eab6b6; background: #fdf2f2; }
+.sev-critical .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
+.sev-tag { color: #8f2020; border-color: #eab6b6; background: #fdf2f2; }
 .sev-serious { border-color: #f2cdbc; }
-.sev-serious .sev-tag { color: #8a4323; border-color: #f2cdbc; background: #fdf4f0; }
+.sev-serious .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
+.sev-tag { color: #8a4323; border-color: #f2cdbc; background: #fdf4f0; }
 .sev-warning { border-color: #ecdbae; }
-.sev-warning .sev-tag { color: #7a5600; border-color: #ecdbae; background: #fdf9ef; }
+.sev-warning .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
+.sev-tag { color: #7a5600; border-color: #ecdbae; background: #fdf9ef; }
 .sev-good { border-color: #bfe0cd; }
-.sev-good .sev-tag { color: #15633b; border-color: #bfe0cd; background: #f1f9f4; }
+.sev-good .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
+.sev-tag { color: #15633b; border-color: #bfe0cd; background: #f1f9f4; }
+
+/* ---------------------------------------------------------------- اشخاص */
+.people-view, .person-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px 40px;
+  width: 100%;
+}
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.person-card {
+  font: inherit;
+  text-align: start;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: border-color .12s, transform .08s;
+}
+.person-card:hover { border-color: var(--brand); }
+.person-card:active { transform: translateY(1px); }
+.person-card.repeat { border-inline-start: 3px solid var(--brand); }
+.person-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.person-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person-meta { font-size: 11.5px; color: var(--muted); }
+.person-conflict { font-size: 11.5px; color: var(--warn); margin-top: 4px; }
+
+.person-summary { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.person-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.conflict-list { margin: 6px 0 0; padding-inline-start: 18px; font-size: 12.5px; }
+
+.person-cases-card, .person-timeline-card { margin-bottom: 14px; }
+.table-scroll { overflow-x: auto; }
+.person-cases { margin-top: 4px; min-width: 620px; }
+.person-cases th, .person-cases td { white-space: nowrap; }
+.person-case-row { cursor: pointer; }
+.person-case-row:hover td { background: var(--brand-soft); }
+.person-case-row:focus { outline: 2px solid var(--brand); outline-offset: -2px; }
+
+.person-profile { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px 14px; }
+.pp-item { display: flex; flex-direction: column; }
+.pp-label { font-size: 11px; color: var(--muted); }
+.pp-value { font-size: 13px; }
+
+.person-timeline .tl-date { flex-basis: 118px; }
+.person-timeline::before { inset-inline-start: 126px; }
+.case-tag {
+  font: inherit;
+  font-size: 11px;
+  background: #eef2f7;
+  border: 1px solid var(--line);
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 0 8px;
+  margin-inline-end: 6px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.case-tag:hover { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
 
 /* ---------------------------------------------------------------- مستندات */
 .doc-panel { font-size: 13px; }
@@ -937,6 +1012,28 @@ select.input { cursor: pointer; }
 .doc-versions { margin-top: 5px; font-size: 12px; }
 .doc-versions summary { cursor: pointer; color: var(--muted); }
 .doc-versions ul { margin: 4px 0 0; padding-inline-start: 18px; }
+
+.doc-shared {
+  border: 1px solid #bcd2ea;
+  background: #f7fafd;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.doc-shared-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.doc-shared-head h4 { margin: 0; }
+.doc-shared .doc-item { background: #fff; }
+.doc-section-title { margin: 0 0 8px; font-size: 13px; }
+.doc-scope {
+  font-size: 11px;
+  border: 1px solid #cfc3ea;
+  background: #f1edfa;
+  color: #4b338f;
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.doc-item.person-doc { border-color: #cfc3ea; }
 
 .linkish {
   font: inherit;
@@ -1032,6 +1129,7 @@ select.input { cursor: pointer; }
 
 /* ---------------------------------------------------------------- واکنش‌گرا */
 @media (max-width: 900px) {
+  .person-layout { grid-template-columns: 1fr; }
   .doc-add-fields { grid-template-columns: auto 1fr; }
   .doc-item { flex-wrap: wrap; }
   .hero-row { grid-template-columns: 1fr; }
@@ -3464,7 +3562,13 @@ window.SEED_CASES = [
     return out;
   }
 
+  /** هر تغییری در پرونده‌ها، نمایهٔ اشخاص را بی‌اعتبار می‌کند */
+  function invalidatePeople() {
+    if (w.Person) w.Person.invalidate();
+  }
+
   function markChange() {
+    invalidatePeople();
     state.settings.changesSinceBackup = (state.settings.changesSinceBackup || 0) + 1;
     w.Store.metaSet('settings', state.settings);
     w.Store.scheduleSave();
@@ -3618,14 +3722,10 @@ window.SEED_CASES = [
     return base;
   }
 
-  /** پرونده‌های دیگر همین فرد (بر اساس کد ملی یا کد پرسنلی) */
+  /** پرونده‌های دیگر همین فرد — تعریف واحد در لایهٔ «شخص» */
   function relatedCases(rec) {
-    var nid = rec.nationalId, pid = rec.personnelCode;
-    if (!nid && !pid) return [];
-    return state.cases.filter(function (c) {
-      return c.id !== rec.id &&
-        ((nid && c.nationalId === nid) || (pid && c.personnelCode === pid));
-    });
+    if (!w.Person) return [];
+    return w.Person.otherCases(rec);
   }
 
   function duplicateCaseNo(caseNo, excludeId) {
@@ -3672,6 +3772,7 @@ window.SEED_CASES = [
       state.cases = (res[0] || []).map(index);
       state.history = (res[1] || []);
       reindexHistory();
+      invalidatePeople();
       state.lists = w.Store.metaGet('lists', null) || JSON.parse(JSON.stringify(w.DEFAULT_LISTS));
       state.columns = w.Store.metaGet('columns', null) || w.DEFAULT_COLUMNS.slice();
       var saved = w.Store.metaGet('settings', null);
@@ -3701,6 +3802,7 @@ window.SEED_CASES = [
     state.cases = records;
     state.history = entries;
     reindexHistory();
+    invalidatePeople();
     return Promise.all([
       w.Store.put('cases', records.map(strip)),
       w.Store.put('history', entries)
@@ -5579,19 +5681,51 @@ else if (typeof exports === 'object'){
     add('critical', '⚠️', 'شمارهٔ پروندهٔ تکراری',
       'دو پرونده با یک شماره ثبت شده‌اند؛ یکی را اصلاح یا ادغام کنید.', dupes);
 
-    // ۷) تکرار تخلف: افرادی با بیش از یک پرونده
-    var byPerson = {};
-    cases.forEach(function (c) {
-      var k = (c.nationalId || '').trim();
-      if (!k) return;
-      (byPerson[k] = byPerson[k] || []).push(c);
+    // ۷) تکرار تخلف: یک کارمند ممکن است چند پرونده داشته باشد
+    var rp = w.Person.repeatStats(cases);
+    if (rp.repeaters.length) {
+      out.push({
+        severity: 'warning', icon: '🔁', title: 'افراد با بیش از یک پرونده',
+        advice: w.U.toFaDigits(rp.repeaters.length) + ' نفر مجموعاً ' +
+          w.U.toFaDigits(rp.repeatCases) + ' پرونده دارند. سابقهٔ تکرار تخلف در ' +
+          'تعیین نوع تنبیه مؤثر است؛ پیش از رأی بررسی شود.',
+        count: rp.repeaters.length, people: rp.repeaters,
+        ids: rp.repeaters.reduce(function (acc, p) {
+          return acc.concat(p.cases.map(function (c) { return c.id; }));
+        }, [])
+      });
+    }
+
+    // ۷-ب) پرونده‌های باز هم‌زمانِ یک نفر — بهتر است با هم دیده شوند
+    var concurrent = rp.repeaters.filter(function (p) {
+      return p.cases.filter(function (c) { return !isClosed(c); }).length > 1;
     });
-    var repeat = [];
-    Object.keys(byPerson).forEach(function (k) {
-      if (byPerson[k].length > 1) repeat = repeat.concat(byPerson[k]);
-    });
-    add('warning', '🔁', 'افراد با بیش از یک پرونده',
-      'سابقهٔ تکرار تخلف در تعیین نوع تنبیه مؤثر است؛ پیش از رأی بررسی شود.', repeat);
+    if (concurrent.length) {
+      out.push({
+        severity: 'serious', icon: '👥', title: 'اشخاص با چند پروندهٔ باز هم‌زمان',
+        advice: 'این افراد بیش از یک پروندهٔ در جریان دارند؛ رسیدگی هم‌زمان و ' +
+          'یکجا معمولاً درست‌تر از رأی جداگانه است.',
+        count: concurrent.length, people: concurrent,
+        ids: concurrent.reduce(function (acc, p) {
+          return acc.concat(p.cases.filter(function (c) { return !isClosed(c); })
+            .map(function (c) { return c.id; }));
+        }, [])
+      });
+    }
+
+    // ۷-ج) ناسازگاری مشخصات هویتی بین پرونده‌های یک نفر
+    var conflicted = rp.repeaters.filter(function (p) { return p.conflicts.length; });
+    if (conflicted.length) {
+      out.push({
+        severity: 'critical', icon: '🪪', title: 'ناسازگاری مشخصات هویتی',
+        advice: 'با یک کد ملی، در پرونده‌های مختلف مشخصات متفاوتی ثبت شده ' +
+          '(نام، نام پدر، شماره شناسنامه…). احتمالاً خطای ورود اطلاعات است.',
+        count: conflicted.length, people: conflicted,
+        ids: conflicted.reduce(function (acc, p) {
+          return acc.concat(p.cases.map(function (c) { return c.id; }));
+        }, [])
+      });
+    }
 
     // ۸) کیفیت داده: فیلدهای کلیدی خالی
     var KEY_FIELDS = [
@@ -5709,6 +5843,7 @@ else if (typeof exports === 'object'){
       durations: durations(cases),
       aging: aging(cases),
       experts: experts(cases),
+      repeat: w.Person.repeatStats(cases),
       docKinds: docKinds(cases),
       findings: findings(cases)
     };
@@ -5723,6 +5858,273 @@ else if (typeof exports === 'object'){
     STAGES: STAGES, reachedStage: reachedStage,
     addDays: addDays, median: median, mean: mean, monthLabel: monthLabel,
     yearsInData: yearsInData
+  };
+})(window);
+
+</script>
+<script>
+/* ==== js/person.js ==== */
+/*
+ * لایهٔ «شخص»: یک کارمند ممکن است چند پرونده داشته باشد.
+ * پرونده‌ها بر پایهٔ کد ملی (و در نبودش کد پرسنلی) به یک شخص گره می‌خورند.
+ */
+(function (w) {
+  'use strict';
+
+  var M = w.Model, J = w.J;
+
+  /** فیلدهای هویتی که باید بین پرونده‌های یک شخص یکسان باشند */
+  var IDENTITY_FIELDS = [
+    { key: 'firstName', label: 'نام' },
+    { key: 'lastName', label: 'نام خانوادگی' },
+    { key: 'fatherName', label: 'نام پدر' },
+    { key: 'idNumber', label: 'شماره شناسنامه' },
+    { key: 'personnelCode', label: 'کد پرسنلی' },
+    { key: 'gender', label: 'جنسیت' }
+  ];
+
+  /** فیلدهایی که با آخرین پرونده به‌روز می‌شوند (شغلی/سازمانی) */
+  var PROFILE_FIELDS = ['postTitle', 'jobTitle', 'jobGrade', 'jobNature',
+    'payrollPlace', 'orgUnit', 'servicePlace', 'servicePlaceType',
+    'contractType', 'employmentStatus', 'education', 'maritalStatus', 'phone'];
+
+  /**
+   * کلید یکتای شخص. کد ملی ارجح است؛ اگر نبود کد پرسنلی.
+   * پرونده‌ای که هیچ‌کدام را ندارد، شخص مستقل تلقی می‌شود (کلید null).
+   */
+  function keyOf(rec) {
+    var nid = w.U.toLatinDigits(rec.nationalId || '').replace(/\D/g, '');
+    if (nid) return 'n:' + nid;
+    var pc = w.U.toLatinDigits(rec.personnelCode || '').replace(/\D/g, '');
+    if (pc) return 'p:' + pc;
+    return null;
+  }
+
+  function fullName(rec) {
+    return [rec.firstName, rec.lastName].filter(Boolean).join(' ').trim();
+  }
+
+  /** ترتیب زمانی پرونده‌ها: تاریخ ورود، وگرنه شمارهٔ پرونده */
+  function sortCases(list) {
+    return list.slice().sort(function (a, b) {
+      var da = a.intakeDate || '', db = b.intakeDate || '';
+      if (da !== db) return da < db ? -1 : 1;
+      return String(a.caseNo || '').localeCompare(String(b.caseNo || ''), 'fa');
+    });
+  }
+
+  /**
+   * ناسازگاری مشخصات هویتی بین پرونده‌های یک شخص.
+   * با یک کد ملی نباید دو نام خانوادگی متفاوت ثبت شده باشد.
+   */
+  function conflicts(cases) {
+    var out = [];
+    IDENTITY_FIELDS.forEach(function (f) {
+      var seen = {};
+      cases.forEach(function (c) {
+        var v = String(c[f.key] || '').trim();
+        if (!v) return;
+        (seen[v] = seen[v] || []).push(c);
+      });
+      var values = Object.keys(seen);
+      if (values.length > 1) {
+        out.push({
+          field: f.key, label: f.label,
+          values: values.map(function (v) {
+            return {
+              value: v,
+              caseNos: seen[v].map(function (c) { return c.caseNo || '—'; })
+            };
+          })
+        });
+      }
+    });
+    return out;
+  }
+
+  /**
+   * پرتکرارترین مقدار یک فیلد بین پرونده‌های شخص.
+   * اگر در یک پرونده نام غلط تایپ شده باشد، نباید نام نمایشی شخص را عوض کند.
+   * در تساوی، مقدار تازه‌تر برنده است (چون فهرست به ترتیب زمانی است).
+   */
+  function dominant(orderedCases, key) {
+    var counts = {}, order = [];
+    orderedCases.forEach(function (c) {
+      var v = String(c[key] || '').trim();
+      if (!v) return;
+      if (counts[v] == null) { counts[v] = 0; order.push(v); }
+      counts[v]++;
+    });
+    if (!order.length) return '';
+    var best = order[0];
+    order.forEach(function (v) { if (counts[v] >= counts[best]) best = v; });
+    return best;
+  }
+
+  /** ساخت شیء شخص از روی پرونده‌هایش */
+  function build(key, cases) {
+    var ordered = sortCases(cases);
+    var latest = ordered[ordered.length - 1];
+    var names = [];
+    ordered.forEach(function (c) {
+      var n = fullName(c);
+      if (n && names.indexOf(n) < 0) names.push(n);
+    });
+    var open = ordered.filter(function (c) { return !w.Report.isClosed(c); });
+    var profile = {};
+    PROFILE_FIELDS.forEach(function (f) {
+      // آخرین مقدار ثبت‌شده، از تازه‌ترین پرونده به عقب
+      for (var i = ordered.length - 1; i >= 0; i--) {
+        if (ordered[i][f]) { profile[f] = ordered[i][f]; break; }
+      }
+    });
+    var name = [dominant(ordered, 'firstName'), dominant(ordered, 'lastName')]
+      .filter(Boolean).join(' ').trim();
+    return {
+      key: key,
+      nationalId: dominant(ordered, 'nationalId'),
+      personnelCode: dominant(ordered, 'personnelCode'),
+      name: name || fullName(latest) || 'بدون نام',
+      // همهٔ املاهای ثبت‌شدهٔ نام، تا جستجو با هر کدامشان جواب بدهد
+      aliases: names,
+      fatherName: dominant(ordered, 'fatherName'),
+      idNumber: dominant(ordered, 'idNumber'),
+      gender: dominant(ordered, 'gender'),
+      profile: profile,
+      cases: ordered,
+      caseCount: ordered.length,
+      openCount: open.length,
+      closedCount: ordered.length - open.length,
+      firstIntake: ordered[0].intakeDate || '',
+      lastIntake: latest.intakeDate || '',
+      conflicts: conflicts(ordered),
+      searchText: w.U.normalize([
+        name, names.join(' '),
+        dominant(ordered, 'nationalId'), dominant(ordered, 'personnelCode'),
+        ordered.map(function (c) { return c.caseNo; }).join(' '),
+        profile.orgUnit || '', profile.servicePlace || ''
+      ].join(' '))
+    };
+  }
+
+  // نمایه با هر تغییر در پرونده‌ها از سوی مدل باطل می‌شود؛ حدس‌زدن تغییر از
+  // روی داده قابل اتکا نیست (مثلاً اصلاح نام، طول رکورد را عوض نمی‌کند).
+  var cache = null;
+
+  function index() {
+    var groups = {};
+    var singles = [];
+    M.state.cases.forEach(function (rec) {
+      var k = keyOf(rec);
+      if (!k) { singles.push(rec); return; }
+      (groups[k] = groups[k] || []).push(rec);
+    });
+    var people = Object.keys(groups).map(function (k) {
+      return build(k, groups[k]);
+    });
+    // پرونده‌های بدون شناسه، هر کدام یک شخص جداگانه
+    singles.forEach(function (rec) {
+      people.push(build('c:' + rec.id, [rec]));
+    });
+    people.sort(function (a, b) {
+      if (b.caseCount !== a.caseCount) return b.caseCount - a.caseCount;
+      return String(a.name).localeCompare(String(b.name), 'fa');
+    });
+    return people;
+  }
+
+  function all() {
+    if (!cache) cache = index();
+    return cache;
+  }
+
+  function invalidate() { cache = null; }
+
+  function get(key) {
+    var found = all().filter(function (p) { return p.key === key; });
+    return found[0] || null;
+  }
+
+  function forCase(rec) {
+    if (!rec) return null;
+    var k = keyOf(rec);
+    return get(k || ('c:' + rec.id));
+  }
+
+  /** پرونده‌های دیگر همین شخص */
+  function otherCases(rec) {
+    var p = forCase(rec);
+    if (!p) return [];
+    return p.cases.filter(function (c) { return c.id !== rec.id; });
+  }
+
+  /** تایم‌لاین یکپارچهٔ همهٔ پرونده‌های یک شخص */
+  function timeline(person) {
+    var items = [];
+    person.cases.forEach(function (rec) {
+      M.timelineFor(rec).forEach(function (it) {
+        items.push({
+          caseNo: rec.caseNo || '—', caseId: rec.id,
+          type: it.type, date: it.date, label: it.label,
+          entry: it.entry, doc: it.doc, sortKey: it.sortKey
+        });
+      });
+    });
+    items.sort(function (a, b) { return a.sortKey < b.sortKey ? -1 : 1; });
+    return items;
+  }
+
+  /** فاصلهٔ روز بین پرونده‌های پیاپی یک شخص */
+  function intervals(person) {
+    var out = [];
+    for (var i = 1; i < person.cases.length; i++) {
+      var a = person.cases[i - 1].intakeDate, b = person.cases[i].intakeDate;
+      if (!a || !b) continue;
+      var d = J.diffDays(b, a);
+      if (d != null && d >= 0) out.push(d);
+    }
+    return out;
+  }
+
+  /** آمار تکرار تخلف روی یک برش از پرونده‌ها */
+  function repeatStats(cases) {
+    var groups = {};
+    cases.forEach(function (rec) {
+      var k = keyOf(rec) || ('c:' + rec.id);
+      (groups[k] = groups[k] || []).push(rec);
+    });
+    var buckets = [
+      { label: 'یک پرونده', value: 0, min: 1, max: 1 },
+      { label: 'دو پرونده', value: 0, min: 2, max: 2 },
+      { label: 'سه پرونده', value: 0, min: 3, max: 3 },
+      { label: 'چهار پرونده و بیشتر', value: 0, min: 4, max: Infinity }
+    ];
+    var repeaters = [];
+    Object.keys(groups).forEach(function (k) {
+      var n = groups[k].length;
+      for (var i = 0; i < buckets.length; i++) {
+        if (n >= buckets[i].min && n <= buckets[i].max) { buckets[i].value++; break; }
+      }
+      if (n > 1) {
+        var p = build(k, groups[k]);
+        repeaters.push(p);
+      }
+    });
+    repeaters.sort(function (a, b) { return b.caseCount - a.caseCount; });
+    return {
+      people: Object.keys(groups).length,
+      buckets: buckets,
+      repeaters: repeaters,
+      repeatCases: repeaters.reduce(function (a, p) { return a + p.caseCount; }, 0)
+    };
+  }
+
+  w.Person = {
+    IDENTITY_FIELDS: IDENTITY_FIELDS, PROFILE_FIELDS: PROFILE_FIELDS,
+    dominant: dominant,
+    keyOf: keyOf, fullName: fullName, all: all, get: get, forCase: forCase,
+    otherCases: otherCases, timeline: timeline, intervals: intervals,
+    conflicts: conflicts, repeatStats: repeatStats, invalidate: invalidate
   };
 })(window);
 
@@ -5746,6 +6148,15 @@ else if (typeof exports === 'object'){
     'مدارک هویتی', 'سایر'
   ];
 
+  /**
+   * انواعی که به «شخص» تعلق دارند نه به یک پروندهٔ خاص.
+   * یک کارمند ممکن است چند پرونده داشته باشد؛ شناسنامه و حکم کارگزینی‌اش
+   * نباید در هر پرونده دوباره بارگذاری شود.
+   */
+  var PERSON_KINDS = ['مدارک هویتی', 'حکم کارگزینی'];
+
+  var PERSON_ROOT = '_مدارک اشخاص';
+
   /** نوع سند → مرحلهٔ گردش‌کار، برای نشاندن سند در تایم‌لاین */
   var KIND_STAGE = {
     'نامهٔ وارده': 'intake', 'گزارش بازرسی': 'intake',
@@ -5758,6 +6169,7 @@ else if (typeof exports === 'object'){
 
   var docs = [];           // همهٔ رکوردهای فراداده
   var byCase = {};
+  var byPerson = {};
   var root = null;         // FileSystemDirectoryHandle پوشهٔ ریشه
   var rootName = '';
   var listeners = [];
@@ -5810,6 +6222,13 @@ else if (typeof exports === 'object'){
     var person = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
     var caseNo = w.U.toLatinDigits(rec.caseNo || '').trim();
     return safeName([caseNo, person].filter(Boolean).join(' - '), caseNo || rec.id);
+  }
+
+  /** پوشهٔ مدارک مشترک یک شخص: «کد ملی - نام و نام خانوادگی» */
+  function personFolderNameFor(person) {
+    var id = w.U.toLatinDigits(person.nationalId || person.personnelCode || '')
+      .replace(/\D/g, '');
+    return safeName([id, person.name].filter(Boolean).join(' - '), person.key);
   }
 
   function splitExt(fileName) {
@@ -5928,13 +6347,19 @@ else if (typeof exports === 'object'){
   // ----------------------------------------------------------- عملیات سند
   function indexDocs() {
     byCase = {};
+    byPerson = {};
     docs.forEach(function (d) {
+      if (d.scope === 'person') {
+        (byPerson[d.personKey] = byPerson[d.personKey] || []).push(d);
+        return;
+      }
+      if (!d.caseId) return;
       (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
     });
+    function byDate(a, b) { return (a.docDate || '') < (b.docDate || '') ? -1 : 1; }
+    Object.keys(byPerson).forEach(function (k) { byPerson[k].sort(byDate); });
     Object.keys(byCase).forEach(function (k) {
-      byCase[k].sort(function (a, b) {
-        return (a.docDate || '') < (b.docDate || '') ? -1 : 1;
-      });
+      byCase[k].sort(byDate);
       refreshSearchText(k);
     });
   }
@@ -5950,6 +6375,21 @@ else if (typeof exports === 'object'){
   }
 
   function forCase(caseId) { return byCase[caseId] || []; }
+
+  function forPerson(personKey) { return byPerson[personKey] || []; }
+
+  function currentForPerson(personKey) {
+    return forPerson(personKey).filter(function (d) { return !d.superseded; });
+  }
+
+  /** همهٔ اسناد یک شخص: مدارک مشترک + اسناد همهٔ پرونده‌هایش */
+  function allForPerson(person) {
+    var out = currentForPerson(person.key).slice();
+    person.cases.forEach(function (c) {
+      out = out.concat(current(c.id));
+    });
+    return out;
+  }
 
   function current(caseId) {
     return forCase(caseId).filter(function (d) { return !d.superseded; });
@@ -6010,6 +6450,55 @@ else if (typeof exports === 'object'){
     });
   }
 
+  /** پوشهٔ مدارک مشترک یک شخص، زیر پوشهٔ ریشه */
+  function personFolder(person, create) {
+    return requireRoot().then(function (r) {
+      return r.getDirectoryHandle(PERSON_ROOT, { create: !!create });
+    }).then(function (dir) {
+      return dir.getDirectoryHandle(personFolderNameFor(person), { create: !!create });
+    });
+  }
+
+  /**
+   * افزودن مدرک در سطح شخص. رویداد در تاریخچهٔ پرونده‌ای ثبت می‌شود که
+   * کاربر از آن اقدام کرده، ولی مدرک به همهٔ پرونده‌های آن شخص تعلق دارد.
+   */
+  function addPersonFile(person, file, meta, fromCase) {
+    return personFolder(person, true).then(function (dir) {
+      var wanted = fileNameFor(meta, file.name, null);
+      return uniqueName(dir, wanted).then(function (name) {
+        return dir.getFileHandle(name, { create: true }).then(function (fh) {
+          return fh.createWritable().then(function (wr) {
+            return wr.write(file).then(function () { return wr.close(); });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      var doc = {
+        id: w.U.uid(), chain: w.U.uid(),
+        scope: 'person', personKey: person.key,
+        personName: person.name,
+        folderName: PERSON_ROOT + '/' + personFolderNameFor(person),
+        fileName: name, originalName: file.name,
+        kind: meta.kind || 'مدارک هویتی', title: meta.title || '',
+        letterNo: meta.letterNo || '', docDate: meta.docDate || J.today(),
+        stage: '', size: file.size, mime: file.type || '',
+        version: 1, superseded: false,
+        addedAt: new Date().toISOString(), addedAtJalali: J.stamp(),
+        user: M.state.settings.user || 'کاربر'
+      };
+      docs.push(doc);
+      indexDocs();
+      return persist([doc]).then(function () {
+        if (fromCase) {
+          M.addHistory('doc-person', fromCase, [], doc.kind +
+            ' — مدرک شخص (مشترک بین همهٔ پرونده‌های این فرد): ' + doc.fileName);
+        }
+        return doc;
+      });
+    });
+  }
+
   /** نسخهٔ تازه از یک سند؛ نسخهٔ قبلی روی دیسک دست‌نخورده می‌ماند */
   function addVersion(rec, oldDoc, file) {
     var meta = {
@@ -6050,9 +6539,18 @@ else if (typeof exports === 'object'){
     });
   }
 
+  /** پوشهٔ نگهدارندهٔ یک سند، چه در سطح پرونده چه در سطح شخص */
+  function folderOf(doc) {
+    if (doc.scope === 'person') {
+      var person = w.Person.get(doc.personKey);
+      if (!person) return Promise.reject(new Error('شخص این سند پیدا نشد'));
+      return personFolder(person, false);
+    }
+    return caseFolder(M.get(doc.caseId), false);
+  }
+
   function openDoc(doc) {
-    var rec = M.get(doc.caseId);
-    return caseFolder(rec, false)
+    return folderOf(doc)
       .then(function (dir) { return dir.getFileHandle(doc.fileName); })
       .then(function (fh) { return fh.getFile(); })
       .then(function (file) {
@@ -6070,8 +6568,8 @@ else if (typeof exports === 'object'){
   }
 
   function removeDoc(doc) {
-    var rec = M.get(doc.caseId);
-    return caseFolder(rec, false).then(function (dir) {
+    var rec = doc.caseId ? M.get(doc.caseId) : null;
+    return folderOf(doc).then(function (dir) {
       return dir.removeEntry(doc.fileName).catch(function () { /* از قبل نبوده */ });
     }).catch(function () { /* پوشه در دسترس نیست */ })
       .then(function () {
@@ -6217,6 +6715,10 @@ else if (typeof exports === 'object'){
     addFile: addFile, addVersion: addVersion, openDoc: openDoc, removeDoc: removeDoc,
     scan: scan, register: register, renameFolder: renameFolder,
     hasStoredFolder: hasStoredFolder, storedFolderName: storedFolderName,
+    PERSON_KINDS: PERSON_KINDS, PERSON_ROOT: PERSON_ROOT,
+    forPerson: forPerson, currentForPerson: currentForPerson,
+    allForPerson: allForPerson, addPersonFile: addPersonFile,
+    personFolderNameFor: personFolderNameFor,
     folderMismatch: folderMismatch, folderNameFor: folderNameFor,
     fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
     indexDocs: indexDocs
@@ -7163,7 +7665,126 @@ else if (typeof exports === 'object'){
     run('گزارش عملکرد کمیتهٔ انضباطی');
   }
 
-  w.UIPrint = { printCase: printCase, printList: printList, printReport: printReport };
+  /** پروندهٔ یکپارچهٔ یک شخص: همهٔ پرونده‌ها، مدارک و گردش‌کار */
+  function printPerson(person) {
+    var node = area();
+    node.appendChild(header('پروندهٔ شخص — ' + person.name,
+      person.nationalId ? 'کد ملی ' + w.U.toFaDigits(person.nationalId) : ''));
+
+    var info = el('table.p-table');
+    [
+      ['تعداد پرونده', w.U.toFaDigits(person.caseCount)],
+      ['در جریان', w.U.toFaDigits(person.openCount)],
+      ['مختومه', w.U.toFaDigits(person.closedCount)],
+      ['کد پرسنلی', person.personnelCode ? w.U.toFaDigits(person.personnelCode) : '—'],
+      ['نام پدر', person.fatherName || '—'],
+      ['واحد سازمانی', person.profile.orgUnit || '—'],
+      ['نام شغل', person.profile.jobTitle || '—'],
+      ['نوع قرارداد', person.profile.contractType || '—']
+    ].forEach(function (r) {
+      info.appendChild(el('tr', null, [
+        el('th', { text: r[0] }), el('td', { text: r[1] })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'مشخصات فرد' }), info
+    ]));
+
+    if (person.conflicts.length) {
+      var cTable = el('table.p-table.p-list', null, [
+        el('tr', null, [el('th', { text: 'فیلد' }), el('th', { text: 'مقادیر ناسازگار' })])
+      ]);
+      person.conflicts.forEach(function (c) {
+        cTable.appendChild(el('tr', null, [
+          el('td', { text: c.label }),
+          el('td', {
+            text: c.values.map(function (v) {
+              return v.value + ' (پروندهٔ ' +
+                v.caseNos.map(function (n) { return w.U.toFaDigits(n); }).join('، ') + ')';
+            }).join(' — ')
+          })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'ناسازگاری مشخصات هویتی' }), cTable
+      ]));
+    }
+
+    var cases = el('table.p-table.p-list', null, [
+      el('tr', null, ['شماره پرونده', 'وضعیت', 'نوع', 'تاریخ ورود',
+        'طرح در کمیته', 'کارشناس'].map(function (h) { return el('th', { text: h }); }))
+    ]);
+    person.cases.forEach(function (rec) {
+      cases.appendChild(el('tr', null, [
+        el('td', { text: w.U.toFaDigits(rec.caseNo || '—') }),
+        el('td', { text: rec.status || '—' }),
+        el('td', { text: rec.caseType || '—' }),
+        el('td', { text: rec.intakeDate ? J.format(rec.intakeDate) : '—' }),
+        el('td', { text: rec.committeeDate ? J.format(rec.committeeDate) : '—' }),
+        el('td', { text: rec.expert || '—' })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'پرونده‌های این فرد' }), cases
+    ]));
+
+    var shared = w.Docs ? w.Docs.currentForPerson(person.key) : [];
+    if (shared.length) {
+      var dTable = el('table.p-table.p-list', null, [
+        el('tr', null, [el('th', { text: 'نوع مدرک' }), el('th', { text: 'تاریخ' }),
+          el('th', { text: 'نام فایل' })])
+      ]);
+      shared.forEach(function (d) {
+        dTable.appendChild(el('tr', null, [
+          el('td', { text: d.kind }),
+          el('td', { text: d.docDate ? J.format(d.docDate) : '' }),
+          el('td', { text: d.fileName })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'مدارک شخص' }), dTable
+      ]));
+    }
+
+    var items = w.Person.timeline(person);
+    if (items.length) {
+      var tl = el('table.p-table.p-list', null, [
+        el('tr', null, [el('th', { text: 'تاریخ' }), el('th', { text: 'پرونده' }),
+          el('th', { text: 'رویداد' })])
+      ]);
+      items.forEach(function (it) {
+        var what;
+        if (it.type === 'milestone') what = it.label;
+        else if (it.type === 'doc') what = it.doc.kind + ' — ' + it.doc.fileName;
+        else {
+          what = w.UIForm.kindLabel(it.entry.kind) +
+            (it.entry.note ? ' — ' + it.entry.note : '');
+        }
+        tl.appendChild(el('tr', null, [
+          el('td', {
+            text: it.type === 'history' ? it.entry.atJalali : J.format(it.date)
+          }),
+          el('td', { text: w.U.toFaDigits(it.caseNo) }),
+          el('td', { text: what })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'گردش‌کار یکپارچه' }), tl
+      ]));
+    }
+
+    node.appendChild(el('div.p-sign', null, [
+      el('div', { text: 'امضای کارشناس پرونده' }),
+      el('div', { text: 'امضای دبیر کمیته' })
+    ]));
+
+    run('پروندهٔ شخص ' + person.name);
+  }
+
+  w.UIPrint = {
+    printCase: printCase, printList: printList, printReport: printReport,
+    printPerson: printPerson
+  };
 })(window);
 
 </script>
@@ -7410,6 +8031,20 @@ else if (typeof exports === 'object'){
         })),
       widths: [26, 10, 12, 12, 20]
     });
+
+    if (data.repeat && data.repeat.repeaters.length) {
+      sheets.push({
+        name: 'تکرار تخلف',
+        rows: [['نام', 'کد ملی', 'تعداد پرونده', 'در جریان', 'مختومه',
+          'شماره پرونده‌ها']].concat(
+          data.repeat.repeaters.map(function (p) {
+            return [p.name, fa(p.nationalId), fa(p.caseCount), fa(p.openCount),
+              fa(p.closedCount),
+              p.cases.map(function (c) { return fa(c.caseNo || '—'); }).join('، ')];
+          })),
+        widths: [26, 16, 14, 12, 12, 40]
+      });
+    }
 
     if (data.docKinds && data.docKinds.length) {
       sheets.push({
@@ -7817,22 +8452,45 @@ else if (typeof exports === 'object'){
 
   // --------------------------------------------------- پنجرهٔ افزودن مستندات
   /** برای هر فایل یک ردیف با نوع، تاریخ، شمارهٔ نامه و عنوان */
-  function addDialog(rec, files, onDone) {
+  function addDialog(rec, files, onDone, opts) {
+    opts = opts || {};
+    var person = w.Person.forCase(rec);
+    var multiCase = person && person.caseCount > 1;
+
     var rows = files.map(function (file) {
       var guess = guessFromName(file.name);
       var state = {
         file: file,
-        kind: 'سایر',
+        kind: opts.kind || 'سایر',
         docDate: guess.docDate || rec.intakeDate || J.today(),
         letterNo: guess.letterNo || '',
-        title: ''
+        title: '',
+        scope: opts.scope || 'case'
       };
+
+      // سطح سند: این پرونده، یا مدرک مشترک شخص
+      var scopeSel = el('select.input.small');
+      scopeSel.appendChild(el('option', { value: 'case', text: 'فقط این پرونده' }));
+      scopeSel.appendChild(el('option', {
+        value: 'person',
+        text: 'مدرک شخص' + (multiCase
+          ? ' (مشترک بین ' + w.U.toFaDigits(person.caseCount) + ' پرونده)' : '')
+      }));
+      scopeSel.value = state.scope;
+      scopeSel.addEventListener('change', function () { state.scope = scopeSel.value; });
 
       var kindSel = el('select.input.small');
       D.kinds().forEach(function (k) {
         kindSel.appendChild(el('option', { value: k, text: k, selected: k === state.kind }));
       });
-      kindSel.addEventListener('change', function () { state.kind = kindSel.value; });
+      kindSel.addEventListener('change', function () {
+        state.kind = kindSel.value;
+        // مدارک هویتی و حکم کارگزینی به شخص تعلق دارند، نه به یک پرونده
+        if (!opts.scope) {
+          state.scope = D.PERSON_KINDS.indexOf(state.kind) >= 0 ? 'person' : 'case';
+          scopeSel.value = state.scope;
+        }
+      });
 
       var dateField = w.DatePicker.field(state.docDate, function (v) { state.docDate = v; });
       var letterInput = el('input.input.small', {
@@ -7852,6 +8510,7 @@ else if (typeof exports === 'object'){
         ]),
         el('div.doc-add-fields', null, [
           el('label.mini', { text: 'نوع سند' }), kindSel,
+          el('label.mini', { text: 'سطح سند' }), scopeSel,
           el('label.mini', { text: 'تاریخ سند' }), dateField,
           el('label.mini', { text: 'شمارهٔ نامه' }), letterInput,
           el('label.mini', { text: 'توضیح' }), titleInput
@@ -7862,8 +8521,9 @@ else if (typeof exports === 'object'){
 
     var body = el('div.doc-add', null,
       [el('p.muted.tiny', {
-        text: 'فایل‌ها در پوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
-          '» ذخیره می‌شوند و نامشان از همین مشخصات ساخته می‌شود.'
+        text: 'سند پرونده در پوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
+          '» ذخیره می‌شود و مدرک شخص در «' + D.PERSON_ROOT + '/' +
+          (person ? D.personFolderNameFor(person) : '') + '».'
       })].concat(rows.map(function (r) { return r.node; })));
 
     var m, busy = false;
@@ -7875,10 +8535,14 @@ else if (typeof exports === 'object'){
         save.textContent = 'در حال ذخیره…';
         rows.reduce(function (chain, r) {
           return chain.then(function () {
-            return D.addFile(rec, r.file, {
+            var meta = {
               kind: r.kind, docDate: r.docDate,
               letterNo: r.letterNo, title: r.title
-            });
+            };
+            if (r.scope === 'person' && person) {
+              return D.addPersonFile(person, r.file, meta, rec);
+            }
+            return D.addFile(rec, r.file, meta);
           });
         }, Promise.resolve()).then(function () {
           m.close();
@@ -7916,7 +8580,7 @@ else if (typeof exports === 'object'){
           D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
         }
       }),
-      el('button.btn.small.ghost', {
+      doc.scope === 'person' ? null : el('button.btn.small.ghost', {
         type: 'button', text: 'نسخهٔ جدید', title: 'نسخهٔ قبلی نگه داشته می‌شود',
         onclick: function () {
           pickFiles(false).then(function (files) {
@@ -7932,7 +8596,10 @@ else if (typeof exports === 'object'){
         type: 'button', text: 'حذف',
         onclick: function () {
           w.U.confirmBox('حذف سند',
-            'فایل «' + doc.fileName + '» از پوشهٔ پرونده هم پاک می‌شود. ادامه می‌دهید؟',
+            doc.scope === 'person'
+              ? 'این مدرک شخص است و از همهٔ پرونده‌های این فرد برداشته می‌شود. ' +
+                'فایل «' + doc.fileName + '» هم از پوشه پاک می‌شود. ادامه می‌دهید؟'
+              : 'فایل «' + doc.fileName + '» از پوشهٔ پرونده هم پاک می‌شود. ادامه می‌دهید؟',
             'حذف کن').then(function (ok) {
               if (!ok) return;
               return D.removeDoc(doc).then(function () {
@@ -7959,11 +8626,14 @@ else if (typeof exports === 'object'){
       }))
     ]) : null;
 
-    return el('li.doc-item' + (doc.missing ? '.missing' : ''), null, [
+    return el('li.doc-item' + (doc.missing ? '.missing' : '') +
+      (doc.scope === 'person' ? '.person-doc' : ''), null, [
       el('span.doc-icon', { text: iconFor(doc.fileName) }),
       el('div.doc-body', null, [
         el('div.doc-head', null, [
           el('span.doc-kind', { text: doc.kind }),
+          doc.scope === 'person'
+            ? el('span.doc-scope', { text: 'مدرک شخص' }) : null,
           doc.version > 1 ? el('span.doc-version', {
             text: 'نسخهٔ ' + w.U.toFaDigits(doc.version)
           }) : null,
@@ -8131,6 +8801,57 @@ else if (typeof exports === 'object'){
     });
     panel.appendChild(drop);
 
+    // مدارک مشترک شخص — یک کارمند ممکن است چند پرونده داشته باشد
+    var person = w.Person.forCase(rec);
+    if (person) {
+      var shared = D.currentForPerson(person.key);
+      var sharedBox = el('section.doc-shared', null, [
+        el('div.doc-shared-head', null, [
+          el('h4', {
+            text: 'مدارک شخص' + (person.caseCount > 1
+              ? ' — مشترک بین ' + w.U.toFaDigits(person.caseCount) + ' پرونده'
+              : '')
+          }),
+          el('div.spacer'),
+          el('button.btn.small.ghost', {
+            type: 'button', text: '＋ افزودن مدرک شخص',
+            onclick: function () {
+              pickFiles(true).then(function (files) {
+                if (files.length) {
+                  addDialog(rec, files, refresh,
+                    { scope: 'person', kind: 'مدارک هویتی' });
+                }
+              });
+            }
+          })
+        ])
+      ]);
+      if (shared.length) {
+        sharedBox.appendChild(el('ul.doc-list', null, shared.map(function (doc) {
+          return docRow(app, rec, doc, refresh);
+        })));
+      } else {
+        sharedBox.appendChild(el('p.muted.tiny', {
+          text: 'مدارکی مثل شناسنامه و حکم کارگزینی که به خود فرد تعلق دارند ' +
+            'اینجا یک بار ثبت می‌شوند و در همهٔ پرونده‌های او دیده می‌شوند.'
+        }));
+      }
+      panel.appendChild(sharedBox);
+      if (person.caseCount > 1) {
+        panel.appendChild(el('p.card-note', null, [
+          el('span', {
+            text: 'این فرد ' + w.U.toFaDigits(person.caseCount) + ' پرونده دارد. '
+          }),
+          el('button.linkish', {
+            type: 'button', text: 'دیدن پروندهٔ شخص',
+            onclick: function () { app.openPerson(person.key); }
+          })
+        ]));
+      }
+    }
+
+    panel.appendChild(el('h4.doc-section-title', { text: 'مستندات این پرونده' }));
+
     if (!list.length) {
       panel.appendChild(el('p.muted', { text: 'هنوز سندی برای این پرونده ثبت نشده است.' }));
       return panel;
@@ -8211,6 +8932,325 @@ else if (typeof exports === 'object'){
   }
 
   w.UIDocs = { render: render, iconFor: iconFor, sizeText: sizeText };
+})(window);
+
+</script>
+<script>
+/* ==== js/ui.person.js ==== */
+/* نمای اشخاص: فهرست کارمندان و پروندهٔ یکپارچهٔ هر شخص */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model, P = w.Person, D = w.Docs;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  // ------------------------------------------------------------ فهرست اشخاص
+  function renderList(app, mount) {
+    var q = w.U.normalize(app.state.q || '');
+    var tokens = q ? q.split(' ').filter(Boolean) : [];
+    var people = P.all().filter(function (p) {
+      return tokens.every(function (t) { return p.searchText.indexOf(t) >= 0; });
+    });
+
+    var repeaters = people.filter(function (p) { return p.caseCount > 1; });
+    var conflicted = people.filter(function (p) { return p.conflicts.length; });
+
+    var summary = el('div.result-bar', null, [
+      el('span.result-count', {
+        html: '<b>' + fa(people.length) + '</b> نفر' +
+          (repeaters.length
+            ? ' — <b>' + fa(repeaters.length) + '</b> نفر بیش از یک پرونده دارند' : '')
+      }),
+      el('div.spacer'),
+      conflicted.length ? el('span.pill.st-verdict', {
+        text: fa(conflicted.length) + ' مورد ناسازگاری مشخصات'
+      }) : null
+    ]);
+
+    var rows = el('div.person-grid');
+    people.forEach(function (p) {
+      rows.appendChild(el('button.person-card' + (p.caseCount > 1 ? '.repeat' : ''), {
+        type: 'button',
+        onclick: function () { app.openPerson(p.key); }
+      }, [
+        el('div.person-card-head', null, [
+          el('b.person-name', { text: p.name }),
+          p.caseCount > 1 ? el('span.badge', { text: fa(p.caseCount) + ' پرونده' }) : null
+        ]),
+        el('div.person-meta', {
+          text: [p.nationalId ? 'کد ملی ' + fa(p.nationalId) : null,
+            p.profile.orgUnit || null].filter(Boolean).join(' • ')
+        }),
+        p.aliases.length > 1 ? el('div.person-meta', {
+          text: 'ثبت‌شده با: ' + p.aliases.join(' / ')
+        }) : null,
+        el('div.person-meta', {
+          text: (p.openCount ? fa(p.openCount) + ' در جریان' : 'بدون پروندهٔ باز') +
+            (p.closedCount ? ' • ' + fa(p.closedCount) + ' مختومه' : '')
+        }),
+        p.conflicts.length ? el('div.person-conflict', {
+          text: '⚠ ناسازگاری در ' + p.conflicts.map(function (c) { return c.label; }).join('، ')
+        }) : null
+      ]));
+    });
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.people-view', null, [
+      summary,
+      people.length ? rows : el('div.empty-state', null, [
+        el('p', { text: 'شخصی پیدا نشد.' })
+      ])
+    ]));
+  }
+
+  // ------------------------------------------------------------- یک شخص
+  function conflictBox(app, person) {
+    if (!person.conflicts.length) return null;
+    return el('div.warn', null, [
+      el('div', null, [
+        el('b', { text: 'مشخصات هویتی بین پرونده‌ها یکسان نیست. ' }),
+        el('span', {
+          text: 'با یک کد ملی نباید چند مقدار متفاوت ثبت شده باشد؛ ' +
+            'احتمالاً خطای ورود اطلاعات است.'
+        }),
+        el('ul.conflict-list', null, person.conflicts.map(function (c) {
+          return el('li', null, [
+            el('b', { text: c.label + ': ' }),
+            el('span', {
+              text: c.values.map(function (v) {
+                return '«' + v.value + '» در پروندهٔ ' +
+                  v.caseNos.map(function (n) { return fa(n); }).join('، ');
+              }).join(' — ')
+            })
+          ]);
+        }))
+      ])
+    ]);
+  }
+
+  function casesTable(app, person) {
+    var table = el('table.c-table.person-cases', null, [
+      el('thead', null, [el('tr', null,
+        ['شماره پرونده', 'وضعیت', 'نوع', 'تاریخ ورود', 'طرح در کمیته', 'کارشناس', 'مستندات']
+          .map(function (h) { return el('th', { text: h }); }))])
+    ]);
+    var body = el('tbody');
+    person.cases.forEach(function (rec) {
+      var docCount = D.current(rec.id).length;
+      var tr = el('tr.person-case-row', {
+        tabindex: '0',
+        onclick: function () { app.openCase(rec.id); },
+        onkeydown: function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); app.openCase(rec.id); }
+        }
+      }, [
+        el('td', null, [el('b', { text: fa(rec.caseNo || '—') })]),
+        el('td', null, [el('span.pill.' + (w.UIList.statusClass(rec.status) || 'st-none'),
+          { text: rec.status || '—' })]),
+        el('td', { text: rec.caseType || '—' }),
+        el('td', { text: rec.intakeDate ? J.format(rec.intakeDate) : '—' }),
+        el('td', { text: rec.committeeDate ? J.format(rec.committeeDate) : '—' }),
+        el('td', { text: rec.expert || '—' }),
+        el('td', { text: docCount ? fa(docCount) : '—' })
+      ]);
+      body.appendChild(tr);
+    });
+    table.appendChild(body);
+    return table;
+  }
+
+  function profileCard(person) {
+    var pairs = [
+      ['کد ملی', person.nationalId ? fa(person.nationalId) : '—'],
+      ['کد پرسنلی', person.personnelCode ? fa(person.personnelCode) : '—'],
+      ['نام پدر', person.fatherName || '—'],
+      ['شماره شناسنامه', person.idNumber ? fa(person.idNumber) : '—'],
+      ['واحد سازمانی', person.profile.orgUnit || '—'],
+      ['محل خدمت', person.profile.servicePlace || '—'],
+      ['نام شغل', person.profile.jobTitle || '—'],
+      ['ماهیت شغل', person.profile.jobNature || '—'],
+      ['نوع قرارداد', person.profile.contractType || '—'],
+      ['وضعیت اشتغال', person.profile.employmentStatus || '—']
+    ];
+    return el('div.person-profile', null, pairs.map(function (p) {
+      return el('div.pp-item', null, [
+        el('span.pp-label', { text: p[0] }),
+        el('span.pp-value', { text: p[1] })
+      ]);
+    }));
+  }
+
+  function sharedDocs(app, person) {
+    var shared = D.currentForPerson(person.key);
+    var box = el('section.chart-card', null, [
+      el('div.card-head', null, [
+        el('div', null, [
+          el('h3', { text: 'مدارک شخص' }),
+          el('p.card-sub', {
+            text: 'مدارکی که به خود فرد تعلق دارند و در همهٔ پرونده‌هایش دیده می‌شوند.'
+          })
+        ])
+      ])
+    ]);
+    if (!shared.length) {
+      box.appendChild(el('p.muted.tiny', {
+        text: 'مدرکی در سطح شخص ثبت نشده است. از تب «مستندات» هر پرونده می‌توانید ' +
+          'مدرک شخص اضافه کنید.'
+      }));
+      return box;
+    }
+    box.appendChild(el('ul.doc-list', null, shared.map(function (doc) {
+      return el('li.doc-item.person-doc', null, [
+        el('span.doc-icon', { text: w.UIDocs.iconFor(doc.fileName) }),
+        el('div.doc-body', null, [
+          el('div.doc-head', null, [
+            el('span.doc-kind', { text: doc.kind }),
+            el('b.doc-title', { text: doc.title || doc.letterNo || doc.originalName })
+          ]),
+          el('div.doc-meta', {
+            text: [doc.docDate ? J.format(doc.docDate) : null,
+              w.UIDocs.sizeText(doc.size)].filter(Boolean).join(' • ')
+          })
+        ]),
+        el('div.doc-actions', null, [
+          el('button.btn.small', {
+            type: 'button', text: 'باز کردن',
+            onclick: function () {
+              D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+            }
+          })
+        ])
+      ]);
+    })));
+    return box;
+  }
+
+  function mergedTimeline(app, person) {
+    var items = P.timeline(person);
+    if (!items.length) return el('p.muted', { text: 'رویدادی ثبت نشده است.' });
+    var box = el('ol.timeline.person-timeline');
+    items.forEach(function (it) {
+      var caseTag = el('button.case-tag', {
+        type: 'button', text: fa(it.caseNo),
+        title: 'رفتن به پروندهٔ ' + fa(it.caseNo),
+        onclick: function (e) { e.stopPropagation(); app.openCase(it.caseId); }
+      });
+      var bodyNodes;
+      if (it.type === 'milestone') {
+        bodyNodes = [caseTag, el('b', { text: it.label })];
+      } else if (it.type === 'doc') {
+        bodyNodes = [caseTag,
+          el('span.doc-icon', { text: w.UIDocs.iconFor(it.doc.fileName) }),
+          el('b', { text: it.doc.kind }),
+          el('span.muted', {
+            text: ' — ' + (it.doc.title || it.doc.letterNo || it.doc.originalName) + ' '
+          }),
+          el('button.linkish', {
+            type: 'button', text: 'باز کردن',
+            onclick: function () {
+              D.openDoc(it.doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+            }
+          })];
+      } else {
+        var h = it.entry;
+        bodyNodes = [caseTag,
+          el('b', { text: w.UIForm.kindLabel(h.kind) }),
+          el('span.muted', { text: ' — ' + (h.user || 'کاربر') }),
+          h.note ? el('span.muted', { text: ' • ' + h.note }) : null];
+        if (h.changes && h.changes.length) {
+          bodyNodes.push(el('div.tl-changes', null, h.changes.map(function (ch) {
+            return el('div.tl-change', null, [
+              el('span.tl-field', { text: w.UIForm.cleanLabel(ch.label) + ': ' }),
+              el('span.tl-from', { text: ch.from || '(خالی)' }),
+              el('span.tl-arrow', { text: ' ← ' }),
+              el('span.tl-to', { text: ch.to || '(خالی)' })
+            ]);
+          })));
+        }
+      }
+      box.appendChild(el('li.tl-item.tl-' +
+        (it.type === 'milestone' ? 'milestone' : (it.type === 'doc' ? 'doc' : 'history')),
+        null, [
+          el('span.tl-date', {
+            text: it.type === 'history' ? (it.entry.atJalali || '') : J.format(it.date)
+          }),
+          el('span.tl-body', null, bodyNodes)
+        ]));
+    });
+    return box;
+  }
+
+  function renderOne(app, mount, key) {
+    var person = P.get(key);
+    if (!person) {
+      w.U.clear(mount);
+      mount.appendChild(el('div.empty-state', null, [
+        el('p', { text: 'این شخص دیگر پرونده‌ای ندارد.' }),
+        el('button.btn', { type: 'button', text: 'بازگشت به فهرست اشخاص',
+          onclick: function () { app.goPeople(); } })
+      ]));
+      return;
+    }
+
+    var gaps = P.intervals(person);
+    var summaryBits = [
+      fa(person.caseCount) + ' پرونده',
+      person.openCount ? fa(person.openCount) + ' در جریان' : null,
+      person.closedCount ? fa(person.closedCount) + ' مختومه' : null,
+      gaps.length ? 'کوتاه‌ترین فاصله بین دو پرونده ' +
+        fa(Math.min.apply(null, gaps)) + ' روز' : null
+    ].filter(Boolean).join(' • ');
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.person-view', null, [
+      el('div.case-head', null, [
+        el('h2.case-title', { text: person.name }),
+        el('div.case-actions', null, [
+          el('button.btn.ghost', {
+            type: 'button', text: '← فهرست اشخاص',
+            onclick: function () { app.goPeople(); }
+          }),
+          el('div.spacer'),
+          el('button.btn.ghost', {
+            type: 'button', text: 'چاپ پروندهٔ شخص',
+            onclick: function () { w.UIPrint.printPerson(person); }
+          })
+        ])
+      ]),
+      el('p.person-summary', { text: summaryBits }),
+      conflictBox(app, person),
+      // جدول پرونده‌ها تمام‌عرض است؛ ستون‌هایش از یک کارت باریک بیرون می‌زند
+      el('section.chart-card.person-cases-card', null, [
+        el('div.card-head', null, [el('div', null, [
+          el('h3', { text: 'پرونده‌های این فرد' }),
+          el('p.card-sub', { text: 'به ترتیب تاریخ ورود؛ روی هر سطر بزنید تا باز شود.' })
+        ])]),
+        el('div.table-scroll', null, [casesTable(app, person)])
+      ]),
+      el('div.person-layout', null, [
+        el('section.chart-card', null, [
+          el('div.card-head', null, [el('div', null, [
+            el('h3', { text: 'مشخصات فرد' }),
+            el('p.card-sub', { text: 'پرتکرارترین مقدار ثبت‌شده در پرونده‌های این فرد.' })
+          ])]),
+          profileCard(person)
+        ]),
+        sharedDocs(app, person)
+      ]),
+      el('section.chart-card.person-timeline-card', null, [
+        el('div.card-head', null, [el('div', null, [
+          el('h3', { text: 'گردش‌کار یکپارچه' }),
+          el('p.card-sub', {
+            text: 'رویدادهای همهٔ پرونده‌های این فرد، کنار هم و به ترتیب زمان.'
+          })
+        ])]),
+        mergedTimeline(app, person)
+      ])
+    ]));
+  }
+
+  w.UIPerson = { renderList: renderList, renderOne: renderOne };
 })(window);
 
 </script>
@@ -8468,10 +9508,20 @@ else if (typeof exports === 'object'){
             ]),
             el('p.finding-advice', { text: f.advice })
           ]),
-          f.ids && f.ids.length ? el('button.btn.small.ghost', {
-            type: 'button', text: 'نمایش پرونده‌ها',
-            onclick: function () { app.showCases(f.ids, f.title); }
-          }) : null
+          el('div.finding-actions', null, [
+            f.people && f.people.length === 1 ? el('button.btn.small.ghost', {
+              type: 'button', text: 'پروندهٔ شخص',
+              onclick: function () { app.openPerson(f.people[0].key); }
+            }) : null,
+            f.people && f.people.length > 1 ? el('button.btn.small.ghost', {
+              type: 'button', text: 'فهرست اشخاص',
+              onclick: function () { app.goPeople(); }
+            }) : null,
+            f.ids && f.ids.length ? el('button.btn.small.ghost', {
+              type: 'button', text: 'نمایش پرونده‌ها',
+              onclick: function () { app.showCases(f.ids, f.title); }
+            }) : null
+          ])
         ]);
       }))
     ]);
@@ -8698,6 +9748,43 @@ else if (typeof exports === 'object'){
       }
     }));
 
+    // تکرار تخلف — یک کارمند ممکن است چند پرونده داشته باشد
+    if (data.repeat.people) {
+      grid.appendChild(card({
+        title: 'تکرار تخلف',
+        subtitle: fa(data.repeat.people) + ' نفر در این برش؛ گروه‌بندی بر پایهٔ ' +
+          'کد ملی و در نبودش کد پرسنلی.',
+        chart: function () {
+          return Ch.hbar({
+            data: data.repeat.buckets, ramp: true, labelWidth: 160,
+            valueLabel: 'نفر'
+          });
+        },
+        footer: function () {
+          if (!data.repeat.repeaters.length) return null;
+          return el('p.card-note', null, [
+            el('span', { text: 'پرتکرارترین: ' }),
+            el('span', null, data.repeat.repeaters.slice(0, 5).map(function (p, i) {
+              return el('span', null, [
+                i ? el('span', { text: '، ' }) : null,
+                el('button.linkish', {
+                  type: 'button',
+                  text: p.name + ' (' + fa(p.caseCount) + ')',
+                  onclick: function () { app.openPerson(p.key); }
+                })
+              ]);
+            }))
+          ]);
+        },
+        table: function () {
+          return Ch.table(['تعداد پرونده', 'تعداد نفر'],
+            data.repeat.buckets.map(function (b) {
+              return [b.label, fa(b.value)];
+            }));
+        }
+      }));
+    }
+
     // مستندات — فقط وقتی سندی ثبت شده باشد
     if (data.docKinds.length) {
       grid.appendChild(card({
@@ -8763,7 +9850,7 @@ else if (typeof exports === 'object'){
 
   var app = {
     state: {
-      view: 'list',      // list | case | report
+      view: 'list',      // list | case | report | people | person
       caseId: null,
       q: '',
       filters: {},
@@ -8778,7 +9865,8 @@ else if (typeof exports === 'object'){
         baseField: 'intakeDate', granularity: 'auto',
         expert: '', year: '', placeType: ''
       },
-      reportData: null
+      reportData: null,
+      personKey: null
     }
   };
 
@@ -8792,6 +9880,29 @@ else if (typeof exports === 'object'){
     app.state.dirty = false;
     app.state.formTab = null;
     app.render();
+  };
+
+  app.goPeople = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'people';
+    app.state.caseId = null;
+    app.state.personKey = null;
+    app.render();
+  };
+
+  app.openPerson = function (key) {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'person';
+    app.state.personKey = key;
+    app.state.caseId = null;
+    app.render();
+    window.scrollTo(0, 0);
   };
 
   app.goReport = function () {
@@ -8889,6 +10000,10 @@ else if (typeof exports === 'object'){
       w.UIForm.render(app, mount, app.state.caseId);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
+    } else if (app.state.view === 'people') {
+      w.UIPerson.renderList(app, mount);
+    } else if (app.state.view === 'person') {
+      w.UIPerson.renderOne(app, mount, app.state.personKey);
     } else {
       w.UIList.render(app, mount);
     }
@@ -8896,11 +10011,15 @@ else if (typeof exports === 'object'){
     updateStatusChip();
   };
 
+  var NAV_FOR_VIEW = {
+    list: 'list', case: 'list', report: 'report', people: 'people', person: 'people'
+  };
+
   function updateNav() {
     if (!navButtons) return;
+    var active = NAV_FOR_VIEW[app.state.view] || 'list';
     Object.keys(navButtons).forEach(function (k) {
-      var active = (k === 'report') === (app.state.view === 'report');
-      navButtons[k].classList.toggle('active', active);
+      navButtons[k].classList.toggle('active', k === active);
     });
   }
 
@@ -8959,7 +10078,11 @@ else if (typeof exports === 'object'){
     });
     var onSearch = w.U.debounce(function () {
       app.state.q = searchInput.value;
-      if (app.state.view !== 'list') { app.state.view = 'list'; app.state.caseId = null; }
+      if (app.state.view === 'person') app.state.view = 'people';
+      else if (app.state.view !== 'list' && app.state.view !== 'people') {
+        app.state.view = 'list';
+        app.state.caseId = null;
+      }
       app.render();
     }, 150);
     searchInput.addEventListener('input', onSearch);
@@ -8973,6 +10096,11 @@ else if (typeof exports === 'object'){
       list: el('button.nav-btn.active', {
         type: 'button', text: 'فهرست پرونده‌ها',
         onclick: function () { app.goList(); }
+      }),
+      people: el('button.nav-btn', {
+        type: 'button', text: 'اشخاص',
+        title: 'یک کارمند ممکن است چند پرونده داشته باشد',
+        onclick: function () { app.goPeople(); }
       }),
       report: el('button.nav-btn', {
         type: 'button', text: 'گزارش‌ها',
@@ -8990,7 +10118,7 @@ else if (typeof exports === 'object'){
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),
-      el('nav.main-nav', null, [navButtons.list, navButtons.report]),
+      el('nav.main-nav', null, [navButtons.list, navButtons.people, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -9036,6 +10164,9 @@ else if (typeof exports === 'object'){
         e.preventDefault();
         if (app.state.view === 'case' && app.saveCurrentForm) app.saveCurrentForm();
         else w.UIMisc.exportJson();
+      } else if (ctrl && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        app.goPeople();
       } else if (ctrl && e.key.toLowerCase() === 'g') {
         e.preventDefault();
         app.goReport();

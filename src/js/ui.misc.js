@@ -240,6 +240,20 @@
       widths: [26, 10, 12, 12, 20]
     });
 
+    if (data.repeat && data.repeat.repeaters.length) {
+      sheets.push({
+        name: 'تکرار تخلف',
+        rows: [['نام', 'کد ملی', 'تعداد پرونده', 'در جریان', 'مختومه',
+          'شماره پرونده‌ها']].concat(
+          data.repeat.repeaters.map(function (p) {
+            return [p.name, fa(p.nationalId), fa(p.caseCount), fa(p.openCount),
+              fa(p.closedCount),
+              p.cases.map(function (c) { return fa(c.caseNo || '—'); }).join('، ')];
+          })),
+        widths: [26, 16, 14, 12, 12, 40]
+      });
+    }
+
     if (data.docKinds && data.docKinds.length) {
       sheets.push({
         name: 'مستندات',

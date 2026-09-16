@@ -509,19 +509,51 @@
     add('critical', '⚠️', 'شمارهٔ پروندهٔ تکراری',
       'دو پرونده با یک شماره ثبت شده‌اند؛ یکی را اصلاح یا ادغام کنید.', dupes);
 
-    // ۷) تکرار تخلف: افرادی با بیش از یک پرونده
-    var byPerson = {};
-    cases.forEach(function (c) {
-      var k = (c.nationalId || '').trim();
-      if (!k) return;
-      (byPerson[k] = byPerson[k] || []).push(c);
+    // ۷) تکرار تخلف: یک کارمند ممکن است چند پرونده داشته باشد
+    var rp = w.Person.repeatStats(cases);
+    if (rp.repeaters.length) {
+      out.push({
+        severity: 'warning', icon: '🔁', title: 'افراد با بیش از یک پرونده',
+        advice: w.U.toFaDigits(rp.repeaters.length) + ' نفر مجموعاً ' +
+          w.U.toFaDigits(rp.repeatCases) + ' پرونده دارند. سابقهٔ تکرار تخلف در ' +
+          'تعیین نوع تنبیه مؤثر است؛ پیش از رأی بررسی شود.',
+        count: rp.repeaters.length, people: rp.repeaters,
+        ids: rp.repeaters.reduce(function (acc, p) {
+          return acc.concat(p.cases.map(function (c) { return c.id; }));
+        }, [])
+      });
+    }
+
+    // ۷-ب) پرونده‌های باز هم‌زمانِ یک نفر — بهتر است با هم دیده شوند
+    var concurrent = rp.repeaters.filter(function (p) {
+      return p.cases.filter(function (c) { return !isClosed(c); }).length > 1;
     });
-    var repeat = [];
-    Object.keys(byPerson).forEach(function (k) {
-      if (byPerson[k].length > 1) repeat = repeat.concat(byPerson[k]);
-    });
-    add('warning', '🔁', 'افراد با بیش از یک پرونده',
-      'سابقهٔ تکرار تخلف در تعیین نوع تنبیه مؤثر است؛ پیش از رأی بررسی شود.', repeat);
+    if (concurrent.length) {
+      out.push({
+        severity: 'serious', icon: '👥', title: 'اشخاص با چند پروندهٔ باز هم‌زمان',
+        advice: 'این افراد بیش از یک پروندهٔ در جریان دارند؛ رسیدگی هم‌زمان و ' +
+          'یکجا معمولاً درست‌تر از رأی جداگانه است.',
+        count: concurrent.length, people: concurrent,
+        ids: concurrent.reduce(function (acc, p) {
+          return acc.concat(p.cases.filter(function (c) { return !isClosed(c); })
+            .map(function (c) { return c.id; }));
+        }, [])
+      });
+    }
+
+    // ۷-ج) ناسازگاری مشخصات هویتی بین پرونده‌های یک نفر
+    var conflicted = rp.repeaters.filter(function (p) { return p.conflicts.length; });
+    if (conflicted.length) {
+      out.push({
+        severity: 'critical', icon: '🪪', title: 'ناسازگاری مشخصات هویتی',
+        advice: 'با یک کد ملی، در پرونده‌های مختلف مشخصات متفاوتی ثبت شده ' +
+          '(نام، نام پدر، شماره شناسنامه…). احتمالاً خطای ورود اطلاعات است.',
+        count: conflicted.length, people: conflicted,
+        ids: conflicted.reduce(function (acc, p) {
+          return acc.concat(p.cases.map(function (c) { return c.id; }));
+        }, [])
+      });
+    }
 
     // ۸) کیفیت داده: فیلدهای کلیدی خالی
     var KEY_FIELDS = [
@@ -639,6 +671,7 @@
       durations: durations(cases),
       aging: aging(cases),
       experts: experts(cases),
+      repeat: w.Person.repeatStats(cases),
       docKinds: docKinds(cases),
       findings: findings(cases)
     };

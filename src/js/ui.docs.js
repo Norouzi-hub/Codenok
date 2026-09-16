@@ -51,22 +51,45 @@
 
   // --------------------------------------------------- پنجرهٔ افزودن مستندات
   /** برای هر فایل یک ردیف با نوع، تاریخ، شمارهٔ نامه و عنوان */
-  function addDialog(rec, files, onDone) {
+  function addDialog(rec, files, onDone, opts) {
+    opts = opts || {};
+    var person = w.Person.forCase(rec);
+    var multiCase = person && person.caseCount > 1;
+
     var rows = files.map(function (file) {
       var guess = guessFromName(file.name);
       var state = {
         file: file,
-        kind: 'سایر',
+        kind: opts.kind || 'سایر',
         docDate: guess.docDate || rec.intakeDate || J.today(),
         letterNo: guess.letterNo || '',
-        title: ''
+        title: '',
+        scope: opts.scope || 'case'
       };
+
+      // سطح سند: این پرونده، یا مدرک مشترک شخص
+      var scopeSel = el('select.input.small');
+      scopeSel.appendChild(el('option', { value: 'case', text: 'فقط این پرونده' }));
+      scopeSel.appendChild(el('option', {
+        value: 'person',
+        text: 'مدرک شخص' + (multiCase
+          ? ' (مشترک بین ' + w.U.toFaDigits(person.caseCount) + ' پرونده)' : '')
+      }));
+      scopeSel.value = state.scope;
+      scopeSel.addEventListener('change', function () { state.scope = scopeSel.value; });
 
       var kindSel = el('select.input.small');
       D.kinds().forEach(function (k) {
         kindSel.appendChild(el('option', { value: k, text: k, selected: k === state.kind }));
       });
-      kindSel.addEventListener('change', function () { state.kind = kindSel.value; });
+      kindSel.addEventListener('change', function () {
+        state.kind = kindSel.value;
+        // مدارک هویتی و حکم کارگزینی به شخص تعلق دارند، نه به یک پرونده
+        if (!opts.scope) {
+          state.scope = D.PERSON_KINDS.indexOf(state.kind) >= 0 ? 'person' : 'case';
+          scopeSel.value = state.scope;
+        }
+      });
 
       var dateField = w.DatePicker.field(state.docDate, function (v) { state.docDate = v; });
       var letterInput = el('input.input.small', {
@@ -86,6 +109,7 @@
         ]),
         el('div.doc-add-fields', null, [
           el('label.mini', { text: 'نوع سند' }), kindSel,
+          el('label.mini', { text: 'سطح سند' }), scopeSel,
           el('label.mini', { text: 'تاریخ سند' }), dateField,
           el('label.mini', { text: 'شمارهٔ نامه' }), letterInput,
           el('label.mini', { text: 'توضیح' }), titleInput
@@ -96,8 +120,9 @@
 
     var body = el('div.doc-add', null,
       [el('p.muted.tiny', {
-        text: 'فایل‌ها در پوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
-          '» ذخیره می‌شوند و نامشان از همین مشخصات ساخته می‌شود.'
+        text: 'سند پرونده در پوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
+          '» ذخیره می‌شود و مدرک شخص در «' + D.PERSON_ROOT + '/' +
+          (person ? D.personFolderNameFor(person) : '') + '».'
       })].concat(rows.map(function (r) { return r.node; })));
 
     var m, busy = false;
@@ -109,10 +134,14 @@
         save.textContent = 'در حال ذخیره…';
         rows.reduce(function (chain, r) {
           return chain.then(function () {
-            return D.addFile(rec, r.file, {
+            var meta = {
               kind: r.kind, docDate: r.docDate,
               letterNo: r.letterNo, title: r.title
-            });
+            };
+            if (r.scope === 'person' && person) {
+              return D.addPersonFile(person, r.file, meta, rec);
+            }
+            return D.addFile(rec, r.file, meta);
           });
         }, Promise.resolve()).then(function () {
           m.close();
@@ -150,7 +179,7 @@
           D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
         }
       }),
-      el('button.btn.small.ghost', {
+      doc.scope === 'person' ? null : el('button.btn.small.ghost', {
         type: 'button', text: 'نسخهٔ جدید', title: 'نسخهٔ قبلی نگه داشته می‌شود',
         onclick: function () {
           pickFiles(false).then(function (files) {
@@ -166,7 +195,10 @@
         type: 'button', text: 'حذف',
         onclick: function () {
           w.U.confirmBox('حذف سند',
-            'فایل «' + doc.fileName + '» از پوشهٔ پرونده هم پاک می‌شود. ادامه می‌دهید؟',
+            doc.scope === 'person'
+              ? 'این مدرک شخص است و از همهٔ پرونده‌های این فرد برداشته می‌شود. ' +
+                'فایل «' + doc.fileName + '» هم از پوشه پاک می‌شود. ادامه می‌دهید؟'
+              : 'فایل «' + doc.fileName + '» از پوشهٔ پرونده هم پاک می‌شود. ادامه می‌دهید؟',
             'حذف کن').then(function (ok) {
               if (!ok) return;
               return D.removeDoc(doc).then(function () {
@@ -193,11 +225,14 @@
       }))
     ]) : null;
 
-    return el('li.doc-item' + (doc.missing ? '.missing' : ''), null, [
+    return el('li.doc-item' + (doc.missing ? '.missing' : '') +
+      (doc.scope === 'person' ? '.person-doc' : ''), null, [
       el('span.doc-icon', { text: iconFor(doc.fileName) }),
       el('div.doc-body', null, [
         el('div.doc-head', null, [
           el('span.doc-kind', { text: doc.kind }),
+          doc.scope === 'person'
+            ? el('span.doc-scope', { text: 'مدرک شخص' }) : null,
           doc.version > 1 ? el('span.doc-version', {
             text: 'نسخهٔ ' + w.U.toFaDigits(doc.version)
           }) : null,
@@ -364,6 +399,57 @@
       if (files.length) addDialog(rec, files, refresh);
     });
     panel.appendChild(drop);
+
+    // مدارک مشترک شخص — یک کارمند ممکن است چند پرونده داشته باشد
+    var person = w.Person.forCase(rec);
+    if (person) {
+      var shared = D.currentForPerson(person.key);
+      var sharedBox = el('section.doc-shared', null, [
+        el('div.doc-shared-head', null, [
+          el('h4', {
+            text: 'مدارک شخص' + (person.caseCount > 1
+              ? ' — مشترک بین ' + w.U.toFaDigits(person.caseCount) + ' پرونده'
+              : '')
+          }),
+          el('div.spacer'),
+          el('button.btn.small.ghost', {
+            type: 'button', text: '＋ افزودن مدرک شخص',
+            onclick: function () {
+              pickFiles(true).then(function (files) {
+                if (files.length) {
+                  addDialog(rec, files, refresh,
+                    { scope: 'person', kind: 'مدارک هویتی' });
+                }
+              });
+            }
+          })
+        ])
+      ]);
+      if (shared.length) {
+        sharedBox.appendChild(el('ul.doc-list', null, shared.map(function (doc) {
+          return docRow(app, rec, doc, refresh);
+        })));
+      } else {
+        sharedBox.appendChild(el('p.muted.tiny', {
+          text: 'مدارکی مثل شناسنامه و حکم کارگزینی که به خود فرد تعلق دارند ' +
+            'اینجا یک بار ثبت می‌شوند و در همهٔ پرونده‌های او دیده می‌شوند.'
+        }));
+      }
+      panel.appendChild(sharedBox);
+      if (person.caseCount > 1) {
+        panel.appendChild(el('p.card-note', null, [
+          el('span', {
+            text: 'این فرد ' + w.U.toFaDigits(person.caseCount) + ' پرونده دارد. '
+          }),
+          el('button.linkish', {
+            type: 'button', text: 'دیدن پروندهٔ شخص',
+            onclick: function () { app.openPerson(person.key); }
+          })
+        ]));
+      }
+    }
+
+    panel.appendChild(el('h4.doc-section-title', { text: 'مستندات این پرونده' }));
 
     if (!list.length) {
       panel.appendChild(el('p.muted', { text: 'هنوز سندی برای این پرونده ثبت نشده است.' }));

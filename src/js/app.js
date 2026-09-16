@@ -6,7 +6,7 @@
 
   var app = {
     state: {
-      view: 'list',      // list | case | report
+      view: 'list',      // list | case | report | people | person
       caseId: null,
       q: '',
       filters: {},
@@ -21,7 +21,8 @@
         baseField: 'intakeDate', granularity: 'auto',
         expert: '', year: '', placeType: ''
       },
-      reportData: null
+      reportData: null,
+      personKey: null
     }
   };
 
@@ -35,6 +36,29 @@
     app.state.dirty = false;
     app.state.formTab = null;
     app.render();
+  };
+
+  app.goPeople = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'people';
+    app.state.caseId = null;
+    app.state.personKey = null;
+    app.render();
+  };
+
+  app.openPerson = function (key) {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'person';
+    app.state.personKey = key;
+    app.state.caseId = null;
+    app.render();
+    window.scrollTo(0, 0);
   };
 
   app.goReport = function () {
@@ -132,6 +156,10 @@
       w.UIForm.render(app, mount, app.state.caseId);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
+    } else if (app.state.view === 'people') {
+      w.UIPerson.renderList(app, mount);
+    } else if (app.state.view === 'person') {
+      w.UIPerson.renderOne(app, mount, app.state.personKey);
     } else {
       w.UIList.render(app, mount);
     }
@@ -139,11 +167,15 @@
     updateStatusChip();
   };
 
+  var NAV_FOR_VIEW = {
+    list: 'list', case: 'list', report: 'report', people: 'people', person: 'people'
+  };
+
   function updateNav() {
     if (!navButtons) return;
+    var active = NAV_FOR_VIEW[app.state.view] || 'list';
     Object.keys(navButtons).forEach(function (k) {
-      var active = (k === 'report') === (app.state.view === 'report');
-      navButtons[k].classList.toggle('active', active);
+      navButtons[k].classList.toggle('active', k === active);
     });
   }
 
@@ -202,7 +234,11 @@
     });
     var onSearch = w.U.debounce(function () {
       app.state.q = searchInput.value;
-      if (app.state.view !== 'list') { app.state.view = 'list'; app.state.caseId = null; }
+      if (app.state.view === 'person') app.state.view = 'people';
+      else if (app.state.view !== 'list' && app.state.view !== 'people') {
+        app.state.view = 'list';
+        app.state.caseId = null;
+      }
       app.render();
     }, 150);
     searchInput.addEventListener('input', onSearch);
@@ -216,6 +252,11 @@
       list: el('button.nav-btn.active', {
         type: 'button', text: 'فهرست پرونده‌ها',
         onclick: function () { app.goList(); }
+      }),
+      people: el('button.nav-btn', {
+        type: 'button', text: 'اشخاص',
+        title: 'یک کارمند ممکن است چند پرونده داشته باشد',
+        onclick: function () { app.goPeople(); }
       }),
       report: el('button.nav-btn', {
         type: 'button', text: 'گزارش‌ها',
@@ -233,7 +274,7 @@
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),
-      el('nav.main-nav', null, [navButtons.list, navButtons.report]),
+      el('nav.main-nav', null, [navButtons.list, navButtons.people, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -279,6 +320,9 @@
         e.preventDefault();
         if (app.state.view === 'case' && app.saveCurrentForm) app.saveCurrentForm();
         else w.UIMisc.exportJson();
+      } else if (ctrl && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        app.goPeople();
       } else if (ctrl && e.key.toLowerCase() === 'g') {
         e.preventDefault();
         app.goReport();

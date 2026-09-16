@@ -137,7 +137,13 @@
     return out;
   }
 
+  /** هر تغییری در پرونده‌ها، نمایهٔ اشخاص را بی‌اعتبار می‌کند */
+  function invalidatePeople() {
+    if (w.Person) w.Person.invalidate();
+  }
+
   function markChange() {
+    invalidatePeople();
     state.settings.changesSinceBackup = (state.settings.changesSinceBackup || 0) + 1;
     w.Store.metaSet('settings', state.settings);
     w.Store.scheduleSave();
@@ -291,14 +297,10 @@
     return base;
   }
 
-  /** پرونده‌های دیگر همین فرد (بر اساس کد ملی یا کد پرسنلی) */
+  /** پرونده‌های دیگر همین فرد — تعریف واحد در لایهٔ «شخص» */
   function relatedCases(rec) {
-    var nid = rec.nationalId, pid = rec.personnelCode;
-    if (!nid && !pid) return [];
-    return state.cases.filter(function (c) {
-      return c.id !== rec.id &&
-        ((nid && c.nationalId === nid) || (pid && c.personnelCode === pid));
-    });
+    if (!w.Person) return [];
+    return w.Person.otherCases(rec);
   }
 
   function duplicateCaseNo(caseNo, excludeId) {
@@ -345,6 +347,7 @@
       state.cases = (res[0] || []).map(index);
       state.history = (res[1] || []);
       reindexHistory();
+      invalidatePeople();
       state.lists = w.Store.metaGet('lists', null) || JSON.parse(JSON.stringify(w.DEFAULT_LISTS));
       state.columns = w.Store.metaGet('columns', null) || w.DEFAULT_COLUMNS.slice();
       var saved = w.Store.metaGet('settings', null);
@@ -374,6 +377,7 @@
     state.cases = records;
     state.history = entries;
     reindexHistory();
+    invalidatePeople();
     return Promise.all([
       w.Store.put('cases', records.map(strip)),
       w.Store.put('history', entries)

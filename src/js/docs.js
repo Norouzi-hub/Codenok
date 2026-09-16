@@ -15,6 +15,15 @@
     'مدارک هویتی', 'سایر'
   ];
 
+  /**
+   * انواعی که به «شخص» تعلق دارند نه به یک پروندهٔ خاص.
+   * یک کارمند ممکن است چند پرونده داشته باشد؛ شناسنامه و حکم کارگزینی‌اش
+   * نباید در هر پرونده دوباره بارگذاری شود.
+   */
+  var PERSON_KINDS = ['مدارک هویتی', 'حکم کارگزینی'];
+
+  var PERSON_ROOT = '_مدارک اشخاص';
+
   /** نوع سند → مرحلهٔ گردش‌کار، برای نشاندن سند در تایم‌لاین */
   var KIND_STAGE = {
     'نامهٔ وارده': 'intake', 'گزارش بازرسی': 'intake',
@@ -27,6 +36,7 @@
 
   var docs = [];           // همهٔ رکوردهای فراداده
   var byCase = {};
+  var byPerson = {};
   var root = null;         // FileSystemDirectoryHandle پوشهٔ ریشه
   var rootName = '';
   var listeners = [];
@@ -79,6 +89,13 @@
     var person = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
     var caseNo = w.U.toLatinDigits(rec.caseNo || '').trim();
     return safeName([caseNo, person].filter(Boolean).join(' - '), caseNo || rec.id);
+  }
+
+  /** پوشهٔ مدارک مشترک یک شخص: «کد ملی - نام و نام خانوادگی» */
+  function personFolderNameFor(person) {
+    var id = w.U.toLatinDigits(person.nationalId || person.personnelCode || '')
+      .replace(/\D/g, '');
+    return safeName([id, person.name].filter(Boolean).join(' - '), person.key);
   }
 
   function splitExt(fileName) {
@@ -197,13 +214,19 @@
   // ----------------------------------------------------------- عملیات سند
   function indexDocs() {
     byCase = {};
+    byPerson = {};
     docs.forEach(function (d) {
+      if (d.scope === 'person') {
+        (byPerson[d.personKey] = byPerson[d.personKey] || []).push(d);
+        return;
+      }
+      if (!d.caseId) return;
       (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
     });
+    function byDate(a, b) { return (a.docDate || '') < (b.docDate || '') ? -1 : 1; }
+    Object.keys(byPerson).forEach(function (k) { byPerson[k].sort(byDate); });
     Object.keys(byCase).forEach(function (k) {
-      byCase[k].sort(function (a, b) {
-        return (a.docDate || '') < (b.docDate || '') ? -1 : 1;
-      });
+      byCase[k].sort(byDate);
       refreshSearchText(k);
     });
   }
@@ -219,6 +242,21 @@
   }
 
   function forCase(caseId) { return byCase[caseId] || []; }
+
+  function forPerson(personKey) { return byPerson[personKey] || []; }
+
+  function currentForPerson(personKey) {
+    return forPerson(personKey).filter(function (d) { return !d.superseded; });
+  }
+
+  /** همهٔ اسناد یک شخص: مدارک مشترک + اسناد همهٔ پرونده‌هایش */
+  function allForPerson(person) {
+    var out = currentForPerson(person.key).slice();
+    person.cases.forEach(function (c) {
+      out = out.concat(current(c.id));
+    });
+    return out;
+  }
 
   function current(caseId) {
     return forCase(caseId).filter(function (d) { return !d.superseded; });
@@ -279,6 +317,55 @@
     });
   }
 
+  /** پوشهٔ مدارک مشترک یک شخص، زیر پوشهٔ ریشه */
+  function personFolder(person, create) {
+    return requireRoot().then(function (r) {
+      return r.getDirectoryHandle(PERSON_ROOT, { create: !!create });
+    }).then(function (dir) {
+      return dir.getDirectoryHandle(personFolderNameFor(person), { create: !!create });
+    });
+  }
+
+  /**
+   * افزودن مدرک در سطح شخص. رویداد در تاریخچهٔ پرونده‌ای ثبت می‌شود که
+   * کاربر از آن اقدام کرده، ولی مدرک به همهٔ پرونده‌های آن شخص تعلق دارد.
+   */
+  function addPersonFile(person, file, meta, fromCase) {
+    return personFolder(person, true).then(function (dir) {
+      var wanted = fileNameFor(meta, file.name, null);
+      return uniqueName(dir, wanted).then(function (name) {
+        return dir.getFileHandle(name, { create: true }).then(function (fh) {
+          return fh.createWritable().then(function (wr) {
+            return wr.write(file).then(function () { return wr.close(); });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      var doc = {
+        id: w.U.uid(), chain: w.U.uid(),
+        scope: 'person', personKey: person.key,
+        personName: person.name,
+        folderName: PERSON_ROOT + '/' + personFolderNameFor(person),
+        fileName: name, originalName: file.name,
+        kind: meta.kind || 'مدارک هویتی', title: meta.title || '',
+        letterNo: meta.letterNo || '', docDate: meta.docDate || J.today(),
+        stage: '', size: file.size, mime: file.type || '',
+        version: 1, superseded: false,
+        addedAt: new Date().toISOString(), addedAtJalali: J.stamp(),
+        user: M.state.settings.user || 'کاربر'
+      };
+      docs.push(doc);
+      indexDocs();
+      return persist([doc]).then(function () {
+        if (fromCase) {
+          M.addHistory('doc-person', fromCase, [], doc.kind +
+            ' — مدرک شخص (مشترک بین همهٔ پرونده‌های این فرد): ' + doc.fileName);
+        }
+        return doc;
+      });
+    });
+  }
+
   /** نسخهٔ تازه از یک سند؛ نسخهٔ قبلی روی دیسک دست‌نخورده می‌ماند */
   function addVersion(rec, oldDoc, file) {
     var meta = {
@@ -319,9 +406,18 @@
     });
   }
 
+  /** پوشهٔ نگهدارندهٔ یک سند، چه در سطح پرونده چه در سطح شخص */
+  function folderOf(doc) {
+    if (doc.scope === 'person') {
+      var person = w.Person.get(doc.personKey);
+      if (!person) return Promise.reject(new Error('شخص این سند پیدا نشد'));
+      return personFolder(person, false);
+    }
+    return caseFolder(M.get(doc.caseId), false);
+  }
+
   function openDoc(doc) {
-    var rec = M.get(doc.caseId);
-    return caseFolder(rec, false)
+    return folderOf(doc)
       .then(function (dir) { return dir.getFileHandle(doc.fileName); })
       .then(function (fh) { return fh.getFile(); })
       .then(function (file) {
@@ -339,8 +435,8 @@
   }
 
   function removeDoc(doc) {
-    var rec = M.get(doc.caseId);
-    return caseFolder(rec, false).then(function (dir) {
+    var rec = doc.caseId ? M.get(doc.caseId) : null;
+    return folderOf(doc).then(function (dir) {
       return dir.removeEntry(doc.fileName).catch(function () { /* از قبل نبوده */ });
     }).catch(function () { /* پوشه در دسترس نیست */ })
       .then(function () {
@@ -486,6 +582,10 @@
     addFile: addFile, addVersion: addVersion, openDoc: openDoc, removeDoc: removeDoc,
     scan: scan, register: register, renameFolder: renameFolder,
     hasStoredFolder: hasStoredFolder, storedFolderName: storedFolderName,
+    PERSON_KINDS: PERSON_KINDS, PERSON_ROOT: PERSON_ROOT,
+    forPerson: forPerson, currentForPerson: currentForPerson,
+    allForPerson: allForPerson, addPersonFile: addPersonFile,
+    personFolderNameFor: personFolderNameFor,
     folderMismatch: folderMismatch, folderNameFor: folderNameFor,
     fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
     indexDocs: indexDocs

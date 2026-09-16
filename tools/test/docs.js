@@ -313,6 +313,74 @@ function fakeFile(name, text) {
     renamed.fileCount + ' از ' + renamed.expectedCount);
   check('ارجاع اسناد به پوشهٔ تازه به‌روز شد', renamed.docsRepointed);
 
+  console.log('\n— مدارک شخص (مشترک بین پرونده‌ها) —');
+  const personDocs = await page.evaluate(async (fileExpr) => {
+    // دو پرونده برای یک کارمند
+    const a = window.Model.state.cases.find(c => c.caseNo === '1404380');
+    await window.Model.update(a.id, Object.assign({}, window.Model.strip(a),
+      { nationalId: '0055443322', firstName: 'سعید', lastName: 'موسوی' }));
+    const b = await window.Model.create({
+      caseNo: '1405900', nationalId: '0055443322',
+      firstName: 'سعید', lastName: 'موسوی', status: 'مفتوح رسیدگی',
+      intakeDate: '14050301'
+    });
+    const recA = window.Model.get(a.id);
+    const person = window.Person.forCase(recA);
+
+    const doc = await window.Docs.addPersonFile(person, eval(fileExpr),
+      { kind: 'مدارک هویتی', docDate: '14000101', title: 'شناسنامه' }, recA);
+
+    const tree = window.__tree();
+    const personRoot = tree[window.Docs.PERSON_ROOT] || {};
+    const folderName = window.Docs.personFolderNameFor(person);
+
+    return {
+      caseCount: person.caseCount,
+      folder: folderName,
+      storedUnderRoot: !!personRoot[folderName],
+      fileStored: !!(personRoot[folderName] || {})[doc.fileName],
+      fileName: doc.fileName,
+      // مدرک شخص نباید جزو اسناد هیچ‌کدام از پرونده‌ها شمرده شود
+      caseADocs: window.Docs.current(recA.id).some(d => d.id === doc.id),
+      caseBDocs: window.Docs.current(b.id).some(d => d.id === doc.id),
+      // ولی از هر دو پرونده دیده می‌شود
+      sharedFromA: window.Docs.currentForPerson(
+        window.Person.forCase(recA).key).length,
+      sharedFromB: window.Docs.currentForPerson(
+        window.Person.forCase(window.Model.get(b.id)).key).length,
+      allForPerson: window.Docs.allForPerson(window.Person.forCase(recA)).length,
+      history: window.Model.historyFor(recA.id).some(h => h.kind === 'doc-person'),
+      docId: doc.id
+    };
+  }, fakeFile('id-card.pdf'));
+  check('دو پروندهٔ یک کارمند به یک شخص گره خوردند',
+    personDocs.caseCount === 2, personDocs.caseCount + ' پرونده');
+  check('مدرک شخص در پوشهٔ جدا و به نام «کد ملی - نام» ذخیره شد',
+    personDocs.storedUnderRoot && personDocs.fileStored &&
+    personDocs.folder === '0055443322 - سعید موسوی',
+    personDocs.folder + '/' + personDocs.fileName);
+  check('مدرک شخص جزو اسناد هیچ پروندهٔ خاصی شمرده نمی‌شود',
+    !personDocs.caseADocs && !personDocs.caseBDocs);
+  check('همان مدرک از هر دو پرونده دیده می‌شود',
+    personDocs.sharedFromA === 1 && personDocs.sharedFromB === 1,
+    personDocs.sharedFromA + ' و ' + personDocs.sharedFromB);
+  check('رویداد مدرک شخص در تاریخچه ثبت شد', personDocs.history);
+
+  const personDocRemoved = await page.evaluate(async (docId) => {
+    const doc = window.Docs.all().find(d => d.id === docId);
+    const person = window.Person.get(doc.personKey);
+    const before = (window.__tree()[window.Docs.PERSON_ROOT] || {})[
+      window.Docs.personFolderNameFor(person)] || {};
+    const had = !!before[doc.fileName];
+    await window.Docs.removeDoc(doc);
+    const after = (window.__tree()[window.Docs.PERSON_ROOT] || {})[
+      window.Docs.personFolderNameFor(person)] || {};
+    return { had: had, gone: !after[doc.fileName],
+      left: window.Docs.currentForPerson(person.key).length };
+  }, personDocs.docId);
+  check('حذف مدرک شخص، فایلش را از پوشهٔ شخص پاک می‌کند',
+    personDocRemoved.had && personDocRemoved.gone && personDocRemoved.left === 0);
+
   console.log('\n— تأیید دوبارهٔ دسترسی —');
   const regrant = await page.evaluate(async () => {
     const before = window.Docs.status();

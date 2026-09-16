@@ -243,5 +243,124 @@
     run('گزارش عملکرد کمیتهٔ انضباطی');
   }
 
-  w.UIPrint = { printCase: printCase, printList: printList, printReport: printReport };
+  /** پروندهٔ یکپارچهٔ یک شخص: همهٔ پرونده‌ها، مدارک و گردش‌کار */
+  function printPerson(person) {
+    var node = area();
+    node.appendChild(header('پروندهٔ شخص — ' + person.name,
+      person.nationalId ? 'کد ملی ' + w.U.toFaDigits(person.nationalId) : ''));
+
+    var info = el('table.p-table');
+    [
+      ['تعداد پرونده', w.U.toFaDigits(person.caseCount)],
+      ['در جریان', w.U.toFaDigits(person.openCount)],
+      ['مختومه', w.U.toFaDigits(person.closedCount)],
+      ['کد پرسنلی', person.personnelCode ? w.U.toFaDigits(person.personnelCode) : '—'],
+      ['نام پدر', person.fatherName || '—'],
+      ['واحد سازمانی', person.profile.orgUnit || '—'],
+      ['نام شغل', person.profile.jobTitle || '—'],
+      ['نوع قرارداد', person.profile.contractType || '—']
+    ].forEach(function (r) {
+      info.appendChild(el('tr', null, [
+        el('th', { text: r[0] }), el('td', { text: r[1] })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'مشخصات فرد' }), info
+    ]));
+
+    if (person.conflicts.length) {
+      var cTable = el('table.p-table.p-list', null, [
+        el('tr', null, [el('th', { text: 'فیلد' }), el('th', { text: 'مقادیر ناسازگار' })])
+      ]);
+      person.conflicts.forEach(function (c) {
+        cTable.appendChild(el('tr', null, [
+          el('td', { text: c.label }),
+          el('td', {
+            text: c.values.map(function (v) {
+              return v.value + ' (پروندهٔ ' +
+                v.caseNos.map(function (n) { return w.U.toFaDigits(n); }).join('، ') + ')';
+            }).join(' — ')
+          })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'ناسازگاری مشخصات هویتی' }), cTable
+      ]));
+    }
+
+    var cases = el('table.p-table.p-list', null, [
+      el('tr', null, ['شماره پرونده', 'وضعیت', 'نوع', 'تاریخ ورود',
+        'طرح در کمیته', 'کارشناس'].map(function (h) { return el('th', { text: h }); }))
+    ]);
+    person.cases.forEach(function (rec) {
+      cases.appendChild(el('tr', null, [
+        el('td', { text: w.U.toFaDigits(rec.caseNo || '—') }),
+        el('td', { text: rec.status || '—' }),
+        el('td', { text: rec.caseType || '—' }),
+        el('td', { text: rec.intakeDate ? J.format(rec.intakeDate) : '—' }),
+        el('td', { text: rec.committeeDate ? J.format(rec.committeeDate) : '—' }),
+        el('td', { text: rec.expert || '—' })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'پرونده‌های این فرد' }), cases
+    ]));
+
+    var shared = w.Docs ? w.Docs.currentForPerson(person.key) : [];
+    if (shared.length) {
+      var dTable = el('table.p-table.p-list', null, [
+        el('tr', null, [el('th', { text: 'نوع مدرک' }), el('th', { text: 'تاریخ' }),
+          el('th', { text: 'نام فایل' })])
+      ]);
+      shared.forEach(function (d) {
+        dTable.appendChild(el('tr', null, [
+          el('td', { text: d.kind }),
+          el('td', { text: d.docDate ? J.format(d.docDate) : '' }),
+          el('td', { text: d.fileName })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'مدارک شخص' }), dTable
+      ]));
+    }
+
+    var items = w.Person.timeline(person);
+    if (items.length) {
+      var tl = el('table.p-table.p-list', null, [
+        el('tr', null, [el('th', { text: 'تاریخ' }), el('th', { text: 'پرونده' }),
+          el('th', { text: 'رویداد' })])
+      ]);
+      items.forEach(function (it) {
+        var what;
+        if (it.type === 'milestone') what = it.label;
+        else if (it.type === 'doc') what = it.doc.kind + ' — ' + it.doc.fileName;
+        else {
+          what = w.UIForm.kindLabel(it.entry.kind) +
+            (it.entry.note ? ' — ' + it.entry.note : '');
+        }
+        tl.appendChild(el('tr', null, [
+          el('td', {
+            text: it.type === 'history' ? it.entry.atJalali : J.format(it.date)
+          }),
+          el('td', { text: w.U.toFaDigits(it.caseNo) }),
+          el('td', { text: what })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: 'گردش‌کار یکپارچه' }), tl
+      ]));
+    }
+
+    node.appendChild(el('div.p-sign', null, [
+      el('div', { text: 'امضای کارشناس پرونده' }),
+      el('div', { text: 'امضای دبیر کمیته' })
+    ]));
+
+    run('پروندهٔ شخص ' + person.name);
+  }
+
+  w.UIPrint = {
+    printCase: printCase, printList: printList, printReport: printReport,
+    printPerson: printPerson
+  };
 })(window);

@@ -250,10 +250,20 @@
             ]),
             el('p.finding-advice', { text: f.advice })
           ]),
-          f.ids && f.ids.length ? el('button.btn.small.ghost', {
-            type: 'button', text: 'نمایش پرونده‌ها',
-            onclick: function () { app.showCases(f.ids, f.title); }
-          }) : null
+          el('div.finding-actions', null, [
+            f.people && f.people.length === 1 ? el('button.btn.small.ghost', {
+              type: 'button', text: 'پروندهٔ شخص',
+              onclick: function () { app.openPerson(f.people[0].key); }
+            }) : null,
+            f.people && f.people.length > 1 ? el('button.btn.small.ghost', {
+              type: 'button', text: 'فهرست اشخاص',
+              onclick: function () { app.goPeople(); }
+            }) : null,
+            f.ids && f.ids.length ? el('button.btn.small.ghost', {
+              type: 'button', text: 'نمایش پرونده‌ها',
+              onclick: function () { app.showCases(f.ids, f.title); }
+            }) : null
+          ])
         ]);
       }))
     ]);
@@ -479,6 +489,43 @@
         }));
       }
     }));
+
+    // تکرار تخلف — یک کارمند ممکن است چند پرونده داشته باشد
+    if (data.repeat.people) {
+      grid.appendChild(card({
+        title: 'تکرار تخلف',
+        subtitle: fa(data.repeat.people) + ' نفر در این برش؛ گروه‌بندی بر پایهٔ ' +
+          'کد ملی و در نبودش کد پرسنلی.',
+        chart: function () {
+          return Ch.hbar({
+            data: data.repeat.buckets, ramp: true, labelWidth: 160,
+            valueLabel: 'نفر'
+          });
+        },
+        footer: function () {
+          if (!data.repeat.repeaters.length) return null;
+          return el('p.card-note', null, [
+            el('span', { text: 'پرتکرارترین: ' }),
+            el('span', null, data.repeat.repeaters.slice(0, 5).map(function (p, i) {
+              return el('span', null, [
+                i ? el('span', { text: '، ' }) : null,
+                el('button.linkish', {
+                  type: 'button',
+                  text: p.name + ' (' + fa(p.caseCount) + ')',
+                  onclick: function () { app.openPerson(p.key); }
+                })
+              ]);
+            }))
+          ]);
+        },
+        table: function () {
+          return Ch.table(['تعداد پرونده', 'تعداد نفر'],
+            data.repeat.buckets.map(function (b) {
+              return [b.label, fa(b.value)];
+            }));
+        }
+      }));
+    }
 
     // مستندات — فقط وقتی سندی ثبت شده باشد
     if (data.docKinds.length) {
