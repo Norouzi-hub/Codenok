@@ -26,13 +26,19 @@ def read(path):
 def main():
     html = read(os.path.join(SRC, 'index.html'))
 
-    # حذف بخش مخصوص حالت توسعه
+    # حذف بخش‌های مخصوص حالت توسعه
     html = re.sub(r'<!-- DEV-ONLY:.*?<!-- /DEV-ONLY -->', '', html, flags=re.S)
+    html = re.sub(r'<!-- DEV-FONT -->.*?<!-- /DEV-FONT -->', '', html, flags=re.S)
 
     # درج CSS
     css = read(os.path.join(SRC, 'css', 'app.css'))
     html = html.replace('<link rel="stylesheet" href="css/app.css">',
                         '<style>\n' + css + '\n</style>')
+
+    # درج فونت وزیرمتن به‌صورت data URI
+    font_b64 = read(os.path.join(SRC, 'vendor', 'vazirmatn.woff2.b64')).strip()
+    html = html.replace('/*FONT_DATA_URI*/',
+                        'url(data:font/woff2;base64,' + font_b64 + ') format("woff2")')
 
     # درج باینری SQLite
     wasm_b64 = read(os.path.join(SRC, 'vendor', 'sql-wasm.wasm.b64')).strip()

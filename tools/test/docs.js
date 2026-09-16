@@ -113,6 +113,15 @@ function fakeFile(name, text) {
     `{ type: 'application/pdf' })`;
 }
 
+
+/** صفحهٔ نخست حالا کارتابل است؛ تست‌ها با فهرست پرونده‌ها کار می‌کنند */
+async function openList(page) {
+  await page.waitForSelector('.worklist, .lock-screen, .tr', { timeout: 20000 });
+  if (await page.$('.lock-screen')) return;
+  await page.evaluate(() => window.App.goList());
+  await page.waitForSelector('.tr', { timeout: 20000 });
+}
+
 (async () => {
   const browser = await chromium.launch({
     executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -126,7 +135,7 @@ function fakeFile(name, text) {
   page.on('dialog', d => d.accept());
 
   await page.goto(APP);
-  await page.waitForSelector('.tr', { timeout: 15000 });
+  await openList(page);
   await page.evaluate(MOCK_FS);
 
   console.log('\n— اتصال پوشه —');
@@ -395,7 +404,7 @@ function fakeFile(name, text) {
 
   console.log('\n— ماندگاری فراداده —');
   await page.reload();
-  await page.waitForSelector('.tr', { timeout: 15000 });
+  await openList(page);
   const persisted = await page.evaluate(() => {
     const rec = window.Model.state.cases.find(c => c.caseNo === '1404308');
     return {

@@ -6,7 +6,7 @@
 
   var app = {
     state: {
-      view: 'list',      // list | case | report | people | person
+      view: 'work',      // work | list | case | report | people | person
       caseId: null,
       q: '',
       filters: {},
@@ -35,6 +35,16 @@
     app.state.caseId = null;
     app.state.dirty = false;
     app.state.formTab = null;
+    app.render();
+  };
+
+  app.goWork = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'work';
+    app.state.caseId = null;
     app.render();
   };
 
@@ -154,6 +164,8 @@
     w.Charts.hideTip();
     if (app.state.view === 'case') {
       w.UIForm.render(app, mount, app.state.caseId);
+    } else if (app.state.view === 'work') {
+      w.UIWorklist.render(app, mount);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
     } else if (app.state.view === 'people') {
@@ -168,7 +180,8 @@
   };
 
   var NAV_FOR_VIEW = {
-    list: 'list', case: 'list', report: 'report', people: 'people', person: 'people'
+    work: 'work', list: 'list', case: 'list', report: 'report',
+    people: 'people', person: 'people'
   };
 
   function updateNav() {
@@ -229,7 +242,8 @@
 
   function topBar() {
     searchInput = el('input.search', {
-      type: 'search', placeholder: 'جستجو در همهٔ فیلدها… (Ctrl+F)',
+      type: 'search', placeholder: 'جستجو در همهٔ فیلدها…',
+      title: 'جستجو در همهٔ فیلدها (Ctrl+F)',
       autocomplete: 'off', value: app.state.q
     });
     var onSearch = w.U.debounce(function () {
@@ -249,8 +263,13 @@
     statusChip = el('button.chip', { type: 'button', onclick: onChipClick });
 
     navButtons = {
-      list: el('button.nav-btn.active', {
-        type: 'button', text: 'فهرست پرونده‌ها',
+      work: el('button.nav-btn.active', {
+        type: 'button', text: 'کارتابل',
+        title: 'چه کاری شده و چه کاری مانده',
+        onclick: function () { app.goWork(); }
+      }),
+      list: el('button.nav-btn', {
+        type: 'button', text: 'پرونده‌ها',
         onclick: function () { app.goList(); }
       }),
       people: el('button.nav-btn', {
@@ -266,7 +285,7 @@
 
     return el('header.topbar', null, [
       el('div.brand', {
-        onclick: function () { app.goList(); }, title: 'بازگشت به فهرست'
+        onclick: function () { app.goWork(); }, title: 'بازگشت به کارتابل'
       }, [
         el('span.logo', { text: '📁' }),
         el('span.brand-text', null, [
@@ -274,7 +293,8 @@
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),
-      el('nav.main-nav', null, [navButtons.list, navButtons.people, navButtons.report]),
+      el('nav.main-nav', null, [navButtons.work, navButtons.list,
+        navButtons.people, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -327,6 +347,9 @@
         e.preventDefault();
         if (app.state.view === 'case' && app.saveCurrentForm) app.saveCurrentForm();
         else w.UIMisc.exportJson();
+      } else if (ctrl && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        app.goWork();
       } else if (ctrl && e.key.toLowerCase() === 'l') {
         e.preventDefault();
         if (w.Store.status().encrypted) lockNow(false);
@@ -378,7 +401,12 @@
     }, IDLE_MS);
   }
 
+  var unlocking = false;
+
   function lockNow(automatic) {
+    // اگر همین حالا در حال باز شدن قفل هستیم یا صفحهٔ قفل بالاست، دوباره
+    // قفل نکن؛ وگرنه صفحهٔ قفلِ تازه را همان باز شدنِ در جریان پاک می‌کند.
+    if (unlocking || w.UILock.isShowing()) return;
     clearTimeout(idleTimer);
     w.Store.lock().then(function () {
       // داده‌های رمزگشایی‌شده باید از حافظهٔ صفحه هم پاک شوند، نه فقط از انبار
@@ -388,7 +416,7 @@
       if (w.UIDocs) w.UIDocs.releaseThumbs();
       app.state.reportData = null;
       app.state.lastResult = [];
-      app.state.view = 'list';
+      app.state.view = 'work';
       app.state.caseId = null;
       app.state.personKey = null;
       app.state.dirty = false;
@@ -415,6 +443,7 @@
 
   // ----------------------------------------------------------------- شروع
   function afterUnlock() {
+    unlocking = true;
     return M.load().then(function () {
       if (!M.state.cases.length) {
         return M.seed().then(function (n) {
@@ -436,6 +465,10 @@
       if (s.mode === 'memory') {
         w.U.toast('مرورگر اجازهٔ ذخیره‌سازی نداده است؛ داده‌ها با بستن صفحه از بین می‌رود.', 'bad');
       }
+      unlocking = false;
+    }).catch(function (err) {
+      unlocking = false;
+      throw err;
     });
   }
 

@@ -9,6 +9,13 @@
     'jobTitle', 'jobGrade', 'jobNature', 'payrollPlace', 'orgUnit', 'servicePlace',
     'servicePlaceType', 'contractType', 'employmentStatus'];
 
+  /* فیلدهایی که «شناسه»‌اند نه متن؛ با قلم داده خوانده و مقایسه می‌شوند */
+  var REGISTER_FIELDS = {
+    caseNo: 1, letterNo: 1, committeeRegNo: 1, noticeLetterNo: 1,
+    invitationLetterNo: 1, securityOutLetterNo: 1, securityInLetterNo: 1,
+    nationalId: 1, personnelCode: 1, idNumber: 1, phone: 1
+  };
+
   function cleanLabel(label) {
     return String(label).replace(/\(\d[^)]*\)/g, '').replace(/\*/g, '').trim();
   }
@@ -53,7 +60,7 @@
 
     // متنی: با تکمیل خودکار از مقادیر موجود
     var listId = 'dl-' + field.key;
-    var input = el('input.input', {
+    var input = el('input.input' + (REGISTER_FIELDS[field.key] ? '.reg-input' : ''), {
       type: field.type === 'tel' ? 'tel' : 'text',
       value: value || '', autocomplete: 'off', list: listId,
       inputmode: field.type === 'tel' ? 'tel' : undefined
@@ -204,8 +211,16 @@
 
     function updateTitle() {
       var name = [draft.firstName, draft.lastName].filter(Boolean).join(' ');
-      headTitle.textContent = (draft.caseNo ? 'پروندهٔ ' + w.U.toFaDigits(draft.caseNo) : 'پروندهٔ جدید') +
-        (name ? ' — ' + name : '');
+      w.U.clear(headTitle);
+      if (draft.caseNo) {
+        headTitle.appendChild(document.createTextNode('پروندهٔ '));
+        headTitle.appendChild(el('span.reg-no', {
+          text: w.U.toLatinDigits(draft.caseNo)
+        }));
+      } else {
+        headTitle.appendChild(document.createTextNode('پروندهٔ جدید'));
+      }
+      if (name) headTitle.appendChild(document.createTextNode(' — ' + name));
     }
 
     function warn(node) {
@@ -413,9 +428,50 @@
       saveBtn
     ]);
 
+    /** ریل گردش‌کار و اقدام بعدی — فقط برای پروندهٔ ذخیره‌شده معنا دارد */
+    function railCard() {
+      if (!existing) return null;
+      var action = w.Worklist.nextAction(existing);
+      var next = null;
+      if (action.key !== 'closed') {
+        var meta = [];
+        if (action.days != null) meta.push('از ' + w.U.toFaDigits(action.days) + ' روز پیش');
+        if (action.limit != null) {
+          meta.push(action.overdue
+            ? w.U.toFaDigits(action.days - action.limit) + ' روز بیش از مهلت'
+            : w.U.toFaDigits(action.limit - action.days) + ' روز تا پایان مهلت');
+        }
+        if (action.owner && action.owner !== '—') meta.push('مسئول: ' + action.owner);
+        next = el('div.case-next' + (action.overdue ? '.late' : ''), null, [
+          el('span.case-next-label', { text: action.label }),
+          el('span.case-next-meta', { text: meta.join(' • ') })
+        ]);
+      } else {
+        // مختومه‌ای که مرحله‌هایش ناقص مانده، یعنی ثبت کار عقب است
+        var missing = w.Worklist.stages(existing).filter(function (st) {
+          return !st.done && !st.optional;
+        });
+        next = el('div.case-next', null, [
+          el('span.case-next-label', { text: 'مختومه' }),
+          el('span.case-next-meta', {
+            text: missing.length
+              ? 'مختومه ثبت شده، ولی ' +
+                missing.map(function (st) { return st.label; }).join(' و ') +
+                ' در پرونده ثبت نشده است.'
+              : 'اقدام بازی روی این پرونده نمانده است.'
+          })
+        ]);
+      }
+      return el('div.case-rail', null, [
+        w.UIWorklist.rail(existing, 'full'),
+        next
+      ]);
+    }
+
     w.U.clear(mount);
     mount.appendChild(el('div.case-view', null, [
       el('div.case-head', null, [headTitle, actions]),
+      railCard(),
       warnBox, tabs, panel
     ]));
 

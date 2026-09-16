@@ -38,6 +38,15 @@ const SEED = `
 })()
 `;
 
+
+/** صفحهٔ نخست حالا کارتابل است؛ تست‌ها با فهرست پرونده‌ها کار می‌کنند */
+async function openList(page) {
+  await page.waitForSelector('.worklist, .lock-screen, .tr', { timeout: 20000 });
+  if (await page.$('.lock-screen')) return;
+  await page.evaluate(() => window.App.goList());
+  await page.waitForSelector('.tr', { timeout: 20000 });
+}
+
 (async () => {
   const browser = await chromium.launch({
     executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -51,7 +60,7 @@ const SEED = `
   page.on('dialog', d => d.accept());
 
   await page.goto(APP);
-  await page.waitForSelector('.tr', { timeout: 15000 });
+  await openList(page);
   await page.evaluate(SEED);
 
   console.log('\n— گروه‌بندی پرونده‌ها به شخص —');

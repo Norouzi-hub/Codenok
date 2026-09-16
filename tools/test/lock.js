@@ -8,6 +8,8 @@ const { chromium } = require(process.env.PW || 'playwright');
 const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
 const PW = 'Komite@1405';
 
+const w = { toFa: n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]) };
+
 let failures = 0;
 function check(name, ok, extra) {
   console.log((ok ? '  ✓ ' : '  ✗ ') + name + (extra ? '  — ' + extra : ''));
@@ -38,6 +40,15 @@ new Promise(function (resolve, reject) {
 })
 `;
 
+
+/** صفحهٔ نخست حالا کارتابل است؛ تست‌ها با فهرست پرونده‌ها کار می‌کنند */
+async function openList(page) {
+  await page.waitForSelector('.worklist, .lock-screen, .tr', { timeout: 20000 });
+  if (await page.$('.lock-screen')) return;
+  await page.evaluate(() => window.App.goList());
+  await page.waitForSelector('.tr', { timeout: 20000 });
+}
+
 (async () => {
   const browser = await chromium.launch({
     executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -51,7 +62,7 @@ new Promise(function (resolve, reject) {
   page.on('dialog', d => d.accept());
 
   await page.goto(APP);
-  await page.waitForSelector('.tr', { timeout: 15000 });
+  await openList(page);
 
   console.log('\n— پیش از تعیین رمز —');
   const before = await page.evaluate(RAW_READ);
@@ -66,10 +77,17 @@ new Promise(function (resolve, reject) {
   const set = await page.evaluate(async (pw) => {
     const t0 = performance.now();
     await window.Store.setPassword(pw);
-    return { ms: Math.round(performance.now() - t0), st: window.Store.status() };
+    const cfg = window.Vault.getConfig();
+    return {
+      ms: Math.round(performance.now() - t0), st: window.Store.status(),
+      iterations: cfg.iterations, saltBits: atob(cfg.salt).length * 8
+    };
   }, PW);
   check('رمز تنظیم شد', set.st.encrypted, set.ms + 'ms برای رمزنگاری کل داده');
-  check('مشتق‌سازی کلید عمداً کند است (ضد حدس زدن)', set.ms > 100, set.ms + 'ms');
+  // زمان اجرا روی ماشین‌های مختلف فرق می‌کند؛ خودِ ویژگی را می‌سنجیم
+  check('مشتق‌سازی کلید با دورِ بالا انجام می‌شود (ضد حدس زدن)',
+    set.iterations >= 300000 && set.saltBits >= 128,
+    w.toFa(set.iterations) + ' دور، نمک ' + set.saltBits + ' بیتی');
 
   const after = await page.evaluate(RAW_READ);
   check('همهٔ رکوردهای پرونده رمز شدند',
@@ -132,7 +150,8 @@ new Promise(function (resolve, reject) {
   console.log('\n— رمز درست —');
   await page.fill('.lock-input', PW);
   await page.click('.lock-box .btn.primary');
-  await page.waitForSelector('.tr', { timeout: 20000 });
+  await page.waitForSelector('.lock-screen', { state: 'detached', timeout: 25000 });
+  await openList(page);
   const opened = await page.evaluate(() => ({
     shown: window.UILock.isShowing(),
     cases: window.Model.state.cases.length,
@@ -156,7 +175,8 @@ new Promise(function (resolve, reject) {
     relocked.cases + ' پرونده در حافظه');
   await page.fill('.lock-input', PW);
   await page.click('.lock-box .btn.primary');
-  await page.waitForSelector('.tr', { timeout: 20000 });
+  await page.waitForSelector('.lock-screen', { state: 'detached', timeout: 25000 });
+  await openList(page);
 
   console.log('\n— نسخهٔ پشتیبان رمزشده —');
   const fs = require('fs');
@@ -212,7 +232,7 @@ new Promise(function (resolve, reject) {
     afterClear.count + ' رکورد');
 
   await page.reload();
-  await page.waitForSelector('.tr', { timeout: 15000 });
+  await openList(page);
   const finalState = await page.evaluate(() => ({
     locked: window.UILock.isShowing(),
     cases: window.Model.state.cases.length,
@@ -221,6 +241,38 @@ new Promise(function (resolve, reject) {
   check('پس از برداشتن رمز، بدون قفل بالا می‌آید و داده سالم است',
     !finalState.locked && finalState.cases > 0 && finalState.newOne,
     finalState.cases + ' پرونده');
+
+  console.log('\n— پاک کردن کامل از مرورگر —');
+  const dbList = () => page.evaluate(() =>
+    indexedDB.databases ? indexedDB.databases().then(d => d.map(x => x.name)) : ['?']);
+  const dbBefore = await dbList();
+  check('دیتابیس در مرورگر وجود دارد',
+    dbBefore.indexOf('parvandeha') >= 0, dbBefore.join(', '));
+
+  await page.evaluate(() => window.Store.wipeBrowser());
+  await page.waitForTimeout(600);
+  const dbAfter = await dbList();
+  check('دیتابیس به‌طور کامل از مرورگر حذف شد',
+    dbAfter.indexOf('parvandeha') < 0, dbAfter.join(', ') || 'خالی');
+  const lsLeft = await page.evaluate(() =>
+    Object.keys(localStorage).filter(k => k.indexOf('parvandeha') === 0).length);
+  check('کلیدهای localStorage هم پاک شدند', lsLeft === 0, lsLeft + ' کلید');
+
+  // «فایل تازه هم داده‌های قبلی را نشان می‌دهد» دیگر نباید رخ دهد
+  await page.reload();
+  await openList(page);
+  const fresh = await page.evaluate(() => ({
+    locked: window.UILock.isShowing(),
+    cases: window.Model.state.cases.length,
+    encrypted: window.Store.status().encrypted,
+    history: window.Model.state.history.length
+  }));
+  check('پس از پاک کردن، برنامه از صفر بالا می‌آید',
+    !fresh.locked && !fresh.encrypted,
+    fresh.cases + ' پرونده، رمز: ' + fresh.encrypted);
+  check('داده‌های تازه فقط نمونهٔ اولیه است',
+    fresh.cases === 31 && fresh.history === 31,
+    fresh.cases + ' پرونده، ' + fresh.history + ' رویداد');
 
   console.log('\n— سنجش قدرت رمز —');
   const strengths = await page.evaluate(() => ({

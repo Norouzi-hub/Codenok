@@ -155,6 +155,45 @@
     return Promise.resolve();
   }
 
+  /**
+   * پاک کردن کامل ردّ برنامه از این مرورگر.
+   *
+   * چرا لازم است: صفحه‌هایی که با file:// باز می‌شوند همه یک «مبدأ» دارند.
+   * یعنی دیتابیس به مرورگر بسته است نه به فایل — اگر فایل HTML را حذف کنید و
+   * نسخهٔ تازه‌ای بگذارید، همان دیتابیس قبلی با همهٔ داده‌ها برمی‌گردد.
+   * تنها راه پاک کردن واقعی، حذف خود دیتابیس است.
+   */
+  function wipeBrowser() {
+    return new Promise(function (resolve) {
+      try {
+        Object.keys(w.localStorage).forEach(function (k) {
+          if (k.indexOf('parvandeha') === 0) w.localStorage.removeItem(k);
+        });
+      } catch (e) { /* localStorage در دسترس نیست */ }
+
+      if (db) { try { db.close(); } catch (e) { /* از قبل بسته */ } }
+      db = null;
+      mem = { cases: {}, history: {}, docs: {}, meta: {} };
+      dataLoaded = false;
+      fileHandle = null;
+      fileName = '';
+      w.Vault.clearPassword();
+
+      if (!w.indexedDB) return resolve(true);
+      var req = w.indexedDB.deleteDatabase(DB_NAME);
+      var done = false;
+      var finish = function () { if (!done) { done = true; resolve(true); } };
+      req.onsuccess = finish;
+      req.onerror = finish;
+      // اگر تب دیگری دیتابیس را باز نگه داشته باشد، حذف بلوکه می‌شود
+      req.onblocked = finish;
+      setTimeout(finish, 3000);
+    });
+  }
+
+  /** نام دیتابیس، برای نمایش در تنظیمات */
+  function dbName() { return DB_NAME; }
+
   function clearAll() {
     mem = { cases: {}, history: {}, docs: {}, meta: mem.meta };
     if (mode === 'idb') return idbClear(['cases', 'history', 'docs']);
@@ -471,6 +510,7 @@
     status: status, onStatusChange: onStatusChange,
     supportsFileSystem: supportsFileSystem,
     unlock: unlock, lock: lock, isLocked: isLocked, isLoaded: isLoaded,
+    wipeBrowser: wipeBrowser, dbName: dbName,
     setPassword: setPassword, clearPassword: clearPassword, loadData: loadData
   };
 })(window);

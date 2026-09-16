@@ -359,8 +359,43 @@
     run('پروندهٔ شخص ' + person.name);
   }
 
+  /** دستور کار جلسهٔ کمیته: پرونده‌هایی که آمادهٔ طرح‌اند */
+  function printAgenda(cases) {
+    var node = area();
+    node.appendChild(header('دستور کار جلسهٔ کمیتهٔ انضباطی',
+      w.U.toFaDigits(cases.length) + ' پرونده'));
+
+    var table = el('table.p-table.p-list', null, [
+      el('tr', null, ['ردیف', 'شماره پرونده', 'نام و نام خانوادگی', 'واحد سازمانی',
+        'نوع پرونده', 'تاریخ ورود', 'دفاعیه', 'رأی جلسه'].map(function (h) {
+          return el('th', { text: h });
+        }))
+    ]);
+    cases.forEach(function (rec, i) {
+      table.appendChild(el('tr', null, [
+        el('td', { text: w.U.toFaDigits(i + 1) }),
+        el('td', { text: w.U.toFaDigits(rec.caseNo || '—') }),
+        el('td', { text: [rec.firstName, rec.lastName].filter(Boolean).join(' ') }),
+        el('td', { text: rec.orgUnit || '—' }),
+        el('td', { text: rec.caseType || '—' }),
+        el('td', { text: rec.intakeDate ? J.format(rec.intakeDate) : '—' }),
+        el('td', { text: rec.invitationLetterDate ? J.format(rec.invitationLetterDate) : '—' }),
+        el('td', { text: '' })      // جای خالی برای نوشتن رأی در جلسه
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'پرونده‌های آمادهٔ طرح' }), table
+    ]));
+
+    node.appendChild(el('div.p-sign', null, [
+      el('div', { text: 'امضای دبیر کمیته' }),
+      el('div', { text: 'امضای رئیس کمیته' })
+    ]));
+    run('دستور کار جلسه');
+  }
+
   w.UIPrint = {
     printCase: printCase, printList: printList, printReport: printReport,
-    printPerson: printPerson
+    printPerson: printPerson, printAgenda: printAgenda
   };
 })(window);

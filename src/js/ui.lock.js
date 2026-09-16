@@ -67,10 +67,16 @@
         el('h1', { text: 'سامانهٔ پرونده‌ها' }),
         el('p.muted', { text: 'برای دیدن اطلاعات، رمز عبور را وارد کنید.' }),
         input, msg, btn,
-        el('p.lock-note', {
-          text: 'اطلاعات با همین رمز رمزنگاری شده‌اند. اگر رمز را فراموش کنید ' +
-            'هیچ راهی برای بازیابی وجود ندارد.'
-        })
+        el('p.lock-note', null, [
+          el('span', {
+            text: 'اطلاعات با همین رمز رمزنگاری شده‌اند. اگر رمز را فراموش کنید ' +
+              'هیچ راهی برای بازیابی وجود ندارد. '
+          }),
+          el('button.linkish', {
+            type: 'button', text: 'شروع از نو با حذف کامل داده‌ها',
+            onclick: function () { w.UIMisc.wipeDialog(null, null); }
+          })
+        ])
       ])
     ]);
     document.body.appendChild(overlay);

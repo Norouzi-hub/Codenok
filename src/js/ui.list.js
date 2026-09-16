@@ -125,10 +125,14 @@
   function buildTable(app, rows) {
     var fields = M.state.columns.map(function (k) { return M.FIELD_BY_KEY[k]; })
       .filter(Boolean);
-    var template = fields.map(function (f) { return colWidth(f) + 'px'; }).join(' ');
+    // ستون ثابت گردش‌کار، پیش از ستون‌های انتخابی کاربر
+    var template = '104px ' + fields.map(function (f) {
+      return colWidth(f) + 'px';
+    }).join(' ');
 
     var header = el('div.trow.thead');
     header.style.gridTemplateColumns = template;
+    header.appendChild(el('div.th', { text: 'گردش‌کار', title: 'مرحله‌ای که پرونده در آن است' }));
     fields.forEach(function (f) {
       var active = app.state.sortKey === f.key;
       header.appendChild(el('div.th' + (active ? '.sorted' : ''), {
@@ -182,19 +186,31 @@
   }
 
   function makeRow(app, rec, fields, template, i) {
-    var row = el('div.trow.tr' + (i % 2 ? '.odd' : ''), {
+    var action = w.Worklist.nextAction(rec);
+    var urgency = '';
+    if (action.key === 'closed') urgency = '.done-row';
+    else if (action.overdue) urgency = '.late';
+    else if (action.remaining != null && action.remaining <= 3) urgency = '.due';
+
+    var row = el('div.trow.tr' + (i % 2 ? '.odd' : '') + urgency, {
       tabindex: '0',
+      title: action.key === 'closed' ? 'مختومه'
+        : (action.label + (action.days != null
+          ? ' — ' + w.U.toFaDigits(action.days) + ' روز' : '')),
       onclick: function () { app.openCase(rec.id); },
       onkeydown: function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); app.openCase(rec.id); }
       }
     });
     row.style.gridTemplateColumns = template;
+    row.appendChild(el('div.td.td-rail', null, [w.UIWorklist.rail(rec, 'mini')]));
     fields.forEach(function (f) {
       var text = cellText(rec, f);
       var cell = el('div.td', { title: text });
       if (f.key === 'status') {
         cell.appendChild(el('span.pill.' + (statusClass(text) || 'st-none'), { text: text }));
+      } else if (f.key === 'caseNo') {
+        cell.appendChild(el('span.reg-no', { text: w.U.toLatinDigits(text) }));
       } else {
         cell.textContent = text;
       }

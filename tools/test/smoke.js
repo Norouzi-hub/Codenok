@@ -16,6 +16,15 @@ function check(name, ok, extra) {
   if (!ok) failures++;
 }
 
+
+/** صفحهٔ نخست حالا کارتابل است؛ تست‌ها با فهرست پرونده‌ها کار می‌کنند */
+async function openList(page) {
+  await page.waitForSelector('.worklist, .lock-screen, .tr', { timeout: 20000 });
+  if (await page.$('.lock-screen')) return;
+  await page.evaluate(() => window.App.goList());
+  await page.waitForSelector('.tr', { timeout: 20000 });
+}
+
 (async () => {
   const browser = await chromium.launch({
     executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -31,7 +40,7 @@ function check(name, ok, extra) {
 
   console.log('\n— بارگذاری —');
   await page.goto(APP);
-  await page.waitForSelector('.tr', { timeout: 15000 });
+  await openList(page);
 
   const mode = await page.evaluate(() => window.Store.status().mode);
   check('انبار داده روی file:// کار می‌کند', mode === 'idb', 'mode=' + mode);
@@ -171,7 +180,7 @@ function check(name, ok, extra) {
 
   console.log('\n— خروجی‌ها —');
   await page.evaluate(() => window.App.goList());
-  await page.waitForSelector('.tr');
+  await openList(page);
 
   const dlXlsx = await Promise.all([
     page.waitForEvent('download', { timeout: 20000 }),
@@ -220,7 +229,7 @@ function check(name, ok, extra) {
   console.log('\n— ماندگاری داده پس از بستن صفحه —');
   await page.waitForTimeout(500);
   await page.reload();
-  await page.waitForSelector('.tr', { timeout: 15000 });
+  await openList(page);
   const afterReload = await page.evaluate(() => ({
     cases: window.Model.state.cases.length,
     hasNew: window.Model.state.cases.some(c => c.caseNo === '1405999'),
@@ -275,6 +284,93 @@ function check(name, ok, extra) {
   const printRows = await page.evaluate(() =>
     document.querySelectorAll('#print-area .p-list tr').length);
   check('فهرست چاپی ساخته شد', printRows === 21, 'سطر=' + printRows);
+
+  console.log('\n— کارتابل و اقدام بعدی —');
+  await page.evaluate(() => window.App.goWork());
+  await page.waitForSelector('.worklist');
+  const wl = await page.evaluate(() => {
+    const WL = window.Worklist;
+    const cases = window.Model.state.cases;
+    const sum = WL.summary(cases);
+    const pipe = WL.pipeline(cases);
+    const buckets = WL.buckets(cases);
+    // هر پروندهٔ باز دقیقاً در یک سطل قرار می‌گیرد
+    const inBuckets = buckets.reduce((a, b) => a + b.items.length, 0);
+    return {
+      sum: sum, pipeline: pipe.map(p => p.value),
+      buckets: buckets.length, inBuckets: inBuckets,
+      monotonic: pipe.every((p, i) => i === 0 || p.value <= pipe[i - 1].value),
+      railsInDom: document.querySelectorAll('.rail-mini').length,
+      pipeRail: document.querySelectorAll('.rail-pipe .rail-step').length,
+      stats: document.querySelectorAll('.wl-stat').length
+    };
+  });
+  check('هر پروندهٔ باز دقیقاً در یک سطل کارتابل است',
+    wl.inBuckets === wl.sum.open, wl.inBuckets + ' == ' + wl.sum.open);
+  check('باز + مختومه برابر کل است',
+    wl.sum.open + wl.sum.closed === wl.sum.total,
+    wl.sum.open + ' + ' + wl.sum.closed + ' = ' + wl.sum.total);
+  check('«منتظر ما» و «منتظر دیگران» روی هم، همهٔ پرونده‌های باز را می‌پوشانند',
+    wl.sum.ours + wl.sum.theirs === wl.sum.open,
+    wl.sum.ours + ' + ' + wl.sum.theirs);
+  check('قیف گردش‌کار نزولی است', wl.monotonic, JSON.stringify(wl.pipeline));
+  check('ریل گردش‌کار هشت مرحله دارد', wl.pipeRail === 8, wl.pipeRail + ' گره');
+  check('ریل در سطرهای کارتابل رندر می‌شود', wl.railsInDom > 0,
+    wl.railsInDom + ' ریل');
+
+  const nextActions = await page.evaluate(() => {
+    const WL = window.Worklist;
+    const mk = (patch) => Object.assign({
+      caseNo: 'X', status: 'مفتوح رسیدگی', intakeDate: '14050101'
+    }, patch);
+    return {
+      needsAssign: WL.nextAction(mk({})).key,
+      needsDefense: WL.nextAction(mk({ deliveryDate: '14050102' })).key,
+      chasingSecurity: WL.nextAction(mk({
+        deliveryDate: '14050102', securityOutLetterDate: '14050103'
+      })).key,
+      // استعلام پاسخ گرفته → دیگر پیگیری لازم نیست
+      securityAnswered: WL.nextAction(mk({
+        deliveryDate: '14050102', securityOutLetterDate: '14050103',
+        securityInLetterDate: '14050110'
+      })).key,
+      needsVerdictText: WL.nextAction(mk({
+        deliveryDate: '14050102', invitationLetterDate: '14050105',
+        committeeDate: '14050120'
+      })).key,
+      needsNotice: WL.nextAction(mk({
+        deliveryDate: '14050102', invitationLetterDate: '14050105',
+        committeeDate: '14050120', verdictFull: 'توبیخ کتبی'
+      })).key,
+      closed: WL.nextAction(mk({ status: 'ابلاغ و مختومه شد' })).key,
+      // دیرکرد: ارجاع‌نشده از ۱۴۰۴
+      overdue: WL.nextAction(mk({ intakeDate: '14040101' })).overdue
+    };
+  });
+  check('اقدام بعدی، ترتیب واقعی کار را دنبال می‌کند',
+    nextActions.needsAssign === 'assign' &&
+    nextActions.needsDefense === 'defense' &&
+    nextActions.chasingSecurity === 'inquiry' &&
+    nextActions.securityAnswered === 'defense' &&
+    nextActions.needsVerdictText === 'verdictText' &&
+    nextActions.needsNotice === 'notice' &&
+    nextActions.closed === 'closed',
+    JSON.stringify(nextActions));
+  check('دیرکرد از روی مهلت مرحله تشخیص داده می‌شود', nextActions.overdue === true);
+
+  const agenda = await page.evaluate(() => {
+    const ready = window.Worklist.readyForCommittee(window.Model.state.cases);
+    return {
+      n: ready.length,
+      allInvited: ready.every(c => !!c.invitationLetterDate),
+      noneHeld: ready.every(c => !c.committeeDate)
+    };
+  });
+  check('فهرست آمادهٔ طرح در جلسه سالم است',
+    agenda.allInvited && agenda.noneHeld, agenda.n + ' پرونده');
+
+  await page.evaluate(() => window.App.goList());
+  await page.waitForSelector('.tr');
 
   console.log('\n— جلوگیری از پروندهٔ تکراری —');
   const dupAnalysis = await page.evaluate(() => {

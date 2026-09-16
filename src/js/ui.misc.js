@@ -521,6 +521,58 @@
     });
   }
 
+  /**
+   * حذف کامل دیتابیس از مرورگر — تنها راه «شروع از نو»ی واقعی روی file://
+   * چون فایل تازه هم همان دیتابیس قبلی را می‌بیند.
+   */
+  function wipeDialog(app, parentModal) {
+    var confirmInput = el('input.input', {
+      type: 'text', placeholder: 'حذف', autocomplete: 'off'
+    });
+    var body = el('div', null, [
+      el('div.warn', null, [
+        el('span', null, [
+          el('b', { text: 'این کار برگشت‌پذیر نیست. ' }),
+          el('span', {
+            text: 'دیتابیس «' + w.Store.dbName() + '» به‌طور کامل از این مرورگر ' +
+              'حذف می‌شود: همهٔ پرونده‌ها، تاریخچه، فهرست مستندات، تنظیمات، ' +
+              'لیست‌ها و رمز عبور.'
+          })
+        ])
+      ]),
+      el('p.muted.tiny', {
+        text: 'فایل‌های پیوست داخل پوشهٔ مستندات و فایل پشتیبان روی دیسک ' +
+          'دست‌نخورده می‌مانند؛ فقط حافظهٔ مرورگر پاک می‌شود.'
+      }),
+      el('label.field', null, [
+        el('span.field-label', { text: 'برای تأیید، واژهٔ «حذف» را تایپ کنید' }),
+        confirmInput
+      ])
+    ]);
+
+    var m;
+    var go = el('button.btn.danger', {
+      type: 'button', text: 'پاک کن و صفحه را تازه کن',
+      onclick: function () {
+        if (confirmInput.value.trim() !== 'حذف') {
+          w.U.toast('برای تأیید، دقیقاً واژهٔ «حذف» را تایپ کنید.', 'bad');
+          return;
+        }
+        go.textContent = 'در حال پاک کردن…';
+        w.Store.wipeBrowser().then(function () {
+          w.location.reload();
+        });
+      }
+    });
+    if (parentModal) parentModal.close();
+    m = w.U.modal('پاک کردن کامل از مرورگر', body, [
+      el('button.btn.ghost', { type: 'button', text: 'انصراف',
+        onclick: function () { m.close(); } }),
+      go
+    ]);
+    setTimeout(function () { confirmInput.focus(); }, 50);
+  }
+
   // ---------------------------------------------------------------- تنظیمات
   function listsEditor() {
     var lists = JSON.parse(JSON.stringify(M.state.lists));
@@ -578,6 +630,16 @@
         text: 'انبار داده: ' + ({ idb: 'IndexedDB (پیشنهادی)',
           localStorage: 'localStorage (محدود)', memory: 'فقط حافظه — داده ذخیره نمی‌شود!' })[s.mode]
       }));
+      // چرا «فایل را حذف کردم ولی داده‌ها هنوز هستند»
+      storageInfo.appendChild(el('div.info-note', null, [
+        el('b', { text: 'داده‌ها به مرورگر بسته‌اند، نه به فایل. ' }),
+        el('span', {
+          text: 'همهٔ صفحه‌هایی که با file:// باز می‌شوند یک «مبدأ» مشترک دارند، ' +
+            'پس دیتابیس «' + w.Store.dbName() + '» در کروم می‌ماند. ' +
+            'اگر این فایل را حذف کنید و نسخهٔ تازه‌ای بگذارید، همان داده‌های قبلی ' +
+            'دوباره نشان داده می‌شوند. برای شروع واقعاً تازه، از دکمهٔ زیر استفاده کنید.'
+        })
+      ]));
       storageInfo.appendChild(el('p', {
         text: s.linked
           ? 'ذخیرهٔ خودکار روی فایل: ' + s.fileName +
@@ -755,19 +817,26 @@
           onclick: function () { m.close(); restoreJson(app); }
         }),
         el('button.btn.small.ghost.danger', {
-          type: 'button', text: 'حذف همهٔ داده‌ها',
+          type: 'button', text: 'حذف پرونده‌ها',
+          title: 'پرونده‌ها و تاریخچه پاک می‌شوند؛ تنظیمات و رمز می‌مانند',
           onclick: function () {
-            w.U.confirmBox('حذف همهٔ داده‌ها',
-              'تمام پرونده‌ها و تاریخچه پاک می‌شود. پیش از این کار حتماً نسخهٔ پشتیبان بگیرید.',
-              'همه را حذف کن').then(function (ok) {
+            w.U.confirmBox('حذف همهٔ پرونده‌ها',
+              'تمام پرونده‌ها و تاریخچه پاک می‌شود. تنظیمات، لیست‌ها و رمز عبور ' +
+              'دست‌نخورده می‌مانند. پیش از این کار حتماً نسخهٔ پشتیبان بگیرید.',
+              'پرونده‌ها را حذف کن').then(function (ok) {
                 if (!ok) return;
                 w.Store.clearAll().then(function () { return M.reload(); }).then(function () {
                   m.close();
-                  w.U.toast('همهٔ داده‌ها حذف شد.', 'good');
+                  w.U.toast('همهٔ پرونده‌ها حذف شد.', 'good');
                   app.goList();
                 });
               });
           }
+        }),
+        el('button.btn.small.danger', {
+          type: 'button', text: 'پاک کردن کامل از مرورگر',
+          title: 'حذف خودِ دیتابیس؛ برای شروع واقعاً تازه',
+          onclick: function () { wipeDialog(app, m); }
         })
       ])
     ]));
@@ -793,6 +862,6 @@
     exportSqlite: exportSqlite, exportJson: exportJson, restoreJson: restoreJson,
     exportReportExcel: exportReportExcel,
     importExcel: importExcel, settingsDialog: settingsDialog, mapColumns: mapColumns,
-    importDialog: importDialog
+    importDialog: importDialog, wipeDialog: wipeDialog
   };
 })(window);
