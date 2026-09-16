@@ -202,10 +202,9 @@
   };
 
   function updateNav() {
-    if (!navButtons) return;
     var active = NAV_FOR_VIEW[app.state.view] || 'list';
-    Object.keys(navButtons).forEach(function (k) {
-      navButtons[k].classList.toggle('active', k === active);
+    w.U.$$('[data-nav]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-nav') === active);
     });
   }
 
@@ -281,21 +280,21 @@
 
     navButtons = {
       work: el('button.nav-btn.active', {
-        type: 'button', text: 'کارتابل',
+        type: 'button', text: 'کارتابل', 'data-nav': 'work',
         title: 'چه کاری شده و چه کاری مانده',
         onclick: function () { app.goWork(); }
       }),
       list: el('button.nav-btn', {
-        type: 'button', text: 'پرونده‌ها',
+        type: 'button', text: 'پرونده‌ها', 'data-nav': 'list',
         onclick: function () { app.goList(); }
       }),
       people: el('button.nav-btn', {
-        type: 'button', text: 'اشخاص',
+        type: 'button', text: 'اشخاص', 'data-nav': 'people',
         title: 'یک کارمند ممکن است چند پرونده داشته باشد',
         onclick: function () { app.goPeople(); }
       }),
       report: el('button.nav-btn', {
-        type: 'button', text: 'گزارش‌ها',
+        type: 'button', text: 'گزارش‌ها', 'data-nav': 'report',
         onclick: function () { app.goReport(); }
       })
     };
@@ -345,7 +344,107 @@
           onclick: function () { w.UIMisc.settingsDialog(app); }
         }),
         statusChip
-      ])
+      ]),
+      // روی موبایل همهٔ اقدام‌های بالا در یک شیت جمع می‌شوند
+      el('button.icon-btn.more-btn', {
+        type: 'button', text: '⋯', title: 'اقدام‌ها',
+        'aria-label': 'اقدام‌ها',
+        onclick: openActionSheet
+      })
+    ]);
+  }
+
+  /** شیت اقدام‌ها روی موبایل — همان کارهای نوار بالا */
+  function openActionSheet() {
+    var s = w.Store.status();
+    w.Mobile.sheet('اقدام‌ها', [
+      {
+        icon: 'plus', label: 'پروندهٔ جدید',
+        onclick: function () { app.newCase(); }
+      },
+      {
+        icon: 'imp', label: 'ورود از اکسل',
+        hint: 'خواندن فایل اکسل با همین قالب',
+        onclick: function () { w.UIMisc.importExcel(app); }
+      },
+      { sep: true },
+      {
+        icon: 'exp', label: 'خروجی اکسل',
+        hint: 'همهٔ پرونده‌ها',
+        onclick: function () { w.UIMisc.exportExcel(M.state.cases); }
+      },
+      {
+        icon: 'db', label: 'خروجی SQLite',
+        onclick: function () { w.UIMisc.exportSqlite(); }
+      },
+      {
+        icon: 'backup', label: 'نسخهٔ پشتیبان',
+        hint: w.Mobile.canLinkFile() ? 'ذخیرهٔ فایل پشتیبان'
+          : 'روی موبایل تنها راه نگه‌داشتن داده بیرون از مرورگر',
+        onclick: function () { w.UIMisc.exportJson(); }
+      },
+      { sep: true },
+      {
+        icon: 'lock', label: 'قفل کردن برنامه',
+        hint: s.encrypted ? '' : 'اول یک رمز عبور تعیین کنید',
+        onclick: function () {
+          if (w.Store.status().encrypted) lockNow(false);
+          else w.UILock.passwordDialog(app);
+        }
+      },
+      {
+        icon: 'gear', label: 'تنظیمات',
+        onclick: function () { w.UIMisc.settingsDialog(app); }
+      },
+      { sep: true },
+      {
+        node: el('button.sheet-status', {
+          type: 'button',
+          text: statusChip ? statusChip.textContent : '',
+          onclick: function () {
+            var ov = document.querySelector('.sheet-overlay');
+            if (ov) ov.remove();
+            onChipClick();
+          }
+        })
+      }
+    ]);
+  }
+
+  /* آیکن‌های نوار پایین — خطی و هم‌خانواده، نه شکلک */
+  function svg(d) {
+    return '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  }
+  var TAB_ICONS = {
+    work: svg('<path d="M9 4h6v3H9z"/><path d="M15 5.5h2.5A1.5 1.5 0 0 1 19 7v11.5A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5V7a1.5 1.5 0 0 1 1.5-1.5H9"/><path d="M8.6 13.2l2 2 3.8-4"/>'),
+    list: svg('<path d="M4.5 6h15M4.5 10.5h15M4.5 15h15M4.5 19.5h9"/>'),
+    people: svg('<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17.2 14.9c2 .6 3.3 2.3 3.3 4.6"/>'),
+    report: svg('<path d="M4.5 19.5h15"/><rect x="6" y="11" width="3" height="6" rx="1"/><rect x="11" y="7.5" width="3" height="9.5" rx="1"/><rect x="16" y="13.5" width="3" height="3.5" rx="1"/>')
+  };
+
+  /** نوار پایین مخصوص موبایل — چهار مقصد و دکمهٔ پروندهٔ جدید */
+  function tabBar() {
+    function tab(key, label, go) {
+      return el('button.tab-btn', {
+        type: 'button', 'data-nav': key, 'aria-label': label,
+        onclick: go
+      }, [
+        el('span.tab-icon', { html: TAB_ICONS[key] }),
+        el('span.tab-label', { text: label })
+      ]);
+    }
+    return el('nav.tabbar', { 'aria-label': 'مسیرهای اصلی' }, [
+      tab('work', 'کارتابل', function () { app.goWork(); }),
+      tab('list', 'پرونده‌ها', function () { app.goList(); }),
+      el('button.tab-new', {
+        type: 'button', text: '＋', 'aria-label': 'پروندهٔ جدید',
+        title: 'پروندهٔ جدید',
+        onclick: function () { app.newCase(); }
+      }),
+      tab('people', 'اشخاص', function () { app.goPeople(); }),
+      tab('report', 'گزارش‌ها', function () { app.goReport(); })
     ]);
   }
 
@@ -453,6 +552,7 @@
       app.state.q = '';
       app.state.filters = {};
       w.U.clear(mount);
+      if (tabBarNode) tabBarNode.style.display = 'none';
       w.UILock.showLock(afterUnlock);
       if (automatic) {
         setTimeout(function () {
@@ -490,6 +590,7 @@
         document.body.insertBefore(topBarNode, mount);
       }
       topBarNode.style.display = '';
+      if (tabBarNode) tabBarNode.style.display = '';
       app.render();
       resetIdle();
       setTimeout(backupReminder, 2500);
@@ -505,11 +606,21 @@
   }
 
   var topBarNode = null;
+  var tabBarNode = null;
 
   function boot() {
     mount = $('#main');
     topBarNode = topBar();
     document.body.insertBefore(topBarNode, mount);
+    tabBarNode = tabBar();
+    document.body.appendChild(tabBarNode);
+
+    // با چرخاندن گوشی یا تغییر اندازه، نما باید دوباره ساخته شود:
+    // فهرست روی موبایل کارت است و روی دسکتاپ جدول.
+    w.Mobile.onChange(function () {
+      if (w.Store.isLocked && w.Store.isLocked()) return;
+      app.render();
+    });
 
     w.Store.onStatusChange(updateStatusChip);
 
@@ -518,6 +629,7 @@
       bindIdle();
       if (w.Store.isLocked()) {
         topBarNode.style.display = 'none';
+        tabBarNode.style.display = 'none';
         w.UILock.showLock(afterUnlock);
         return null;
       }

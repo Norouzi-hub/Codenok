@@ -646,8 +646,24 @@
             (s.lastSavedAt ? ' — آخرین ذخیره ' + J.stamp(s.lastSavedAt) : '')
           : (s.canLink
             ? 'هنوز به هیچ فایلی روی دیسک وصل نیست. توصیه می‌شود وصل کنید.'
-            : 'این مرورگر از ذخیرهٔ مستقیم روی فایل پشتیبانی نمی‌کند؛ از «نسخهٔ پشتیبان» استفاده کنید.')
+            : (w.Mobile.isPhone()
+              ? 'روی موبایل، مرورگر اجازهٔ نوشتن روی فایل دیسک را نمی‌دهد. ' +
+                'داده‌ها در خود مرورگر می‌ماند؛ تنها راهِ بیرون بردن یا نگه‌داشتنش، ' +
+                'گرفتن «نسخهٔ پشتیبان» است — و اگر داده‌های مرورگر پاک شود، ' +
+                'بدون پشتیبان چیزی باقی نمی‌ماند.'
+              : 'این مرورگر از ذخیرهٔ مستقیم روی فایل پشتیبانی نمی‌کند؛ از «نسخهٔ پشتیبان» استفاده کنید.'))
       }));
+      if (!s.canLink) {
+        storageInfo.appendChild(el('div.btn-row', null, [
+          el('button.btn.small.primary', {
+            type: 'button', text: 'گرفتن نسخهٔ پشتیبان', onclick: exportJson
+          }),
+          el('button.btn.small', {
+            type: 'button', text: 'بازگرداندن از پشتیبان',
+            onclick: function () { m.close(); restoreJson(app); }
+          })
+        ]));
+      }
       if (s.canLink) {
         if (!s.linked && s.hasStored) {
           storageInfo.appendChild(el('button.btn.small.primary', {

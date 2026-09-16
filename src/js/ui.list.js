@@ -4,6 +4,7 @@
 
   var el = w.U.el, $ = w.U.$, J = w.J, M = w.Model;
   var ROW_H = 38;
+  var CARD_H = 120;   // ارتفاع ثابت کارت موبایل، تا رندر مجازی سر جایش بماند
   var OVERSCAN = 8;
 
   var FILTER_FIELDS = [
@@ -198,6 +199,92 @@
     return { node: scroller, paint: function () { lastStart = -1; paint(); } };
   }
 
+  // ------------------------------------------------- کارت‌های موبایل
+  /* روی گوشی، جدول چندستونی خوانده نمی‌شود. هر پرونده یک کارت است: شمارهٔ ثبت،
+     وضعیت، نام، و اقدام بعدی — همان چیزی که با یک نگاه لازم است. */
+  function buildCards(app, rows) {
+    var viewport = el('div.cards-viewport');
+    var spacer = el('div.cards-spacer');
+    spacer.style.height = (rows.length * CARD_H) + 'px';
+    spacer.appendChild(viewport);
+
+    var scroller = el('div.cards-scroll');
+    scroller.appendChild(spacer);
+
+    var lastStart = -1;
+
+    function paint() {
+      var visible = Math.ceil(scroller.clientHeight / CARD_H) + OVERSCAN * 2;
+      var start = Math.max(0, Math.floor(scroller.scrollTop / CARD_H) - OVERSCAN);
+      if (start === lastStart) return;
+      lastStart = start;
+      var end = Math.min(rows.length, start + visible);
+      w.U.clear(viewport);
+      viewport.style.transform = 'translateY(' + (start * CARD_H) + 'px)';
+      for (var i = start; i < end; i++) viewport.appendChild(makeCard(app, rows[i]));
+    }
+
+    scroller.addEventListener('scroll', function () {
+      window.requestAnimationFrame(paint);
+    }, { passive: true });
+
+    setTimeout(paint, 0);
+    return { node: scroller, paint: function () { lastStart = -1; paint(); } };
+  }
+
+  function makeCard(app, rec) {
+    var action = w.Worklist.nextAction(rec);
+    var cls = '';
+    if (action.key === 'closed') cls = '.done-row';
+    else if (action.overdue) cls = '.late';
+    else if (action.remaining != null && action.remaining <= 3) cls = '.due';
+
+    var card = el('article.case-card' + cls + (app.state.selected[rec.id] ? '.picked' : ''), {
+      tabindex: '0',
+      onclick: function () { app.openCase(rec.id); },
+      onkeydown: function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); app.openCase(rec.id); }
+      }
+    });
+
+    var pick = el('input.card-pick', {
+      type: 'checkbox', checked: !!app.state.selected[rec.id],
+      'aria-label': 'انتخاب پروندهٔ ' + (rec.caseNo || '')
+    });
+    pick.addEventListener('click', function (e) { e.stopPropagation(); });
+    pick.addEventListener('change', function () {
+      app.toggleSelect(rec.id, pick.checked);
+      card.classList.toggle('picked', pick.checked);
+      app.refreshSelectionBar();
+    });
+
+    var status = rec.status || '';
+    card.appendChild(el('div.card-top', null, [
+      pick,
+      el('span.reg-no', { text: w.U.toLatinDigits(rec.caseNo || '—') }),
+      status ? el('span.pill.' + (statusClass(status) || 'st-none'), { text: status }) : null,
+      el('div.spacer'),
+      el('span.card-date', { text: rec.intakeDate ? J.format(rec.intakeDate) : '' })
+    ]));
+
+    var who = w.Person.fullName(rec);
+    card.appendChild(el('div.card-name', {
+      text: who || 'بدون نام', title: who
+    }));
+
+    var meta = [rec.orgUnit, rec.expert].filter(Boolean).join(' • ');
+    card.appendChild(el('div.card-foot', null, [
+      w.UIWorklist.rail(rec, 'mini'),
+      el('span.card-action', { text: action.label || '' }),
+      action.days != null && action.key !== 'closed'
+        ? el('span.card-days' + (action.overdue ? '.late' : ''), {
+          text: w.U.toFaDigits(action.days) + ' روز'
+        }) : null
+    ]));
+    if (meta) card.appendChild(el('div.card-meta', { text: meta, title: meta }));
+    return card;
+  }
+
   function makeRow(app, rec, fields, template, i) {
     var action = w.Worklist.nextAction(rec);
     var urgency = '';
@@ -246,6 +333,58 @@
     return row;
   }
 
+  // -------------------------------------------------- فیلتر و ابزار روی موبایل
+  function activeFilterCount(app) {
+    return Object.keys(app.state.filters).filter(function (k) {
+      return k.charAt(0) !== '_' && (app.state.filters[k] || []).length;
+    }).length;
+  }
+
+  function openFilterSheet(app) {
+    var body = el('div.filter-sheet', null, [renderFilters(app), w.UIMisc.statsPanel(app)]);
+    var m = w.U.modal('فیلترها', body, [
+      el('button.btn.primary', {
+        type: 'button', text: 'نمایش نتیجه',
+        onclick: function () { m.close(); }
+      })
+    ]);
+    // هر تغییر فیلتر، فهرست پشت سر را بازمی‌سازد؛ شیت باید باز بماند
+    m.root.classList.add('filter-modal');
+  }
+
+  function openListTools(app, rows) {
+    w.Mobile.sheet('ابزارهای فهرست', [
+      {
+        icon: 'imp', label: 'ورود از اکسل',
+        hint: 'همین قالب را می‌خواند و فیلدها را پر می‌کند',
+        onclick: function () { w.UIMisc.importExcel(app); }
+      },
+      {
+        icon: 'exp', label: 'خروجی اکسل از این نتیجه',
+        hint: w.U.toFaDigits(rows.length) + ' پرونده',
+        onclick: function () { w.UIMisc.exportExcel(rows); }
+      },
+      {
+        icon: 'print', label: 'چاپ فهرست',
+        onclick: function () { w.UIPrint.printList(rows); }
+      },
+      {
+        icon: 'columns', label: 'ستون‌های جدول',
+        hint: 'برای نمای رایانه و چاپ',
+        onclick: function () { w.UIMisc.columnsDialog(app); }
+      },
+      { sep: true },
+      {
+        icon: 'check', label: 'انتخاب همهٔ این نتیجه',
+        hint: 'برای اقدام دسته‌ای',
+        onclick: function () {
+          rows.forEach(function (r) { app.toggleSelect(r.id, true); });
+          app.render();
+        }
+      }
+    ]);
+  }
+
   // ------------------------------------------------------------------ صفحه
   function render(app, mount) {
     var rows = M.query({
@@ -255,30 +394,49 @@
     app.state.lastResult = rows;
 
     var total = M.state.cases.length;
-    var summary = el('div.result-bar', null, [
-      el('span.result-count', {
-        html: '<b>' + w.U.toFaDigits(rows.length) + '</b> پرونده' +
-          (rows.length !== total ? ' از ' + w.U.toFaDigits(total) : '')
-      }),
-      el('div.spacer'),
-      el('button.btn.small.ghost', {
-        type: 'button', text: 'ورود از اکسل',
-        title: 'خواندن فایل اکسل با همین قالب و پر کردن خودکار فیلدها',
-        onclick: function () { w.UIMisc.importExcel(app); }
-      }),
-      el('button.btn.small.ghost', {
-        type: 'button', text: 'ستون‌های جدول',
-        onclick: function () { w.UIMisc.columnsDialog(app); }
-      }),
-      el('button.btn.small.ghost', {
-        type: 'button', text: 'چاپ فهرست',
-        onclick: function () { w.UIPrint.printList(rows); }
-      }),
-      el('button.btn.small', {
-        type: 'button', text: 'خروجی اکسل از این نتیجه',
-        onclick: function () { w.UIMisc.exportExcel(rows); }
-      })
-    ]);
+    var phone = w.Mobile.isPhone();
+    var countNode = el('span.result-count', {
+      html: '<b>' + w.U.toFaDigits(rows.length) + '</b> پرونده' +
+        (rows.length !== total ? ' از ' + w.U.toFaDigits(total) : '')
+    });
+
+    var summary = phone
+      ? el('div.result-bar.mobile', null, [
+        countNode,
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', onclick: function () { openFilterSheet(app); }
+        }, [
+          el('span', { text: 'فیلترها' }),
+          activeFilterCount(app)
+            ? el('span.badge', { text: w.U.toFaDigits(activeFilterCount(app)) }) : null
+        ]),
+        el('button.btn.small.ghost', {
+          type: 'button', text: '⋯', 'aria-label': 'ابزارهای فهرست',
+          onclick: function () { openListTools(app, rows); }
+        })
+      ])
+      : el('div.result-bar', null, [
+        countNode,
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'ورود از اکسل',
+          title: 'خواندن فایل اکسل با همین قالب و پر کردن خودکار فیلدها',
+          onclick: function () { w.UIMisc.importExcel(app); }
+        }),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'ستون‌های جدول',
+          onclick: function () { w.UIMisc.columnsDialog(app); }
+        }),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'چاپ فهرست',
+          onclick: function () { w.UIPrint.printList(rows); }
+        }),
+        el('button.btn.small', {
+          type: 'button', text: 'خروجی اکسل از این نتیجه',
+          onclick: function () { w.UIMisc.exportExcel(rows); }
+        })
+      ]);
 
     var note = app.state.filterNote ? el('div.filter-note', null, [
       el('span.fn-icon', { text: '⌖', 'aria-hidden': 'true' }),
@@ -295,7 +453,7 @@
       })
     ]) : null;
 
-    var table = buildTable(app, rows);
+    var table = rows.length ? (phone ? buildCards(app, rows) : buildTable(app, rows)) : null;
     var body = rows.length
       ? table.node
       : el('div.empty-state', null, [
@@ -312,6 +470,8 @@
       var ids = app.selectedIds();
       w.U.clear(selBar);
       selBar.classList.toggle('on', ids.length > 0);
+      // روی موبایل نوار اقدام شناور است؛ آخرین کارت نباید زیرش گم شود
+      if (selBar.parentNode) selBar.parentNode.classList.toggle('has-sel', ids.length > 0);
       if (!ids.length) return;
       selBar.appendChild(el('b.sel-count', {
         text: w.U.toFaDigits(ids.length) + ' پرونده انتخاب شده'
@@ -339,12 +499,15 @@
     };
 
     w.U.clear(mount);
-    mount.appendChild(el('div.list-layout', null, [
-      el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
+    mount.appendChild(el('div.list-layout' + (phone ? '.phone' : ''), null, [
+      phone ? null
+        : el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
       el('section.list-main', null, [note, summary, body, selBar])
     ]));
     app.refreshSelectionBar();
   }
 
-  w.UIList = { render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth };
+  w.UIList = {
+    render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth
+  };
 })(window);

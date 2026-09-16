@@ -75,6 +75,10 @@
 * { box-sizing: border-box; }
 
 html, body { height: 100%; margin: 0; }
+html {
+  -webkit-text-size-adjust: 100%;   /* چرخاندن گوشی نباید قلم را بزرگ کند */
+  text-size-adjust: 100%;
+}
 
 body {
   background: var(--paper);
@@ -87,7 +91,15 @@ body {
   flex-direction: column;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgba(166, 116, 27, .12);
 }
+
+/* روی موبایل ارتفاع واقعیِ دیدرس با نوار آدرس فرق می‌کند */
+@supports (height: 100dvh) {
+  html, body { height: 100dvh; }
+}
+
+button, input, select, textarea { touch-action: manipulation; }
 
 h1, h2, h3, h4 {
   margin: 0 0 .5em;
@@ -570,7 +582,14 @@ button.wl-stat:hover { border-color: #D3CEC1; }
 }
 .sidebar h3 { font-size: 12px; text-transform: none; color: var(--muted); font-weight: 600; }
 
-.list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 12px 14px; }
+.list-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;   /* وگرنه در چیدمان ستونی (موبایل) از قاب بیرون می‌زند و اسکرول نمی‌شود */
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+}
 
 .result-bar {
   display: flex;
@@ -1919,16 +1938,411 @@ select.input { cursor: pointer; }
   tr { break-inside: avoid; }
 }
 
-/* ---------------------------------------------------------------- واکنش‌گرا */
-@media (max-width: 900px) {
+/* ================================================================
+   واکنش‌گرا — از میز کار تا گوشی
+   ----------------------------------------------------------------
+   روی رایانه، برنامه یک دفتر است: جدول چندستونی، فیلترِ کناری، نوار
+   بالای پُر. روی گوشی همان کار باید با یک شست انجام شود: کارت به‌جای
+   سطر، نوار پایین به‌جای نوار بالا، و شیت به‌جای پنجره.
+   ================================================================ */
+
+/* عنصرهای مخصوص موبایل، روی رایانه پنهان‌اند */
+.more-btn, .tabbar { display: none; }
+
+/* ------------------------------------------------------------ شیت پایین */
+.sheet-overlay { align-items: flex-end; padding: 0; }
+.sheet {
+  width: 100%;
+  background: var(--card);
+  border-radius: 18px 18px 0 0;
+  padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: sheet-up .18s ease-out;
+}
+@keyframes sheet-up { from { transform: translateY(14px); opacity: .6; } }
+.sheet-head { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0 10px; }
+.sheet-grip { width: 38px; height: 4px; border-radius: 999px; background: var(--line); }
+.sheet-head h3 { margin: 0; font-size: 14px; color: var(--muted); font-weight: 600; }
+.sheet-list { display: flex; flex-direction: column; }
+.sheet-sep { height: 1px; background: var(--line-soft); margin: 7px 0; }
+.sheet-item {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 6px;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+  color: var(--ink);
+  border-radius: var(--radius);
+}
+.sheet-item:active { background: var(--paper-2); }
+.sheet-icon {
+  width: 36px; height: 36px; flex: 0 0 36px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: var(--paper-2);
+  color: var(--ink-700);
+  line-height: 0;
+}
+.sheet-text { display: flex; flex-direction: column; line-height: 1.5; min-width: 0; }
+.sheet-text b { font-size: 14px; font-weight: 600; }
+.sheet-text small { font-size: 11.5px; color: var(--muted); }
+.sheet-status {
+  font: inherit;
+  font-size: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: start;
+}
+.sheet-close { margin-top: 10px; min-height: 46px; }
+
+/* ------------------------------------------------------- نوار پایین موبایل */
+.tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  background: var(--ink-900);
+  color: #fff;
+  align-items: center;
+  justify-content: space-around;
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 24px -16px rgba(23, 26, 46, .6);
+}
+.tab-btn {
+  font: inherit;
+  flex: 1;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, .55);
+  cursor: pointer;
+  border-radius: 10px;
+}
+.tab-btn .tab-icon { display: block; line-height: 0; }
+.tab-btn.active .tab-icon { color: var(--brass); }
+.tab-btn .tab-label { font-size: 10.5px; }
+.tab-btn.active { color: #fff; }
+.tab-new {
+  font: inherit;
+  flex: 0 0 auto;
+  width: 48px; height: 48px;
+  margin: 0 2px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--brass);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px -6px rgba(166, 116, 27, .9);
+}
+.tab-new:active { transform: translateY(1px); }
+
+/* ------------------------------------------------------------ کارت پرونده */
+.cards-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.cards-spacer { position: relative; }
+.cards-viewport { position: absolute; inset-inline: 0; top: 0; will-change: transform; }
+.case-card {
+  height: 112px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+.case-card::before {
+  content: '';
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: transparent;
+}
+.case-card.late::before { background: var(--cinnabar); }
+.case-card.due::before { background: var(--brass); }
+.case-card.done-row { opacity: .72; }
+.case-card.picked { border-color: var(--brass); background: var(--brass-soft); }
+.card-top { display: flex; align-items: center; gap: 8px; }
+.card-pick { width: 19px; height: 19px; accent-color: var(--brass); flex: 0 0 auto; }
+.card-top .reg-no { font-size: 13px; }
+.card-top .pill {
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-date { font-size: 11px; color: var(--muted); }
+.card-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-foot { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.card-action {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-days {
+  font-size: 11px;
+  color: var(--muted);
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+.card-days.late { color: var(--cinnabar); font-weight: 600; }
+.card-meta {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --------------------------------------------------------- تبلت و صفحهٔ کوچک */
+@media (max-width: 1000px) {
   .person-layout { grid-template-columns: 1fr; }
   .doc-add-fields { grid-template-columns: auto 1fr; }
   .doc-item { flex-wrap: wrap; }
   .hero-row { grid-template-columns: 1fr; }
   .chart-grid { grid-template-columns: 1fr; }
-  .main-nav { order: 2; }
   .list-layout { flex-direction: column; }
-  .sidebar { width: auto; flex: 0 0 auto; max-height: 230px; border-inline-start: 0; border-bottom: 1px solid var(--line); }
+  .sidebar {
+    width: auto; flex: 0 0 auto; max-height: 230px;
+    border-inline-start: 0; border-bottom: 1px solid var(--line);
+  }
   .topbar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
+  .main-nav { order: 2; }
   .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
+  /* روی تبلت، خروجی‌ها زیر ⋯ می‌روند تا نوار بالا شلوغ نشود */
+  .top-actions .btn.ghost { display: none; }
+  .more-btn { display: grid; place-items: center; width: 36px; height: 36px; font-size: 19px; }
+  .chip { max-width: 44%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ------------------------------------------------------------------ گوشی */
+@media (max-width: 720px) {
+  /* --- پوسته --- */
+  body { font-size: 14px; }
+  .topbar {
+    height: 54px;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 0 10px;
+    padding-top: env(safe-area-inset-top);
+  }
+  .brand-text, .main-nav, .top-actions { display: none; }
+  .brand { gap: 0; }
+  .logo { width: 32px; height: 32px; }
+  .search-wrap { order: 0; flex: 1; max-width: none; }
+  .search { font-size: 16px; padding: 9px 14px; }   /* زیر ۱۶ پیکسل، iOS زوم می‌کند */
+  .more-btn { display: grid; place-items: center; width: 38px; height: 38px; font-size: 20px; }
+  .tabbar { display: flex; }
+
+  /* جا برای نوار پایین، در همهٔ نماهای اسکرول‌شونده */
+  #main { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+
+  /* --- ورودی‌ها و دکمه‌ها: هدف لمس --- */
+  .input, .search, select.input, textarea.input { font-size: 16px; }
+  .btn { min-height: 40px; padding: 8px 14px; }
+  .btn.small { min-height: 34px; padding: 6px 11px; font-size: 12.5px; }
+  .icon-btn { min-width: 38px; min-height: 38px; }
+
+  /* --- کارتابل --- */
+  .worklist { padding: 16px 14px 40px; }
+  .wl-hero-line { font-size: 20px; }
+  .wl-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .wl-stat { min-width: 0; }
+  .wl-stats > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .wl-head { flex-wrap: wrap; gap: 6px; }
+  /* سطر کارتابل روی گوشی دو خط می‌شود؛ وگرنه نام به یک حرف می‌رسد */
+  .wl-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'no     wait'
+      'person rail'
+      'unit   rail';
+    gap: 1px 10px;
+    padding: 10px 14px;
+  }
+  .wl-row > .reg-no { grid-area: no; }
+  .wl-person { grid-area: person; font-size: 13.5px; }
+  .wl-unit { grid-area: unit; }
+  .wl-row > .rail-mini { grid-area: rail; align-self: center; }
+  .wl-wait { grid-area: wait; align-self: start; text-align: start; }
+  .wl-go { display: none; }   /* روی لمس، خود سطر دکمه است */
+  .rail-pipe { overflow-x: auto; padding-bottom: 6px; }
+
+  /* --- فهرست --- */
+  .list-layout.phone { flex-direction: column; }
+  .list-main { padding: 10px 12px 0; }
+  .result-bar.mobile { gap: 6px; padding-bottom: 8px; }
+  .result-bar.mobile .btn.small { min-height: 34px; }
+  .filter-modal .modal-body .filters { padding: 0; }
+  .filter-modal .filters > h3 { display: none; }   /* عنوان پنجره خودش هست */
+  .filter-sheet .stats { margin-top: 16px; }
+  .filter-group summary { padding: 11px 2px; font-size: 14px; }
+  .filter-group summary::after {
+    content: '⌄';
+    margin-inline-start: auto;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .filter-group[open] > summary::after { content: '⌃'; }
+  .filter-option { padding: 7px 2px; font-size: 13.5px; }
+  .filter-option input { width: 19px; height: 19px; }
+
+  /* نوار اقدام دسته‌ای، بالای نوار پایین می‌نشیند */
+  .sel-bar {
+    position: fixed;
+    inset-inline: 10px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    margin: 0;
+    flex-wrap: wrap;
+    z-index: 55;
+  }
+  .sel-bar .btn { min-height: 36px; }
+  .list-main.has-sel .cards-spacer { padding-bottom: 92px; }
+
+  /* --- پرونده --- */
+  .case-view { padding: 14px 13px 40px; }
+  .case-title { font-size: 17px; }
+  .case-head { gap: 8px; }
+  .case-actions { flex-wrap: wrap; gap: 6px; }
+  /* ریل هشت‌مرحله‌ای روی گوشی جا نمی‌شود؛ به‌جای فشرده شدن، کنار می‌رود */
+  .case-rail { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .case-rail::-webkit-scrollbar { display: none; }
+  .rail-full { min-width: 560px; }
+  .rail-full .rail-date { font-size: 9.5px; }
+  .field-grid { grid-template-columns: 1fr; gap: 12px; }
+  .form-panel { padding: 14px 13px; border-radius: var(--radius); }
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { white-space: nowrap; padding: 11px 12px; }
+  .timeline { padding-inline-start: 14px; }
+
+  /* --- یادداشت --- */
+  .note-form-row { align-items: stretch; gap: 8px 6px; }
+  .note-form-row > .field-label { flex: 1 0 100%; }
+  .note-form-row .date-field { flex: 1 0 100%; min-width: 0; }
+  .note-form-row > .btn.ghost {
+    flex: 1 1 calc(50% - 3px);   /* دو میان‌بر در هر سطر */
+    border-color: var(--line);
+    background: var(--card);
+  }
+  .note-form-row > .spacer { display: none; }
+  .note-form-row > .btn.primary { flex: 1 0 100%; min-height: 44px; }
+  .note-actions { flex-wrap: wrap; }
+  /* اقدام دسته‌ای: فیلد بالا، مقدار پایین — وگرنه جعبهٔ تاریخ به یک وجب می‌رسد */
+  .bulk-row {
+    grid-template-columns: 1fr 34px;
+    grid-template-areas: 'field remove' 'value value';
+    row-gap: 7px;
+  }
+  .bulk-row > select { grid-area: field; }
+  .bulk-value { grid-area: value; }
+  .bulk-remove { grid-area: remove; }
+  .bulk-row .input, .bulk-row .date-field { min-width: 0; }
+
+  /* --- مستندات --- */
+  .doc-add-fields { grid-template-columns: 1fr; }
+  .doc-item { gap: 8px; }
+  .doc-thumb { width: 54px; height: 54px; }
+
+  /* --- اشخاص و گزارش --- */
+  /* جدول پرونده‌های شخص عمداً پهن می‌ماند و داخل قابش کنار می‌رود */
+  .table-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .person-grid { grid-template-columns: 1fr; }
+  .report-filters { gap: 8px; }
+  .report-filters .input.small, .report-filters .date-field { min-width: 0; flex: 1 1 140px; }
+  /* یافته‌ها: دکمه‌ها زیر متن می‌روند، وگرنه متن به ستونی یک‌کلمه‌ای می‌رسد */
+  .finding { flex-wrap: wrap; }
+  .finding-body { flex: 1 1 calc(100% - 28px); }
+  .finding-actions { flex: 1 0 100%; margin-top: 6px; }
+  .finding-actions .btn { flex: 1 1 auto; }
+  .chart-card { padding: 14px 12px; }
+  .hero-row { grid-template-columns: 1fr; }
+
+  /* --- پنجره‌ها: از پایین بالا می‌آیند --- */
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+    animation: sheet-up .18s ease-out;
+  }
+  .modal-foot {
+    border-radius: 0;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    flex-wrap: wrap;
+  }
+  .modal-foot .btn { flex: 1 1 auto; min-height: 44px; }
+  .modal-body { padding: 14px; }
+
+  /* تقویم: روی گوشی وسط صفحه، نه چسبیده به فیلد */
+  .dp-pop {
+    position: fixed;
+    inset-inline: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    max-width: 340px;
+    margin-inline: auto;
+    z-index: 400;
+  }
+  .dp-cell { min-height: 34px; }
+
+  .toast { inset-inline: 12px; bottom: calc(70px + env(safe-area-inset-bottom)); text-align: center; }
+}
+
+/* روی دستگاه لمسی، دکمه‌هایی که با hover ظاهر می‌شوند همیشه دیده شوند */
+@media (hover: none) {
+  .doc-actions, .note-actions { opacity: 1; visibility: visible; }
+}
+
+/* گوشیِ خیلی باریک */
+@media (max-width: 380px) {
+  .wl-stats { grid-template-columns: 1fr; }
+  .tab-btn .tab-label { font-size: 9.5px; }
 }

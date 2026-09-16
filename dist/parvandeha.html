@@ -90,6 +90,10 @@
 * { box-sizing: border-box; }
 
 html, body { height: 100%; margin: 0; }
+html {
+  -webkit-text-size-adjust: 100%;   /* چرخاندن گوشی نباید قلم را بزرگ کند */
+  text-size-adjust: 100%;
+}
 
 body {
   background: var(--paper);
@@ -102,7 +106,15 @@ body {
   flex-direction: column;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgba(166, 116, 27, .12);
 }
+
+/* روی موبایل ارتفاع واقعیِ دیدرس با نوار آدرس فرق می‌کند */
+@supports (height: 100dvh) {
+  html, body { height: 100dvh; }
+}
+
+button, input, select, textarea { touch-action: manipulation; }
 
 h1, h2, h3, h4 {
   margin: 0 0 .5em;
@@ -585,7 +597,14 @@ button.wl-stat:hover { border-color: #D3CEC1; }
 }
 .sidebar h3 { font-size: 12px; text-transform: none; color: var(--muted); font-weight: 600; }
 
-.list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 12px 14px; }
+.list-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;   /* وگرنه در چیدمان ستونی (موبایل) از قاب بیرون می‌زند و اسکرول نمی‌شود */
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+}
 
 .result-bar {
   display: flex;
@@ -1934,18 +1953,413 @@ select.input { cursor: pointer; }
   tr { break-inside: avoid; }
 }
 
-/* ---------------------------------------------------------------- واکنش‌گرا */
-@media (max-width: 900px) {
+/* ================================================================
+   واکنش‌گرا — از میز کار تا گوشی
+   ----------------------------------------------------------------
+   روی رایانه، برنامه یک دفتر است: جدول چندستونی، فیلترِ کناری، نوار
+   بالای پُر. روی گوشی همان کار باید با یک شست انجام شود: کارت به‌جای
+   سطر، نوار پایین به‌جای نوار بالا، و شیت به‌جای پنجره.
+   ================================================================ */
+
+/* عنصرهای مخصوص موبایل، روی رایانه پنهان‌اند */
+.more-btn, .tabbar { display: none; }
+
+/* ------------------------------------------------------------ شیت پایین */
+.sheet-overlay { align-items: flex-end; padding: 0; }
+.sheet {
+  width: 100%;
+  background: var(--card);
+  border-radius: 18px 18px 0 0;
+  padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: sheet-up .18s ease-out;
+}
+@keyframes sheet-up { from { transform: translateY(14px); opacity: .6; } }
+.sheet-head { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0 10px; }
+.sheet-grip { width: 38px; height: 4px; border-radius: 999px; background: var(--line); }
+.sheet-head h3 { margin: 0; font-size: 14px; color: var(--muted); font-weight: 600; }
+.sheet-list { display: flex; flex-direction: column; }
+.sheet-sep { height: 1px; background: var(--line-soft); margin: 7px 0; }
+.sheet-item {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 6px;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+  color: var(--ink);
+  border-radius: var(--radius);
+}
+.sheet-item:active { background: var(--paper-2); }
+.sheet-icon {
+  width: 36px; height: 36px; flex: 0 0 36px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: var(--paper-2);
+  color: var(--ink-700);
+  line-height: 0;
+}
+.sheet-text { display: flex; flex-direction: column; line-height: 1.5; min-width: 0; }
+.sheet-text b { font-size: 14px; font-weight: 600; }
+.sheet-text small { font-size: 11.5px; color: var(--muted); }
+.sheet-status {
+  font: inherit;
+  font-size: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: start;
+}
+.sheet-close { margin-top: 10px; min-height: 46px; }
+
+/* ------------------------------------------------------- نوار پایین موبایل */
+.tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  background: var(--ink-900);
+  color: #fff;
+  align-items: center;
+  justify-content: space-around;
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 24px -16px rgba(23, 26, 46, .6);
+}
+.tab-btn {
+  font: inherit;
+  flex: 1;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, .55);
+  cursor: pointer;
+  border-radius: 10px;
+}
+.tab-btn .tab-icon { display: block; line-height: 0; }
+.tab-btn.active .tab-icon { color: var(--brass); }
+.tab-btn .tab-label { font-size: 10.5px; }
+.tab-btn.active { color: #fff; }
+.tab-new {
+  font: inherit;
+  flex: 0 0 auto;
+  width: 48px; height: 48px;
+  margin: 0 2px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--brass);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px -6px rgba(166, 116, 27, .9);
+}
+.tab-new:active { transform: translateY(1px); }
+
+/* ------------------------------------------------------------ کارت پرونده */
+.cards-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.cards-spacer { position: relative; }
+.cards-viewport { position: absolute; inset-inline: 0; top: 0; will-change: transform; }
+.case-card {
+  height: 112px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+.case-card::before {
+  content: '';
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: transparent;
+}
+.case-card.late::before { background: var(--cinnabar); }
+.case-card.due::before { background: var(--brass); }
+.case-card.done-row { opacity: .72; }
+.case-card.picked { border-color: var(--brass); background: var(--brass-soft); }
+.card-top { display: flex; align-items: center; gap: 8px; }
+.card-pick { width: 19px; height: 19px; accent-color: var(--brass); flex: 0 0 auto; }
+.card-top .reg-no { font-size: 13px; }
+.card-top .pill {
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-date { font-size: 11px; color: var(--muted); }
+.card-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-foot { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.card-action {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-days {
+  font-size: 11px;
+  color: var(--muted);
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+.card-days.late { color: var(--cinnabar); font-weight: 600; }
+.card-meta {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --------------------------------------------------------- تبلت و صفحهٔ کوچک */
+@media (max-width: 1000px) {
   .person-layout { grid-template-columns: 1fr; }
   .doc-add-fields { grid-template-columns: auto 1fr; }
   .doc-item { flex-wrap: wrap; }
   .hero-row { grid-template-columns: 1fr; }
   .chart-grid { grid-template-columns: 1fr; }
-  .main-nav { order: 2; }
   .list-layout { flex-direction: column; }
-  .sidebar { width: auto; flex: 0 0 auto; max-height: 230px; border-inline-start: 0; border-bottom: 1px solid var(--line); }
+  .sidebar {
+    width: auto; flex: 0 0 auto; max-height: 230px;
+    border-inline-start: 0; border-bottom: 1px solid var(--line);
+  }
   .topbar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
+  .main-nav { order: 2; }
   .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
+  /* روی تبلت، خروجی‌ها زیر ⋯ می‌روند تا نوار بالا شلوغ نشود */
+  .top-actions .btn.ghost { display: none; }
+  .more-btn { display: grid; place-items: center; width: 36px; height: 36px; font-size: 19px; }
+  .chip { max-width: 44%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ------------------------------------------------------------------ گوشی */
+@media (max-width: 720px) {
+  /* --- پوسته --- */
+  body { font-size: 14px; }
+  .topbar {
+    height: 54px;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 0 10px;
+    padding-top: env(safe-area-inset-top);
+  }
+  .brand-text, .main-nav, .top-actions { display: none; }
+  .brand { gap: 0; }
+  .logo { width: 32px; height: 32px; }
+  .search-wrap { order: 0; flex: 1; max-width: none; }
+  .search { font-size: 16px; padding: 9px 14px; }   /* زیر ۱۶ پیکسل، iOS زوم می‌کند */
+  .more-btn { display: grid; place-items: center; width: 38px; height: 38px; font-size: 20px; }
+  .tabbar { display: flex; }
+
+  /* جا برای نوار پایین، در همهٔ نماهای اسکرول‌شونده */
+  #main { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+
+  /* --- ورودی‌ها و دکمه‌ها: هدف لمس --- */
+  .input, .search, select.input, textarea.input { font-size: 16px; }
+  .btn { min-height: 40px; padding: 8px 14px; }
+  .btn.small { min-height: 34px; padding: 6px 11px; font-size: 12.5px; }
+  .icon-btn { min-width: 38px; min-height: 38px; }
+
+  /* --- کارتابل --- */
+  .worklist { padding: 16px 14px 40px; }
+  .wl-hero-line { font-size: 20px; }
+  .wl-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .wl-stat { min-width: 0; }
+  .wl-stats > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .wl-head { flex-wrap: wrap; gap: 6px; }
+  /* سطر کارتابل روی گوشی دو خط می‌شود؛ وگرنه نام به یک حرف می‌رسد */
+  .wl-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'no     wait'
+      'person rail'
+      'unit   rail';
+    gap: 1px 10px;
+    padding: 10px 14px;
+  }
+  .wl-row > .reg-no { grid-area: no; }
+  .wl-person { grid-area: person; font-size: 13.5px; }
+  .wl-unit { grid-area: unit; }
+  .wl-row > .rail-mini { grid-area: rail; align-self: center; }
+  .wl-wait { grid-area: wait; align-self: start; text-align: start; }
+  .wl-go { display: none; }   /* روی لمس، خود سطر دکمه است */
+  .rail-pipe { overflow-x: auto; padding-bottom: 6px; }
+
+  /* --- فهرست --- */
+  .list-layout.phone { flex-direction: column; }
+  .list-main { padding: 10px 12px 0; }
+  .result-bar.mobile { gap: 6px; padding-bottom: 8px; }
+  .result-bar.mobile .btn.small { min-height: 34px; }
+  .filter-modal .modal-body .filters { padding: 0; }
+  .filter-modal .filters > h3 { display: none; }   /* عنوان پنجره خودش هست */
+  .filter-sheet .stats { margin-top: 16px; }
+  .filter-group summary { padding: 11px 2px; font-size: 14px; }
+  .filter-group summary::after {
+    content: '⌄';
+    margin-inline-start: auto;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .filter-group[open] > summary::after { content: '⌃'; }
+  .filter-option { padding: 7px 2px; font-size: 13.5px; }
+  .filter-option input { width: 19px; height: 19px; }
+
+  /* نوار اقدام دسته‌ای، بالای نوار پایین می‌نشیند */
+  .sel-bar {
+    position: fixed;
+    inset-inline: 10px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    margin: 0;
+    flex-wrap: wrap;
+    z-index: 55;
+  }
+  .sel-bar .btn { min-height: 36px; }
+  .list-main.has-sel .cards-spacer { padding-bottom: 92px; }
+
+  /* --- پرونده --- */
+  .case-view { padding: 14px 13px 40px; }
+  .case-title { font-size: 17px; }
+  .case-head { gap: 8px; }
+  .case-actions { flex-wrap: wrap; gap: 6px; }
+  /* ریل هشت‌مرحله‌ای روی گوشی جا نمی‌شود؛ به‌جای فشرده شدن، کنار می‌رود */
+  .case-rail { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .case-rail::-webkit-scrollbar { display: none; }
+  .rail-full { min-width: 560px; }
+  .rail-full .rail-date { font-size: 9.5px; }
+  .field-grid { grid-template-columns: 1fr; gap: 12px; }
+  .form-panel { padding: 14px 13px; border-radius: var(--radius); }
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { white-space: nowrap; padding: 11px 12px; }
+  .timeline { padding-inline-start: 14px; }
+
+  /* --- یادداشت --- */
+  .note-form-row { align-items: stretch; gap: 8px 6px; }
+  .note-form-row > .field-label { flex: 1 0 100%; }
+  .note-form-row .date-field { flex: 1 0 100%; min-width: 0; }
+  .note-form-row > .btn.ghost {
+    flex: 1 1 calc(50% - 3px);   /* دو میان‌بر در هر سطر */
+    border-color: var(--line);
+    background: var(--card);
+  }
+  .note-form-row > .spacer { display: none; }
+  .note-form-row > .btn.primary { flex: 1 0 100%; min-height: 44px; }
+  .note-actions { flex-wrap: wrap; }
+  /* اقدام دسته‌ای: فیلد بالا، مقدار پایین — وگرنه جعبهٔ تاریخ به یک وجب می‌رسد */
+  .bulk-row {
+    grid-template-columns: 1fr 34px;
+    grid-template-areas: 'field remove' 'value value';
+    row-gap: 7px;
+  }
+  .bulk-row > select { grid-area: field; }
+  .bulk-value { grid-area: value; }
+  .bulk-remove { grid-area: remove; }
+  .bulk-row .input, .bulk-row .date-field { min-width: 0; }
+
+  /* --- مستندات --- */
+  .doc-add-fields { grid-template-columns: 1fr; }
+  .doc-item { gap: 8px; }
+  .doc-thumb { width: 54px; height: 54px; }
+
+  /* --- اشخاص و گزارش --- */
+  /* جدول پرونده‌های شخص عمداً پهن می‌ماند و داخل قابش کنار می‌رود */
+  .table-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .person-grid { grid-template-columns: 1fr; }
+  .report-filters { gap: 8px; }
+  .report-filters .input.small, .report-filters .date-field { min-width: 0; flex: 1 1 140px; }
+  /* یافته‌ها: دکمه‌ها زیر متن می‌روند، وگرنه متن به ستونی یک‌کلمه‌ای می‌رسد */
+  .finding { flex-wrap: wrap; }
+  .finding-body { flex: 1 1 calc(100% - 28px); }
+  .finding-actions { flex: 1 0 100%; margin-top: 6px; }
+  .finding-actions .btn { flex: 1 1 auto; }
+  .chart-card { padding: 14px 12px; }
+  .hero-row { grid-template-columns: 1fr; }
+
+  /* --- پنجره‌ها: از پایین بالا می‌آیند --- */
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+    animation: sheet-up .18s ease-out;
+  }
+  .modal-foot {
+    border-radius: 0;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    flex-wrap: wrap;
+  }
+  .modal-foot .btn { flex: 1 1 auto; min-height: 44px; }
+  .modal-body { padding: 14px; }
+
+  /* تقویم: روی گوشی وسط صفحه، نه چسبیده به فیلد */
+  .dp-pop {
+    position: fixed;
+    inset-inline: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    max-width: 340px;
+    margin-inline: auto;
+    z-index: 400;
+  }
+  .dp-cell { min-height: 34px; }
+
+  .toast { inset-inline: 12px; bottom: calc(70px + env(safe-area-inset-bottom)); text-align: center; }
+}
+
+/* روی دستگاه لمسی، دکمه‌هایی که با hover ظاهر می‌شوند همیشه دیده شوند */
+@media (hover: none) {
+  .doc-actions, .note-actions { opacity: 1; visibility: visible; }
+}
+
+/* گوشیِ خیلی باریک */
+@media (max-width: 380px) {
+  .wl-stats { grid-template-columns: 1fr; }
+  .tab-btn .tab-label { font-size: 9.5px; }
 }
 
 </style>
@@ -3645,6 +4059,119 @@ window.SEED_CASES = [
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,
     modal: modal, confirmBox: confirmBox, download: download, uid: uid
+  };
+})(window);
+
+</script>
+<script>
+/* ==== js/mobile.js ==== */
+/* موبایل: تشخیص صفحهٔ کوچک، شیت پایین، و قابلیت‌هایی که روی موبایل نیستند */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el;
+  var PHONE = '(max-width: 720px)';
+  var mq = w.matchMedia ? w.matchMedia(PHONE) : { matches: false, addListener: function () {} };
+  var listeners = [];
+
+  function isPhone() { return !!mq.matches; }
+
+  /** لمسی بودن دستگاه — برای دکمه‌هایی که با hover ظاهر می‌شوند */
+  function isTouch() {
+    return ('ontouchstart' in w) || (navigator.maxTouchPoints > 0);
+  }
+
+  function onChange(fn) { listeners.push(fn); }
+
+  var fire = w.U.debounce(function () {
+    listeners.forEach(function (f) {
+      try { f(isPhone()); } catch (e) { /* یک شنونده نباید بقیه را بخواباند */ }
+    });
+  }, 120);
+  if (mq.addEventListener) mq.addEventListener('change', fire);
+  else if (mq.addListener) mq.addListener(fire);
+
+  /* --------------------------------------------------------- قابلیت‌های فایل
+     مرورگرهای موبایل File System Access API ندارند: نه می‌شود به فایل دیتابیس
+     روی دیسک وصل شد، نه پوشهٔ مستندات را باز کرد. به‌جای خطا، صریح می‌گوییم. */
+  function canLinkFile() { return typeof w.showSaveFilePicker === 'function'; }
+  function canPickFolder() { return typeof w.showDirectoryPicker === 'function'; }
+
+  var NO_FILE_MSG = 'مرورگرهای موبایل اجازهٔ نوشتن روی فایل دیسک را نمی‌دهند. ' +
+    'داده‌ها در خود مرورگر ذخیره می‌شود؛ برای انتقال یا نگه‌داری، از «پشتیبان» ' +
+    'خروجی بگیرید.';
+  var NO_FOLDER_MSG = 'روی موبایل، پوشهٔ مستندات روی دیسک در دسترس نیست. ' +
+    'مستندات هر پرونده را روی رایانه اضافه کنید.';
+
+
+  /* ------------------------------------------------------------- آیکن‌ها
+     یک خانواده خط‌نازک، نه شکلک رنگی؛ همان زبان بصری بقیهٔ برنامه. */
+  function svg(d) {
+    return '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  }
+  var ICONS = {
+    plus: svg('<path d="M12 5.5v13M5.5 12h13"/>'),
+    imp: svg('<path d="M12 15.5V4.5"/><path d="M8.5 8L12 4.5 15.5 8"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>'),
+    exp: svg('<path d="M12 4.5v11"/><path d="M8.5 12l3.5 3.5L15.5 12"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>'),
+    db: svg('<ellipse cx="12" cy="6.5" rx="6.5" ry="2.5"/><path d="M5.5 6.5v11c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-11"/><path d="M5.5 12c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5"/>'),
+    backup: svg('<path d="M12 3.5l6.5 2.6v5.2c0 3.8-2.7 7-6.5 8.2-3.8-1.2-6.5-4.4-6.5-8.2V6.1z"/><path d="M9.3 11.8l2 2 3.4-3.6"/>'),
+    lock: svg('<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'),
+    gear: svg('<circle cx="12" cy="12" r="2.8"/><path d="M12 3.5l1.1 2.2 2.4-.5 1 2.2 2.2 1.1-.5 2.4.5 2.4-2.2 1.1-1 2.2-2.4-.5L12 20.5l-1.1-2.2-2.4.5-1-2.2-2.2-1.1.5-2.4-.5-2.4 2.2-1.1 1-2.2 2.4.5z"/>'),
+    print: svg('<path d="M7 9.5V4.5h10v5"/><rect x="4.5" y="9.5" width="15" height="6.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>'),
+    columns: svg('<rect x="4.5" y="5" width="15" height="14" rx="1.5"/><path d="M9.5 5v14M14.5 5v14"/>'),
+    check: svg('<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><path d="M8.3 12.2l2.6 2.6 4.8-5.2"/>'),
+    filter: svg('<path d="M4.5 6h15l-5.8 6.6v5.2l-3.4 1.7v-6.9z"/>')
+  };
+  function icon(name) { return ICONS[name] || ''; }
+
+  /** شیت پایین صفحه: فهرستی از اقدام‌ها، مخصوص لمس */
+  function sheet(title, items) {
+    var overlay = el('div.overlay.sheet-overlay');
+    var close = function () {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    };
+    var onKey = function (e) { if (e.key === 'Escape') close(); };
+
+    var list = el('div.sheet-list');
+    (items || []).forEach(function (it) {
+      if (!it) return;
+      if (it.node) { list.appendChild(it.node); return; }
+      if (it.sep) { list.appendChild(el('div.sheet-sep')); return; }
+      list.appendChild(el('button.sheet-item' + (it.kind ? '.' + it.kind : ''), {
+        type: 'button',
+        onclick: function () { close(); if (it.onclick) it.onclick(); }
+      }, [
+        it.icon ? el('span.sheet-icon', { html: icon(it.icon), 'aria-hidden': 'true' })
+          : el('span.sheet-icon'),
+        el('span.sheet-text', null, [
+          el('b', { text: it.label }),
+          it.hint ? el('small', { text: it.hint }) : null
+        ])
+      ]));
+    });
+
+    var box = el('div.sheet', null, [
+      el('div.sheet-head', null, [
+        el('span.sheet-grip', { 'aria-hidden': 'true' }),
+        el('h3', { text: title || '' })
+      ]),
+      list,
+      el('button.btn.block.sheet-close', { type: 'button', text: 'بستن', onclick: close })
+    ]);
+    overlay.appendChild(box);
+    overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(overlay);
+    return { root: box, close: close };
+  }
+
+  w.Mobile = {
+    isPhone: isPhone, isTouch: isTouch, onChange: onChange, sheet: sheet,
+    canLinkFile: canLinkFile, canPickFolder: canPickFolder, icon: icon,
+    NO_FILE_MSG: NO_FILE_MSG, NO_FOLDER_MSG: NO_FOLDER_MSG
   };
 })(window);
 
@@ -8373,6 +8900,7 @@ else if (typeof exports === 'object'){
 
   var el = w.U.el, $ = w.U.$, J = w.J, M = w.Model;
   var ROW_H = 38;
+  var CARD_H = 120;   // ارتفاع ثابت کارت موبایل، تا رندر مجازی سر جایش بماند
   var OVERSCAN = 8;
 
   var FILTER_FIELDS = [
@@ -8567,6 +9095,92 @@ else if (typeof exports === 'object'){
     return { node: scroller, paint: function () { lastStart = -1; paint(); } };
   }
 
+  // ------------------------------------------------- کارت‌های موبایل
+  /* روی گوشی، جدول چندستونی خوانده نمی‌شود. هر پرونده یک کارت است: شمارهٔ ثبت،
+     وضعیت، نام، و اقدام بعدی — همان چیزی که با یک نگاه لازم است. */
+  function buildCards(app, rows) {
+    var viewport = el('div.cards-viewport');
+    var spacer = el('div.cards-spacer');
+    spacer.style.height = (rows.length * CARD_H) + 'px';
+    spacer.appendChild(viewport);
+
+    var scroller = el('div.cards-scroll');
+    scroller.appendChild(spacer);
+
+    var lastStart = -1;
+
+    function paint() {
+      var visible = Math.ceil(scroller.clientHeight / CARD_H) + OVERSCAN * 2;
+      var start = Math.max(0, Math.floor(scroller.scrollTop / CARD_H) - OVERSCAN);
+      if (start === lastStart) return;
+      lastStart = start;
+      var end = Math.min(rows.length, start + visible);
+      w.U.clear(viewport);
+      viewport.style.transform = 'translateY(' + (start * CARD_H) + 'px)';
+      for (var i = start; i < end; i++) viewport.appendChild(makeCard(app, rows[i]));
+    }
+
+    scroller.addEventListener('scroll', function () {
+      window.requestAnimationFrame(paint);
+    }, { passive: true });
+
+    setTimeout(paint, 0);
+    return { node: scroller, paint: function () { lastStart = -1; paint(); } };
+  }
+
+  function makeCard(app, rec) {
+    var action = w.Worklist.nextAction(rec);
+    var cls = '';
+    if (action.key === 'closed') cls = '.done-row';
+    else if (action.overdue) cls = '.late';
+    else if (action.remaining != null && action.remaining <= 3) cls = '.due';
+
+    var card = el('article.case-card' + cls + (app.state.selected[rec.id] ? '.picked' : ''), {
+      tabindex: '0',
+      onclick: function () { app.openCase(rec.id); },
+      onkeydown: function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); app.openCase(rec.id); }
+      }
+    });
+
+    var pick = el('input.card-pick', {
+      type: 'checkbox', checked: !!app.state.selected[rec.id],
+      'aria-label': 'انتخاب پروندهٔ ' + (rec.caseNo || '')
+    });
+    pick.addEventListener('click', function (e) { e.stopPropagation(); });
+    pick.addEventListener('change', function () {
+      app.toggleSelect(rec.id, pick.checked);
+      card.classList.toggle('picked', pick.checked);
+      app.refreshSelectionBar();
+    });
+
+    var status = rec.status || '';
+    card.appendChild(el('div.card-top', null, [
+      pick,
+      el('span.reg-no', { text: w.U.toLatinDigits(rec.caseNo || '—') }),
+      status ? el('span.pill.' + (statusClass(status) || 'st-none'), { text: status }) : null,
+      el('div.spacer'),
+      el('span.card-date', { text: rec.intakeDate ? J.format(rec.intakeDate) : '' })
+    ]));
+
+    var who = w.Person.fullName(rec);
+    card.appendChild(el('div.card-name', {
+      text: who || 'بدون نام', title: who
+    }));
+
+    var meta = [rec.orgUnit, rec.expert].filter(Boolean).join(' • ');
+    card.appendChild(el('div.card-foot', null, [
+      w.UIWorklist.rail(rec, 'mini'),
+      el('span.card-action', { text: action.label || '' }),
+      action.days != null && action.key !== 'closed'
+        ? el('span.card-days' + (action.overdue ? '.late' : ''), {
+          text: w.U.toFaDigits(action.days) + ' روز'
+        }) : null
+    ]));
+    if (meta) card.appendChild(el('div.card-meta', { text: meta, title: meta }));
+    return card;
+  }
+
   function makeRow(app, rec, fields, template, i) {
     var action = w.Worklist.nextAction(rec);
     var urgency = '';
@@ -8615,6 +9229,58 @@ else if (typeof exports === 'object'){
     return row;
   }
 
+  // -------------------------------------------------- فیلتر و ابزار روی موبایل
+  function activeFilterCount(app) {
+    return Object.keys(app.state.filters).filter(function (k) {
+      return k.charAt(0) !== '_' && (app.state.filters[k] || []).length;
+    }).length;
+  }
+
+  function openFilterSheet(app) {
+    var body = el('div.filter-sheet', null, [renderFilters(app), w.UIMisc.statsPanel(app)]);
+    var m = w.U.modal('فیلترها', body, [
+      el('button.btn.primary', {
+        type: 'button', text: 'نمایش نتیجه',
+        onclick: function () { m.close(); }
+      })
+    ]);
+    // هر تغییر فیلتر، فهرست پشت سر را بازمی‌سازد؛ شیت باید باز بماند
+    m.root.classList.add('filter-modal');
+  }
+
+  function openListTools(app, rows) {
+    w.Mobile.sheet('ابزارهای فهرست', [
+      {
+        icon: 'imp', label: 'ورود از اکسل',
+        hint: 'همین قالب را می‌خواند و فیلدها را پر می‌کند',
+        onclick: function () { w.UIMisc.importExcel(app); }
+      },
+      {
+        icon: 'exp', label: 'خروجی اکسل از این نتیجه',
+        hint: w.U.toFaDigits(rows.length) + ' پرونده',
+        onclick: function () { w.UIMisc.exportExcel(rows); }
+      },
+      {
+        icon: 'print', label: 'چاپ فهرست',
+        onclick: function () { w.UIPrint.printList(rows); }
+      },
+      {
+        icon: 'columns', label: 'ستون‌های جدول',
+        hint: 'برای نمای رایانه و چاپ',
+        onclick: function () { w.UIMisc.columnsDialog(app); }
+      },
+      { sep: true },
+      {
+        icon: 'check', label: 'انتخاب همهٔ این نتیجه',
+        hint: 'برای اقدام دسته‌ای',
+        onclick: function () {
+          rows.forEach(function (r) { app.toggleSelect(r.id, true); });
+          app.render();
+        }
+      }
+    ]);
+  }
+
   // ------------------------------------------------------------------ صفحه
   function render(app, mount) {
     var rows = M.query({
@@ -8624,30 +9290,49 @@ else if (typeof exports === 'object'){
     app.state.lastResult = rows;
 
     var total = M.state.cases.length;
-    var summary = el('div.result-bar', null, [
-      el('span.result-count', {
-        html: '<b>' + w.U.toFaDigits(rows.length) + '</b> پرونده' +
-          (rows.length !== total ? ' از ' + w.U.toFaDigits(total) : '')
-      }),
-      el('div.spacer'),
-      el('button.btn.small.ghost', {
-        type: 'button', text: 'ورود از اکسل',
-        title: 'خواندن فایل اکسل با همین قالب و پر کردن خودکار فیلدها',
-        onclick: function () { w.UIMisc.importExcel(app); }
-      }),
-      el('button.btn.small.ghost', {
-        type: 'button', text: 'ستون‌های جدول',
-        onclick: function () { w.UIMisc.columnsDialog(app); }
-      }),
-      el('button.btn.small.ghost', {
-        type: 'button', text: 'چاپ فهرست',
-        onclick: function () { w.UIPrint.printList(rows); }
-      }),
-      el('button.btn.small', {
-        type: 'button', text: 'خروجی اکسل از این نتیجه',
-        onclick: function () { w.UIMisc.exportExcel(rows); }
-      })
-    ]);
+    var phone = w.Mobile.isPhone();
+    var countNode = el('span.result-count', {
+      html: '<b>' + w.U.toFaDigits(rows.length) + '</b> پرونده' +
+        (rows.length !== total ? ' از ' + w.U.toFaDigits(total) : '')
+    });
+
+    var summary = phone
+      ? el('div.result-bar.mobile', null, [
+        countNode,
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', onclick: function () { openFilterSheet(app); }
+        }, [
+          el('span', { text: 'فیلترها' }),
+          activeFilterCount(app)
+            ? el('span.badge', { text: w.U.toFaDigits(activeFilterCount(app)) }) : null
+        ]),
+        el('button.btn.small.ghost', {
+          type: 'button', text: '⋯', 'aria-label': 'ابزارهای فهرست',
+          onclick: function () { openListTools(app, rows); }
+        })
+      ])
+      : el('div.result-bar', null, [
+        countNode,
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'ورود از اکسل',
+          title: 'خواندن فایل اکسل با همین قالب و پر کردن خودکار فیلدها',
+          onclick: function () { w.UIMisc.importExcel(app); }
+        }),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'ستون‌های جدول',
+          onclick: function () { w.UIMisc.columnsDialog(app); }
+        }),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'چاپ فهرست',
+          onclick: function () { w.UIPrint.printList(rows); }
+        }),
+        el('button.btn.small', {
+          type: 'button', text: 'خروجی اکسل از این نتیجه',
+          onclick: function () { w.UIMisc.exportExcel(rows); }
+        })
+      ]);
 
     var note = app.state.filterNote ? el('div.filter-note', null, [
       el('span.fn-icon', { text: '⌖', 'aria-hidden': 'true' }),
@@ -8664,7 +9349,7 @@ else if (typeof exports === 'object'){
       })
     ]) : null;
 
-    var table = buildTable(app, rows);
+    var table = rows.length ? (phone ? buildCards(app, rows) : buildTable(app, rows)) : null;
     var body = rows.length
       ? table.node
       : el('div.empty-state', null, [
@@ -8681,6 +9366,8 @@ else if (typeof exports === 'object'){
       var ids = app.selectedIds();
       w.U.clear(selBar);
       selBar.classList.toggle('on', ids.length > 0);
+      // روی موبایل نوار اقدام شناور است؛ آخرین کارت نباید زیرش گم شود
+      if (selBar.parentNode) selBar.parentNode.classList.toggle('has-sel', ids.length > 0);
       if (!ids.length) return;
       selBar.appendChild(el('b.sel-count', {
         text: w.U.toFaDigits(ids.length) + ' پرونده انتخاب شده'
@@ -8708,14 +9395,17 @@ else if (typeof exports === 'object'){
     };
 
     w.U.clear(mount);
-    mount.appendChild(el('div.list-layout', null, [
-      el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
+    mount.appendChild(el('div.list-layout' + (phone ? '.phone' : ''), null, [
+      phone ? null
+        : el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
       el('section.list-main', null, [note, summary, body, selBar])
     ]));
     app.refreshSelectionBar();
   }
 
-  w.UIList = { render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth };
+  w.UIList = {
+    render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth
+  };
 })(window);
 
 </script>
@@ -10547,8 +11237,24 @@ else if (typeof exports === 'object'){
             (s.lastSavedAt ? ' — آخرین ذخیره ' + J.stamp(s.lastSavedAt) : '')
           : (s.canLink
             ? 'هنوز به هیچ فایلی روی دیسک وصل نیست. توصیه می‌شود وصل کنید.'
-            : 'این مرورگر از ذخیرهٔ مستقیم روی فایل پشتیبانی نمی‌کند؛ از «نسخهٔ پشتیبان» استفاده کنید.')
+            : (w.Mobile.isPhone()
+              ? 'روی موبایل، مرورگر اجازهٔ نوشتن روی فایل دیسک را نمی‌دهد. ' +
+                'داده‌ها در خود مرورگر می‌ماند؛ تنها راهِ بیرون بردن یا نگه‌داشتنش، ' +
+                'گرفتن «نسخهٔ پشتیبان» است — و اگر داده‌های مرورگر پاک شود، ' +
+                'بدون پشتیبان چیزی باقی نمی‌ماند.'
+              : 'این مرورگر از ذخیرهٔ مستقیم روی فایل پشتیبانی نمی‌کند؛ از «نسخهٔ پشتیبان» استفاده کنید.'))
       }));
+      if (!s.canLink) {
+        storageInfo.appendChild(el('div.btn-row', null, [
+          el('button.btn.small.primary', {
+            type: 'button', text: 'گرفتن نسخهٔ پشتیبان', onclick: exportJson
+          }),
+          el('button.btn.small', {
+            type: 'button', text: 'بازگرداندن از پشتیبان',
+            onclick: function () { m.close(); restoreJson(app); }
+          })
+        ]));
+      }
       if (s.canLink) {
         if (!s.linked && s.hasStored) {
           storageInfo.appendChild(el('button.btn.small.primary', {
@@ -11136,13 +11842,15 @@ else if (typeof exports === 'object'){
     var st = D.status();
 
     if (!st.supported) {
+      // روی موبایل این قابلیت اصلاً وجود ندارد؛ بهتر است صریح گفته شود چرا
+      var why = w.Mobile.isPhone()
+        ? 'مرورگرهای موبایل اجازهٔ دسترسی به پوشه‌های دستگاه را نمی‌دهند. ' +
+          'مستندات هر پرونده را روی رایانه اضافه کنید؛ اینجا فقط دیده نمی‌شوند، ' +
+          'چیزی از بین نمی‌رود.'
+        : 'ذخیرهٔ مستندات در پوشه فقط در کروم و اج کار می‌کند. ' +
+          'این مرورگر از این قابلیت پشتیبانی نمی‌کند.';
       return el('div.doc-panel', null, [
-        el('div.warn', null, [
-          el('span', {
-            text: 'ذخیرهٔ مستندات در پوشه فقط در کروم و اج کار می‌کند. ' +
-              'این مرورگر از این قابلیت پشتیبانی نمی‌کند.'
-          })
-        ])
+        el('div.warn', null, [el('span', { text: why })])
       ]);
     }
 
@@ -13260,10 +13968,9 @@ else if (typeof exports === 'object'){
   };
 
   function updateNav() {
-    if (!navButtons) return;
     var active = NAV_FOR_VIEW[app.state.view] || 'list';
-    Object.keys(navButtons).forEach(function (k) {
-      navButtons[k].classList.toggle('active', k === active);
+    w.U.$$('[data-nav]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-nav') === active);
     });
   }
 
@@ -13339,21 +14046,21 @@ else if (typeof exports === 'object'){
 
     navButtons = {
       work: el('button.nav-btn.active', {
-        type: 'button', text: 'کارتابل',
+        type: 'button', text: 'کارتابل', 'data-nav': 'work',
         title: 'چه کاری شده و چه کاری مانده',
         onclick: function () { app.goWork(); }
       }),
       list: el('button.nav-btn', {
-        type: 'button', text: 'پرونده‌ها',
+        type: 'button', text: 'پرونده‌ها', 'data-nav': 'list',
         onclick: function () { app.goList(); }
       }),
       people: el('button.nav-btn', {
-        type: 'button', text: 'اشخاص',
+        type: 'button', text: 'اشخاص', 'data-nav': 'people',
         title: 'یک کارمند ممکن است چند پرونده داشته باشد',
         onclick: function () { app.goPeople(); }
       }),
       report: el('button.nav-btn', {
-        type: 'button', text: 'گزارش‌ها',
+        type: 'button', text: 'گزارش‌ها', 'data-nav': 'report',
         onclick: function () { app.goReport(); }
       })
     };
@@ -13403,7 +14110,107 @@ else if (typeof exports === 'object'){
           onclick: function () { w.UIMisc.settingsDialog(app); }
         }),
         statusChip
-      ])
+      ]),
+      // روی موبایل همهٔ اقدام‌های بالا در یک شیت جمع می‌شوند
+      el('button.icon-btn.more-btn', {
+        type: 'button', text: '⋯', title: 'اقدام‌ها',
+        'aria-label': 'اقدام‌ها',
+        onclick: openActionSheet
+      })
+    ]);
+  }
+
+  /** شیت اقدام‌ها روی موبایل — همان کارهای نوار بالا */
+  function openActionSheet() {
+    var s = w.Store.status();
+    w.Mobile.sheet('اقدام‌ها', [
+      {
+        icon: 'plus', label: 'پروندهٔ جدید',
+        onclick: function () { app.newCase(); }
+      },
+      {
+        icon: 'imp', label: 'ورود از اکسل',
+        hint: 'خواندن فایل اکسل با همین قالب',
+        onclick: function () { w.UIMisc.importExcel(app); }
+      },
+      { sep: true },
+      {
+        icon: 'exp', label: 'خروجی اکسل',
+        hint: 'همهٔ پرونده‌ها',
+        onclick: function () { w.UIMisc.exportExcel(M.state.cases); }
+      },
+      {
+        icon: 'db', label: 'خروجی SQLite',
+        onclick: function () { w.UIMisc.exportSqlite(); }
+      },
+      {
+        icon: 'backup', label: 'نسخهٔ پشتیبان',
+        hint: w.Mobile.canLinkFile() ? 'ذخیرهٔ فایل پشتیبان'
+          : 'روی موبایل تنها راه نگه‌داشتن داده بیرون از مرورگر',
+        onclick: function () { w.UIMisc.exportJson(); }
+      },
+      { sep: true },
+      {
+        icon: 'lock', label: 'قفل کردن برنامه',
+        hint: s.encrypted ? '' : 'اول یک رمز عبور تعیین کنید',
+        onclick: function () {
+          if (w.Store.status().encrypted) lockNow(false);
+          else w.UILock.passwordDialog(app);
+        }
+      },
+      {
+        icon: 'gear', label: 'تنظیمات',
+        onclick: function () { w.UIMisc.settingsDialog(app); }
+      },
+      { sep: true },
+      {
+        node: el('button.sheet-status', {
+          type: 'button',
+          text: statusChip ? statusChip.textContent : '',
+          onclick: function () {
+            var ov = document.querySelector('.sheet-overlay');
+            if (ov) ov.remove();
+            onChipClick();
+          }
+        })
+      }
+    ]);
+  }
+
+  /* آیکن‌های نوار پایین — خطی و هم‌خانواده، نه شکلک */
+  function svg(d) {
+    return '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  }
+  var TAB_ICONS = {
+    work: svg('<path d="M9 4h6v3H9z"/><path d="M15 5.5h2.5A1.5 1.5 0 0 1 19 7v11.5A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5V7a1.5 1.5 0 0 1 1.5-1.5H9"/><path d="M8.6 13.2l2 2 3.8-4"/>'),
+    list: svg('<path d="M4.5 6h15M4.5 10.5h15M4.5 15h15M4.5 19.5h9"/>'),
+    people: svg('<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17.2 14.9c2 .6 3.3 2.3 3.3 4.6"/>'),
+    report: svg('<path d="M4.5 19.5h15"/><rect x="6" y="11" width="3" height="6" rx="1"/><rect x="11" y="7.5" width="3" height="9.5" rx="1"/><rect x="16" y="13.5" width="3" height="3.5" rx="1"/>')
+  };
+
+  /** نوار پایین مخصوص موبایل — چهار مقصد و دکمهٔ پروندهٔ جدید */
+  function tabBar() {
+    function tab(key, label, go) {
+      return el('button.tab-btn', {
+        type: 'button', 'data-nav': key, 'aria-label': label,
+        onclick: go
+      }, [
+        el('span.tab-icon', { html: TAB_ICONS[key] }),
+        el('span.tab-label', { text: label })
+      ]);
+    }
+    return el('nav.tabbar', { 'aria-label': 'مسیرهای اصلی' }, [
+      tab('work', 'کارتابل', function () { app.goWork(); }),
+      tab('list', 'پرونده‌ها', function () { app.goList(); }),
+      el('button.tab-new', {
+        type: 'button', text: '＋', 'aria-label': 'پروندهٔ جدید',
+        title: 'پروندهٔ جدید',
+        onclick: function () { app.newCase(); }
+      }),
+      tab('people', 'اشخاص', function () { app.goPeople(); }),
+      tab('report', 'گزارش‌ها', function () { app.goReport(); })
     ]);
   }
 
@@ -13511,6 +14318,7 @@ else if (typeof exports === 'object'){
       app.state.q = '';
       app.state.filters = {};
       w.U.clear(mount);
+      if (tabBarNode) tabBarNode.style.display = 'none';
       w.UILock.showLock(afterUnlock);
       if (automatic) {
         setTimeout(function () {
@@ -13548,6 +14356,7 @@ else if (typeof exports === 'object'){
         document.body.insertBefore(topBarNode, mount);
       }
       topBarNode.style.display = '';
+      if (tabBarNode) tabBarNode.style.display = '';
       app.render();
       resetIdle();
       setTimeout(backupReminder, 2500);
@@ -13563,11 +14372,21 @@ else if (typeof exports === 'object'){
   }
 
   var topBarNode = null;
+  var tabBarNode = null;
 
   function boot() {
     mount = $('#main');
     topBarNode = topBar();
     document.body.insertBefore(topBarNode, mount);
+    tabBarNode = tabBar();
+    document.body.appendChild(tabBarNode);
+
+    // با چرخاندن گوشی یا تغییر اندازه، نما باید دوباره ساخته شود:
+    // فهرست روی موبایل کارت است و روی دسکتاپ جدول.
+    w.Mobile.onChange(function () {
+      if (w.Store.isLocked && w.Store.isLocked()) return;
+      app.render();
+    });
 
     w.Store.onStatusChange(updateStatusChip);
 
@@ -13576,6 +14395,7 @@ else if (typeof exports === 'object'){
       bindIdle();
       if (w.Store.isLocked()) {
         topBarNode.style.display = 'none';
+        tabBarNode.style.display = 'none';
         w.UILock.showLock(afterUnlock);
         return null;
       }
