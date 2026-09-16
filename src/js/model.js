@@ -182,14 +182,24 @@
     return w.U.normalize(q).split(' ').filter(Boolean);
   }
 
+  var STAGE_FIELD = {
+    assigned: 'deliveryDate', committee: 'committeeDate', notified: 'noticeLetterDate'
+  };
+
   function matches(rec, tokens, filters) {
     for (var k in filters) {
+      // کلیدهای با زیرخط، فیلترهای ویژه‌اند و جداگانه بررسی می‌شوند
+      if (k.charAt(0) === '_') continue;
       if (!filters[k] || !filters[k].length) continue;
-      if (k === '_from' || k === '_to') continue;
       if (filters[k].indexOf(rec[k] || '') < 0) return false;
     }
     if (filters._from && (!rec.intakeDate || rec.intakeDate < filters._from)) return false;
     if (filters._to && (!rec.intakeDate || rec.intakeDate > filters._to)) return false;
+    if (filters._idSet && !filters._idSet[rec.id]) return false;
+    if (filters._stage && filters._stage !== 'all') {
+      var f = STAGE_FIELD[filters._stage];
+      if (f && !rec[f]) return false;
+    }
     for (var i = 0; i < tokens.length; i++) {
       if (rec._blob.indexOf(tokens[i]) < 0) return false;
     }
@@ -204,6 +214,13 @@
     else r = String(va).localeCompare(String(vb), 'fa');
     if (r === 0) return 0;
     return dir === 'desc' ? -r : r;
+  }
+
+  /** آرایهٔ شناسه را به نگاشت سریع تبدیل می‌کند */
+  function idSet(ids) {
+    var out = Object.create(null);
+    (ids || []).forEach(function (id) { out[id] = true; });
+    return out;
   }
 
   function query(opts) {
@@ -396,6 +413,7 @@
     state: state, FIELDS: FIELDS, FIELD_BY_KEY: FIELD_BY_KEY, DATE_KEYS: DATE_KEYS,
     load: load, reload: reload, seed: seed, bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
+    idSet: idSet,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
     stats: stats, stale: stale, strip: strip, diff: diff,

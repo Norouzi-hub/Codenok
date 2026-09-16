@@ -6,19 +6,25 @@
 
   var app = {
     state: {
-      view: 'list',      // list | case
+      view: 'list',      // list | case | report
       caseId: null,
       q: '',
       filters: {},
+      filterNote: '',
       sortKey: 'caseNo',
       sortDir: 'desc',
       formTab: null,
       dirty: false,
-      lastResult: []
+      lastResult: [],
+      report: {
+        preset: 'all', custom: { from: '', to: '' },
+        expert: '', year: '', placeType: ''
+      },
+      reportData: null
     }
   };
 
-  var mount, searchInput, statusChip;
+  var mount, searchInput, statusChip, navButtons;
 
   app.setDirty = function (v) { app.state.dirty = v; };
 
@@ -28,6 +34,65 @@
     app.state.dirty = false;
     app.state.formTab = null;
     app.render();
+  };
+
+  app.goReport = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'report';
+    app.state.caseId = null;
+    app.render();
+  };
+
+  /** رفتن به فهرست با مجموعه‌ای مشخص از پرونده‌ها (از دل گزارش) */
+  app.showCases = function (ids, note) {
+    app.state.q = '';
+    app.state.filters = { _idSet: M.idSet(ids) };
+    app.state.filterNote = note || '';
+    app.state.view = 'list';
+    app.state.caseId = null;
+    app.refresh(true);
+  };
+
+  /** رفتن به فهرست با فیلتر یک فیلد مشخص */
+  app.showCasesByField = function (field, value, note) {
+    app.state.q = '';
+    var f = {};
+    f[field] = [value];
+    applyReportScope(f);
+    app.state.filters = f;
+    app.state.filterNote = note || '';
+    app.state.view = 'list';
+    app.state.caseId = null;
+    app.refresh(true);
+  };
+
+  /** رفتن به فهرست با فیلتر مرحلهٔ گردش‌کار */
+  app.showCasesByStage = function (stage, note) {
+    app.state.q = '';
+    var f = { _stage: stage };
+    applyReportScope(f);
+    app.state.filters = f;
+    app.state.filterNote = note || '';
+    app.state.view = 'list';
+    app.state.caseId = null;
+    app.refresh(true);
+  };
+
+  /** بازهٔ زمانی گزارش را هم به فیلتر فهرست منتقل می‌کند تا اعداد بخوانند */
+  function applyReportScope(filters) {
+    var data = app.state.reportData;
+    if (!data || !data.range) return;
+    if (data.range.from) filters._from = data.range.from;
+    if (data.range.to) filters._to = data.range.to;
+  }
+
+  app.clearFilterNote = function () {
+    app.state.filters = {};
+    app.state.filterNote = '';
+    app.refresh(true);
   };
 
   app.openCase = function (id) {
@@ -59,13 +124,25 @@
   };
 
   app.render = function () {
+    w.Charts.hideTip();
     if (app.state.view === 'case') {
       w.UIForm.render(app, mount, app.state.caseId);
+    } else if (app.state.view === 'report') {
+      w.UIReport.render(app, mount);
     } else {
       w.UIList.render(app, mount);
     }
+    updateNav();
     updateStatusChip();
   };
+
+  function updateNav() {
+    if (!navButtons) return;
+    Object.keys(navButtons).forEach(function (k) {
+      var active = (k === 'report') === (app.state.view === 'report');
+      navButtons[k].classList.toggle('active', active);
+    });
+  }
 
   // ------------------------------------------------------------- نوار وضعیت
   function updateStatusChip() {
@@ -110,6 +187,17 @@
       type: 'button', onclick: function () { w.UIMisc.settingsDialog(app); }
     });
 
+    navButtons = {
+      list: el('button.nav-btn.active', {
+        type: 'button', text: 'فهرست پرونده‌ها',
+        onclick: function () { app.goList(); }
+      }),
+      report: el('button.nav-btn', {
+        type: 'button', text: 'گزارش‌ها',
+        onclick: function () { app.goReport(); }
+      })
+    };
+
     return el('header.topbar', null, [
       el('div.brand', {
         onclick: function () { app.goList(); }, title: 'بازگشت به فهرست'
@@ -120,6 +208,7 @@
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),
+      el('nav.main-nav', null, [navButtons.list, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -165,6 +254,9 @@
         e.preventDefault();
         if (app.state.view === 'case' && app.saveCurrentForm) app.saveCurrentForm();
         else w.UIMisc.exportJson();
+      } else if (ctrl && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        app.goReport();
       } else if (e.key === 'Escape' && app.state.view === 'case' && !app.state.dirty) {
         app.goList();
       }

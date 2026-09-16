@@ -637,6 +637,214 @@ select.input { cursor: pointer; }
 
 .fatal { padding: 40px; text-align: center; color: var(--bad); }
 
+/* ---------------------------------------------------------------- ناوبری */
+.main-nav { display: flex; gap: 2px; background: #eef2f7; padding: 3px; border-radius: 999px; }
+.nav-btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nav-btn:hover { color: var(--ink); }
+.nav-btn.active { background: #fff; color: var(--brand); font-weight: 700; box-shadow: var(--shadow); }
+
+/* ------------------------------------------------------------- نمای گزارش */
+.report-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px 48px;
+  width: 100%;
+}
+
+/* یک ردیف فیلتر، بالای هر چیزی که برشش می‌زند */
+.report-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.filter-lead { font-size: 12px; color: var(--muted); font-weight: 600; }
+.input.small { font-size: 12.5px; padding: 5px 8px; width: auto; min-width: 130px; }
+.report-filters .date-field { min-width: 150px; }
+.report-filters .date-hint { display: none; }
+
+/* عدد قهرمان — دقیقاً یکی در هر نما */
+.hero-row {
+  display: grid;
+  grid-template-columns: minmax(200px, 250px) 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.hero-figure {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.hero-label { font-size: 12.5px; color: var(--muted); }
+.hero-value {
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+  /* ارقام متناسب، نه tabular — عدد بزرگ نباید شل به‌نظر برسد */
+}
+.hero-delta { font-size: 12px; color: var(--muted); }
+.hero-delta.up { color: #b26b00; }
+.hero-delta.down { color: #15633b; }
+
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+.stat-tile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+.tile-label { font-size: 12px; color: var(--muted); min-height: 34px; }
+.tile-value { font-size: 26px; font-weight: 700; line-height: 1.3; }
+.tile-note { font-size: 11.5px; color: var(--muted); }
+
+/* ------------------------------------------------------------ کارت نمودار */
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 14px; }
+.chart-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.chart-card.wide { grid-column: 1 / -1; }
+.card-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-head h3 { margin: 0; font-size: 14.5px; }
+.card-head > div:first-child { flex: 1; }
+.card-sub { font-size: 11.5px; color: var(--muted); margin: 2px 0 0; line-height: 1.6; }
+.card-note { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
+.chart-holder { width: 100%; min-width: 0; }
+.chart { display: block; overflow: visible; }
+
+/* متن‌های داخل SVG با توکن‌های متن، نه رنگ داده */
+.c-cat { font-size: 12px; }
+.c-val { font-size: 12px; font-weight: 700; }
+.c-tick { font-size: 11px; font-variant-numeric: tabular-nums; }
+.c-seg { font-size: 11.5px; font-weight: 700; }
+.bar-g { cursor: default; }
+.bar-g.clickable { cursor: pointer; }
+.bar-g:hover path, .bar-g:focus path,
+.chart g.clickable:hover rect, .chart g.clickable:focus rect { filter: brightness(1.12); }
+.chart g:focus, .chart rect:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+.crosshair { opacity: 0; transition: opacity .1s; }
+.crosshair.on { opacity: 1; }
+.band-hit { cursor: crosshair; }
+
+.c-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.c-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); }
+.c-swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.c-swatch.line { width: 16px; height: 3px; border-radius: 2px; }
+.c-legend-val { color: var(--ink); }
+
+.c-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.c-table th, .c-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 8px;
+  text-align: right;
+}
+.c-table th { color: var(--muted); font-weight: 600; font-size: 11.5px; }
+.c-table td { font-variant-numeric: tabular-nums; }
+.c-table td:first-child { font-variant-numeric: normal; }
+.c-table tr:last-child td { border-bottom: 0; }
+
+/* ---------------------------------------------------------------- تولتیپ */
+.chart-tip {
+  position: absolute;
+  z-index: 350;
+  background: #1b2430;
+  color: #fff;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s;
+  box-shadow: 0 6px 20px rgba(16, 24, 40, .3);
+  max-width: 280px;
+}
+.chart-tip.show { opacity: 1; }
+.tip-title { font-weight: 700; margin-bottom: 3px; }
+.tip-row { display: flex; align-items: center; gap: 6px; }
+.tip-key { width: 12px; height: 3px; border-radius: 2px; flex: 0 0 12px; }
+.tip-value { font-variant-numeric: tabular-nums; }
+.tip-label { color: #c3c2b7; }
+
+/* ------------------------------------------------------------- یافته‌ها */
+.finding-list { list-style: none; margin: 0; padding: 0; }
+.finding {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+  background: #fcfcfb;
+}
+.finding-icon { font-size: 16px; line-height: 1.5; flex: 0 0 auto; }
+.finding-body { flex: 1; min-width: 0; }
+.finding-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.finding-advice { font-size: 12.5px; color: var(--muted); margin: 2px 0 0; }
+.finding-count { font-size: 12px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+/* شدت با آیکن و برچسب متنی همراه است؛ رنگ هرگز تنها حامل معنا نیست */
+.sev-tag {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.sev-critical { border-color: #eab6b6; }
+.sev-critical .sev-tag { color: #8f2020; border-color: #eab6b6; background: #fdf2f2; }
+.sev-serious { border-color: #f2cdbc; }
+.sev-serious .sev-tag { color: #8a4323; border-color: #f2cdbc; background: #fdf4f0; }
+.sev-warning { border-color: #ecdbae; }
+.sev-warning .sev-tag { color: #7a5600; border-color: #ecdbae; background: #fdf9ef; }
+.sev-good { border-color: #bfe0cd; }
+.sev-good .sev-tag { color: #15633b; border-color: #bfe0cd; background: #f1f9f4; }
+
+/* ------------------------------------------------------- نوار برش گزارش */
+.filter-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--brand-soft);
+  border: 1px solid #bcd2ea;
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.fn-icon { color: var(--brand); }
+
 /* ---------------------------------------------------------------- چاپ */
 #print-area { display: none; }
 
@@ -663,6 +871,16 @@ select.input { cursor: pointer; }
   .p-table th { background: #f3f3f3; width: 190px; font-weight: 700; }
   .p-table.p-list th, .p-table.p-history th { width: auto; text-align: center; }
   .p-table.p-list { font-size: 8.5pt; }
+  .p-chart { width: 100%; margin-bottom: 6px; }
+  .p-chart svg { width: 100%; height: auto; max-width: 680px; }
+  .p-chart .c-cat, .p-chart .c-val, .p-chart .c-tick, .p-chart .c-seg { font-size: 8pt; }
+  .p-table.p-kpi { width: 70%; }
+  .p-table.p-kpi th { width: 55%; }
+  #print-area .c-legend { display: flex; gap: 14px; margin: 0 0 4px; font-size: 9pt; }
+  #print-area .c-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  #print-area .c-swatch.line { width: 14px; height: 3px; }
+  #print-area .c-legend-item { display: flex; align-items: center; gap: 5px; }
+  .report-view .chart-tip { display: none; }
   .p-sign { display: flex; justify-content: space-between; margin-top: 28px; font-size: 10pt; }
   .p-sign div { border-top: 1px dotted #555; padding-top: 4px; width: 200px; text-align: center; }
   tr { break-inside: avoid; }
@@ -670,6 +888,9 @@ select.input { cursor: pointer; }
 
 /* ---------------------------------------------------------------- واکنش‌گرا */
 @media (max-width: 900px) {
+  .hero-row { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .main-nav { order: 2; }
   .list-layout { flex-direction: column; }
   .sidebar { width: auto; flex: 0 0 auto; max-height: 230px; border-inline-start: 0; border-bottom: 1px solid var(--line); }
   .topbar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
@@ -3101,14 +3322,24 @@ window.SEED_CASES = [
     return w.U.normalize(q).split(' ').filter(Boolean);
   }
 
+  var STAGE_FIELD = {
+    assigned: 'deliveryDate', committee: 'committeeDate', notified: 'noticeLetterDate'
+  };
+
   function matches(rec, tokens, filters) {
     for (var k in filters) {
+      // کلیدهای با زیرخط، فیلترهای ویژه‌اند و جداگانه بررسی می‌شوند
+      if (k.charAt(0) === '_') continue;
       if (!filters[k] || !filters[k].length) continue;
-      if (k === '_from' || k === '_to') continue;
       if (filters[k].indexOf(rec[k] || '') < 0) return false;
     }
     if (filters._from && (!rec.intakeDate || rec.intakeDate < filters._from)) return false;
     if (filters._to && (!rec.intakeDate || rec.intakeDate > filters._to)) return false;
+    if (filters._idSet && !filters._idSet[rec.id]) return false;
+    if (filters._stage && filters._stage !== 'all') {
+      var f = STAGE_FIELD[filters._stage];
+      if (f && !rec[f]) return false;
+    }
     for (var i = 0; i < tokens.length; i++) {
       if (rec._blob.indexOf(tokens[i]) < 0) return false;
     }
@@ -3123,6 +3354,13 @@ window.SEED_CASES = [
     else r = String(va).localeCompare(String(vb), 'fa');
     if (r === 0) return 0;
     return dir === 'desc' ? -r : r;
+  }
+
+  /** آرایهٔ شناسه را به نگاشت سریع تبدیل می‌کند */
+  function idSet(ids) {
+    var out = Object.create(null);
+    (ids || []).forEach(function (id) { out[id] = true; });
+    return out;
   }
 
   function query(opts) {
@@ -3315,6 +3553,7 @@ window.SEED_CASES = [
     state: state, FIELDS: FIELDS, FIELD_BY_KEY: FIELD_BY_KEY, DATE_KEYS: DATE_KEYS,
     load: load, reload: reload, seed: seed, bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
+    idSet: idSet,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
     stats: stats, stale: stale, strip: strip, diff: diff,
@@ -4118,6 +4357,944 @@ else if (typeof exports === 'object'){
 
 </script>
 <script>
+/* ==== js/charts.js ==== */
+/*
+ * نمودارهای SVG درون‌خطی — بدون هیچ کتابخانهٔ بیرونی.
+ * محورها راست‌به‌چپ‌اند: میله‌ها از خط پایهٔ سمت راست به چپ رشد می‌کنند و
+ * محور زمان از راست (قدیمی‌تر) به چپ (تازه‌تر) می‌رود، مثل نمودارهای اکسل فارسی.
+ *
+ * پالت رنگ از references/palette.md گرفته و با scripts/validate_palette.js
+ * روی سطح سفید کارت‌ها اعتبارسنجی شده است:
+ *   categorical (۴ اسلات، مجاور)  → همهٔ بررسی‌ها PASS
+ *   ordinal ۵ پله                  → همهٔ بررسی‌ها PASS
+ * هشدار کنتراست اسلات‌های ۳ و ۴ با «برچسب مستقیم + نمای جدول» جبران شده است.
+ */
+(function (w) {
+  'use strict';
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var el = w.U.el;
+
+  var C = {
+    // هویت (کدام سری) — ترتیب ثابت، هرگز چرخشی
+    series: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100'],
+    // ترتیب (مرحلهٔ قیف، سطل سنی) — یک رنگ، روشن به تیره
+    ordinal: ['#86b6ef', '#3987e5', '#256abf', '#184f95', '#0d366b'],
+    // وضعیت — معنای رزرو‌شده، همیشه با آیکن و برچسب
+    status: { good: '#0ca30c', warning: '#fab219', serious: '#ec835a', critical: '#d03b3b' },
+    surface: '#ffffff',
+    grid: '#e1e0d9',
+    axis: '#c3c2b7',
+    muted: '#898781',
+    ink: '#0b0b0b',
+    ink2: '#52514e'
+  };
+
+  /** زیرمجموعهٔ رمپ ترتیبی با حفظ دو سر بازه */
+  function ordinalRamp(n) {
+    var r = C.ordinal;
+    if (n >= r.length) return r.slice(0, n);
+    if (n === 1) return [r[2]];
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      out.push(r[Math.round(i * (r.length - 1) / (n - 1))]);
+    }
+    return out;
+  }
+
+  function svgEl(name, attrs) {
+    var node = document.createElementNS(NS, name);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        if (attrs[k] == null) return;
+        node.setAttribute(k, attrs[k]);
+      });
+    }
+    return node;
+  }
+
+  /*
+   * در SVG راست‌به‌چپ معنای لنگر وارونه است: start لبهٔ *راست* متن را روی x
+   * می‌گذارد (متن به چپ کشیده می‌شود) و end لبهٔ *چپ* را. با اسم‌های زیر
+   * دیگر لازم نیست هر بار این را در ذهن برگردانیم.
+   */
+  var ANCHOR_RIGHT = 'start';   // متن از x شروع و به چپ کشیده می‌شود
+  var ANCHOR_LEFT = 'end';      // متن از x شروع و به راست کشیده می‌شود
+
+  function text(str, attrs) {
+    var t = svgEl('text', attrs);
+    t.appendChild(document.createTextNode(str));   // برچسب‌ها دادهٔ نامطمئن‌اند
+    return t;
+  }
+
+  /** طول رندرشدهٔ متن؛ اگر عنصر هنوز به صفحه وصل نباشد null */
+  function textWidth(node) {
+    try {
+      var len = node.getComputedTextLength();
+      return len > 0 ? len : null;
+    } catch (e) { return null; }
+  }
+
+  /**
+   * متن را در صورت بیرون‌زدن از لبه‌های نمودار به داخل هل می‌دهد.
+   * برچسب دو سرِ محور افقی وگرنه نصفه از کادر بیرون می‌ماند.
+   */
+  function clampText(node, svgWidth, pad) {
+    pad = pad == null ? 2 : pad;
+    var bb;
+    try { bb = node.getBBox(); } catch (e) { return; }
+    if (!bb || !bb.width) return;
+    var x = parseFloat(node.getAttribute('x')) || 0;
+    if (bb.x < pad) {
+      node.setAttribute('x', x + (pad - bb.x));
+    } else if (bb.x + bb.width > svgWidth - pad) {
+      node.setAttribute('x', x - (bb.x + bb.width - (svgWidth - pad)));
+    }
+  }
+
+  /** متن بلند را با «…» کوتاه می‌کند تا از جای تعیین‌شده بیرون نزند */
+  function fitLabel(node, maxWidth) {
+    var full = node.textContent;
+    var len = textWidth(node);
+    if (len == null || len <= maxWidth) return;
+    var lo = 1, hi = full.length;
+    while (lo < hi) {
+      var mid = Math.ceil((lo + hi) / 2);
+      node.textContent = full.slice(0, mid) + '…';
+      if (node.getComputedTextLength() <= maxWidth) lo = mid; else hi = mid - 1;
+    }
+    node.textContent = full.slice(0, lo) + '…';
+  }
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  /** مسیر میله با سرِ گرد در انتهای داده و گوشهٔ تیز روی خط پایه */
+  function barPath(x, y, width, height, r, round) {
+    r = Math.min(r, height / 2, width);
+    if (width <= 0.5) return '';
+    if (round === 'left') {
+      return 'M' + (x + width) + ',' + y +
+        'H' + (x + r) + 'a' + r + ',' + r + ' 0 0 0 ' + (-r) + ',' + r +
+        'V' + (y + height - r) + 'a' + r + ',' + r + ' 0 0 0 ' + r + ',' + r +
+        'H' + (x + width) + 'Z';
+    }
+    // round === 'top' (ستونی)
+    return 'M' + x + ',' + (y + height) +
+      'V' + (y + r) + 'a' + r + ',' + r + ' 0 0 1 ' + r + ',' + (-r) +
+      'H' + (x + width - r) + 'a' + r + ',' + r + ' 0 0 1 ' + r + ',' + r +
+      'V' + (y + height) + 'Z';
+  }
+
+  // ------------------------------------------------------------------ تولتیپ
+  var tip = null;
+  function tooltip() {
+    if (!tip) {
+      tip = el('div.chart-tip');
+      tip.setAttribute('role', 'status');
+      document.body.appendChild(tip);
+    }
+    return tip;
+  }
+
+  function showTip(target, rows, title) {
+    var box = tooltip();
+    w.U.clear(box);
+    if (title) box.appendChild(el('div.tip-title', { text: title }));
+    rows.forEach(function (r) {
+      box.appendChild(el('div.tip-row', null, [
+        r.color ? el('span.tip-key', { style: 'background:' + r.color }) : null,
+        el('b.tip-value', { text: r.value }),
+        el('span.tip-label', { text: r.label })
+      ]));
+    });
+    box.classList.add('show');
+    var rect = target.getBoundingClientRect();
+    var top = rect.top + window.scrollY - box.offsetHeight - 8;
+    if (top < window.scrollY + 4) top = rect.bottom + window.scrollY + 8;
+    var left = rect.left + rect.width / 2 - box.offsetWidth / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - box.offsetWidth - 8));
+    box.style.top = top + 'px';
+    box.style.left = left + 'px';
+  }
+
+  function hideTip() { if (tip) tip.classList.remove('show'); }
+
+  /** رویدادهای اشاره‌گر و صفحه‌کلید روی یک نشانه */
+  function bindMark(node, rows, title, onActivate) {
+    node.setAttribute('tabindex', '0');
+    node.addEventListener('mouseenter', function () { showTip(node, rows, title); });
+    node.addEventListener('focus', function () { showTip(node, rows, title); });
+    node.addEventListener('mouseleave', hideTip);
+    node.addEventListener('blur', hideTip);
+    if (onActivate) {
+      node.classList.add('clickable');
+      node.addEventListener('click', onActivate);
+      node.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(); }
+      });
+    }
+  }
+
+  // ------------------------------------------------------- میلهٔ افقی (راست‌چین)
+  /**
+   * opts: { data:[{label,value,note?,key?}], color? , ramp? , onPick?, unit? }
+   * یک سری = یک رنگ (اسلات ۱)؛ رستهٔ ترتیبی = رمپ تک‌رنگ.
+   */
+  function hbar(opts) {
+    var data = opts.data || [];
+    var rowH = 30, gap = 8, barH = Math.min(22, rowH - gap);
+    var labelW = opts.labelWidth || 150;
+    var valueW = opts.unit ? 70 : 54;
+    var height = Math.max(1, data.length) * rowH + 8;
+    var colors = opts.ramp ? ordinalRamp(data.length) : null;
+
+    var svg = svgEl('svg', { class: 'chart', height: height, role: 'img' });
+    svg.style.width = '100%';
+
+    svg.draw = function (width) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+      var plotRight = width - labelW;          // خط پایه سمت راست
+      var plotW = Math.max(10, plotRight - valueW);
+      var max = Math.max.apply(null, data.map(function (d) { return d.value; }).concat([1]));
+
+      data.forEach(function (d, i) {
+        var y = i * rowH + 4;
+        var len = Math.max(0, (d.value / max) * plotW);
+        var x = plotRight - len;
+        var color = colors ? colors[i] : (opts.color || C.series[0]);
+        var valueText = fa(d.value) + (opts.unit ? ' ' + opts.unit : '');
+
+        // برچسب رسته در سمت راست خط پایه، با توکن متن (نه رنگ داده)
+        var label = text(d.label, {
+          x: width - 6, y: y + barH / 2 + 4, 'text-anchor': ANCHOR_RIGHT,
+          class: 'c-cat', fill: C.ink2
+        });
+        svg.appendChild(label);
+        fitLabel(label, labelW - 14);
+
+        var g = svgEl('g', { class: 'bar-g' });
+        // ناحیهٔ اصابت بزرگ‌تر از خود نشانه
+        g.appendChild(svgEl('rect', {
+          x: 0, y: y - 3, width: Math.max(1, plotRight), height: barH + 6, fill: 'transparent'
+        }));
+        g.appendChild(svgEl('path', {
+          d: barPath(x, y, len, barH, 4, 'left'), fill: color
+        }));
+        svg.appendChild(g);
+
+        // مقدار در نوک میله؛ اگر بیرون جا نشد و داخل هم جا نشد، فقط در
+        // تولتیپ و جدول می‌ماند — هرگز بریده نمی‌شود.
+        var value = text(valueText, {
+          x: x - 7, y: y + barH / 2 + 4, 'text-anchor': ANCHOR_RIGHT,
+          class: 'c-val', fill: C.ink
+        });
+        svg.appendChild(value);
+        var vw = textWidth(value);
+        if (vw != null && x - 7 - vw < 2) {
+          if (vw + 16 <= len) {
+            value.setAttribute('x', x + 8);
+            value.setAttribute('text-anchor', ANCHOR_LEFT);
+            value.setAttribute('fill', '#ffffff');
+          } else {
+            svg.removeChild(value);
+          }
+        }
+
+        bindMark(g, [{
+          value: valueText, label: d.note || opts.valueLabel || 'پرونده', color: color
+        }], d.label, opts.onPick && function () { opts.onPick(d); });
+      });
+      return svg;
+    };
+    return svg;
+  }
+
+  // ------------------------------------------------ نوار انباشتهٔ سهم از کل
+  /** opts: { data:[{label,value}], onPick? } — حداکثر ۴ رسته، مابقی «سایر» */
+  function stacked100(opts) {
+    var data = opts.data || [];
+    var total = data.reduce(function (s, d) { return s + d.value; }, 0) || 1;
+    var barH = 34, height = barH + 8;
+    var svg = svgEl('svg', { class: 'chart', height: height, role: 'img' });
+    svg.style.width = '100%';
+
+    svg.draw = function (width) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+      var x = width;                       // از راست شروع می‌شود
+      data.forEach(function (d, i) {
+        var seg = (d.value / total) * width;
+        var drawW = Math.max(0, seg - 2);  // فاصلهٔ ۲ پیکسلی به رنگ سطح
+        var color = C.series[i % C.series.length];
+        var g = svgEl('g');
+        g.appendChild(svgEl('rect', {
+          x: x - seg, y: 4, width: seg, height: barH, fill: 'transparent'
+        }));
+        g.appendChild(svgEl('rect', {
+          x: x - seg, y: 4, width: drawW, height: barH, rx: 3, fill: color
+        }));
+        var pct = Math.round((d.value / total) * 100);
+        var inner = fa(pct) + '٪';
+        // برچسب فقط وقتی جا می‌شود داخل قطعه می‌آید
+        if (drawW > inner.length * 9 + 16) {
+          g.appendChild(text(inner, {
+            x: x - seg / 2, y: 4 + barH / 2 + 5, 'text-anchor': 'middle',
+            class: 'c-seg', fill: '#ffffff'
+          }));
+        }
+        svg.appendChild(g);
+        bindMark(g, [
+          { value: fa(d.value) + ' پرونده', label: 'تعداد', color: color },
+          { value: fa(pct) + '٪', label: 'سهم از کل' }
+        ], d.label, opts.onPick && function () { opts.onPick(d); });
+        x -= seg;
+      });
+      return svg;
+    };
+    return svg;
+  }
+
+  // --------------------------------------------------------- نمودار خطی زمانی
+  /**
+   * opts: { x:[برچسب‌ها ترتیب زمانی], series:[{name,values:[]}], unit? }
+   * محور زمان از راست به چپ. یک محور y؛ هرگز دو مقیاس.
+   */
+  function lines(opts) {
+    var xs = opts.x || [], series = opts.series || [];
+    var height = opts.height || 220;
+    var padTop = 14, padBottom = 30, padLeft = 16, padRight = 44;
+    var svg = svgEl('svg', { class: 'chart', height: height, role: 'img' });
+    svg.style.width = '100%';
+
+    svg.draw = function (width) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+      var plotW = width - padLeft - padRight;
+      var plotH = height - padTop - padBottom;
+      var maxVal = 1;
+      series.forEach(function (s) {
+        s.values.forEach(function (v) { if (v > maxVal) maxVal = v; });
+      });
+      var step = Math.max(1, Math.ceil(maxVal / 4));
+      var top = step * 4;
+      // x از راست به چپ
+      var xAt = function (i) {
+        return width - padRight - (xs.length === 1 ? plotW / 2 : (i * plotW) / (xs.length - 1));
+      };
+      var yAt = function (v) { return padTop + plotH - (v / top) * plotH; };
+
+      // خطوط راهنما: مو‌خط یکدست، یک پله عقب‌تر از سطح
+      for (var k = 0; k <= 4; k++) {
+        var gy = yAt(step * k);
+        svg.appendChild(svgEl('line', {
+          x1: padLeft, y1: gy, x2: width - padRight, y2: gy,
+          stroke: k === 0 ? C.axis : C.grid, 'stroke-width': 1
+        }));
+        svg.appendChild(text(fa(step * k), {
+          x: width - padRight + 8, y: gy + 4, 'text-anchor': ANCHOR_LEFT,
+          class: 'c-tick', fill: C.muted
+        }));
+      }
+
+      // برچسب‌های محور x (تُنُک‌شده تا برخورد نکنند)
+      var everyN = Math.max(1, Math.ceil(xs.length / Math.floor(plotW / 62)));
+      xs.forEach(function (label, i) {
+        if (i % everyN !== 0 && i !== xs.length - 1) return;
+        var tick = text(label, {
+          x: xAt(i), y: height - 10, 'text-anchor': 'middle',
+          class: 'c-tick', fill: C.muted
+        });
+        svg.appendChild(tick);
+        clampText(tick, width);
+      });
+
+      // وقتی نقطه‌های پایانی به هم نزدیک‌اند، برچسب مستقیم نمی‌گذاریم؛
+      // جابه‌جا کردن عمودی برچسب آن را از خطش جدا می‌کند و نویز می‌شود.
+      var lastIdx = xs.length - 1;
+      var endYs = series.map(function (s) { return yAt(s.values[lastIdx] || 0); });
+      var labelEnds = endYs.map(function (y, i) {
+        return endYs.every(function (other, j) {
+          return i === j || Math.abs(y - other) >= 16;
+        });
+      });
+
+      series.forEach(function (s, si) {
+        var color = C.series[si % C.series.length];
+        var d = s.values.map(function (v, i) {
+          return (i ? 'L' : 'M') + xAt(i) + ',' + yAt(v);
+        }).join(' ');
+        svg.appendChild(svgEl('path', {
+          d: d, fill: 'none', stroke: color, 'stroke-width': 2,
+          'stroke-linejoin': 'round', 'stroke-linecap': 'round'
+        }));
+        // نقطهٔ انتهایی با حلقهٔ ۲ پیکسلی به رنگ سطح
+        if (lastIdx >= 0) {
+          svg.appendChild(svgEl('circle', {
+            cx: xAt(lastIdx), cy: endYs[si], r: 4.5,
+            fill: color, stroke: C.surface, 'stroke-width': 2
+          }));
+          if (labelEnds[si]) {
+            var endLabel = text(fa(s.values[lastIdx]), {
+              x: xAt(lastIdx), y: endYs[si] - 10, 'text-anchor': 'middle',
+              class: 'c-val', fill: C.ink
+            });
+            svg.appendChild(endLabel);
+            clampText(endLabel, width);
+          }
+        }
+      });
+
+      // لایهٔ نشانگر: یک تولتیپ برای همهٔ سری‌ها در هر x
+      var hair = svgEl('line', {
+        y1: padTop, y2: padTop + plotH, stroke: C.axis,
+        'stroke-width': 1, class: 'crosshair'
+      });
+      svg.appendChild(hair);
+
+      xs.forEach(function (label, i) {
+        var bandW = xs.length > 1 ? plotW / (xs.length - 1) : plotW;
+        var hit = svgEl('rect', {
+          x: xAt(i) - bandW / 2, y: padTop, width: bandW, height: plotH,
+          fill: 'transparent', class: 'band-hit'
+        });
+        hit.addEventListener('mouseenter', function () {
+          hair.setAttribute('x1', xAt(i));
+          hair.setAttribute('x2', xAt(i));
+          hair.classList.add('on');
+        });
+        hit.addEventListener('mouseleave', function () { hair.classList.remove('on'); });
+        svg.appendChild(hit);
+        bindMark(hit, series.map(function (s, si) {
+          return {
+            value: fa(s.values[i]) + (opts.unit ? ' ' + opts.unit : ''),
+            label: s.name, color: C.series[si % C.series.length]
+          };
+        }), label);
+      });
+      return svg;
+    };
+    return svg;
+  }
+
+  // ------------------------------------------------------------------ راهنما
+  /** راهنمای رنگ‌ها — برای دو سری یا بیشتر همیشه حاضر است */
+  function legend(items, shape) {
+    return el('div.c-legend', null, items.map(function (it, i) {
+      return el('span.c-legend-item', null, [
+        el('span.c-swatch' + (shape === 'line' ? '.line' : ''), {
+          style: 'background:' + (it.color || C.series[i % C.series.length])
+        }),
+        el('span', { text: it.name }),
+        it.value != null ? el('b.c-legend-val', { text: fa(it.value) }) : null
+      ]);
+    }));
+  }
+
+  /** همزاد جدولی هر نمودار — هر مقدار بدون نیاز به هاور در دسترس است */
+  function table(headers, rows) {
+    return el('table.c-table', null, [
+      el('thead', null, [el('tr', null, headers.map(function (h) {
+        return el('th', { text: h });
+      }))]),
+      el('tbody', null, rows.map(function (r) {
+        return el('tr', null, r.map(function (c) { return el('td', { text: c }); }));
+      }))
+    ]);
+  }
+
+  // ------------------------------------------------- اندازه‌گیری و رسم واکنشی
+  var mounted = [];
+
+  /**
+   * نمودار را در ظرف می‌گذارد و با عرض واقعی ظرف رسم می‌کند.
+   * اگر ظرف هنوز به صفحه وصل نشده باشد عرضش صفر است؛ در آن حالت با عرض
+   * موقت رسم می‌شود و settle() بعد از اتصال، رسم درست را انجام می‌دهد.
+   */
+  function mount(container, chart) {
+    container.appendChild(chart);
+    chart.draw(container.clientWidth || 600);
+    mounted.push({ container: container, chart: chart });
+    return chart;
+  }
+
+  function redrawAll() {
+    mounted = mounted.filter(function (m) { return document.body.contains(m.chart); });
+    mounted.forEach(function (m) {
+      var width = m.container.clientWidth;
+      if (width > 0) m.chart.draw(width);
+    });
+  }
+
+  /** بعد از افزوده‌شدن نما به صفحه صدا زده می‌شود تا عرض‌ها واقعی شوند */
+  function settle() {
+    window.requestAnimationFrame(function () { redrawAll(); });
+  }
+
+  function reset() { mounted = []; hideTip(); }
+
+  window.addEventListener('resize', w.U.debounce(redrawAll, 160));
+
+  w.Charts = {
+    C: C, hbar: hbar, stacked100: stacked100, lines: lines, legend: legend,
+    table: table, mount: mount, reset: reset, redrawAll: redrawAll, settle: settle,
+    ordinalRamp: ordinalRamp, hideTip: hideTip
+  };
+})(window);
+
+</script>
+<script>
+/* ==== js/report.js ==== */
+/*
+ * لایهٔ تحلیل گزارش‌ها: همهٔ محاسبه‌ها اینجا انجام می‌شود و نما فقط رسم می‌کند.
+ * هیچ‌کدام از این توابع DOM نمی‌سازند تا بشود مستقیم آزمایششان کرد.
+ */
+(function (w) {
+  'use strict';
+
+  var J = w.J, M = w.Model;
+
+  var MONTH_SHORT = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+    'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+
+  // --------------------------------------------------------------- کمک‌تابع‌ها
+  function addDays(j8, n) {
+    var p = J.unpack(j8);
+    if (!p) return null;
+    var g = J.toGregorian(p.jy, p.jm, p.jd);
+    g.setDate(g.getDate() + n);
+    var b = J.toJalali(g);
+    return J.pack(b.jy, b.jm, b.jd);
+  }
+
+  function median(arr) {
+    if (!arr.length) return null;
+    var s = arr.slice().sort(function (a, b) { return a - b; });
+    var m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+  }
+
+  function mean(arr) {
+    if (!arr.length) return null;
+    return Math.round(arr.reduce(function (a, b) { return a + b; }, 0) / arr.length);
+  }
+
+  function isClosed(rec) {
+    return /مختومه/.test(rec.status || '');
+  }
+
+  /** تاریخ پایان پرونده: ابلاغ رأی، وگرنه تاریخ طرح در کمیته */
+  function closeDate(rec) {
+    if (!isClosed(rec)) return null;
+    return rec.noticeLetterDate || rec.committeeDate || null;
+  }
+
+  function monthKey(j8) {
+    return J.unpack(j8) ? j8.slice(0, 6) : null;
+  }
+
+  function monthLabel(key) {
+    var jm = +key.slice(4, 6);
+    return MONTH_SHORT[jm - 1] + ' ' + w.U.toFaDigits(key.slice(2, 4));
+  }
+
+  /** فهرست کلیدهای ماه بین دو تاریخ (شامل هر دو سر) */
+  function monthRange(from, to) {
+    var a = J.unpack(from), b = J.unpack(to);
+    if (!a || !b) return [];
+    var out = [], y = a.jy, m = a.jm;
+    var guard = 0;
+    while ((y < b.jy || (y === b.jy && m <= b.jm)) && guard++ < 400) {
+      out.push(String(y) + J.pad2(m));
+      m += 1;
+      if (m > 12) { m = 1; y += 1; }
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------ بازهٔ گزارش
+  var PRESETS = [
+    { key: 'all', label: 'همهٔ پرونده‌ها' },
+    { key: '30', label: '۳۰ روز اخیر', days: 30 },
+    { key: '90', label: '۹۰ روز اخیر', days: 90 },
+    { key: '180', label: '۶ ماه اخیر', days: 180 },
+    { key: '365', label: 'یک سال اخیر', days: 365 }
+  ];
+
+  function rangeOf(preset, custom) {
+    if (preset === 'custom') {
+      return { from: (custom && custom.from) || '', to: (custom && custom.to) || '' };
+    }
+    var p = PRESETS.filter(function (x) { return x.key === preset; })[0];
+    if (!p || !p.days) return { from: '', to: '' };
+    var today = J.today();
+    return { from: addDays(today, -p.days), to: today };
+  }
+
+  function previousRange(range) {
+    if (!range.from || !range.to) return null;
+    var span = J.diffDays(range.to, range.from);
+    if (span == null) return null;
+    return { from: addDays(range.from, -(span + 1)), to: addDays(range.from, -1) };
+  }
+
+  /** برش داده بر اساس بازه و فیلترهای گزارش */
+  function scope(opts) {
+    var range = opts.range || { from: '', to: '' };
+    return M.state.cases.filter(function (c) {
+      if (opts.expert && (c.expert || '') !== opts.expert) return false;
+      if (opts.year && (c.year || '') !== opts.year) return false;
+      if (opts.placeType && (c.servicePlaceType || '') !== opts.placeType) return false;
+      if (!range.from && !range.to) return true;
+      var d = c.intakeDate;
+      if (!d || !J.unpack(d)) return false;
+      if (range.from && d < range.from) return false;
+      if (range.to && d > range.to) return false;
+      return true;
+    });
+  }
+
+  // ------------------------------------------------------------------ سنجه‌ها
+  function kpis(cases, prevCases) {
+    var closed = cases.filter(isClosed);
+    var open = cases.filter(function (c) { return !isClosed(c); });
+    var toCommittee = [];
+    cases.forEach(function (c) {
+      if (c.intakeDate && c.committeeDate) {
+        var d = J.diffDays(c.committeeDate, c.intakeDate);
+        if (d != null && d >= 0) toCommittee.push(d);
+      }
+    });
+    var today = J.today();
+    var oldestOpen = 0;
+    open.forEach(function (c) {
+      if (!c.intakeDate) return;
+      var d = J.diffDays(today, c.intakeDate);
+      if (d != null && d > oldestOpen) oldestOpen = d;
+    });
+    return {
+      total: cases.length,
+      open: open.length,
+      closed: closed.length,
+      closedPct: cases.length ? Math.round((closed.length / cases.length) * 100) : 0,
+      medianToCommittee: median(toCommittee),
+      meanToCommittee: mean(toCommittee),
+      committeeSample: toCommittee.length,
+      oldestOpen: oldestOpen,
+      delta: prevCases ? cases.length - prevCases.length : null,
+      prevTotal: prevCases ? prevCases.length : null
+    };
+  }
+
+  /** روند ماهانه: پرونده‌های وارده در برابر مختومه‌شده */
+  function monthlyTrend(cases) {
+    var keys = {};
+    cases.forEach(function (c) {
+      var k = monthKey(c.intakeDate);
+      if (k) keys[k] = true;
+      var ck = monthKey(closeDate(c));
+      if (ck) keys[ck] = true;
+    });
+    var all = Object.keys(keys).sort();
+    if (!all.length) return { x: [], intake: [], closed: [], months: [] };
+    var months = monthRange(all[0] + '01', all[all.length - 1] + '01');
+    if (months.length > 24) months = months.slice(months.length - 24);
+
+    var intake = months.map(function () { return 0; });
+    var closed = months.map(function () { return 0; });
+    var pos = {};
+    months.forEach(function (k, i) { pos[k] = i; });
+    cases.forEach(function (c) {
+      var k = monthKey(c.intakeDate);
+      if (k && pos[k] != null) intake[pos[k]]++;
+      var ck = monthKey(closeDate(c));
+      if (ck && pos[ck] != null) closed[pos[ck]]++;
+    });
+    return { x: months.map(monthLabel), intake: intake, closed: closed, months: months };
+  }
+
+  /** قیف گردش‌کار — مرحله‌ها از روی تاریخ‌ها استخراج می‌شوند، نه متن وضعیت */
+  function funnel(cases) {
+    var total = cases.length;
+    var assigned = cases.filter(function (c) { return !!c.deliveryDate; }).length;
+    var committee = cases.filter(function (c) { return !!c.committeeDate; }).length;
+    var notified = cases.filter(function (c) { return !!c.noticeLetterDate; }).length;
+    return [
+      { label: 'ثبت‌شده در دبیرخانه', value: total, key: 'all' },
+      { label: 'ارجاع به کارشناس', value: assigned, key: 'assigned' },
+      { label: 'طرح در کمیته', value: committee, key: 'committee' },
+      { label: 'ابلاغ رأی', value: notified, key: 'notified' }
+    ].map(function (s) {
+      s.pct = total ? Math.round((s.value / total) * 100) : 0;
+      return s;
+    });
+  }
+
+  /** فراوانی یک فیلد، با تجمیع دنبالهٔ کوچک در «سایر» */
+  function byField(cases, key, limit) {
+    var counts = {};
+    cases.forEach(function (c) {
+      var v = (c[key] || '').trim() || 'ثبت‌نشده';
+      counts[v] = (counts[v] || 0) + 1;
+    });
+    var rows = Object.keys(counts).map(function (k) {
+      return { label: k, value: counts[k], key: k };
+    }).sort(function (a, b) { return b.value - a.value; });
+    if (limit && rows.length > limit) {
+      var head = rows.slice(0, limit - 1);
+      var tail = rows.slice(limit - 1);
+      head.push({
+        label: 'سایر (' + w.U.toFaDigits(tail.length) + ' مورد)',
+        value: tail.reduce(function (s, r) { return s + r.value; }, 0),
+        key: '__other__', tail: tail
+      });
+      return head;
+    }
+    return rows;
+  }
+
+  /** میانه و میانگین روزهای هر گذرگاه از گردش‌کار */
+  function durations(cases) {
+    var legs = [
+      { label: 'ورود ← ارجاع به کارشناس', from: 'intakeDate', to: 'deliveryDate' },
+      { label: 'ورود ← طرح در کمیته', from: 'intakeDate', to: 'committeeDate' },
+      { label: 'طرح در کمیته ← ابلاغ رأی', from: 'committeeDate', to: 'noticeLetterDate' },
+      { label: 'ارسال استعلام ← پاسخ حراست',
+        from: 'securityOutLetterDate', to: 'securityInLetterDate' }
+    ];
+    return legs.map(function (leg) {
+      var days = [];
+      cases.forEach(function (c) {
+        if (!c[leg.from] || !c[leg.to]) return;
+        var d = J.diffDays(c[leg.to], c[leg.from]);
+        if (d != null && d >= 0 && d < 3000) days.push(d);
+      });
+      return {
+        label: leg.label, value: median(days) || 0, mean: mean(days),
+        sample: days.length, max: days.length ? Math.max.apply(null, days) : 0
+      };
+    }).filter(function (l) { return l.sample > 0; });
+  }
+
+  /** سن پرونده‌های باز — سطل‌های مرتب */
+  function aging(cases) {
+    var today = J.today();
+    var buckets = [
+      { label: 'تا ۳۰ روز', max: 30, value: 0, ids: [] },
+      { label: '۳۱ تا ۶۰ روز', max: 60, value: 0, ids: [] },
+      { label: '۶۱ تا ۹۰ روز', max: 90, value: 0, ids: [] },
+      { label: '۹۱ تا ۱۸۰ روز', max: 180, value: 0, ids: [] },
+      { label: 'بیش از ۱۸۰ روز', max: Infinity, value: 0, ids: [] }
+    ];
+    cases.forEach(function (c) {
+      if (isClosed(c) || !c.intakeDate) return;
+      var age = J.diffDays(today, c.intakeDate);
+      if (age == null || age < 0) return;
+      for (var i = 0; i < buckets.length; i++) {
+        if (age <= buckets[i].max) {
+          buckets[i].value++;
+          buckets[i].ids.push(c.id);
+          break;
+        }
+      }
+    });
+    return buckets;
+  }
+
+  /** کارکرد هر کارشناس: تعداد کل، باز، مختومه و میانهٔ زمان تا کمیته */
+  function experts(cases) {
+    var by = {};
+    cases.forEach(function (c) {
+      var k = (c.expert || '').trim() || 'ارجاع‌نشده';
+      var e = by[k] || (by[k] = { label: k, value: 0, open: 0, closed: 0, days: [] });
+      e.value++;
+      if (isClosed(c)) e.closed++; else e.open++;
+      if (c.intakeDate && c.committeeDate) {
+        var d = J.diffDays(c.committeeDate, c.intakeDate);
+        if (d != null && d >= 0) e.days.push(d);
+      }
+    });
+    return Object.keys(by).map(function (k) {
+      by[k].median = median(by[k].days);
+      return by[k];
+    }).sort(function (a, b) { return b.value - a.value; });
+  }
+
+  // ------------------------------------------------- یافته‌ها و پیشنهادها
+  var SEV_ORDER = { critical: 0, serious: 1, warning: 2, good: 3 };
+
+  /**
+   * تحلیل خودکار: هر یافته شامل شدت، آیکن، عنوان، توضیح، تعداد و
+   * شناسهٔ پرونده‌هاست تا بشود مستقیم در فهرست نشانشان داد.
+   * (رنگ وضعیت هرگز تنها حامل معنا نیست؛ همیشه آیکن و برچسب همراهش است.)
+   */
+  function findings(cases) {
+    var today = J.today();
+    var out = [];
+
+    function add(sev, icon, title, advice, list) {
+      if (!list.length) return;
+      out.push({
+        severity: sev, icon: icon, title: title, advice: advice,
+        count: list.length, ids: list.map(function (c) { return c.id; })
+      });
+    }
+
+    // ۱) پرونده‌های باز که بیش از ۹۰ روز از ورودشان گذشته و هنوز به کمیته نرفته‌اند
+    add('critical', '⏳', 'پرونده‌های راکد بالای ۹۰ روز',
+      'اینها هنوز در کمیته طرح نشده‌اند. پیشنهاد: در دستور کار نزدیک‌ترین جلسه قرار بگیرند.',
+      cases.filter(function (c) {
+        if (isClosed(c) || c.committeeDate || !c.intakeDate) return false;
+        var d = J.diffDays(today, c.intakeDate);
+        return d != null && d > 90;
+      }));
+
+    // ۲) رأی صادر شده ولی بیش از ۳۰ روز ابلاغ نشده
+    add('serious', '📨', 'رأی صادرشده بدون ابلاغ',
+      'بیش از ۳۰ روز از طرح در کمیته گذشته و نامهٔ ابلاغ رأی ثبت نشده است.',
+      cases.filter(function (c) {
+        if (!c.committeeDate || c.noticeLetterDate) return false;
+        var d = J.diffDays(today, c.committeeDate);
+        return d != null && d > 30;
+      }));
+
+    // ۳) استعلام حراست بی‌پاسخ
+    add('serious', '🔎', 'استعلام حراست بی‌پاسخ',
+      'بیش از ۳۰ روز از ارسال استعلام گذشته و پاسخی ثبت نشده؛ پیگیری لازم است.',
+      cases.filter(function (c) {
+        if (!c.securityOutLetterDate || c.securityInLetterDate) return false;
+        var d = J.diffDays(today, c.securityOutLetterDate);
+        return d != null && d > 30;
+      }));
+
+    // ۴) پرونده‌های بدون کارشناس
+    add('warning', '👤', 'پروندهٔ بدون کارشناس',
+      'کارشناس پرونده تعیین نشده است؛ تا زمان ارجاع، گردش‌کار متوقف می‌ماند.',
+      cases.filter(function (c) { return !isClosed(c) && !(c.expert || '').trim(); }));
+
+    // ۵) ناسازگاری تاریخ‌ها
+    add('critical', '📅', 'تاریخ‌های ناسازگار',
+      'تاریخ یک مرحله جلوتر از مرحلهٔ بعدی ثبت شده؛ احتمالاً خطای ورود اطلاعات است.',
+      cases.filter(function (c) {
+        var bad = false;
+        if (c.intakeDate && c.committeeDate &&
+          J.diffDays(c.committeeDate, c.intakeDate) < 0) bad = true;
+        if (c.committeeDate && c.noticeLetterDate &&
+          J.diffDays(c.noticeLetterDate, c.committeeDate) < 0) bad = true;
+        if (c.intakeDate && J.diffDays(today, c.intakeDate) < 0) bad = true;
+        return bad;
+      }));
+
+    // ۶) شمارهٔ پروندهٔ تکراری
+    var seen = {}, dupes = [];
+    cases.forEach(function (c) {
+      var n = w.U.normalize(c.caseNo || '');
+      if (!n) return;
+      if (seen[n]) dupes.push(c); else seen[n] = c;
+    });
+    add('critical', '⚠️', 'شمارهٔ پروندهٔ تکراری',
+      'دو پرونده با یک شماره ثبت شده‌اند؛ یکی را اصلاح یا ادغام کنید.', dupes);
+
+    // ۷) تکرار تخلف: افرادی با بیش از یک پرونده
+    var byPerson = {};
+    cases.forEach(function (c) {
+      var k = (c.nationalId || '').trim();
+      if (!k) return;
+      (byPerson[k] = byPerson[k] || []).push(c);
+    });
+    var repeat = [];
+    Object.keys(byPerson).forEach(function (k) {
+      if (byPerson[k].length > 1) repeat = repeat.concat(byPerson[k]);
+    });
+    add('warning', '🔁', 'افراد با بیش از یک پرونده',
+      'سابقهٔ تکرار تخلف در تعیین نوع تنبیه مؤثر است؛ پیش از رأی بررسی شود.', repeat);
+
+    // ۸) کیفیت داده: فیلدهای کلیدی خالی
+    var KEY_FIELDS = [
+      { key: 'nationalId', label: 'کد ملی' },
+      { key: 'intakeDate', label: 'تاریخ ورود به دبیرخانه' },
+      { key: 'reporterOrg', label: 'مرجع گزارش‌دهنده' },
+      { key: 'caseType', label: 'نوع پرونده' },
+      { key: 'orgUnit', label: 'واحد سازمانی' }
+    ];
+    var incomplete = cases.filter(function (c) {
+      return KEY_FIELDS.some(function (f) { return !(c[f.key] || '').trim(); });
+    });
+    add('warning', '📝', 'پرونده‌های ناقص',
+      'دست‌کم یکی از فیلدهای کلیدی (کد ملی، تاریخ ورود، مرجع گزارش‌دهنده، ' +
+      'نوع پرونده، واحد سازمانی) خالی است.', incomplete);
+
+    // ۹) گلوگاه: اگر میانهٔ زمان تا کمیته بالاست
+    var d = durations(cases).filter(function (l) {
+      return l.label.indexOf('طرح در کمیته') > 0;
+    })[0];
+    if (d && d.value > 60) {
+      out.push({
+        severity: 'serious', icon: '⏱', title: 'میانهٔ زمان تا طرح در کمیته بالاست',
+        advice: 'میانهٔ ' + w.U.toFaDigits(d.value) + ' روز از ورود تا طرح در کمیته؛ ' +
+          'بیشترین مورد ' + w.U.toFaDigits(d.max) + ' روز. بازبینی فاصلهٔ جلسات پیشنهاد می‌شود.',
+        count: d.sample, ids: null
+      });
+    }
+
+    out.sort(function (a, b) {
+      var s = SEV_ORDER[a.severity] - SEV_ORDER[b.severity];
+      return s !== 0 ? s : b.count - a.count;
+    });
+
+    if (!out.length) {
+      out.push({
+        severity: 'good', icon: '✓', title: 'موردی برای هشدار پیدا نشد',
+        advice: 'در این برش، پروندهٔ راکد، رأی بدون ابلاغ، استعلام بی‌پاسخ یا ' +
+          'ناسازگاری تاریخ دیده نشد.', count: 0, ids: null
+      });
+    }
+    return out;
+  }
+
+  /** همهٔ داده‌های یک گزارش، یکجا */
+  function build(opts) {
+    var range = rangeOf(opts.preset, opts.custom);
+    var cases = scope({
+      range: range, expert: opts.expert, year: opts.year, placeType: opts.placeType
+    });
+    var prev = null;
+    var pr = previousRange(range);
+    if (pr) {
+      prev = scope({
+        range: pr, expert: opts.expert, year: opts.year, placeType: opts.placeType
+      });
+    }
+    return {
+      range: range,
+      cases: cases,
+      kpis: kpis(cases, prev),
+      trend: monthlyTrend(cases),
+      funnel: funnel(cases),
+      status: byField(cases, 'status', 8),
+      caseTypes: byField(cases, 'caseType', 4),
+      orgUnits: byField(cases, 'orgUnit', 8),
+      reporters: byField(cases, 'reporterOrg', 8),
+      placeTypes: byField(cases, 'servicePlaceType', 6),
+      jobNature: byField(cases, 'jobNature', 4),
+      durations: durations(cases),
+      aging: aging(cases),
+      experts: experts(cases),
+      findings: findings(cases)
+    };
+  }
+
+  w.Report = {
+    PRESETS: PRESETS, build: build, rangeOf: rangeOf, previousRange: previousRange,
+    scope: scope, kpis: kpis, monthlyTrend: monthlyTrend, funnel: funnel,
+    byField: byField, durations: durations, aging: aging, experts: experts,
+    findings: findings, isClosed: isClosed, closeDate: closeDate,
+    addDays: addDays, median: median, mean: mean, monthLabel: monthLabel
+  };
+})(window);
+
+</script>
+<script>
 /* ==== js/ui.list.js ==== */
 /* نمای فهرست: جستجو، فیلترها و جدول با رندر مجازی */
 (function (w) {
@@ -4218,7 +5395,12 @@ else if (typeof exports === 'object'){
 
     box.appendChild(el('button.btn.ghost.block', {
       type: 'button', text: 'پاک کردن همهٔ فیلترها',
-      onclick: function () { app.state.filters = {}; app.state.q = ''; app.refresh(true); }
+      onclick: function () {
+        app.state.filters = {};
+        app.state.q = '';
+        app.state.filterNote = '';
+        app.refresh(true);
+      }
     }));
     return box;
   }
@@ -4334,6 +5516,21 @@ else if (typeof exports === 'object'){
       })
     ]);
 
+    var note = app.state.filterNote ? el('div.filter-note', null, [
+      el('span.fn-icon', { text: '⌖', 'aria-hidden': 'true' }),
+      el('span', { text: 'نمایش نتیجهٔ گزارش: ' }),
+      el('b', { text: app.state.filterNote }),
+      el('div.spacer'),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'برداشتن این برش',
+        onclick: function () { app.clearFilterNote(); }
+      }),
+      el('button.btn.small.ghost', {
+        type: 'button', text: '← بازگشت به گزارش',
+        onclick: function () { app.goReport(); }
+      })
+    ]) : null;
+
     var table = buildTable(app, rows);
     var body = rows.length
       ? table.node
@@ -4348,7 +5545,7 @@ else if (typeof exports === 'object'){
     w.U.clear(mount);
     mount.appendChild(el('div.list-layout', null, [
       el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
-      el('section.list-main', null, [summary, body])
+      el('section.list-main', null, [note, summary, body])
     ]));
   }
 
@@ -4741,6 +5938,9 @@ else if (typeof exports === 'object'){
 
   var el = w.U.el, J = w.J, M = w.Model;
 
+  // عرض مفید یک صفحهٔ A4 با حاشیه‌های تعریف‌شده، به پیکسل CSS
+  var PRINT_WIDTH = 680;
+
   function area() {
     var node = document.getElementById('print-area');
     w.U.clear(node);
@@ -4857,7 +6057,102 @@ else if (typeof exports === 'object'){
     run('فهرست پرونده‌ها');
   }
 
-  w.UIPrint = { printCase: printCase, printList: printList };
+  /** گزارش مدیریتی: سنجه‌ها، یافته‌ها، و هر نمودار به همراه جدولش */
+  function printReport(data, scopeText) {
+    var node = area();
+    node.appendChild(header('گزارش عملکرد کمیتهٔ انضباطی', scopeText));
+
+    var k = data.kpis;
+    var kpiTable = el('table.p-table.p-kpi');
+    [
+      ['کل پرونده‌های این برش', w.U.toFaDigits(k.total)],
+      ['در جریان', w.U.toFaDigits(k.open)],
+      ['مختومه‌شده', w.U.toFaDigits(k.closed) + ' (' + w.U.toFaDigits(k.closedPct) + '٪)'],
+      ['میانهٔ روز از ورود تا طرح در کمیته',
+        k.medianToCommittee == null ? '—' : w.U.toFaDigits(k.medianToCommittee) + ' روز'],
+      ['میانگین روز تا طرح در کمیته',
+        k.meanToCommittee == null ? '—' : w.U.toFaDigits(k.meanToCommittee) + ' روز'],
+      ['قدیمی‌ترین پروندهٔ باز',
+        k.oldestOpen ? w.U.toFaDigits(k.oldestOpen) + ' روز' : '—']
+    ].forEach(function (r) {
+      kpiTable.appendChild(el('tr', null, [
+        el('th', { text: r[0] }), el('td', { text: r[1] })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'سنجه‌های کلیدی' }), kpiTable
+    ]));
+
+    // یافته‌ها — شدت همیشه با برچسب متنی می‌آید، نه فقط رنگ
+    var fTable = el('table.p-table.p-list', null, [
+      el('tr', null, [
+        el('th', { text: 'شدت' }), el('th', { text: 'یافته' }),
+        el('th', { text: 'تعداد' }), el('th', { text: 'پیشنهاد' })
+      ])
+    ]);
+    data.findings.forEach(function (f) {
+      var sev = (w.UIReport.SEV[f.severity] || {}).label || '';
+      fTable.appendChild(el('tr', null, [
+        el('td', { text: sev }),
+        el('td', { text: f.title }),
+        el('td', { text: f.count ? w.U.toFaDigits(f.count) : '—' }),
+        el('td', { text: f.advice })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'یافته‌ها و پیشنهادها' }), fTable
+    ]));
+
+    // نمودارها: تصویر SVG از صفحه کپی می‌شود و جدول همزادش زیرش می‌آید
+    var cards = w.U.$$('#main .chart-card:not(.findings)');
+    cards.forEach(function (cardNode) {
+      var title = (cardNode.querySelector('h3') || {}).textContent || '';
+      var section = el('section.p-section', null, [el('h2', { text: title })]);
+      var svg = cardNode.querySelector('svg.chart');
+      if (svg) {
+        // راهنما هم کپی می‌شود؛ روی کاغذ هویت سری نباید فقط با رنگ بماند
+        var lg = cardNode.querySelector('.c-legend');
+        if (lg) section.appendChild(lg.cloneNode(true));
+        // viewBox روی صفحه به عرض کارت بسته است؛ برای کاغذ با عرض A4
+        // دوباره رسم و سپس به حالت قبل برگردانده می‌شود، وگرنه چند برابر
+        // بزرگ چاپ می‌شود.
+        var onScreenWidth = svg.viewBox.baseVal ? svg.viewBox.baseVal.width : 0;
+        if (svg.draw) svg.draw(PRINT_WIDTH);
+        var clone = svg.cloneNode(true);
+        if (svg.draw && onScreenWidth > 0) svg.draw(onScreenWidth);
+        clone.removeAttribute('style');
+        clone.setAttribute('width', '100%');
+        section.appendChild(el('div.p-chart', null, [clone]));
+      }
+      var tbl = cardNode.querySelector('.c-table');
+      if (!tbl && cardNode.repaint) {
+        // کارت در حالت نمودار است؛ جدولش را موقتاً می‌سازیم
+        var probe = cardNode.querySelector('.card-head .btn');
+        if (probe) {
+          probe.click();
+          tbl = cardNode.querySelector('.c-table');
+          if (tbl) tbl = tbl.cloneNode(true);
+          probe.click();
+        }
+      } else if (tbl) {
+        tbl = tbl.cloneNode(true);
+      }
+      if (tbl) {
+        tbl.classList.add('p-table', 'p-list');
+        section.appendChild(tbl);
+      }
+      node.appendChild(section);
+    });
+
+    node.appendChild(el('div.p-sign', null, [
+      el('div', { text: 'امضای دبیر کمیته' }),
+      el('div', { text: 'امضای رئیس کمیته' })
+    ]));
+
+    run('گزارش عملکرد کمیتهٔ انضباطی');
+  }
+
+  w.UIPrint = { printCase: printCase, printList: printList, printReport: printReport };
 })(window);
 
 </script>
@@ -5028,6 +6323,104 @@ else if (typeof exports === 'object'){
       .catch(function (e) {
         w.U.toast('ساخت فایل SQLite ناموفق بود: ' + e.message, 'bad');
       });
+  }
+
+  /** خروجی اکسل گزارش: هر جدول در یک شیت جدا */
+  function exportReportExcel(data, scopeText) {
+    var fa = w.U.toFaDigits;
+    var k = data.kpis;
+    var sheets = [];
+
+    sheets.push({
+      name: 'خلاصهٔ گزارش',
+      rows: [
+        ['سنجه', 'مقدار'],
+        ['برش گزارش', scopeText || 'همهٔ پرونده‌ها'],
+        ['تاریخ تهیه', J.stamp()],
+        ['کل پرونده‌ها', fa(k.total)],
+        ['در جریان', fa(k.open)],
+        ['مختومه‌شده', fa(k.closed)],
+        ['درصد مختومه', fa(k.closedPct) + '٪'],
+        ['میانهٔ روز تا طرح در کمیته',
+          k.medianToCommittee == null ? '—' : fa(k.medianToCommittee)],
+        ['میانگین روز تا طرح در کمیته',
+          k.meanToCommittee == null ? '—' : fa(k.meanToCommittee)],
+        ['قدیمی‌ترین پروندهٔ باز (روز)', k.oldestOpen ? fa(k.oldestOpen) : '—']
+      ],
+      widths: [34, 30]
+    });
+
+    sheets.push({
+      name: 'یافته‌ها و پیشنهادها',
+      rows: [['شدت', 'یافته', 'تعداد پرونده', 'پیشنهاد']].concat(
+        data.findings.map(function (f) {
+          return [(w.UIReport.SEV[f.severity] || {}).label || '', f.title,
+            f.count ? fa(f.count) : '—', f.advice];
+        })),
+      widths: [16, 34, 14, 70]
+    });
+
+    sheets.push({
+      name: 'روند ماهانه',
+      rows: [['ماه', 'وارده', 'مختومه', 'تراز']].concat(
+        data.trend.x.map(function (label, i) {
+          var diff = data.trend.intake[i] - data.trend.closed[i];
+          return [label, fa(data.trend.intake[i]), fa(data.trend.closed[i]),
+            (diff > 0 ? '+' : '') + fa(diff)];
+        })),
+      widths: [18, 12, 12, 12]
+    });
+
+    sheets.push({
+      name: 'قیف گردش‌کار',
+      rows: [['مرحله', 'تعداد', 'درصد از کل']].concat(
+        data.funnel.map(function (f) {
+          return [f.label, fa(f.value), fa(f.pct) + '٪'];
+        })),
+      widths: [30, 12, 14]
+    });
+
+    sheets.push({
+      name: 'زمان مراحل',
+      rows: [['مرحله', 'میانه (روز)', 'میانگین (روز)', 'بیشینه (روز)', 'تعداد نمونه']]
+        .concat(data.durations.map(function (d) {
+          return [d.label, fa(d.value), d.mean == null ? '—' : fa(d.mean),
+            fa(d.max), fa(d.sample)];
+        })),
+      widths: [34, 14, 14, 14, 14]
+    });
+
+    sheets.push({
+      name: 'کارکرد کارشناسان',
+      rows: [['کارشناس', 'کل', 'در جریان', 'مختومه', 'میانهٔ روز تا کمیته']].concat(
+        data.experts.map(function (e) {
+          return [e.label, fa(e.value), fa(e.open), fa(e.closed),
+            e.median == null ? '—' : fa(e.median)];
+        })),
+      widths: [26, 10, 12, 12, 20]
+    });
+
+    [['وضعیت پرونده‌ها', data.status, 'وضعیت'],
+     ['نوع پرونده', data.caseTypes, 'نوع پرونده'],
+     ['سن پرونده‌های باز', data.aging, 'بازهٔ سنی'],
+     ['واحدهای سازمانی', data.orgUnits, 'واحد سازمانی'],
+     ['مراجع گزارش‌دهنده', data.reporters, 'مرجع'],
+     ['نوع محل خدمت', data.placeTypes, 'دسته']].forEach(function (t) {
+      sheets.push({
+        name: t[0],
+        rows: [[t[2], 'تعداد']].concat(t[1].map(function (d) {
+          return [d.label, fa(d.value)];
+        })),
+        widths: [34, 12]
+      });
+    });
+
+    try {
+      w.U.download('gozaresh-' + J.today() + '.xlsx', w.XLSX.build(sheets));
+      w.U.toast('خروجی اکسل گزارش ساخته شد.', 'good');
+    } catch (e) {
+      w.U.toast('ساخت خروجی گزارش ناموفق بود: ' + e.message, 'bad');
+    }
   }
 
   function exportJson() {
@@ -5255,8 +6648,481 @@ else if (typeof exports === 'object'){
   w.UIMisc = {
     statsPanel: statsPanel, columnsDialog: columnsDialog, exportExcel: exportExcel,
     exportSqlite: exportSqlite, exportJson: exportJson, restoreJson: restoreJson,
+    exportReportExcel: exportReportExcel,
     importExcel: importExcel, settingsDialog: settingsDialog
   };
+})(window);
+
+</script>
+<script>
+/* ==== js/ui.report.js ==== */
+/* نمای گزارش‌ها: ردیف فیلتر، سنجه‌ها، یافته‌ها و نمودارها */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model, R = w.Report, Ch = w.Charts;
+
+  var SEV = {
+    critical: { label: 'بحرانی', color: Ch.C.status.critical },
+    serious: { label: 'نیازمند پیگیری', color: Ch.C.status.serious },
+    warning: { label: 'هشدار', color: Ch.C.status.warning },
+    good: { label: 'بی‌اشکال', color: Ch.C.status.good }
+  };
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  function num(v, suffix) {
+    if (v == null) return '—';
+    return fa(v) + (suffix ? ' ' + suffix : '');
+  }
+
+  // ------------------------------------------------------------------- کارت
+  /**
+   * کارت نمودار با همزاد جدولی. هر مقداری که روی نمودار هست، بدون هاور هم
+   * از راه جدول در دسترس است.
+   */
+  function card(opts) {
+    var showTable = false;
+    var body = el('div.card-body');
+    var toggle = el('button.btn.small.ghost', { type: 'button', text: 'جدول' });
+
+    function paint() {
+      w.U.clear(body);
+      if (showTable) {
+        body.appendChild(opts.table());
+      } else {
+        var chart = opts.chart();
+        if (opts.legend) body.appendChild(opts.legend());
+        var holder = el('div.chart-holder');
+        body.appendChild(holder);
+        Ch.mount(holder, chart);
+        if (opts.footer) body.appendChild(opts.footer());
+      }
+      toggle.textContent = showTable ? 'نمودار' : 'جدول';
+    }
+
+    toggle.addEventListener('click', function () { showTable = !showTable; paint(); });
+
+    var node = el('section.chart-card' + (opts.wide ? '.wide' : ''), null, [
+      el('div.card-head', null, [
+        el('div', null, [
+          el('h3', { text: opts.title }),
+          opts.subtitle ? el('p.card-sub', { text: opts.subtitle }) : null
+        ]),
+        toggle
+      ]),
+      body
+    ]);
+    paint();
+    node.repaint = paint;
+    return node;
+  }
+
+  // -------------------------------------------------------------- ردیف فیلتر
+  function filterRow(app, data) {
+    var s = app.state.report;
+
+    function sel(label, value, options, onChange) {
+      var select = el('select.input.small');
+      select.appendChild(el('option', { value: '', text: label }));
+      options.forEach(function (o) {
+        select.appendChild(el('option', {
+          value: o.value, text: o.label, selected: o.value === value
+        }));
+      });
+      select.value = value || '';
+      select.addEventListener('change', function () { onChange(select.value); });
+      return select;
+    }
+
+    var presetSel = el('select.input.small');
+    R.PRESETS.concat([{ key: 'custom', label: 'بازهٔ دلخواه…' }]).forEach(function (p) {
+      presetSel.appendChild(el('option', {
+        value: p.key, text: p.label, selected: p.key === s.preset
+      }));
+    });
+    presetSel.addEventListener('change', function () {
+      s.preset = presetSel.value;
+      app.render();
+    });
+
+    var row = el('div.report-filters', null, [
+      el('span.filter-lead', { text: 'بازهٔ گزارش' }),
+      presetSel
+    ]);
+
+    if (s.preset === 'custom') {
+      var from = w.DatePicker.field(s.custom.from || '', function (v) {
+        s.custom.from = v; app.render();
+      });
+      var to = w.DatePicker.field(s.custom.to || '', function (v) {
+        s.custom.to = v; app.render();
+      });
+      row.appendChild(el('span.filter-lead', { text: 'از' }));
+      row.appendChild(from);
+      row.appendChild(el('span.filter-lead', { text: 'تا' }));
+      row.appendChild(to);
+    }
+
+    row.appendChild(sel('همهٔ کارشناسان', s.expert,
+      M.distinct('expert').map(function (v) { return { value: v, label: v }; }),
+      function (v) { s.expert = v; app.render(); }));
+
+    row.appendChild(sel('همهٔ سال‌ها', s.year,
+      M.distinct('year').map(function (v) { return { value: v, label: fa(v) }; }),
+      function (v) { s.year = v; app.render(); }));
+
+    row.appendChild(sel('همهٔ محل‌های خدمت', s.placeType,
+      M.distinct('servicePlaceType').map(function (v) { return { value: v, label: v }; }),
+      function (v) { s.placeType = v; app.render(); }));
+
+    row.appendChild(el('div.spacer'));
+    row.appendChild(el('button.btn.small.ghost', {
+      type: 'button', text: 'چاپ گزارش',
+      onclick: function () { w.UIPrint.printReport(data, describe(s, data)); }
+    }));
+    row.appendChild(el('button.btn.small', {
+      type: 'button', text: 'خروجی اکسل گزارش',
+      onclick: function () { w.UIMisc.exportReportExcel(data, describe(s, data)); }
+    }));
+    return row;
+  }
+
+  function describe(s, data) {
+    var parts = [];
+    var preset = R.PRESETS.concat([{ key: 'custom', label: 'بازهٔ دلخواه' }])
+      .filter(function (p) { return p.key === s.preset; })[0];
+    parts.push(preset ? preset.label : 'همهٔ پرونده‌ها');
+    if (data.range.from || data.range.to) {
+      parts.push('از ' + (data.range.from ? J.format(data.range.from) : '—') +
+        ' تا ' + (data.range.to ? J.format(data.range.to) : '—'));
+    }
+    if (s.expert) parts.push('کارشناس: ' + s.expert);
+    if (s.year) parts.push('سال رسیدگی: ' + fa(s.year));
+    if (s.placeType) parts.push('محل خدمت: ' + s.placeType);
+    return parts.join(' • ');
+  }
+
+  // ------------------------------------------------------------ سنجه‌های سرآمد
+  function heroRow(app, k) {
+    var tiles = [
+      {
+        label: 'پروندهٔ در جریان', value: fa(k.open),
+        note: k.total ? fa(100 - k.closedPct) + '٪ از کل' : ''
+      },
+      {
+        label: 'مختومه‌شده', value: fa(k.closed),
+        note: k.total ? fa(k.closedPct) + '٪ از کل' : ''
+      },
+      {
+        label: 'میانهٔ روز تا طرح در کمیته',
+        value: k.medianToCommittee == null ? '—' : fa(k.medianToCommittee),
+        note: k.committeeSample
+          ? 'میانگین ' + fa(k.meanToCommittee) + ' روز، بر پایهٔ ' +
+            fa(k.committeeSample) + ' پرونده'
+          : 'دادهٔ کافی نیست'
+      },
+      {
+        label: 'قدیمی‌ترین پروندهٔ باز',
+        value: k.oldestOpen ? fa(k.oldestOpen) : '—',
+        note: k.oldestOpen ? 'روز از تاریخ ورود' : ''
+      }
+    ];
+
+    var delta = null;
+    if (k.delta != null) {
+      var up = k.delta > 0;
+      delta = el('div.hero-delta' + (up ? '.up' : (k.delta < 0 ? '.down' : '')), {
+        text: (k.delta === 0 ? 'بدون تغییر' :
+          (up ? '▲ ' : '▼ ') + fa(Math.abs(k.delta))) + ' نسبت به دورهٔ قبل'
+      });
+    }
+
+    return el('div.hero-row', null, [
+      el('div.hero-figure', null, [
+        el('div.hero-label', { text: 'پروندهٔ این برش' }),
+        el('div.hero-value', { text: fa(k.total) }),
+        delta
+      ]),
+      el('div.stat-tiles', null, tiles.map(function (t) {
+        return el('div.stat-tile', null, [
+          el('div.tile-label', { text: t.label }),
+          el('div.tile-value', { text: t.value }),
+          t.note ? el('div.tile-note', { text: t.note }) : null
+        ]);
+      }))
+    ]);
+  }
+
+  // ------------------------------------------------------------- کارت یافته‌ها
+  function findingsCard(app, findings) {
+    return el('section.chart-card.wide.findings', null, [
+      el('div.card-head', null, [
+        el('div', null, [
+          el('h3', { text: 'یافته‌ها و پیشنهادها' }),
+          el('p.card-sub', {
+            text: 'تحلیل خودکار روی همین برش؛ روی هر مورد بزنید تا پرونده‌هایش را ببینید.'
+          })
+        ])
+      ]),
+      el('ul.finding-list', null, findings.map(function (f) {
+        var sev = SEV[f.severity] || SEV.warning;
+        return el('li.finding.sev-' + f.severity, null, [
+          el('span.finding-icon', { text: f.icon, 'aria-hidden': 'true' }),
+          el('div.finding-body', null, [
+            el('div.finding-head', null, [
+              el('b', { text: f.title }),
+              el('span.sev-tag', { text: sev.label }),
+              f.count ? el('span.finding-count', { text: fa(f.count) + ' پرونده' }) : null
+            ]),
+            el('p.finding-advice', { text: f.advice })
+          ]),
+          f.ids && f.ids.length ? el('button.btn.small.ghost', {
+            type: 'button', text: 'نمایش پرونده‌ها',
+            onclick: function () { app.showCases(f.ids, f.title); }
+          }) : null
+        ]);
+      }))
+    ]);
+  }
+
+  // ------------------------------------------------------------------- نماها
+  function render(app, mount) {
+    Ch.reset();
+    var s = app.state.report;
+    var data = R.build(s);
+    var pick = function (field) {
+      return function (d) {
+        if (d.key === '__other__' || d.label === 'ثبت‌نشده') return;
+        app.showCasesByField(field, d.key || d.label, d.label);
+      };
+    };
+
+    var grid = el('div.chart-grid');
+
+    // روند ماهانه — دو سری، یک محور، راهنما همیشه حاضر
+    if (data.trend.x.length) {
+      grid.appendChild(card({
+        wide: true,
+        title: 'روند ماهانهٔ ورود و اختتام پرونده',
+        subtitle: 'محور زمان از راست (قدیمی‌تر) به چپ (تازه‌تر). ' +
+          'ماه اختتام بر پایهٔ تاریخ ابلاغ رأی یا در نبودش تاریخ طرح در کمیته است.',
+        legend: function () {
+          return Ch.legend([
+            { name: 'وارده', color: Ch.C.series[0] },
+            { name: 'مختومه', color: Ch.C.series[1] }
+          ], 'line');
+        },
+        chart: function () {
+          return Ch.lines({
+            x: data.trend.x, unit: 'پرونده', height: 240,
+            series: [
+              { name: 'وارده', values: data.trend.intake },
+              { name: 'مختومه', values: data.trend.closed }
+            ]
+          });
+        },
+        table: function () {
+          return Ch.table(['ماه', 'وارده', 'مختومه', 'تراز'],
+            data.trend.x.map(function (label, i) {
+              var diff = data.trend.intake[i] - data.trend.closed[i];
+              return [label, fa(data.trend.intake[i]), fa(data.trend.closed[i]),
+                (diff > 0 ? '+' : '') + fa(diff)];
+            }));
+        }
+      }));
+    }
+
+    // قیف گردش‌کار — رستهٔ ترتیبی، رمپ تک‌رنگ
+    grid.appendChild(card({
+      title: 'قیف گردش‌کار',
+      subtitle: 'مرحله‌ها از روی تاریخ‌های ثبت‌شده استخراج می‌شوند، نه از متن وضعیت.',
+      chart: function () {
+        return Ch.hbar({
+          data: data.funnel.map(function (f) {
+            return { label: f.label, value: f.value, key: f.key, note: 'پرونده' };
+          }),
+          ramp: true, labelWidth: 150,
+          onPick: function (d) { app.showCasesByStage(d.key, d.label); }
+        });
+      },
+      footer: function () {
+        return el('p.card-note', {
+          text: data.funnel.map(function (f) {
+            return f.label + ' ' + fa(f.pct) + '٪';
+          }).join(' • ')
+        });
+      },
+      table: function () {
+        return Ch.table(['مرحله', 'تعداد', 'درصد از کل'],
+          data.funnel.map(function (f) {
+            return [f.label, fa(f.value), fa(f.pct) + '٪'];
+          }));
+      }
+    }));
+
+    // نوع پرونده — سهم از کل
+    grid.appendChild(card({
+      title: 'نوع پروندهٔ مطروحه',
+      subtitle: 'سهم هر نوع از کل پرونده‌های این برش.',
+      legend: function () {
+        return Ch.legend(data.caseTypes.map(function (t, i) {
+          return { name: t.label, value: t.value, color: Ch.C.series[i] };
+        }));
+      },
+      chart: function () {
+        return Ch.stacked100({ data: data.caseTypes, onPick: pick('caseType') });
+      },
+      table: function () {
+        var total = data.caseTypes.reduce(function (a, b) { return a + b.value; }, 0) || 1;
+        return Ch.table(['نوع پرونده', 'تعداد', 'سهم'],
+          data.caseTypes.map(function (t) {
+            return [t.label, fa(t.value), fa(Math.round(t.value / total * 100)) + '٪'];
+          }));
+      }
+    }));
+
+    // وضعیت پرونده‌ها — رستهٔ اسمی، یک رنگ برای همه
+    grid.appendChild(card({
+      title: 'وضعیت پرونده‌ها',
+      subtitle: 'روی هر میله بزنید تا همان پرونده‌ها در فهرست باز شوند.',
+      chart: function () {
+        return Ch.hbar({ data: data.status, labelWidth: 185, onPick: pick('status') });
+      },
+      table: function () {
+        return Ch.table(['وضعیت', 'تعداد'], data.status.map(function (d) {
+          return [d.label, fa(d.value)];
+        }));
+      }
+    }));
+
+    // سن پرونده‌های باز — سطل‌های مرتب، رمپ ترتیبی
+    grid.appendChild(card({
+      title: 'سن پرونده‌های باز',
+      subtitle: 'فاصلهٔ امروز تا تاریخ ورود، فقط برای پرونده‌های مختومه‌نشده.',
+      chart: function () {
+        return Ch.hbar({
+          data: data.aging, ramp: true, labelWidth: 120,
+          onPick: function (d) {
+            if (d.value) app.showCases(d.ids, 'پرونده‌های باز — ' + d.label);
+          }
+        });
+      },
+      table: function () {
+        return Ch.table(['بازهٔ سنی', 'تعداد پروندهٔ باز'], data.aging.map(function (d) {
+          return [d.label, fa(d.value)];
+        }));
+      }
+    }));
+
+    // زمان مراحل
+    if (data.durations.length) {
+      grid.appendChild(card({
+        title: 'میانهٔ زمان هر مرحله',
+        subtitle: 'میانه مقاوم‌تر از میانگین است و با یکی دو پروندهٔ طولانی جابه‌جا نمی‌شود.',
+        chart: function () {
+          return Ch.hbar({
+            data: data.durations.map(function (d) {
+              return { label: d.label, value: d.value, note: 'روز (میانه)' };
+            }),
+            labelWidth: 205, unit: 'روز'
+          });
+        },
+        table: function () {
+          return Ch.table(['مرحله', 'میانه (روز)', 'میانگین (روز)', 'بیشینه (روز)', 'تعداد نمونه'],
+            data.durations.map(function (d) {
+              return [d.label, fa(d.value), num(d.mean), fa(d.max), fa(d.sample)];
+            }));
+        }
+      }));
+    }
+
+    // کارکرد کارشناسان
+    grid.appendChild(card({
+      title: 'کارکرد کارشناسان',
+      subtitle: 'تعداد پروندهٔ هر کارشناس؛ جزئیات باز/مختومه در نمای جدول.',
+      chart: function () {
+        return Ch.hbar({
+          data: data.experts.map(function (e) {
+            return { label: e.label, value: e.value, key: e.label, note: 'پرونده' };
+          }),
+          labelWidth: 130, onPick: pick('expert')
+        });
+      },
+      table: function () {
+        return Ch.table(['کارشناس', 'کل', 'در جریان', 'مختومه', 'میانهٔ روز تا کمیته'],
+          data.experts.map(function (e) {
+            return [e.label, fa(e.value), fa(e.open), fa(e.closed), num(e.median)];
+          }));
+      }
+    }));
+
+    // واحد سازمانی
+    grid.appendChild(card({
+      title: 'پراکندگی واحدهای سازمانی',
+      subtitle: 'هشت واحد پرتکرار؛ مابقی در «سایر» جمع شده‌اند.',
+      chart: function () {
+        return Ch.hbar({ data: data.orgUnits, labelWidth: 200, onPick: pick('orgUnit') });
+      },
+      table: function () {
+        return Ch.table(['واحد سازمانی', 'تعداد'], data.orgUnits.map(function (d) {
+          return [d.label, fa(d.value)];
+        }));
+      }
+    }));
+
+    // مرجع گزارش‌دهنده
+    grid.appendChild(card({
+      title: 'مراجع گزارش‌دهنده',
+      subtitle: 'هشت مرجع پرتکرار؛ مابقی در «سایر» جمع شده‌اند.',
+      chart: function () {
+        return Ch.hbar({
+          data: data.reporters, labelWidth: 210, onPick: pick('reporterOrg')
+        });
+      },
+      table: function () {
+        return Ch.table(['مرجع گزارش‌دهنده', 'تعداد'], data.reporters.map(function (d) {
+          return [d.label, fa(d.value)];
+        }));
+      }
+    }));
+
+    // ترکیب استخدامی
+    grid.appendChild(card({
+      title: 'نوع محل خدمت و ماهیت شغل',
+      subtitle: 'ترکیب پرونده‌ها بر اساس جایگاه سازمانی فرد.',
+      chart: function () {
+        return Ch.hbar({
+          data: data.placeTypes, labelWidth: 175, onPick: pick('servicePlaceType')
+        });
+      },
+      table: function () {
+        return Ch.table(['دسته', 'تعداد'],
+          data.placeTypes.map(function (d) { return [d.label, fa(d.value)]; })
+            .concat([['—', '—']])
+            .concat(data.jobNature.map(function (d) { return [d.label, fa(d.value)]; })));
+      }
+    }));
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.report-view', null, [
+      filterRow(app, data),
+      data.cases.length
+        ? el('div', null, [
+          heroRow(app, data.kpis),
+          findingsCard(app, data.findings),
+          grid
+        ])
+        : el('div.empty-state', null, [
+          el('p', { text: 'در این بازه پرونده‌ای پیدا نشد. بازه یا فیلترها را تغییر دهید.' })
+        ])
+    ]));
+
+    app.state.reportData = data;
+    Ch.settle();          // حالا که نما به صفحه وصل شده، با عرض واقعی رسم می‌شود
+  }
+
+  w.UIReport = { render: render, describe: describe, SEV: SEV };
 })(window);
 
 </script>
@@ -5270,19 +7136,25 @@ else if (typeof exports === 'object'){
 
   var app = {
     state: {
-      view: 'list',      // list | case
+      view: 'list',      // list | case | report
       caseId: null,
       q: '',
       filters: {},
+      filterNote: '',
       sortKey: 'caseNo',
       sortDir: 'desc',
       formTab: null,
       dirty: false,
-      lastResult: []
+      lastResult: [],
+      report: {
+        preset: 'all', custom: { from: '', to: '' },
+        expert: '', year: '', placeType: ''
+      },
+      reportData: null
     }
   };
 
-  var mount, searchInput, statusChip;
+  var mount, searchInput, statusChip, navButtons;
 
   app.setDirty = function (v) { app.state.dirty = v; };
 
@@ -5292,6 +7164,65 @@ else if (typeof exports === 'object'){
     app.state.dirty = false;
     app.state.formTab = null;
     app.render();
+  };
+
+  app.goReport = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'report';
+    app.state.caseId = null;
+    app.render();
+  };
+
+  /** رفتن به فهرست با مجموعه‌ای مشخص از پرونده‌ها (از دل گزارش) */
+  app.showCases = function (ids, note) {
+    app.state.q = '';
+    app.state.filters = { _idSet: M.idSet(ids) };
+    app.state.filterNote = note || '';
+    app.state.view = 'list';
+    app.state.caseId = null;
+    app.refresh(true);
+  };
+
+  /** رفتن به فهرست با فیلتر یک فیلد مشخص */
+  app.showCasesByField = function (field, value, note) {
+    app.state.q = '';
+    var f = {};
+    f[field] = [value];
+    applyReportScope(f);
+    app.state.filters = f;
+    app.state.filterNote = note || '';
+    app.state.view = 'list';
+    app.state.caseId = null;
+    app.refresh(true);
+  };
+
+  /** رفتن به فهرست با فیلتر مرحلهٔ گردش‌کار */
+  app.showCasesByStage = function (stage, note) {
+    app.state.q = '';
+    var f = { _stage: stage };
+    applyReportScope(f);
+    app.state.filters = f;
+    app.state.filterNote = note || '';
+    app.state.view = 'list';
+    app.state.caseId = null;
+    app.refresh(true);
+  };
+
+  /** بازهٔ زمانی گزارش را هم به فیلتر فهرست منتقل می‌کند تا اعداد بخوانند */
+  function applyReportScope(filters) {
+    var data = app.state.reportData;
+    if (!data || !data.range) return;
+    if (data.range.from) filters._from = data.range.from;
+    if (data.range.to) filters._to = data.range.to;
+  }
+
+  app.clearFilterNote = function () {
+    app.state.filters = {};
+    app.state.filterNote = '';
+    app.refresh(true);
   };
 
   app.openCase = function (id) {
@@ -5323,13 +7254,25 @@ else if (typeof exports === 'object'){
   };
 
   app.render = function () {
+    w.Charts.hideTip();
     if (app.state.view === 'case') {
       w.UIForm.render(app, mount, app.state.caseId);
+    } else if (app.state.view === 'report') {
+      w.UIReport.render(app, mount);
     } else {
       w.UIList.render(app, mount);
     }
+    updateNav();
     updateStatusChip();
   };
+
+  function updateNav() {
+    if (!navButtons) return;
+    Object.keys(navButtons).forEach(function (k) {
+      var active = (k === 'report') === (app.state.view === 'report');
+      navButtons[k].classList.toggle('active', active);
+    });
+  }
 
   // ------------------------------------------------------------- نوار وضعیت
   function updateStatusChip() {
@@ -5374,6 +7317,17 @@ else if (typeof exports === 'object'){
       type: 'button', onclick: function () { w.UIMisc.settingsDialog(app); }
     });
 
+    navButtons = {
+      list: el('button.nav-btn.active', {
+        type: 'button', text: 'فهرست پرونده‌ها',
+        onclick: function () { app.goList(); }
+      }),
+      report: el('button.nav-btn', {
+        type: 'button', text: 'گزارش‌ها',
+        onclick: function () { app.goReport(); }
+      })
+    };
+
     return el('header.topbar', null, [
       el('div.brand', {
         onclick: function () { app.goList(); }, title: 'بازگشت به فهرست'
@@ -5384,6 +7338,7 @@ else if (typeof exports === 'object'){
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),
+      el('nav.main-nav', null, [navButtons.list, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -5429,6 +7384,9 @@ else if (typeof exports === 'object'){
         e.preventDefault();
         if (app.state.view === 'case' && app.saveCurrentForm) app.saveCurrentForm();
         else w.UIMisc.exportJson();
+      } else if (ctrl && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        app.goReport();
       } else if (e.key === 'Escape' && app.state.view === 'case' && !app.state.dirty) {
         app.goList();
       }

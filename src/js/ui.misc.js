@@ -165,6 +165,104 @@
       });
   }
 
+  /** خروجی اکسل گزارش: هر جدول در یک شیت جدا */
+  function exportReportExcel(data, scopeText) {
+    var fa = w.U.toFaDigits;
+    var k = data.kpis;
+    var sheets = [];
+
+    sheets.push({
+      name: 'خلاصهٔ گزارش',
+      rows: [
+        ['سنجه', 'مقدار'],
+        ['برش گزارش', scopeText || 'همهٔ پرونده‌ها'],
+        ['تاریخ تهیه', J.stamp()],
+        ['کل پرونده‌ها', fa(k.total)],
+        ['در جریان', fa(k.open)],
+        ['مختومه‌شده', fa(k.closed)],
+        ['درصد مختومه', fa(k.closedPct) + '٪'],
+        ['میانهٔ روز تا طرح در کمیته',
+          k.medianToCommittee == null ? '—' : fa(k.medianToCommittee)],
+        ['میانگین روز تا طرح در کمیته',
+          k.meanToCommittee == null ? '—' : fa(k.meanToCommittee)],
+        ['قدیمی‌ترین پروندهٔ باز (روز)', k.oldestOpen ? fa(k.oldestOpen) : '—']
+      ],
+      widths: [34, 30]
+    });
+
+    sheets.push({
+      name: 'یافته‌ها و پیشنهادها',
+      rows: [['شدت', 'یافته', 'تعداد پرونده', 'پیشنهاد']].concat(
+        data.findings.map(function (f) {
+          return [(w.UIReport.SEV[f.severity] || {}).label || '', f.title,
+            f.count ? fa(f.count) : '—', f.advice];
+        })),
+      widths: [16, 34, 14, 70]
+    });
+
+    sheets.push({
+      name: 'روند ماهانه',
+      rows: [['ماه', 'وارده', 'مختومه', 'تراز']].concat(
+        data.trend.x.map(function (label, i) {
+          var diff = data.trend.intake[i] - data.trend.closed[i];
+          return [label, fa(data.trend.intake[i]), fa(data.trend.closed[i]),
+            (diff > 0 ? '+' : '') + fa(diff)];
+        })),
+      widths: [18, 12, 12, 12]
+    });
+
+    sheets.push({
+      name: 'قیف گردش‌کار',
+      rows: [['مرحله', 'تعداد', 'درصد از کل']].concat(
+        data.funnel.map(function (f) {
+          return [f.label, fa(f.value), fa(f.pct) + '٪'];
+        })),
+      widths: [30, 12, 14]
+    });
+
+    sheets.push({
+      name: 'زمان مراحل',
+      rows: [['مرحله', 'میانه (روز)', 'میانگین (روز)', 'بیشینه (روز)', 'تعداد نمونه']]
+        .concat(data.durations.map(function (d) {
+          return [d.label, fa(d.value), d.mean == null ? '—' : fa(d.mean),
+            fa(d.max), fa(d.sample)];
+        })),
+      widths: [34, 14, 14, 14, 14]
+    });
+
+    sheets.push({
+      name: 'کارکرد کارشناسان',
+      rows: [['کارشناس', 'کل', 'در جریان', 'مختومه', 'میانهٔ روز تا کمیته']].concat(
+        data.experts.map(function (e) {
+          return [e.label, fa(e.value), fa(e.open), fa(e.closed),
+            e.median == null ? '—' : fa(e.median)];
+        })),
+      widths: [26, 10, 12, 12, 20]
+    });
+
+    [['وضعیت پرونده‌ها', data.status, 'وضعیت'],
+     ['نوع پرونده', data.caseTypes, 'نوع پرونده'],
+     ['سن پرونده‌های باز', data.aging, 'بازهٔ سنی'],
+     ['واحدهای سازمانی', data.orgUnits, 'واحد سازمانی'],
+     ['مراجع گزارش‌دهنده', data.reporters, 'مرجع'],
+     ['نوع محل خدمت', data.placeTypes, 'دسته']].forEach(function (t) {
+      sheets.push({
+        name: t[0],
+        rows: [[t[2], 'تعداد']].concat(t[1].map(function (d) {
+          return [d.label, fa(d.value)];
+        })),
+        widths: [34, 12]
+      });
+    });
+
+    try {
+      w.U.download('gozaresh-' + J.today() + '.xlsx', w.XLSX.build(sheets));
+      w.U.toast('خروجی اکسل گزارش ساخته شد.', 'good');
+    } catch (e) {
+      w.U.toast('ساخت خروجی گزارش ناموفق بود: ' + e.message, 'bad');
+    }
+  }
+
   function exportJson() {
     var blob = new Blob([JSON.stringify(w.Store.snapshot(), null, 1)],
       { type: 'application/json' });
@@ -390,6 +488,7 @@
   w.UIMisc = {
     statsPanel: statsPanel, columnsDialog: columnsDialog, exportExcel: exportExcel,
     exportSqlite: exportSqlite, exportJson: exportJson, restoreJson: restoreJson,
+    exportReportExcel: exportReportExcel,
     importExcel: importExcel, settingsDialog: settingsDialog
   };
 })(window);

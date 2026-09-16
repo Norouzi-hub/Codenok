@@ -263,6 +263,159 @@ function check(name, ok, extra) {
     document.querySelectorAll('#print-area .p-list tr').length);
   check('فهرست چاپی ساخته شد', printRows === 21, 'سطر=' + printRows);
 
+  console.log('\n— بخش گزارش‌ها —');
+  await page.evaluate(() => window.App.goReport());
+  await page.waitForSelector('.chart-card');
+  await page.waitForTimeout(500);
+
+  const rep = await page.evaluate(() => {
+    const d = window.App.state.reportData;
+    return {
+      cards: document.querySelectorAll('.chart-card').length,
+      svgs: document.querySelectorAll('svg.chart').length,
+      heroes: document.querySelectorAll('.hero-value').length,
+      total: d.kpis.total,
+      cases: d.cases.length,
+      funnel: d.funnel.map(f => f.value),
+      agingSum: d.aging.reduce((a, b) => a + b.value, 0),
+      openWithDate: d.cases.filter(c => !/مختومه/.test(c.status || '') && c.intakeDate).length,
+      findings: d.findings.length,
+      trendIntakeSum: d.trend.intake.reduce((a, b) => a + b, 0),
+      withIntake: d.cases.filter(c => c.intakeDate).length
+    };
+  });
+  check('نماهای گزارش رندر شدند', rep.cards >= 10 && rep.svgs >= 9,
+    rep.cards + ' کارت، ' + rep.svgs + ' نمودار');
+  check('دقیقاً یک عدد قهرمان در نما', rep.heroes === 1, 'hero=' + rep.heroes);
+  check('کل سنجه با تعداد پرونده‌های برش می‌خواند', rep.total === rep.cases,
+    rep.total + ' == ' + rep.cases);
+  check('قیف گردش‌کار نزولی است',
+    rep.funnel[0] >= rep.funnel[1] && rep.funnel[0] >= rep.funnel[2],
+    JSON.stringify(rep.funnel));
+  check('جمع سطل‌های سنی برابر پرونده‌های باز تاریخ‌دار است',
+    rep.agingSum === rep.openWithDate, rep.agingSum + ' == ' + rep.openWithDate);
+  check('جمع روند ماهانه برابر پرونده‌های تاریخ‌دار است',
+    rep.trendIntakeSum === rep.withIntake, rep.trendIntakeSum + ' == ' + rep.withIntake);
+  check('یافته‌ها تولید شدند', rep.findings > 0, rep.findings + ' یافته');
+
+  // هیچ برچسبی از کادر نمودارش بیرون نمی‌زند (لنگر راست‌به‌چپ)
+  const overflow = await page.evaluate(() => {
+    const bad = [];
+    document.querySelectorAll('svg.chart').forEach(svg => {
+      const vb = svg.viewBox.baseVal;
+      svg.querySelectorAll('text').forEach(t => {
+        const b = t.getBBox();
+        if (b.x < -1 || b.x + b.width > vb.width + 1) {
+          bad.push(t.textContent.slice(0, 22) + ' @' + Math.round(b.x) + '..' +
+            Math.round(b.x + b.width) + ' / ' + Math.round(vb.width));
+        }
+      });
+    });
+    return bad;
+  });
+  check('هیچ برچسبی از نمودار بیرون نمی‌زند', overflow.length === 0,
+    overflow.slice(0, 3).join(' | '));
+
+  // همزاد جدولی
+  await page.evaluate(() => {
+    document.querySelectorAll('.chart-card .card-head .btn')[1].click();
+  });
+  await page.waitForTimeout(200);
+  const hasTable = await page.evaluate(() =>
+    document.querySelectorAll('.chart-card .c-table').length);
+  check('نمای جدول هر نمودار کار می‌کند', hasTable >= 1, 'جدول=' + hasTable);
+  await page.evaluate(() => {
+    document.querySelectorAll('.chart-card .card-head .btn')[1].click();
+  });
+
+  // رفتن از نمودار به فهرست پرونده‌ها
+  const drill = await page.evaluate(() => {
+    const d = window.App.state.reportData;
+    const target = d.status[0];
+    window.App.showCasesByField('status', target.key, target.label);
+    return { expected: target.value, got: window.App.state.lastResult.length,
+      label: target.label };
+  });
+  check('کلیک روی میله، همان پرونده‌ها را در فهرست باز می‌کند',
+    drill.expected === drill.got, drill.label + ': ' + drill.got + ' == ' + drill.expected);
+  const bannerShown = await page.evaluate(() => !!document.querySelector('.filter-note'));
+  check('نوار «برش گزارش» در فهرست دیده می‌شود', bannerShown);
+
+  // رفتن از یافته به فهرست
+  await page.evaluate(() => window.App.goReport());
+  await page.waitForSelector('.chart-card');
+  const fdrill = await page.evaluate(() => {
+    const f = window.App.state.reportData.findings.filter(x => x.ids && x.ids.length)[0];
+    if (!f) return null;
+    window.App.showCases(f.ids, f.title);
+    return { expected: f.ids.length, got: window.App.state.lastResult.length };
+  });
+  check('یافته‌ها به پرونده‌های خودشان وصل‌اند',
+    !fdrill || fdrill.expected === fdrill.got,
+    fdrill ? fdrill.got + ' == ' + fdrill.expected : 'یافتهٔ فهرست‌دار نبود');
+
+  // فیلتر بازه
+  await page.evaluate(() => window.App.goReport());
+  await page.waitForSelector('.chart-card');
+  const ranged = await page.evaluate(() => {
+    const all = window.App.state.reportData.kpis.total;
+    window.App.state.report.preset = '90';
+    window.App.render();
+    return { all: all, ranged: window.App.state.reportData.kpis.total };
+  });
+  check('فیلتر بازهٔ زمانی برش را کوچک می‌کند', ranged.ranged <= ranged.all,
+    ranged.ranged + ' <= ' + ranged.all);
+  await page.evaluate(() => {
+    window.App.state.report.preset = 'all';
+    window.App.render();
+  });
+  await page.waitForTimeout(300);
+
+  // رسم دوباره با تغییر عرض پنجره
+  const beforeW = await page.evaluate(() =>
+    document.querySelector('svg.chart').viewBox.baseVal.width);
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await page.waitForTimeout(400);
+  const afterW = await page.evaluate(() =>
+    document.querySelector('svg.chart').viewBox.baseVal.width);
+  check('نمودارها با تغییر اندازهٔ پنجره دوباره رسم می‌شوند',
+    Math.round(afterW) !== Math.round(beforeW) && afterW > 0,
+    Math.round(beforeW) + ' → ' + Math.round(afterW));
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.waitForTimeout(400);
+
+  console.log('\n— خروجی و چاپ گزارش —');
+  const dlRep = await Promise.all([
+    page.waitForEvent('download', { timeout: 20000 }),
+    page.evaluate(() => window.UIMisc.exportReportExcel(
+      window.App.state.reportData, 'تست'))
+  ]);
+  const repPath = path.join(OUT, 'report.xlsx');
+  await dlRep[0].saveAs(repPath);
+  const repSheets = await page.evaluate(async (b64) => {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const rows = await window.XLSX.read(bytes.buffer);
+    return rows.length;
+  }, fs.readFileSync(repPath).toString('base64'));
+  check('خروجی اکسل گزارش ساخته شد',
+    fs.statSync(repPath).size > 4000 && repSheets > 1,
+    fs.statSync(repPath).size + ' بایت، شیت اول ' + repSheets + ' سطر');
+
+  await page.evaluate(() => {
+    window.print = () => {};
+    window.UIPrint.printReport(window.App.state.reportData, 'همهٔ پرونده‌ها');
+  });
+  const repPrint = await page.evaluate(() => ({
+    sections: document.querySelectorAll('#print-area .p-section').length,
+    charts: document.querySelectorAll('#print-area .p-chart svg').length,
+    tables: document.querySelectorAll('#print-area .p-table').length
+  }));
+  check('گزارش چاپی ساخته شد',
+    repPrint.sections >= 8 && repPrint.charts >= 5 && repPrint.tables >= 8,
+    JSON.stringify(repPrint));
+
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));
 

@@ -97,7 +97,12 @@
 
     box.appendChild(el('button.btn.ghost.block', {
       type: 'button', text: 'پاک کردن همهٔ فیلترها',
-      onclick: function () { app.state.filters = {}; app.state.q = ''; app.refresh(true); }
+      onclick: function () {
+        app.state.filters = {};
+        app.state.q = '';
+        app.state.filterNote = '';
+        app.refresh(true);
+      }
     }));
     return box;
   }
@@ -213,6 +218,21 @@
       })
     ]);
 
+    var note = app.state.filterNote ? el('div.filter-note', null, [
+      el('span.fn-icon', { text: '⌖', 'aria-hidden': 'true' }),
+      el('span', { text: 'نمایش نتیجهٔ گزارش: ' }),
+      el('b', { text: app.state.filterNote }),
+      el('div.spacer'),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'برداشتن این برش',
+        onclick: function () { app.clearFilterNote(); }
+      }),
+      el('button.btn.small.ghost', {
+        type: 'button', text: '← بازگشت به گزارش',
+        onclick: function () { app.goReport(); }
+      })
+    ]) : null;
+
     var table = buildTable(app, rows);
     var body = rows.length
       ? table.node
@@ -227,7 +247,7 @@
     w.U.clear(mount);
     mount.appendChild(el('div.list-layout', null, [
       el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
-      el('section.list-main', null, [summary, body])
+      el('section.list-main', null, [note, summary, body])
     ]));
   }
 

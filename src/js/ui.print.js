@@ -4,6 +4,9 @@
 
   var el = w.U.el, J = w.J, M = w.Model;
 
+  // عرض مفید یک صفحهٔ A4 با حاشیه‌های تعریف‌شده، به پیکسل CSS
+  var PRINT_WIDTH = 680;
+
   function area() {
     var node = document.getElementById('print-area');
     w.U.clear(node);
@@ -120,5 +123,100 @@
     run('فهرست پرونده‌ها');
   }
 
-  w.UIPrint = { printCase: printCase, printList: printList };
+  /** گزارش مدیریتی: سنجه‌ها، یافته‌ها، و هر نمودار به همراه جدولش */
+  function printReport(data, scopeText) {
+    var node = area();
+    node.appendChild(header('گزارش عملکرد کمیتهٔ انضباطی', scopeText));
+
+    var k = data.kpis;
+    var kpiTable = el('table.p-table.p-kpi');
+    [
+      ['کل پرونده‌های این برش', w.U.toFaDigits(k.total)],
+      ['در جریان', w.U.toFaDigits(k.open)],
+      ['مختومه‌شده', w.U.toFaDigits(k.closed) + ' (' + w.U.toFaDigits(k.closedPct) + '٪)'],
+      ['میانهٔ روز از ورود تا طرح در کمیته',
+        k.medianToCommittee == null ? '—' : w.U.toFaDigits(k.medianToCommittee) + ' روز'],
+      ['میانگین روز تا طرح در کمیته',
+        k.meanToCommittee == null ? '—' : w.U.toFaDigits(k.meanToCommittee) + ' روز'],
+      ['قدیمی‌ترین پروندهٔ باز',
+        k.oldestOpen ? w.U.toFaDigits(k.oldestOpen) + ' روز' : '—']
+    ].forEach(function (r) {
+      kpiTable.appendChild(el('tr', null, [
+        el('th', { text: r[0] }), el('td', { text: r[1] })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'سنجه‌های کلیدی' }), kpiTable
+    ]));
+
+    // یافته‌ها — شدت همیشه با برچسب متنی می‌آید، نه فقط رنگ
+    var fTable = el('table.p-table.p-list', null, [
+      el('tr', null, [
+        el('th', { text: 'شدت' }), el('th', { text: 'یافته' }),
+        el('th', { text: 'تعداد' }), el('th', { text: 'پیشنهاد' })
+      ])
+    ]);
+    data.findings.forEach(function (f) {
+      var sev = (w.UIReport.SEV[f.severity] || {}).label || '';
+      fTable.appendChild(el('tr', null, [
+        el('td', { text: sev }),
+        el('td', { text: f.title }),
+        el('td', { text: f.count ? w.U.toFaDigits(f.count) : '—' }),
+        el('td', { text: f.advice })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'یافته‌ها و پیشنهادها' }), fTable
+    ]));
+
+    // نمودارها: تصویر SVG از صفحه کپی می‌شود و جدول همزادش زیرش می‌آید
+    var cards = w.U.$$('#main .chart-card:not(.findings)');
+    cards.forEach(function (cardNode) {
+      var title = (cardNode.querySelector('h3') || {}).textContent || '';
+      var section = el('section.p-section', null, [el('h2', { text: title })]);
+      var svg = cardNode.querySelector('svg.chart');
+      if (svg) {
+        // راهنما هم کپی می‌شود؛ روی کاغذ هویت سری نباید فقط با رنگ بماند
+        var lg = cardNode.querySelector('.c-legend');
+        if (lg) section.appendChild(lg.cloneNode(true));
+        // viewBox روی صفحه به عرض کارت بسته است؛ برای کاغذ با عرض A4
+        // دوباره رسم و سپس به حالت قبل برگردانده می‌شود، وگرنه چند برابر
+        // بزرگ چاپ می‌شود.
+        var onScreenWidth = svg.viewBox.baseVal ? svg.viewBox.baseVal.width : 0;
+        if (svg.draw) svg.draw(PRINT_WIDTH);
+        var clone = svg.cloneNode(true);
+        if (svg.draw && onScreenWidth > 0) svg.draw(onScreenWidth);
+        clone.removeAttribute('style');
+        clone.setAttribute('width', '100%');
+        section.appendChild(el('div.p-chart', null, [clone]));
+      }
+      var tbl = cardNode.querySelector('.c-table');
+      if (!tbl && cardNode.repaint) {
+        // کارت در حالت نمودار است؛ جدولش را موقتاً می‌سازیم
+        var probe = cardNode.querySelector('.card-head .btn');
+        if (probe) {
+          probe.click();
+          tbl = cardNode.querySelector('.c-table');
+          if (tbl) tbl = tbl.cloneNode(true);
+          probe.click();
+        }
+      } else if (tbl) {
+        tbl = tbl.cloneNode(true);
+      }
+      if (tbl) {
+        tbl.classList.add('p-table', 'p-list');
+        section.appendChild(tbl);
+      }
+      node.appendChild(section);
+    });
+
+    node.appendChild(el('div.p-sign', null, [
+      el('div', { text: 'امضای دبیر کمیته' }),
+      el('div', { text: 'امضای رئیس کمیته' })
+    ]));
+
+    run('گزارش عملکرد کمیتهٔ انضباطی');
+  }
+
+  w.UIPrint = { printCase: printCase, printList: printList, printReport: printReport };
 })(window);
