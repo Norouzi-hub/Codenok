@@ -95,6 +95,44 @@
     return KIND_LABELS[kind] || kind;
   }
 
+  /**
+   * رفتن به پروندهٔ بعدی/قبلیِ همین نتیجهٔ جستجو.
+   * کار دبیرخانه اغلب «یکی‌یکی رد کردن یک فهرست» است؛ بدون این، برای هر
+   * پرونده باید به فهرست برگشت و دوباره جای خود را پیدا کرد.
+   */
+  function neighbourNav(app, existing) {
+    if (!existing) return null;
+    var list = app.state.lastResult || [];
+    var i = -1;
+    for (var k = 0; k < list.length; k++) {
+      if (list[k].id === existing.id) { i = k; break; }
+    }
+    if (i < 0 || list.length < 2) return null;
+
+    function go(step) {
+      var t = list[i + step];
+      if (t) app.openCase(t.id);
+    }
+    // در RTL، «بعدی» سمت چپ است و «قبلی» سمت راست
+    return el('div.case-nav', null, [
+      el('button.icon-btn.case-nav-btn', {
+        type: 'button', text: '›', disabled: i === 0,
+        title: 'پروندهٔ قبلی در همین فهرست',
+        'aria-label': 'پروندهٔ قبلی',
+        onclick: function () { go(-1); }
+      }),
+      el('span.case-nav-pos', {
+        text: w.U.toFaDigits(i + 1) + ' از ' + w.U.toFaDigits(list.length)
+      }),
+      el('button.icon-btn.case-nav-btn', {
+        type: 'button', text: '‹', disabled: i === list.length - 1,
+        title: 'پروندهٔ بعدی در همین فهرست',
+        'aria-label': 'پروندهٔ بعدی',
+        onclick: function () { go(1); }
+      })
+    ]);
+  }
+
   function renderTimeline(rec) {
     var items = M.timelineFor(rec);
     if (!items.length) return el('p.muted', { text: 'هنوز رویدادی ثبت نشده است.' });
@@ -195,14 +233,15 @@
     var dirty = false;
     var activeTab = app.state.formTab || w.GROUPS[0].key;
 
-    var saveBtn, warnBox, headTitle;
+    var saveBtn, warnBox, headTitle, dirtyChip;
 
     function markDirty() {
       if (dirty) return;
       dirty = true;
       app.setDirty(true);
       saveBtn.classList.add('primary');
-      saveBtn.textContent = 'ذخیرهٔ تغییرات *';
+      saveBtn.disabled = false;
+      if (dirtyChip) dirtyChip.style.display = '';
     }
 
     function setField(key, value) {
@@ -415,34 +454,69 @@
     warnBox = el('div.warn-box');
     warnBox.style.display = 'none';
 
-    saveBtn = el('button.btn', { type: 'button', text: 'ذخیرهٔ تغییرات', onclick: doSave });
+    saveBtn = el('button.btn.case-save', {
+      type: 'button', text: 'ذخیرهٔ تغییرات', onclick: doSave, disabled: true
+    });
+    dirtyChip = el('span.dirty-chip', { text: 'تغییر ذخیره‌نشده' });
+    dirtyChip.style.display = 'none';
+
+    function askDelete() {
+      w.U.confirmBox('حذف پرونده',
+        'پروندهٔ ' + (existing.caseNo || '') + ' حذف شود؟ رکورد حذف در تاریخچه باقی می‌ماند.',
+        'حذف کن').then(function (ok) {
+          if (!ok) return;
+          M.remove(existing.id).then(function () {
+            app.setDirty(false);
+            w.U.toast('پرونده حذف شد.', 'good');
+            app.goList();
+          });
+        });
+    }
+
+    /* روی گوشی، نوار اقدام‌ها چسبیده به پایین می‌ماند و فقط «ذخیره» و «⋯»
+       را نشان می‌دهد؛ چاپ و حذف داخل شیت می‌روند تا کنار دکمهٔ ذخیره،
+       دکمهٔ حذف ننشیند. */
+    var moreBtn = existing ? el('button.icon-btn.case-more', {
+      type: 'button', text: '⋯', title: 'کارهای دیگر این پرونده',
+      'aria-label': 'کارهای دیگر این پرونده',
+      onclick: function () {
+        w.Mobile.sheet('پروندهٔ ' + w.U.toLatinDigits(existing.caseNo || ''), [
+          {
+            icon: 'print', label: 'چاپ برگ پرونده',
+            onclick: function () { w.UIPrint.printCase(existing); }
+          },
+          {
+            icon: 'exp', label: 'بازگشت به فهرست',
+            onclick: function () { app.goList(); }
+          },
+          { sep: true },
+          {
+            icon: 'trash', label: 'حذف پرونده', kind: 'danger',
+            hint: 'برگشت‌ناپذیر است',
+            onclick: askDelete
+          }
+        ]);
+      }
+    }) : null;
 
     var actions = el('div.case-actions', null, [
-      el('button.btn.ghost', {
+      el('button.btn.ghost.case-back', {
         type: 'button', text: '← بازگشت به فهرست',
         onclick: function () { app.goList(); }
       }),
+      neighbourNav(app, existing),
       el('div.spacer'),
-      existing ? el('button.btn.ghost', {
+      // «حذف» عمداً پیش از «چاپ» نشسته تا هم‌مرز دکمهٔ ذخیره نباشد
+      existing ? el('button.btn.ghost.danger.case-delete', {
+        type: 'button', text: 'حذف پرونده', onclick: askDelete
+      }) : null,
+      existing ? el('button.btn.ghost.case-print', {
         type: 'button', text: 'چاپ برگ پرونده',
         onclick: function () { w.UIPrint.printCase(existing); }
       }) : null,
-      existing ? el('button.btn.ghost.danger', {
-        type: 'button', text: 'حذف پرونده',
-        onclick: function () {
-          w.U.confirmBox('حذف پرونده',
-            'پروندهٔ ' + (existing.caseNo || '') + ' حذف شود؟ رکورد حذف در تاریخچه باقی می‌ماند.',
-            'حذف کن').then(function (ok) {
-              if (!ok) return;
-              M.remove(existing.id).then(function () {
-                app.setDirty(false);
-                w.U.toast('پرونده حذف شد.', 'good');
-                app.goList();
-              });
-            });
-        }
-      }) : null,
-      saveBtn
+      dirtyChip,
+      saveBtn,
+      moreBtn
     ]);
 
     /** ریل گردش‌کار و اقدام بعدی — فقط برای پروندهٔ ذخیره‌شده معنا دارد */

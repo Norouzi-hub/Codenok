@@ -437,8 +437,11 @@ a { color: var(--ink-700); }
   min-width: 132px;
   box-shadow: var(--shadow-sm);
 }
-button.wl-stat { cursor: pointer; }
-button.wl-stat:hover { border-color: #D3CEC1; }
+button.wl-stat { cursor: pointer; transition: border-color .12s, transform .12s; }
+button.wl-stat:hover { border-color: var(--brass-line); transform: translateY(-1px); }
+/* صفر که کلیک ندارد، بی‌صدا هم دیده می‌شود */
+.wl-stat-off { background: transparent; box-shadow: none; border-style: dashed; }
+.wl-stat-off .wl-stat-num { color: var(--ink-400); }
 .wl-stat.late { border-color: var(--cinnabar-line); background: var(--cinnabar-soft); }
 .wl-stat-num {
   display: block;
@@ -668,6 +671,14 @@ button.week-day:hover { border-color: var(--brass-line); transform: translateY(-
   gap: 6px;
 }
 .filter-group summary::marker { color: var(--muted); }
+.filter-group summary::after {
+  content: '⌄';
+  margin-inline-start: auto;
+  color: var(--ink-400);
+  font-size: 12px;
+  line-height: 1;
+}
+.filter-group[open] > summary::after { content: '⌃'; }
 .badge {
   background: var(--brand);
   color: #fff;
@@ -873,6 +884,38 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
 }
 .case-title .reg-no { font-size: 17px; }
 .case-actions { display: flex; align-items: center; gap: 8px; flex: 1; }
+.case-more { display: none; }
+
+/* نشانهٔ «هنوز ذخیره نشده» — دکمهٔ غیرفعال به‌تنهایی این را نمی‌گوید */
+.dirty-chip {
+  font-size: 11.5px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+/* جابه‌جایی بین پرونده‌های همین نتیجه */
+.case-nav { display: flex; align-items: center; gap: 4px; }
+.case-nav-btn {
+  color: var(--ink-500);
+  border: 1px solid var(--line);
+  background: var(--card);
+  width: 28px;
+  height: 28px;
+  font-size: 17px;
+  line-height: 1;
+}
+.case-nav-btn:hover:not(:disabled) { background: var(--paper-2); color: var(--ink-900); }
+.case-nav-btn:disabled { opacity: .35; cursor: not-allowed; }
+.case-nav-pos {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 /* ریل کامل بالای پرونده: یک نگاه، و می‌دانی کجای کار ایستاده‌ای */
 .case-rail {
@@ -1172,6 +1215,13 @@ select.input { cursor: pointer; }
 .settings .set-block h4 { border-bottom: 1px solid var(--line); padding-bottom: 5px; }
 .storage-info { font-size: 13px; }
 .lists-editor { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+
+.sla-editor { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px 18px; margin-top: 10px; }
+.sla-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.sla-label { flex: 1; color: var(--ink-700); }
+.sla-input { width: 74px; min-width: 0; text-align: center; font-variant-numeric: tabular-nums; }
+.sla-unit { color: var(--muted); font-size: 11.5px; }
+.sla-editor > .btn { grid-column: 1 / -1; justify-self: start; }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .info-note {
@@ -1485,13 +1535,14 @@ select.input { cursor: pointer; }
   margin-bottom: 8px;
   background: #fcfcfb;
 }
-.finding-icon { font-size: 16px; line-height: 1.5; flex: 0 0 auto; }
+.finding-icon { flex: 0 0 auto; line-height: 0; margin-top: 2px; }
 .finding-body { flex: 1; min-width: 0; }
 .finding-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .finding-advice { font-size: 12.5px; color: var(--muted); margin: 2px 0 0; }
 .finding-count { font-size: 12px; color: var(--ink2); font-variant-numeric: tabular-nums; }
-/* شدت با آیکن و برچسب متنی همراه است؛ رنگ هرگز تنها حامل معنا نیست */
-.finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
+/* شدت با آیکن و برچسب متنی همراه است؛ رنگ هرگز تنها حامل معنا نیست.
+   هر چهار قاعده باید به .sev-* والد مقید باشند — بدون آن، آخرین قاعده روی
+   همه می‌نشیند و «بحرانی» به رنگ «بی‌اشکال» درمی‌آید. */
 .sev-tag {
   font-size: 11px;
   padding: 1px 8px;
@@ -1499,18 +1550,27 @@ select.input { cursor: pointer; }
   border: 1px solid;
   white-space: nowrap;
 }
-.sev-critical { border-color: #eab6b6; }
-.sev-critical .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
-.sev-tag { color: #8f2020; border-color: #eab6b6; background: #fdf2f2; }
-.sev-serious { border-color: #f2cdbc; }
-.sev-serious .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
-.sev-tag { color: #8a4323; border-color: #f2cdbc; background: #fdf4f0; }
-.sev-warning { border-color: #ecdbae; }
-.sev-warning .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
-.sev-tag { color: #7a5600; border-color: #ecdbae; background: #fdf9ef; }
-.sev-good { border-color: #bfe0cd; }
-.sev-good .finding-actions { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
-.sev-tag { color: #15633b; border-color: #bfe0cd; background: #f1f9f4; }
+.sev-critical { border-color: var(--cinnabar-line); }
+.sev-critical .sev-tag {
+  color: var(--cinnabar); border-color: var(--cinnabar-line); background: var(--cinnabar-soft);
+}
+.sev-critical .finding-icon { color: var(--cinnabar); }
+
+.sev-serious { border-color: #EED2B8; }
+.sev-serious .sev-tag { color: #9A4A18; border-color: #EED2B8; background: #FDF4EC; }
+.sev-serious .finding-icon { color: #A85A24; }
+
+.sev-warning { border-color: var(--brass-line); }
+.sev-warning .sev-tag {
+  color: var(--brass-ink); border-color: var(--brass-line); background: var(--brass-soft);
+}
+.sev-warning .finding-icon { color: var(--brass); }
+
+.sev-good { border-color: var(--moss-line); }
+.sev-good .sev-tag {
+  color: var(--moss); border-color: var(--moss-line); background: var(--moss-soft);
+}
+.sev-good .finding-icon { color: var(--moss); }
 
 /* ---------------------------------------------------------------- اشخاص */
 .people-view, .person-view {
@@ -2372,13 +2432,6 @@ select.input { cursor: pointer; }
   .filter-modal .filters > h3 { display: none; }   /* عنوان پنجره خودش هست */
   .filter-sheet .stats { margin-top: 16px; }
   .filter-group summary { padding: 11px 2px; font-size: 14px; }
-  .filter-group summary::after {
-    content: '⌄';
-    margin-inline-start: auto;
-    color: var(--muted);
-    font-size: 13px;
-  }
-  .filter-group[open] > summary::after { content: '⌃'; }
   .filter-option { padding: 7px 2px; font-size: 13.5px; }
   .filter-option input { width: 19px; height: 19px; }
 
@@ -2395,10 +2448,36 @@ select.input { cursor: pointer; }
   .list-main.has-sel .cards-spacer { padding-bottom: 92px; }
 
   /* --- پرونده --- */
-  .case-view { padding: 14px 13px 40px; }
+  .case-view { padding: 14px 13px 96px; }   /* جا برای نوار ذخیرهٔ چسبیده */
+  /* نوار اقدام‌ها پایین می‌ماند: ذخیره همیشه در دسترس، حذف داخل «⋯» */
+  .case-actions {
+    position: fixed;
+    flex-wrap: nowrap;
+    inset-inline: 10px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    z-index: 55;
+    flex: 0 0 auto;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  .case-back, .case-print, .case-delete { display: none; }
+  .case-actions > .spacer { display: none; }   /* وگرنه «⋯» از نوار بیرون می‌افتد */
+  .case-more { display: grid; place-items: center; }
+  .case-actions .btn { flex: 1; min-height: 42px; }
+  .case-actions .icon-btn { flex: 0 0 auto; min-width: 42px; min-height: 42px; }
+  /* دکمه‌های جابه‌جایی و چیپ کوچک‌ترند تا هر چهار عنصر در یک سطر جا شوند */
+  .case-actions .case-nav-btn { min-width: 34px; min-height: 34px; width: 34px; height: 34px; }
+  .case-actions .dirty-chip { font-size: 10.5px; padding: 2px 8px; }
+  .case-nav { order: -1; }
+  .case-nav-pos { display: none; }
+  .sheet-item.danger .sheet-text b { color: var(--cinnabar); }
+  .sheet-item.danger .sheet-icon { color: var(--cinnabar); background: var(--cinnabar-soft); }
   .case-title { font-size: 17px; }
   .case-head { gap: 8px; }
-  .case-actions { flex-wrap: wrap; gap: 6px; }
   /* ریل هشت‌مرحله‌ای روی گوشی جا نمی‌شود؛ به‌جای فشرده شدن، کنار می‌رود */
   .case-rail { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .case-rail::-webkit-scrollbar { display: none; }

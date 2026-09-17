@@ -274,7 +274,7 @@ function overflow(page) {
   const nameInput = await page.$('.form-panel input.input');
   await nameInput.tap();
   await nameInput.fill('آزمون لمسی');
-  await page.tap('.case-actions .btn.primary');
+  await page.tap('.case-save');
   await page.waitForTimeout(700);
   const savedTouch = await page.evaluate(() =>
     JSON.stringify(window.Model.get(window.App.state.caseId)).indexOf('آزمون لمسی') >= 0);

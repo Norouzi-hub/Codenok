@@ -55,7 +55,13 @@
     print: svg('<path d="M7 9.5V4.5h10v5"/><rect x="4.5" y="9.5" width="15" height="6.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>'),
     columns: svg('<rect x="4.5" y="5" width="15" height="14" rx="1.5"/><path d="M9.5 5v14M14.5 5v14"/>'),
     check: svg('<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><path d="M8.3 12.2l2.6 2.6 4.8-5.2"/>'),
-    filter: svg('<path d="M4.5 6h15l-5.8 6.6v5.2l-3.4 1.7v-6.9z"/>')
+    filter: svg('<path d="M4.5 6h15l-5.8 6.6v5.2l-3.4 1.7v-6.9z"/>'),
+    // شدت یافته‌ها در گزارش — همان خانوادهٔ خطی، نه شکلک
+    alert: svg('<path d="M12 4.8L20.5 19.5h-17z"/><path d="M12 10.3v4"/><path d="M12 16.8v.1"/>'),
+    clock: svg('<circle cx="12" cy="12" r="7.5"/><path d="M12 7.8V12l2.8 1.8"/>'),
+    info: svg('<circle cx="12" cy="12" r="7.5"/><path d="M12 11.3v4.5"/><path d="M12 8.4v.1"/>'),
+    ok: svg('<circle cx="12" cy="12" r="7.5"/><path d="M8.6 12.2l2.5 2.5 4.4-5"/>'),
+    trash: svg('<path d="M5 7h14"/><path d="M10 7V5.2h4V7"/><path d="M6.5 7l.8 11.3A1.5 1.5 0 0 0 8.8 19.7h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.5 10.5v6M13.5 10.5v6"/>')
   };
   function icon(name) { return ICONS[name] || ''; }
 

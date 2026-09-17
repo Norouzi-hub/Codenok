@@ -4,11 +4,13 @@
 
   var el = w.U.el, J = w.J, M = w.Model, R = w.Report, Ch = w.Charts;
 
+  /* شدت یافته: برچسب متنی + آیکن هم‌خانواده. آیکن به شدت بسته است نه به
+     موضوع؛ چهارده شکلکِ جوراجور، زبان بصری برنامه را به‌هم می‌ریخت. */
   var SEV = {
-    critical: { label: 'بحرانی', color: Ch.C.status.critical },
-    serious: { label: 'نیازمند پیگیری', color: Ch.C.status.serious },
-    warning: { label: 'هشدار', color: Ch.C.status.warning },
-    good: { label: 'بی‌اشکال', color: Ch.C.status.good }
+    critical: { label: 'بحرانی', color: Ch.C.status.critical, icon: 'alert' },
+    serious: { label: 'نیازمند پیگیری', color: Ch.C.status.serious, icon: 'clock' },
+    warning: { label: 'هشدار', color: Ch.C.status.warning, icon: 'info' },
+    good: { label: 'بی‌اشکال', color: Ch.C.status.good, icon: 'ok' }
   };
 
   function fa(n) { return w.U.toFaDigits(n); }
@@ -241,7 +243,7 @@
       el('ul.finding-list', null, findings.map(function (f) {
         var sev = SEV[f.severity] || SEV.warning;
         return el('li.finding.sev-' + f.severity, null, [
-          el('span.finding-icon', { text: f.icon, 'aria-hidden': 'true' }),
+          el('span.finding-icon', { html: w.Mobile.icon(sev.icon), 'aria-hidden': 'true' }),
           el('div.finding-body', null, [
             el('div.finding-head', null, [
               el('b', { text: f.title }),

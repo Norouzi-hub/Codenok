@@ -114,7 +114,7 @@ async function openList(page) {
     sel.value = 'ابلاغ و مختومه شد';
     sel.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  await page.click('.case-actions .btn:last-child');
+  await page.click('.case-save');
   await page.waitForTimeout(400);
 
   const hist = await page.evaluate(() => {
@@ -172,7 +172,7 @@ async function openList(page) {
   await setField('نام', 'آزمون');
   await setField('نام خانوادگی', 'تستی');
   await setField('کد ملی', '0099887766');
-  await page.click('.case-actions .btn:last-child');
+  await page.click('.case-save');
   await page.waitForTimeout(400);
   const created = await page.evaluate(() =>
     window.Model.state.cases.filter(c => c.caseNo === '1405999').length);

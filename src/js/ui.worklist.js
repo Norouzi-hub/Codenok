@@ -198,36 +198,60 @@
       headline = fa(sum.open) + ' پروندهٔ در جریان، همه در مهلت.';
     }
 
+    /* هر پنج کارت آمار یک شکل‌اند، پس هر پنج‌تا هم باید کار کنند: کارتی که
+       مثل دکمه دیده می‌شود ولی کاری نمی‌کند، به کاربر دروغ می‌گوید. */
+    function statCard(num, label, hint, pick, cls) {
+      var ids = num ? pick() : [];
+      if (!ids.length) {
+        return el('div.wl-stat.wl-stat-off' + (cls || ''), { title: hint }, [
+          el('span.wl-stat-num', { text: fa(num) }),
+          el('span.wl-stat-label', { text: label })
+        ]);
+      }
+      return el('button.wl-stat' + (cls || ''), {
+        type: 'button', title: hint + ' — برای دیدن فهرستشان کلیک کنید',
+        onclick: function () { app.showCases(ids, label); }
+      }, [
+        el('span.wl-stat-num', { text: fa(num) }),
+        el('span.wl-stat-label', { text: label })
+      ]);
+    }
+
+    function idsWhere(fn) {
+      return cases.filter(fn).map(function (c) { return c.id; });
+    }
+
     var stats = el('div.wl-stats', null, [
-      el('button.wl-stat' + (sum.overdue ? '.late' : ''), {
-        type: 'button', title: 'پرونده‌هایی که از مهلت اقدامشان گذشته',
-        onclick: function () {
-          var ids = cases.filter(function (c) {
+      statCard(sum.overdue, 'از مهلت گذشته',
+        'پرونده‌هایی که از مهلت اقدامشان گذشته', function () {
+          return idsWhere(function (c) {
             var a = WL.nextAction(c);
             return a.key !== 'closed' && a.overdue;
-          }).map(function (c) { return c.id; });
-          if (ids.length) app.showCases(ids, 'از مهلت گذشته');
-        }
-      }, [
-        el('span.wl-stat-num', { text: fa(sum.overdue) }),
-        el('span.wl-stat-label', { text: 'از مهلت گذشته' })
-      ]),
-      el('div.wl-stat', null, [
-        el('span.wl-stat-num', { text: fa(sum.ours) }),
-        el('span.wl-stat-label', { text: 'منتظر اقدام ما' })
-      ]),
-      el('div.wl-stat', null, [
-        el('span.wl-stat-num', { text: fa(sum.theirs) }),
-        el('span.wl-stat-label', { text: 'منتظر پاسخ دیگران' })
-      ]),
-      el('div.wl-stat', null, [
-        el('span.wl-stat-num', { text: fa(w.Notes.stats().openFollowUps) }),
-        el('span.wl-stat-label', { text: 'پیگیری باز' })
-      ]),
-      el('div.wl-stat', null, [
-        el('span.wl-stat-num', { text: fa(sum.closed) }),
-        el('span.wl-stat-label', { text: 'مختومه' })
-      ])
+          });
+        }, sum.overdue ? '.late' : ''),
+      statCard(sum.ours, 'منتظر اقدام ما',
+        'کاری که انجامش با دبیرخانه یا کارشناس است', function () {
+          return idsWhere(function (c) {
+            var a = WL.nextAction(c);
+            return a.key !== 'closed' && WL.isOurs(a);
+          });
+        }),
+      statCard(sum.theirs, 'منتظر پاسخ دیگران',
+        'پرونده‌هایی که توپ در زمین ما نیست', function () {
+          return idsWhere(function (c) {
+            var a = WL.nextAction(c);
+            return a.key !== 'closed' && !WL.isOurs(a);
+          });
+        }),
+      statCard(w.Notes.stats().openFollowUps, 'پیگیری باز',
+        'قرارهای پیگیری که هنوز بسته نشده‌اند', function () {
+          var seen = {};
+          w.Notes.dueFollowUps(false).forEach(function (f) { seen[f.rec.id] = 1; });
+          return Object.keys(seen);
+        }),
+      statCard(sum.closed, 'مختومه', 'پرونده‌های مختومه‌شده', function () {
+        return idsWhere(function (c) { return WL.isClosed(c); });
+      })
     ]);
 
     // جلسه هر وقت تشکیل می‌شود، نه فقط وقتی برنامه پرونده‌ای را «آماده» بداند؛

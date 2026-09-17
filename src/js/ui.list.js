@@ -454,15 +454,46 @@
     ]) : null;
 
     var table = rows.length ? (phone ? buildCards(app, rows) : buildTable(app, rows)) : null;
+    // وقتی جستجو/فیلتری فعال است، کار بعدیِ کاربر «برداشتن آن» است، نه
+    // ساختن پروندهٔ تازه؛ دکمهٔ اصلی باید همان باشد.
+    var narrowed = !!(app.state.q || activeFilterCount(app) ||
+      app.state.filters._from || app.state.filters._to || app.state.filters._idSet ||
+      app.state.filters._stage);
     var body = rows.length
       ? table.node
-      : el('div.empty-state', null, [
-        el('p', { text: total ? 'هیچ پرونده‌ای با این جستجو پیدا نشد.' : 'هنوز پرونده‌ای ثبت نشده است.' }),
-        el('button.btn.primary', {
-          type: 'button', text: 'ثبت پروندهٔ جدید',
-          onclick: function () { app.newCase(); }
-        })
-      ]);
+      : el('div.empty-state', null, total
+        ? [
+          el('p', {
+            text: narrowed
+              ? 'هیچ‌کدام از ' + w.U.toFaDigits(total) + ' پرونده با این جستجو و فیلترها نمی‌خواند.'
+              : 'پرونده‌ای برای نمایش نیست.'
+          }),
+          narrowed ? el('p.muted.tiny', {
+            text: app.state.q ? 'جستجو: «' + app.state.q + '»' : 'فیلترها فعال‌اند.'
+          }) : null,
+          el('div.btn-row', null, [
+            narrowed ? el('button.btn.primary', {
+              type: 'button', text: 'پاک کردن جستجو و فیلترها',
+              onclick: function () {
+                app.state.q = '';
+                app.state.filters = {};
+                app.state.filterNote = '';
+                app.refresh(true);
+              }
+            }) : null,
+            el('button.btn' + (narrowed ? '' : '.primary'), {
+              type: 'button', text: 'ثبت پروندهٔ جدید',
+              onclick: function () { app.newCase(); }
+            })
+          ])
+        ]
+        : [
+          el('p', { text: 'هنوز پرونده‌ای ثبت نشده است.' }),
+          el('button.btn.primary', {
+            type: 'button', text: 'ثبت پروندهٔ جدید',
+            onclick: function () { app.newCase(); }
+          })
+        ]);
 
     // نوار اقدام دسته‌ای — فقط وقتی چیزی انتخاب شده باشد
     var selBar = el('div.sel-bar');

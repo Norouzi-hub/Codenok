@@ -812,6 +812,51 @@
       el('h4', { text: 'پوشهٔ مستندات' }), docsInfo
     ]));
 
+    /* مهلت‌ها: همهٔ «دیرکرد»های کارتابل از همین عددها درمی‌آیند، پس باید
+       قابل تنظیم باشند — وگرنه اگر همه‌چیز قرمز شود، قرمز معنایش را
+       از دست می‌دهد و کارتابل به درد نمی‌خورد. */
+    var SLA_LABELS = {
+      assign: 'ارجاع به کارشناس، از تاریخ ورود',
+      inquiry: 'پاسخ استعلام حراست، از تاریخ نامهٔ صادره',
+      defense: 'دعوت و اخذ دفاعیه، از تاریخ ارجاع',
+      committee: 'طرح در کمیته، از تاریخ دعوت‌نامه',
+      verdictText: 'ثبت متن رأی، از تاریخ جلسه',
+      notice: 'صدور ابلاغیه، از تاریخ جلسه',
+      noticeReturn: 'بازگشت ابلاغ، از تاریخ ابلاغیه',
+      enforce: 'پیگیری اجرای رأی، از تاریخ ابلاغیه'
+    };
+    var slaInputs = {};
+    var slaBox = el('div.sla-editor');
+    var currentSla = w.Worklist.sla();
+    Object.keys(SLA_LABELS).forEach(function (k) {
+      var input = el('input.input.small.sla-input', {
+        type: 'number', min: '1', max: '365', value: String(currentSla[k])
+      });
+      slaInputs[k] = input;
+      slaBox.appendChild(el('label.sla-row', null, [
+        el('span.sla-label', { text: SLA_LABELS[k] }),
+        input,
+        el('span.sla-unit', { text: 'روز' })
+      ]));
+    });
+    slaBox.appendChild(el('button.btn.small.ghost', {
+      type: 'button', text: 'بازگرداندن به مقدارهای پیش‌فرض',
+      onclick: function () {
+        Object.keys(SLA_LABELS).forEach(function (k) {
+          slaInputs[k].value = String(w.Worklist.SLA[k]);
+        });
+      }
+    }));
+
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'مهلت اقدام‌ها' }),
+      el('p.muted.tiny', {
+        text: 'کارتابل از روی همین مهلت‌ها می‌گوید چه پرونده‌ای از مهلت گذشته. ' +
+          'اگر با رویهٔ واقعی کمیته نمی‌خواند، همین‌جا عوضش کنید.'
+      }),
+      slaBox
+    ]));
+
     var editor = listsEditor();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'لیست‌های کشویی' }), editor
@@ -862,7 +907,14 @@
       el('button.btn.primary', {
         type: 'button', text: 'ذخیرهٔ تنظیمات',
         onclick: function () {
-          M.saveSettings({ user: userInput.value.trim(), orgName: orgInput.value.trim() });
+          var sla = {};
+          Object.keys(slaInputs).forEach(function (k) {
+            var v = parseInt(w.U.toLatinDigits(slaInputs[k].value), 10);
+            sla[k] = (isFinite(v) && v > 0) ? Math.min(v, 365) : w.Worklist.SLA[k];
+          });
+          M.saveSettings({
+            user: userInput.value.trim(), orgName: orgInput.value.trim(), sla: sla
+          });
           M.saveLists(editor.getLists()).then(function () {
             m.close();
             w.U.toast('تنظیمات ذخیره شد.', 'good');
