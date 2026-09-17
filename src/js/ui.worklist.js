@@ -58,6 +58,61 @@
     return box;
   }
 
+  // ------------------------------------------------------------ هفتهٔ پیشِ رو
+  /**
+   * نوار هفته: هفت روز آینده، و اینکه هر روز چند چیز سررسید می‌شود.
+   * دیرکردها اینجا نمی‌آیند — آنها جای خودشان را در بالای صفحه دارند.
+   * این نوار برای «چه چیزی دارد می‌رسد» است، نه «چه چیزی گذشته».
+   */
+  function weekStrip(app, cases) {
+    var slots = WL.week(cases, 7);
+    var total = slots.reduce(function (n, s) { return n + s.count; }, 0);
+    if (!total) return null;
+
+    var strip = el('ol.week-strip');
+    slots.forEach(function (s) {
+      var cls = 'li.week-day';
+      if (s.offset === 0) cls += '.today';
+      if (!s.count) cls += '.empty';
+      var title = s.count
+        ? (s.deadlines.length ? fa(s.deadlines.length) + ' مهلت اقدام' : '') +
+          (s.deadlines.length && s.follows.length ? ' و ' : '') +
+          (s.follows.length ? fa(s.follows.length) + ' قرار پیگیری' : '')
+        : 'چیزی سررسید نمی‌شود';
+
+      var cell = el(s.count ? 'button' + cls.slice(2) : cls, {
+        title: J.format(s.date) + ' — ' + title,
+        type: s.count ? 'button' : null,
+        onclick: s.count ? function () {
+          app.showCases(s.ids, 'سررسید ' +
+            (s.offset === 0 ? 'امروز' : s.weekday + ' ' + fa(s.day)));
+        } : null
+      }, [
+        el('span.week-name', { text: s.offset === 0 ? 'امروز' : s.weekday }),
+        el('span.week-num', { text: fa(s.day) }),
+        s.count ? el('span.week-count', { text: fa(s.count) }) : el('span.week-dash', { text: '—' }),
+        s.follows.length ? el('span.week-follow', {
+          title: fa(s.follows.length) + ' قرار پیگیری', text: '•'
+        }) : null
+      ]);
+      strip.appendChild(cell);
+    });
+
+    var deadlines = slots.reduce(function (n, s) { return n + s.deadlines.length; }, 0);
+    var follows = slots.reduce(function (n, s) { return n + s.follows.length; }, 0);
+    var bits = [];
+    if (deadlines) bits.push(fa(deadlines) + ' مهلت اقدام');
+    if (follows) bits.push(fa(follows) + ' قرار پیگیری');
+
+    return el('section.wl-section.week-card', null, [
+      el('div.wl-section-head', null, [
+        el('h2', { text: 'این هفته' }),
+        el('p.wl-sub', { text: bits.join(' و ') + ' تا هفت روز آینده سررسید می‌شود.' })
+      ]),
+      strip
+    ]);
+  }
+
   // ------------------------------------------------------------------ سطرها
   function actionRow(app, item) {
     var rec = item.rec, action = item.action;
@@ -175,6 +230,23 @@
       ])
     ]);
 
+    // جلسه هر وقت تشکیل می‌شود، نه فقط وقتی برنامه پرونده‌ای را «آماده» بداند؛
+    // پس ثبت صورت‌جلسه باید همیشه یک کلیک فاصله داشته باشد.
+    var heroActions = el('div.wl-hero-actions', null, [
+      el('button.btn.small.primary', {
+        type: 'button', text: 'ثبت نتیجهٔ جلسه',
+        title: 'صورت‌جلسه: نتیجهٔ هر پرونده، از روی دستور کار',
+        onclick: function () {
+          w.UISession.dialog(app, ready, function () { app.render(); });
+        }
+      }),
+      ready.length ? el('button.btn.small.ghost', {
+        type: 'button', text: 'چاپ دستور کار',
+        title: fa(ready.length) + ' پروندهٔ آمادهٔ طرح',
+        onclick: function () { w.UIPrint.printAgenda(ready); }
+      }) : null
+    ]);
+
     var sections = [];
 
     // پیگیری‌های دستی — اول از همه، چون قرارِ خودتان است نه حدسِ برنامه
@@ -214,6 +286,9 @@
       ]));
     }
 
+    var week = weekStrip(app, cases);
+    if (week) sections.push(week);
+
     sections.push(el('section.wl-pipe-card', null, [
       el('div.wl-section-head', null, [
         el('h2', { text: 'گردش‌کار' }),
@@ -246,10 +321,9 @@
           }),
           el('button.btn.small.primary', {
             type: 'button', text: 'ثبت نتیجهٔ جلسه',
-            title: 'ثبت تاریخ و شمارهٔ جلسه برای همهٔ این پرونده‌ها با هم',
+            title: 'صورت‌جلسه: نتیجهٔ هر پرونده از روی همین دستور کار',
             onclick: function () {
-              w.UIBulk.dialog(app, ready.map(function (r) { return r.id; }),
-                'آمادهٔ طرح در جلسه', function () { app.render(); });
+              w.UISession.dialog(app, ready, function () { app.render(); });
             }
           })
         ]),
@@ -286,11 +360,12 @@
       el('header.wl-hero', null, [
         el('div.wl-hero-date', { text: todayText }),
         el('h1.wl-hero-line', { text: headline }),
-        stats
+        stats,
+        heroActions
       ])
     ].concat(sections)));
   }
 
   w.UIWorklist = { render: render, rail: rail, pipelineRail: pipelineRail,
-    caseNumber: caseNumber };
+    caseNumber: caseNumber, weekStrip: weekStrip };
 })(window);

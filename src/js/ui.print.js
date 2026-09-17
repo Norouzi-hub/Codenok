@@ -394,8 +394,54 @@
     run('دستور کار جلسه');
   }
 
+  /**
+   * صورت‌جلسه: همان دستور کار، ولی با نتیجهٔ هر پرونده.
+   * این برگه چیزی است که امضا می‌شود و در پرونده می‌ماند.
+   */
+  function printMinutes(head, rows) {
+    var node = area();
+    node.appendChild(header('صورت‌جلسهٔ کمیتهٔ انضباطی',
+      'جلسهٔ ' + w.U.toFaDigits(head.session || '—') +
+      ' — ' + (head.date ? J.format(head.date, { long: true }) : '—')));
+
+    if (head.regNo) {
+      node.appendChild(el('div.p-sub', {
+        text: 'شمارهٔ ثبت دبیرخانهٔ کمیته: ' + w.U.toFaDigits(head.regNo)
+      }));
+    }
+
+    var table = el('table.p-table.p-list', null, [
+      el('tr', null, ['ردیف', 'شماره پرونده', 'نام و نام خانوادگی', 'واحد سازمانی',
+        'نوع پرونده', 'نتیجهٔ جلسه', 'رأی'].map(function (h) {
+          return el('th', { text: h });
+        }))
+    ]);
+    rows.forEach(function (r, i) {
+      table.appendChild(el('tr', null, [
+        el('td', { text: w.U.toFaDigits(i + 1) }),
+        el('td', { text: w.U.toFaDigits(r.rec.caseNo || '—') }),
+        el('td', { text: [r.rec.firstName, r.rec.lastName].filter(Boolean).join(' ') }),
+        el('td', { text: r.rec.orgUnit || '—' }),
+        el('td', { text: r.rec.caseType || '—' }),
+        el('td', { text: r.outcomeLabel || '—' }),
+        // اگر متن رأی وارد نشده، جای خالی می‌ماند تا در جلسه دستی نوشته شود
+        el('td', { text: r.verdict || '' })
+      ]));
+    });
+    node.appendChild(el('section.p-section', null, [
+      el('h2', { text: 'پرونده‌های مطرح‌شده' }), table
+    ]));
+
+    node.appendChild(el('div.p-sign', null, [
+      el('div', { text: 'امضای دبیر کمیته' }),
+      el('div', { text: 'امضای رئیس کمیته' }),
+      el('div', { text: 'امضای اعضا' })
+    ]));
+    run('صورت‌جلسهٔ کمیته');
+  }
+
   w.UIPrint = {
     printCase: printCase, printList: printList, printReport: printReport,
-    printPerson: printPerson, printAgenda: printAgenda
+    printPerson: printPerson, printAgenda: printAgenda, printMinutes: printMinutes
   };
 })(window);

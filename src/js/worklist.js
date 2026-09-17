@@ -99,6 +99,8 @@
       return {
         key: key, label: label, owner: owner, since: since || '',
         days: days, limit: limit,
+        // سررسید واقعی: از کِی منتظر است + مهلتش. مبنای نمای «این هفته».
+        due: (since && limit != null) ? J.addDays(since, limit) : '',
         overdue: days != null && limit != null && days > limit,
         remaining: (days != null && limit != null) ? (limit - days) : null
       };
@@ -213,9 +215,56 @@
     });
   }
 
+  /**
+   * هفتهٔ پیشِ رو: برای هر یک از هفت روز آینده، چه چیزی سررسید می‌شود.
+   * دو جنس در کنار هم می‌آیند: مهلت اقدامِ خودِ پرونده (از روی تاریخ‌ها حساب
+   * می‌شود) و قرار پیگیریِ دستی (که کاربر خودش گذاشته است).
+   */
+  function week(cases, days) {
+    var span = days || 7;
+    var today = J.today();
+    var slots = [];
+    var byDate = {};
+    for (var i = 0; i < span; i++) {
+      var d = J.addDays(today, i);
+      var p = J.unpack(d);
+      var slot = {
+        date: d, offset: i,
+        weekday: J.weekday(p.jy, p.jm, p.jd),
+        day: p.jd, month: p.jm,
+        deadlines: [], follows: []
+      };
+      slots.push(slot);
+      byDate[d] = slot;
+    }
+
+    cases.forEach(function (rec) {
+      var a = nextAction(rec);
+      if (a.key === 'closed' || !a.due) return;
+      var slot = byDate[a.due];
+      if (slot) slot.deadlines.push({ rec: rec, action: a });
+    });
+
+    // قرارهای پیگیری، از یادداشت‌های دستی
+    if (w.Notes && w.Notes.dueFollowUps) {
+      w.Notes.dueFollowUps(false).forEach(function (f) {
+        var slot = byDate[f.note.followUp];
+        if (slot) slot.follows.push(f);
+      });
+    }
+
+    slots.forEach(function (s) {
+      s.count = s.deadlines.length + s.follows.length;
+      s.ids = s.deadlines.map(function (d) { return d.rec.id; })
+        .concat(s.follows.map(function (f) { return f.rec.id; }))
+        .filter(function (id, i, arr) { return arr.indexOf(id) === i; });
+    });
+    return slots;
+  }
+
   w.Worklist = {
     STAGES: STAGES, SLA: SLA, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
-    isClosed: isClosed, readyForCommittee: readyForCommittee
+    isClosed: isClosed, readyForCommittee: readyForCommittee, week: week
   };
 })(window);

@@ -152,10 +152,20 @@
     return j2d(pa.jy, pa.jm, pa.jd) - j2d(pb.jy, pb.jm, pb.jd);
   }
 
+  /** n روز جلو (یا عقب) از یک تاریخ ۸ رقمی */
+  function addDays(j8, n) {
+    var p = unpack(j8);
+    if (!p) return null;
+    var g = toGregorian(p.jy, p.jm, p.jd);
+    g.setDate(g.getDate() + n);
+    var b = toJalali(g);
+    return pack(b.jy, b.jm, b.jd);
+  }
+
   w.J = {
     MONTHS: MONTHS, WEEKDAYS: WEEKDAYS, monthLength: monthLength, isLeap: isLeap,
     toJalali: toJalali, toGregorian: toGregorian, pack: pack, unpack: unpack,
     parse: parse, format: format, today: today, stamp: stamp, weekday: weekday,
-    diffDays: diffDays, pad2: pad2
+    diffDays: diffDays, addDays: addDays, pad2: pad2
   };
 })(window);

@@ -11,14 +11,8 @@
     'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
 
   // --------------------------------------------------------------- کمک‌تابع‌ها
-  function addDays(j8, n) {
-    var p = J.unpack(j8);
-    if (!p) return null;
-    var g = J.toGregorian(p.jy, p.jm, p.jd);
-    g.setDate(g.getDate() + n);
-    var b = J.toJalali(g);
-    return J.pack(b.jy, b.jm, b.jd);
-  }
+  // همان ابزار تقویم است؛ اینجا فقط برای سازگاری با کدهای قبلی نگه داشته شده
+  var addDays = J.addDays;
 
   function median(arr) {
     if (!arr.length) return null;

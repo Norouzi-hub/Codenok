@@ -347,6 +347,83 @@ function overflow(page) {
     persistedTouch.sessions === 2 && persistedTouch.name && persistedTouch.notes === 1,
     JSON.stringify(persistedTouch));
 
+  console.log('\n— این هفته و صورت‌جلسه روی گوشی —');
+  // این دو نما فقط وقتی چیزی برای نشان دادن هست دیده می‌شوند؛ پس اول
+  // باید پرونده‌ای با سررسیدِ پیشِ رو و پرونده‌ای آمادهٔ طرح بسازیم،
+  // وگرنه آزمون روی صفحهٔ خالی «موفق» می‌شود و چیزی را نمی‌سنجد.
+  await page.evaluate(async () => {
+    const J = window.J, M = window.Model, WL = window.Worklist;
+    const open = M.state.cases.filter(c => !WL.isClosed(c))
+      .slice().sort((a, b) => (a.caseNo || '') < (b.caseNo || '') ? -1 : 1);
+    for (const c of open.slice(0, 2)) {
+      await M.update(c.id, Object.assign({}, c, {
+        deliveryDate: c.deliveryDate || J.addDays(J.today(), -20),
+        invitationLetterDate: J.addDays(J.today(), -5),
+        committeeDate: '', securityOutLetterDate: '', securityInLetterDate: ''
+      }));
+    }
+    for (const [i, c] of open.slice(5, 7).entries()) {
+      await M.update(c.id, Object.assign({}, c, {
+        deliveryDate: J.addDays(J.today(), -13 + i),
+        invitationLetterDate: '', committeeDate: '',
+        securityOutLetterDate: '', securityInLetterDate: ''
+      }));
+    }
+  });
+  await page.tap('.tab-btn[data-nav="work"]');
+  await page.waitForSelector('.worklist');
+  await page.waitForTimeout(500);
+  const scenarioOn = await page.evaluate(() => ({
+    week: window.Worklist.week(window.Model.state.cases, 7)
+      .reduce((n, s) => n + s.count, 0),
+    ready: window.Worklist.readyForCommittee(window.Model.state.cases).length
+  }));
+  check('سناریو ساخته شد تا این دو نما واقعاً چیزی نشان دهند',
+    scenarioOn.week > 0 && scenarioOn.ready > 0, JSON.stringify(scenarioOn));
+  const weekPhone = await page.evaluate(() => {
+    const strip = document.querySelector('.week-strip');
+    if (!strip) return { missing: true };
+    const cells = [...document.querySelectorAll('.week-day')];
+    const cs = getComputedStyle(strip);
+    return {
+      days: cells.length,
+      today: document.querySelectorAll('.week-day.today').length,
+      // روی گوشی هفت خانه در یک سطر جا نمی‌شود؛ چهارتایی می‌چیند
+      cols: cs.gridTemplateColumns.split(' ').length,
+      inside: cells.every(c => c.getBoundingClientRect().right <= window.innerWidth + 1)
+    };
+  });
+  check('نوار «این هفته» روی گوشی چهارتایی می‌چیند و از صفحه بیرون نمی‌زند',
+    weekPhone.days === 7 && weekPhone.cols === 4 && weekPhone.inside,
+    JSON.stringify(weekPhone));
+
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.wl-hero-actions .btn')]
+      .find(b => b.textContent.indexOf('ثبت نتیجه') >= 0).click();
+  });
+  await page.waitForSelector('.minutes');
+  await page.waitForTimeout(400);
+  const minutesPhone = await page.evaluate(() => {
+    const row = document.querySelector('.minutes-row');
+    const modal = document.querySelector('.modal');
+    if (!row) return { empty: true, gap: window.innerHeight - modal.getBoundingClientRect().bottom };
+    const who = row.querySelector('.minutes-who').getBoundingClientRect();
+    const sel = row.querySelector('.minutes-outcome').getBoundingClientRect();
+    return {
+      // نتیجه باید زیر نام بیفتد، نه کنارش — وگرنه هر دو له می‌شوند
+      stacked: sel.top > who.bottom - 2,
+      selWidth: Math.round(sel.width),
+      gap: window.innerHeight - modal.getBoundingClientRect().bottom
+    };
+  });
+  check('صورت‌جلسه روی گوشی از پایین باز می‌شود',
+    Math.abs(minutesPhone.gap) < 2, Math.round(minutesPhone.gap) + 'px تا کف');
+  check('در هر سطر صورت‌جلسه، نتیجه زیر نام می‌آید و پهنا دارد',
+    !minutesPhone.empty && minutesPhone.stacked && minutesPhone.selWidth > 200,
+    JSON.stringify(minutesPhone));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+
   console.log('\n— چرخاندن گوشی و بازگشت به رایانه —');
   await page.setViewportSize({ width: 780, height: 390 });
   await page.waitForTimeout(500);

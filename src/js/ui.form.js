@@ -88,7 +88,7 @@
     'doc-add': 'افزودن سند', 'doc-version': 'نسخهٔ تازهٔ سند',
     'doc-remove': 'حذف سند', 'doc-folder': 'تغییر پوشهٔ مستندات',
     'doc-person': 'مدرک شخص', 'note-add': 'یادداشت', 'note-done': 'پیگیری انجام شد',
-    'note-remove': 'حذف یادداشت', 'bulk': 'اقدام دسته‌ای'
+    'note-remove': 'حذف یادداشت', 'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه'
   };
 
   function kindLabel(kind) {

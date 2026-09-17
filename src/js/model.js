@@ -205,15 +205,20 @@
   }
 
   /**
-   * اعمال یک تغییر روی چند پرونده با هم.
-   * مثلاً بعد از جلسهٔ کمیته، ثبت یک تاریخ برای پانزده پرونده.
-   * هر پرونده تغییر خودش را در تاریخچه می‌گیرد، پس بعداً معلوم است چه شد.
+   * هستهٔ مشترک اقدام‌های چندتایی: هر پرونده تغییر خودش را در تاریخچه می‌گیرد،
+   * پس بعداً معلوم است کدام پرونده کجا عوض شده.
+   * list: [{ id, patch, note }] — در اقدام دسته‌ای همهٔ patchها یکی‌اند؛ در
+   * صورت‌جلسه هر پرونده نتیجهٔ خودش را دارد.
    */
-  function bulkUpdate(ids, patch, note) {
+  function applyPatches(list, opts) {
+    opts = opts || {};
+    var kind = opts.kind || 'bulk';
+    var note = opts.note || 'اقدام دسته‌ای';
     var now = new Date().toISOString();
     var touched = [], entries = [], unchanged = 0;
 
-    ids.forEach(function (id) {
+    list.forEach(function (item) {
+      var id = item.id, patch = item.patch || {};
       var before = byId[id];
       if (!before) return;
       var merged = Object.assign({}, strip(before));
@@ -236,8 +241,8 @@
       touched.push(after);
       entries.push({
         id: w.U.uid(), caseId: id, caseNo: after.caseNo || '', at: now,
-        atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: 'bulk',
-        changes: changes, note: note || 'اقدام دسته‌ای'
+        atJalali: w.J.stamp(), user: state.settings.user || 'کاربر', kind: kind,
+        changes: changes, note: item.note || note
       });
     });
 
@@ -248,8 +253,18 @@
       entries.length ? w.Store.put('history', entries) : null
     ]).then(function () {
       if (touched.length) markChange();
-      return { changed: touched.length, unchanged: unchanged, total: ids.length };
+      return { changed: touched.length, unchanged: unchanged, total: list.length };
     });
+  }
+
+  /**
+   * اعمال یک تغییر روی چند پرونده با هم.
+   * مثلاً بعد از جلسهٔ کمیته، ثبت یک تاریخ برای پانزده پرونده.
+   */
+  function bulkUpdate(ids, patch, note) {
+    return applyPatches(ids.map(function (id) {
+      return { id: id, patch: patch };
+    }), { kind: 'bulk', note: note || 'اقدام دسته‌ای' });
   }
 
   /**
@@ -589,7 +604,7 @@
     load: load, reload: reload, clearMemory: clearMemory, seed: seed,
     bulkImport: bulkImport,
     create: create, update: update, remove: remove, get: get, query: query,
-    analyzeImport: analyzeImport, bulkUpdate: bulkUpdate, previewBulk: previewBulk,
+    analyzeImport: analyzeImport, bulkUpdate: bulkUpdate, applyPatches: applyPatches, previewBulk: previewBulk,
     idSet: idSet, reindex: index, addHistory: logEvent,
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
