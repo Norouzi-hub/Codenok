@@ -718,6 +718,102 @@
     return M.state.lists.DocKinds || KINDS_DEFAULT;
   }
 
+  // ------------------------------------------------------ پشتیبان خودکار
+  /*
+   * رمزنگاری، محرمانگی را نگه می‌دارد نه موجودیت را: هر کسی که به فایل
+   * دسترسی دارد می‌تواند پاکش کند. جواب این، پشتیبان است نه صفحهٔ ورود.
+   *
+   * پس روزی یک بار — همان‌جا که پوشهٔ مستندات وصل است — یک نسخه در
+   * زیرپوشهٔ «_پشتیبان» نوشته می‌شود. اگر رمز فعال باشد، پشتیبان هم
+   * رمزشده است. آخرین KEEP نسخه می‌ماند و قدیمی‌ترها پاک می‌شوند تا
+   * پوشه بی‌نهایت بزرگ نشود.
+   */
+  var BACKUP_ROOT = '_پشتیبان';
+  var BACKUP_KEEP = 14;
+
+  function backupName(now) {
+    var p = J.unpack(J.today());
+    var hh = String(now.getHours()).padStart(2, '0');
+    var mm = String(now.getMinutes()).padStart(2, '0');
+    var day = p ? (p.jy + '-' + J.pad2(p.jm) + '-' + J.pad2(p.jd))
+      : now.toISOString().slice(0, 10);
+    return 'parvandeha-' + day + '-' + hh + mm + '.json';
+  }
+
+  function backupFolder(create) {
+    return requireRoot().then(function (r) {
+      return r.getDirectoryHandle(BACKUP_ROOT, { create: !!create });
+    });
+  }
+
+  /** فهرست پشتیبان‌های موجود، تازه‌ترین اول */
+  function backups() {
+    return backupFolder(false).then(listDir).then(function (entries) {
+      return entries
+        .filter(function (e) { return e.kind === 'file' && /\.json$/.test(e.name); })
+        .map(function (e) { return e.name; })
+        .sort()
+        .reverse();
+    }).catch(function () { return []; });
+  }
+
+  /**
+   * یک پشتیبان می‌گیرد.
+   * force=false یعنی «اگر امروز گرفته‌ای، دوباره نگیر».
+   */
+  function backupNow(force) {
+    if (!root) return Promise.resolve(null);
+    var now = new Date();
+    var name = backupName(now);
+    var today = name.slice(0, name.lastIndexOf('-'));
+    return backups().then(function (existing) {
+      if (!force && existing.some(function (n) { return n.indexOf(today) === 0; })) {
+        return null;                       // امروز گرفته شده
+      }
+      return w.Vault.sealSnapshot(w.Store.snapshot()).then(function (payload) {
+        return backupFolder(true).then(function (dir) {
+          return dir.getFileHandle(name, { create: true })
+            .then(function (fh) { return fh.createWritable(); })
+            .then(function (wr) {
+              return wr.write(new Blob([JSON.stringify(payload)],
+                { type: 'application/json' })).then(function () { return wr.close(); });
+            })
+            .then(function () { return trimBackups(dir); })
+            .then(function () {
+              w.Store.metaSet('lastBackupAt', now.toISOString());
+              return name;
+            });
+        });
+      });
+    }).catch(function (err) {
+      console.warn('پشتیبان خودکار گرفته نشد:', err && err.message);
+      return null;
+    });
+  }
+
+  function trimBackups(dir) {
+    return listDir(dir).then(function (entries) {
+      var files = entries
+        .filter(function (e) { return e.kind === 'file' && /\.json$/.test(e.name); })
+        .map(function (e) { return e.name; })
+        .sort();
+      var extra = files.slice(0, Math.max(0, files.length - BACKUP_KEEP));
+      return extra.reduce(function (chain, n) {
+        return chain.then(function () {
+          return dir.removeEntry(n).catch(function () { /* مهم نیست */ });
+        });
+      }, Promise.resolve());
+    });
+  }
+
+  function backupStatus() {
+    return {
+      folder: BACKUP_ROOT,
+      keep: BACKUP_KEEP,
+      lastAt: w.Store.metaGet('lastBackupAt', '')
+    };
+  }
+
   /**
    * ویرایش فرادادهٔ یک سند — بدون دست زدن به خود فایل.
    * نوع، دسته، جهت، تاریخ، شمارهٔ نامه، عنوان و متن نامه اینجا عوض می‌شوند.
@@ -854,6 +950,8 @@
     FIELD_KIND: FIELD_KIND, kindForField: kindForField, ofKind: ofKind,
     categoryOf: categoryOf, categoryLabel: categoryLabel,
     directionOf: directionOf, directionLabel: directionLabel,
-    updateMeta: updateMeta, bundle: bundle
+    updateMeta: updateMeta, bundle: bundle,
+    backupNow: backupNow, backups: backups, backupStatus: backupStatus,
+    BACKUP_ROOT: BACKUP_ROOT, BACKUP_KEEP: BACKUP_KEEP
   };
 })(window);

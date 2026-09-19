@@ -12,6 +12,7 @@ const { execFileSync } = require('child_process');
 const { chromium } = require(process.env.PW || 'playwright');
 
 const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const bootApp = require('./boot');
 const MOCK_FS = require('./mockfs');
 const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'dossier-'));
 
@@ -79,9 +80,7 @@ function fakeFile(name, text, type) {
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   page.on('dialog', d => d.accept());
 
-  await page.goto(APP);
-  await page.waitForSelector('.worklist', { timeout: 20000 });
-  await page.waitForTimeout(800);
+  await bootApp(page, APP);
   await page.evaluate(MOCK_FS);
   await page.evaluate(() => window.Docs.linkFolder());
   await page.waitForTimeout(300);
@@ -579,6 +578,69 @@ function fakeFile(name, text, type) {
   check('فیلدهای مرحلهٔ دستی پنهان‌اند و در فرم نمی‌آیند',
     kept.hidden.length === 3 &&
     !clips.some(c => /stageOverride/.test(c.field)), kept.hidden.join(','));
+
+  // ---------------------------------------------------------------------
+  console.log('\n— پشتیبان خودکار در پوشه —');
+
+  /* برنامه موقع بالا آمدن خودش یک پشتیبان می‌گیرد؛ پس تا اینجا باید
+     یکی در پوشه باشد بدون اینکه تست کاری کرده باشد. */
+  const bk = await page.evaluate(async () => {
+    const atBoot = await window.Docs.backups();
+    const again = await window.Docs.backupNow(false);   // همان روز، نباید دوباره بگیرد
+    const forced = await window.Docs.backupNow(true);
+    const list = await window.Docs.backups();
+    const tree = window.__tree();
+    return {
+      atBoot: atBoot, again: again, forced: forced,
+      count: list.length, folder: Object.keys(tree).filter(k => k[0] === '_'),
+      status: window.Docs.backupStatus()
+    };
+  });
+  check('برنامه خودش موقع باز شدن، پشتیبان را در زیرپوشه می‌گذارد',
+    bk.atBoot.length >= 1 && bk.folder.indexOf('_پشتیبان') >= 0,
+    bk.atBoot[0] || '—');
+  check('روزی یک بار، نه هر بار باز شدن', bk.again === null);
+  check('پشتیبان دستی همیشه گرفته می‌شود', !!bk.forced);
+  check('زمان آخرین پشتیبان ثبت می‌شود', !!bk.status.lastAt, bk.status.lastAt);
+
+  const rotated = await page.evaluate(async () => {
+    // بیست نسخهٔ ساختگی، تا چرخش سنجیده شود
+    const dir = await window.__mockRoot.getDirectoryHandle('_پشتیبان', { create: true });
+    for (let i = 1; i <= 20; i++) {
+      const n = 'parvandeha-1400-01-' + String(i).padStart(2, '0') + '-0900.json';
+      const fh = await dir.getFileHandle(n, { create: true });
+      const wr = await fh.createWritable();
+      await wr.write(new Blob(['{}']));
+      await wr.close();
+    }
+    const before = (await window.Docs.backups()).length;
+    await window.Docs.backupNow(true);
+    const after = await window.Docs.backups();
+    return { before: before, after: after.length, keep: window.Docs.BACKUP_KEEP,
+      newest: after[0] };
+  });
+  check('فقط آخرین چند نسخه می‌ماند، پوشه بی‌نهایت بزرگ نمی‌شود',
+    rotated.after === rotated.keep && rotated.before > rotated.keep,
+    rotated.before + ' → ' + rotated.after + ' (سقف ' + rotated.keep + ')');
+  check('تازه‌ترین نسخه سرِ فهرست است',
+    /^parvandeha-14/.test(rotated.newest) && rotated.newest.indexOf('1400-01') < 0,
+    rotated.newest);
+
+  const sealedBackup = await page.evaluate(async () => {
+    await window.Store.setPassword('Pass-1404!');
+    const name = await window.Docs.backupNow(true);
+    const dir = await window.__mockRoot.getDirectoryHandle('_پشتیبان');
+    const fh = await dir.getFileHandle(name);
+    const text = await (await fh.getFile()).text();
+    const payload = JSON.parse(text);
+    await window.Store.clearPassword();
+    return {
+      encrypted: !!payload.encrypted,
+      leaks: /غلامستان|1404308/.test(text)
+    };
+  });
+  check('وقتی رمز فعال است، پشتیبان هم رمز می‌شود',
+    sealedBackup.encrypted && !sealedBackup.leaks);
 
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));

@@ -2784,6 +2784,92 @@ select.input { cursor: pointer; }
   .access-bar { flex-wrap: wrap; margin-inline: 12px; }
 }
 
+/* ================================================================
+   صفحهٔ شروع — وقتی دیتابیسی باز نیست
+   ----------------------------------------------------------------
+   بالاتر از صفحهٔ قفل نیست، پایین‌تر هم نیست: این دو هیچ‌وقت با هم
+   نمی‌آیند. قفل یعنی «دیتابیس هست، رمزش را بده»؛ این یعنی «دیتابیسی
+   نیست، بگو کجاست».
+   ================================================================ */
+.start-screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-lock);
+  background:
+    radial-gradient(900px 520px at 80% -10%, rgba(166, 116, 27, .22), transparent 60%),
+    linear-gradient(165deg, var(--ink-800), var(--ink-900) 60%, #10121F);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+}
+.start-box {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px 26px 20px;
+  width: min(520px, 100%);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .3);
+  animation: modal-in .24s cubic-bezier(.2, .8, .3, 1);
+}
+.start-logo { font-size: 32px; line-height: 1; text-align: center; }
+.start-box h1 { font-size: 19px; margin: 10px 0 6px; text-align: center; }
+.start-lead {
+  margin: 0 0 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.9;
+}
+.start-opts { display: grid; gap: 8px; }
+.start-opt {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: start;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color .14s, background .14s, transform .1s;
+}
+.start-opt:hover { border-color: var(--brass); background: var(--paper); }
+.start-opt:active { transform: scale(.99); }
+.start-opt.primary { border-color: var(--brass); background: var(--brass-soft); }
+.start-opt-icon { line-height: 0; color: var(--brass-ink); flex: 0 0 auto; }
+.start-opt-icon svg { width: 20px; height: 20px; }
+.start-opt-text { display: grid; gap: 2px; min-width: 0; }
+.start-opt-text b { font-size: 13.5px; }
+.start-opt-text span { font-size: 11.5px; color: var(--muted); line-height: 1.7; }
+
+.start-note {
+  padding: 10px 12px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--brass-ink);
+}
+.start-msg { min-height: 18px; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+.start-msg.bad { color: var(--cinnabar); }
+.start-foot {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.9;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 11px;
+}
+.start-demo {
+  display: block;
+  margin: 10px auto 0;
+  font-size: 11.5px;
+  color: var(--ink-400);
+}
+
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
@@ -5701,6 +5787,11 @@ window.SEED_CASES = [
     });
   }
 
+  /** آیا این بسته رمز دارد؟ (بدون اینکه بازش کنیم) */
+  function isSealed(payload) {
+    return !!(payload && payload.encrypted && payload.kdf && payload.kdf.salt);
+  }
+
   /** باز کردن بستهٔ رمزشده با رمزی که کاربر می‌دهد */
   function openSnapshot(payload, password) {
     if (!payload || !payload.encrypted) return Promise.resolve(payload);
@@ -5710,12 +5801,42 @@ window.SEED_CASES = [
       });
   }
 
+  /**
+   * باز کردن بسته و **پذیرفتن رمزِ خودش**.
+   *
+   * این تفاوت ریز، همان چیزی است که امنیت را واقعی می‌کند: رمز و نمکش
+   * داخل خودِ فایل‌اند، نه در انبار این مرورگر. پس هر جا فایل باز شود —
+   * مرورگر دیگر، رایانهٔ دیگر — همان رمز را می‌خواهد. تا امروز قفل به
+   * مرورگر بسته بود و با مرورگر تازه، برنامه بی‌رمز بالا می‌آمد.
+   *
+   * خروجی: { data, config } یا رد شدن با پیام «رمز نادرست».
+   */
+  function openAndAdopt(payload, password) {
+    if (!isSealed(payload)) return Promise.resolve({ data: payload, config: null });
+    var next = {
+      salt: payload.kdf.salt,
+      iterations: payload.kdf.iterations,
+      verifier: payload.verifier
+    };
+    return deriveKey(password, next.salt, next.iterations).then(function (k) {
+      return decryptWith(k, { iv: payload.iv, ct: payload.data })
+        .then(function (data) {
+          config = next;
+          key = k;
+          return { data: data, config: next };
+        });
+    }).catch(function () {
+      throw new Error('رمز نادرست است');
+    });
+  }
+
   w.Vault = {
     available: available, configure: configure, isEnabled: isEnabled,
     isUnlocked: isUnlocked, needsPassword: needsPassword,
     unlock: unlock, lock: lock, setPassword: setPassword,
     clearPassword: clearPassword, sealRecord: sealRecord, openRecord: openRecord,
     sealSnapshot: sealSnapshot, openSnapshot: openSnapshot,
+    isSealed: isSealed, openAndAdopt: openAndAdopt,
     getConfig: function () { return config; }
   };
 })(window);
@@ -5989,6 +6110,11 @@ window.SEED_CASES = [
   // می‌شود و هنگام بازیابی، رمز نشست جاری اعمال می‌گردد.
   var HANDLE_KEYS = ['fileHandle', 'docsFolder', 'security'];
 
+  /* رابط کاربری، پرسیدن رمزِ یک فایل را اینجا وصل می‌کند. لایهٔ داده خودش
+     پنجره نمی‌سازد. */
+  var askPassword = null;
+  function onPasswordNeeded(fn) { askPassword = fn; }
+
   function snapshot() {
     return {
       app: 'parvandeha',
@@ -6054,38 +6180,27 @@ window.SEED_CASES = [
         return rememberHandle('fileHandle', handle);
       });
     }).then(function () {
-      return readFile();
-    }).then(function (snap) {
-      if (!snap || snap.app !== 'parvandeha') {
+      return readRaw();
+    }).then(function (payload) {
+      if (!payload || payload.app !== 'parvandeha') {
         throw new Error('این فایل، دیتابیس این برنامه نیست');
       }
-      // فایلِ انتخاب‌شده صراحتاً خواستهٔ کاربر است، پس بی‌قید‌وشرط می‌نشیند
-      mem.cases = {};
-      mem.history = {};
-      mem.docs = {};
-      mem.notes = {};
-      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
-      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
-      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
-      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
-      (snap.meta || []).forEach(function (m) {
-        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
-      });
-      return clearAll()
-        .then(function () { return put('cases', snap.cases || []); })
-        .then(function () { return put('history', snap.history || []); })
-        .then(function () {
-          return (snap.docs || []).length ? put('docs', snap.docs) : null;
-        })
-        .then(function () {
-          return (snap.notes || []).length ? put('notes', snap.notes) : null;
-        })
-        .then(function () {
-          var metas = (snap.meta || []).filter(function (m) {
-            return HANDLE_KEYS.indexOf(m.key) < 0;
-          });
-          return metas.length ? put('meta', metas) : null;
+      /* اگر فایل رمز دارد، رمزِ خودش پرسیده می‌شود — نه رمزِ این مرورگر.
+         قفل به داده بسته است، پس در هر مرورگر و هر رایانه‌ای می‌آید. */
+      if (!w.Vault.isSealed(payload)) {
+        w.Vault.clearPassword();
+        return metaSet('security', null).then(function () { return payload; });
+      }
+      if (!askPassword) throw new Error('این دیتابیس رمز دارد');
+      return askPassword(fileName).then(function (pw) {
+        if (!pw) throw new Error('بدون رمز، این دیتابیس باز نمی‌شود');
+        return w.Vault.openAndAdopt(payload, pw).then(function (res) {
+          return res.data;
         });
+      });
+    }).then(function (snap) {
+      // فایلِ انتخاب‌شده صراحتاً خواستهٔ کاربر است، پس بی‌قید‌وشرط می‌نشیند
+      return installSnapshot(snap);
     }).then(function () {
       emit();
       return { cases: Object.keys(mem.cases).length };
@@ -6141,20 +6256,34 @@ window.SEED_CASES = [
    * کردن فایل HTML یا پاک شدن دادهٔ مرورگر، کار از دست می‌رفت — درحالی‌که
    * فایل سرِ جایش بود. حالا برعکس است: هر وقت فایل وصل باشد، همان مبناست.
    */
-  function readFile() {
+  function readRaw() {
     if (!fileHandle) return Promise.resolve(null);
     return fileHandle.getFile()
       .then(function (f) { return f.text(); })
       .then(function (text) {
         if (!text || !text.trim()) return null;
-        var payload = JSON.parse(text);
-        return w.Vault.openSnapshot(payload);
+        return JSON.parse(text);
       })
       .catch(function (err) {
         saveError = 'خواندن فایل ناموفق بود: ' + (err.message || err);
         emit();
         return null;
       });
+  }
+
+  /** محتوای فایل، بازشده با کلیدی که همین حالا در دست است */
+  function readFile() {
+    return readRaw().then(function (payload) {
+      if (!payload) return null;
+      if (!w.Vault.isSealed(payload)) return payload;
+      // بستهٔ رمزدار را بدون رمز نمی‌شود باز کرد؛ فراخوان باید رمز بگیرد
+      return null;
+    });
+  }
+
+  /** آیا فایلِ وصل‌شده رمز دارد؟ */
+  function fileIsSealed() {
+    return readRaw().then(function (p) { return w.Vault.isSealed(p); });
   }
 
   /** چند رکورد دارد — برای مقایسهٔ فایل با انبار مرورگر */
@@ -6192,6 +6321,41 @@ window.SEED_CASES = [
    * انبار مرورگر خالی باشد، فایل بی‌چون‌وچرا می‌نشیند — همان حالتی که
    * کاربر فایل HTML را عوض کرده و مرورگر چیزی ندارد.
    */
+  /** یک snapshot را روی حافظه و انبار می‌نشاند */
+  function installSnapshot(snap) {
+    mem.cases = {};
+    mem.history = {};
+    mem.docs = {};
+    mem.notes = {};
+    (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+    (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+    (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+    (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
+    (snap.meta || []).forEach(function (m) {
+      if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
+    });
+    return clearAll()
+      .then(function () { return put('cases', snap.cases || []); })
+      .then(function () { return put('history', snap.history || []); })
+      .then(function () {
+        return (snap.docs || []).length ? put('docs', snap.docs) : null;
+      })
+      .then(function () {
+        return (snap.notes || []).length ? put('notes', snap.notes) : null;
+      })
+      .then(function () {
+        var metas = (snap.meta || []).filter(function (m) {
+          return HANDLE_KEYS.indexOf(m.key) < 0;
+        });
+        return metas.length ? put('meta', metas) : null;
+      })
+      .then(function () {
+        // رمزِ فایل، رمزِ این مرورگر هم می‌شود: قفل به داده بسته است نه به مرورگر
+        var cfg = w.Vault.getConfig();
+        return cfg ? metaSet('security', cfg) : null;
+      });
+  }
+
   function adoptFile() {
     return readFile().then(function (snap) {
       if (!snap || snap.app !== 'parvandeha') return false;
@@ -6203,34 +6367,8 @@ window.SEED_CASES = [
       var newer = !here || (theirs && (!mine || theirs > mine));
       if (!newer) return false;
       if (countOf(snap) < 0) return false;
-      mem.cases = {};
-      mem.history = {};
-      mem.docs = {};
-      mem.notes = {};
-      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
-      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
-      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
-      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
-      (snap.meta || []).forEach(function (m) {
-        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
-      });
       // انبار مرورگر فقط یک کَش است؛ با همان چیزی که از فایل آمد پر می‌شود
-      return clearAll()
-        .then(function () { return put('cases', snap.cases || []); })
-        .then(function () { return put('history', snap.history || []); })
-        .then(function () {
-          return (snap.docs || []).length ? put('docs', snap.docs) : null;
-        })
-        .then(function () {
-          return (snap.notes || []).length ? put('notes', snap.notes) : null;
-        })
-        .then(function () {
-          var metas = (snap.meta || []).filter(function (m) {
-            return HANDLE_KEYS.indexOf(m.key) < 0;
-          });
-          return metas.length ? put('meta', metas) : null;
-        })
-        .then(function () { return true; });
+      return installSnapshot(snap).then(function () { return true; });
     });
   }
 
@@ -6427,6 +6565,8 @@ window.SEED_CASES = [
     metaGet: metaGet, metaSet: metaSet, snapshot: snapshot, restore: restore,
     linkFile: linkFile, unlinkFile: unlinkFile, writeFile: writeFile,
     readFile: readFile, adoptFile: adoptFile, relinkFile: relinkFile,
+    fileIsSealed: fileIsSealed, onPasswordNeeded: onPasswordNeeded,
+    installSnapshot: installSnapshot,
     openFile: openFile,
     hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,
@@ -10977,6 +11117,102 @@ else if (typeof exports === 'object'){
     return M.state.lists.DocKinds || KINDS_DEFAULT;
   }
 
+  // ------------------------------------------------------ پشتیبان خودکار
+  /*
+   * رمزنگاری، محرمانگی را نگه می‌دارد نه موجودیت را: هر کسی که به فایل
+   * دسترسی دارد می‌تواند پاکش کند. جواب این، پشتیبان است نه صفحهٔ ورود.
+   *
+   * پس روزی یک بار — همان‌جا که پوشهٔ مستندات وصل است — یک نسخه در
+   * زیرپوشهٔ «_پشتیبان» نوشته می‌شود. اگر رمز فعال باشد، پشتیبان هم
+   * رمزشده است. آخرین KEEP نسخه می‌ماند و قدیمی‌ترها پاک می‌شوند تا
+   * پوشه بی‌نهایت بزرگ نشود.
+   */
+  var BACKUP_ROOT = '_پشتیبان';
+  var BACKUP_KEEP = 14;
+
+  function backupName(now) {
+    var p = J.unpack(J.today());
+    var hh = String(now.getHours()).padStart(2, '0');
+    var mm = String(now.getMinutes()).padStart(2, '0');
+    var day = p ? (p.jy + '-' + J.pad2(p.jm) + '-' + J.pad2(p.jd))
+      : now.toISOString().slice(0, 10);
+    return 'parvandeha-' + day + '-' + hh + mm + '.json';
+  }
+
+  function backupFolder(create) {
+    return requireRoot().then(function (r) {
+      return r.getDirectoryHandle(BACKUP_ROOT, { create: !!create });
+    });
+  }
+
+  /** فهرست پشتیبان‌های موجود، تازه‌ترین اول */
+  function backups() {
+    return backupFolder(false).then(listDir).then(function (entries) {
+      return entries
+        .filter(function (e) { return e.kind === 'file' && /\.json$/.test(e.name); })
+        .map(function (e) { return e.name; })
+        .sort()
+        .reverse();
+    }).catch(function () { return []; });
+  }
+
+  /**
+   * یک پشتیبان می‌گیرد.
+   * force=false یعنی «اگر امروز گرفته‌ای، دوباره نگیر».
+   */
+  function backupNow(force) {
+    if (!root) return Promise.resolve(null);
+    var now = new Date();
+    var name = backupName(now);
+    var today = name.slice(0, name.lastIndexOf('-'));
+    return backups().then(function (existing) {
+      if (!force && existing.some(function (n) { return n.indexOf(today) === 0; })) {
+        return null;                       // امروز گرفته شده
+      }
+      return w.Vault.sealSnapshot(w.Store.snapshot()).then(function (payload) {
+        return backupFolder(true).then(function (dir) {
+          return dir.getFileHandle(name, { create: true })
+            .then(function (fh) { return fh.createWritable(); })
+            .then(function (wr) {
+              return wr.write(new Blob([JSON.stringify(payload)],
+                { type: 'application/json' })).then(function () { return wr.close(); });
+            })
+            .then(function () { return trimBackups(dir); })
+            .then(function () {
+              w.Store.metaSet('lastBackupAt', now.toISOString());
+              return name;
+            });
+        });
+      });
+    }).catch(function (err) {
+      console.warn('پشتیبان خودکار گرفته نشد:', err && err.message);
+      return null;
+    });
+  }
+
+  function trimBackups(dir) {
+    return listDir(dir).then(function (entries) {
+      var files = entries
+        .filter(function (e) { return e.kind === 'file' && /\.json$/.test(e.name); })
+        .map(function (e) { return e.name; })
+        .sort();
+      var extra = files.slice(0, Math.max(0, files.length - BACKUP_KEEP));
+      return extra.reduce(function (chain, n) {
+        return chain.then(function () {
+          return dir.removeEntry(n).catch(function () { /* مهم نیست */ });
+        });
+      }, Promise.resolve());
+    });
+  }
+
+  function backupStatus() {
+    return {
+      folder: BACKUP_ROOT,
+      keep: BACKUP_KEEP,
+      lastAt: w.Store.metaGet('lastBackupAt', '')
+    };
+  }
+
   /**
    * ویرایش فرادادهٔ یک سند — بدون دست زدن به خود فایل.
    * نوع، دسته، جهت، تاریخ، شمارهٔ نامه، عنوان و متن نامه اینجا عوض می‌شوند.
@@ -11113,7 +11349,9 @@ else if (typeof exports === 'object'){
     FIELD_KIND: FIELD_KIND, kindForField: kindForField, ofKind: ofKind,
     categoryOf: categoryOf, categoryLabel: categoryLabel,
     directionOf: directionOf, directionLabel: directionLabel,
-    updateMeta: updateMeta, bundle: bundle
+    updateMeta: updateMeta, bundle: bundle,
+    backupNow: backupNow, backups: backups, backupStatus: backupStatus,
+    BACKUP_ROOT: BACKUP_ROOT, BACKUP_KEEP: BACKUP_KEEP
   };
 })(window);
 
@@ -14873,10 +15111,16 @@ else if (typeof exports === 'object'){
           return file.text().then(function (text) {
             var payload = JSON.parse(text);
             if (!payload.encrypted) return payload;
-            // نسخهٔ پشتیبان رمزشده: رمزِ زمانِ ساختنش لازم است
+            /* نسخهٔ پشتیبان رمزشده: رمزِ زمانِ ساختنش لازم است — و همان رمز
+               روی این مرورگر هم می‌نشیند. وگرنه پشتیبانِ رمزدار را در
+               مرورگر تازه بازیابی می‌کردید و داده بی‌رمز و باز می‌ماند. */
             return w.UILock.askBackupPassword(file.name).then(function (pw) {
               if (!pw) return null;
-              return w.Vault.openSnapshot(payload, pw).catch(function () {
+              return w.Vault.openAndAdopt(payload, pw).then(function (res) {
+                return w.Store.metaSet('security', res.config).then(function () {
+                  return res.data;
+                });
+              }).catch(function () {
                 throw new Error('رمز نادرست است یا فایل آسیب دیده');
               });
             });
@@ -15277,6 +15521,33 @@ else if (typeof exports === 'object'){
           })
         ]));
       }
+      /* پشتیبان خودکار: رمزنگاری محرمانگی را نگه می‌دارد، نه موجودیت را.
+         هر کسی که به فایل برسد می‌تواند پاکش کند؛ جوابش پشتیبان است. */
+      var bk = w.Docs.backupStatus();
+      var dst = w.Docs.status();
+      storageInfo.appendChild(el('div.info-note', null, [
+        el('b', { text: 'پشتیبان خودکار: ' }),
+        el('span', {
+          text: dst.linked
+            ? 'روزی یک بار، داخل پوشهٔ مستندات در زیرپوشهٔ «' + bk.folder +
+              '». آخرین ' + w.U.toFaDigits(bk.keep) + ' نسخه نگه داشته می‌شود' +
+              (bk.lastAt ? ' — آخرین‌بار ' + J.stamp(new Date(bk.lastAt)) : '') + '.'
+            : 'تا پوشهٔ مستندات وصل نشده، پشتیبان خودکار گرفته نمی‌شود. ' +
+              'فعلاً دستی «نسخهٔ پشتیبان» بگیرید.'
+        })
+      ]));
+      if (dst.linked) {
+        storageInfo.appendChild(el('button.btn.small.ghost', {
+          type: 'button', text: 'همین حالا پشتیبان بگیر',
+          onclick: function () {
+            w.Docs.backupNow(true).then(function (name) {
+              w.U.toast(name ? 'پشتیبان «' + name + '» ساخته شد.'
+                : 'پشتیبان گرفته نشد.', name ? 'good' : 'bad');
+              refreshStorage();
+            });
+          }
+        }));
+      }
     }
     refreshStorage();
     body.appendChild(el('section.set-block', null, [
@@ -15580,6 +15851,166 @@ else if (typeof exports === 'object'){
     importExcel: importExcel, settingsDialog: settingsDialog, mapColumns: mapColumns,
     importDialog: importDialog, wipeDialog: wipeDialog
   };
+})(window);
+
+</script>
+<script>
+/* ==== js/ui.start.js ==== */
+/*
+ * صفحهٔ شروع — وقتی هیچ دیتابیسی باز نیست.
+ *
+ * تا امروز برنامه با هر بار باز شدن در یک مرورگرِ تازه، ۳۱ پروندهٔ نمونه
+ * می‌ساخت و بی‌رمز بالا می‌آمد. برای کسی که فایل را در مرورگر دیگری باز
+ * می‌کرد، این یعنی «برنامه بدون هیچ احراز هویتی باز شد» — حتی اگر آنچه
+ * می‌دید دادهٔ نمونه بود نه پروندهٔ واقعی.
+ *
+ * حالا برنامه بدون دیتابیس بالا نمی‌آید: اول می‌پرسد دیتابیس کجاست.
+ * و چون رمز و نمکش داخل خودِ فایل دیتابیس‌اند، به‌محض باز شدنِ فایلِ
+ * رمزدار، رمز پرسیده می‌شود — در هر مرورگر و هر رایانه‌ای.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el;
+  var overlay = null;
+
+  function hide() {
+    if (overlay) { overlay.remove(); overlay = null; }
+  }
+
+  function isShowing() { return !!overlay; }
+
+  /**
+   * show(onReady) — صفحه را نشان می‌دهد و پس از آماده شدن دیتابیس،
+   * onReady() را صدا می‌زند.
+   */
+  function show(onReady) {
+    hide();
+    var st = w.Store.status();
+    var msg = el('div.start-msg');
+
+    function fail(e) {
+      if (e && e.name === 'AbortError') return;
+      msg.textContent = e && e.message ? e.message : String(e);
+      msg.className = 'start-msg bad';
+    }
+
+    function ready() {
+      hide();
+      onReady();
+    }
+
+    function option(icon, title, hint, onclick, primary) {
+      return el('button.start-opt' + (primary ? '.primary' : ''), {
+        type: 'button', onclick: onclick
+      }, [
+        el('span.start-opt-icon', { html: w.Mobile.icon(icon) }),
+        el('span.start-opt-text', null, [
+          el('b', { text: title }),
+          el('span', { text: hint })
+        ])
+      ]);
+    }
+
+    var opts = el('div.start-opts');
+
+    if (st.canLink) {
+      opts.appendChild(option('db', 'باز کردن دیتابیس موجود',
+        'فایلی که از قبل دارید. اگر رمز داشته باشد، رمزش پرسیده می‌شود.',
+        function () {
+          msg.textContent = 'در حال باز کردن…';
+          msg.className = 'start-msg';
+          w.Store.openFile().then(function (res) {
+            w.U.toast(w.U.toFaDigits(res.cases) + ' پرونده از فایل خوانده شد.', 'good');
+            ready();
+          }).catch(fail);
+        }, true));
+
+      opts.appendChild(option('plus', 'ساخت دیتابیس تازه',
+        'یک فایل خالی روی دیسک؛ از این پس همه‌چیز آنجا ذخیره می‌شود.',
+        function () {
+          msg.textContent = 'در حال ساخت…';
+          msg.className = 'start-msg';
+          w.Store.linkFile().then(function () { ready(); }).catch(fail);
+        }));
+    } else {
+      opts.appendChild(el('div.start-note', null, [
+        el('b', { text: 'این مرورگر نمی‌تواند روی فایل دیسک بنویسد. ' }),
+        el('span', {
+          text: 'ذخیرهٔ مستقیم روی فایل فقط در کروم و اج (روی رایانه) کار ' +
+            'می‌کند. اینجا می‌توانید از نسخهٔ پشتیبان بازیابی کنید، ولی ' +
+            'داده‌ها فقط در همین مرورگر می‌مانند.'
+        })
+      ]));
+    }
+
+    opts.appendChild(option('backup', 'بازیابی از نسخهٔ پشتیبان',
+      'فایل JSON پشتیبان. در همهٔ مرورگرها کار می‌کند.',
+      function () { restore(ready, fail); }));
+
+    var body = el('div.start-box', null, [
+      el('div.start-logo', { text: '🗂' }),
+      el('h1', { text: 'دیتابیسی باز نیست' }),
+      el('p.start-lead', {
+        text: 'این برنامه داده‌هایش را در یک فایل روی دیسک شما نگه می‌دارد. ' +
+          'بگویید آن فایل کجاست تا بالا بیاید.'
+      }),
+      opts,
+      msg,
+      el('p.start-foot', {
+        text: 'اگر دیتابیس رمز داشته باشد، بدون رمز باز نمی‌شود — در هیچ ' +
+          'مرورگری. رمز داخل خودِ فایل است، نه در این مرورگر.'
+      })
+    ]);
+
+    /* راه گریز برای دادهٔ نمونه. عمداً کم‌رنگ و با برچسب صریح: کسی که
+       می‌خواهد برنامه را ببیند لازمش دارد، ولی نباید مسیر پیش‌فرض باشد. */
+    body.appendChild(el('button.linkish.start-demo', {
+      type: 'button', text: 'ادامه با دادهٔ نمونه (بدون فایل، فقط برای آزمایش)',
+      onclick: function () {
+        w.Store.metaSet('demoMode', true).then(function () {
+          ready();
+        });
+      }
+    }));
+
+    overlay = el('div.start-screen', null, [body]);
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  /** بازیابی از پشتیبان، بدون نیاز به اینکه برنامه بالا آمده باشد */
+  function restore(ready, fail) {
+    var input = el('input', { type: 'file', accept: '.json,application/json' });
+    input.style.display = 'none';
+    input.addEventListener('change', function () {
+      var file = (input.files || [])[0];
+      input.remove();
+      if (!file) return;
+      file.text().then(function (text) {
+        var payload = JSON.parse(text);
+        if (!w.Vault.isSealed(payload)) return payload;
+        return w.UILock.askBackupPassword(file.name).then(function (pw) {
+          if (!pw) return null;
+          return w.Vault.openAndAdopt(payload, pw).then(function (res) {
+            return w.Store.metaSet('security', res.config).then(function () {
+              return res.data;
+            });
+          });
+        });
+      }).then(function (snap) {
+        if (!snap) return null;
+        if (snap.app !== 'parvandeha') {
+          throw new Error('این فایل، پشتیبان این برنامه نیست');
+        }
+        return w.Store.restore(snap).then(ready);
+      }).catch(fail);
+    });
+    document.body.appendChild(input);
+    input.click();
+  }
+
+  w.UIStart = { show: show, hide: hide, isShowing: isShowing };
 })(window);
 
 </script>
@@ -19442,16 +19873,49 @@ else if (typeof exports === 'object'){
   }
 
   // ----------------------------------------------------------------- شروع
+  /**
+   * آیا باید صفحهٔ شروع بیاید؟
+   *
+   * وقتی نه داده‌ای هست، نه فایلی وصل است و نه فایلی از نشست قبل ذخیره
+   * شده. در این حالت ساختن خودکارِ دادهٔ نمونه، برنامه را بی‌رمز و
+   * بی‌صاحب بالا می‌آورد — همان چیزی که در مرورگر تازه دیده می‌شود.
+   */
+  function needsDatabase() {
+    var s = w.Store.status();
+    if (s.linked || s.hasStored) return false;
+    if (w.Store.metaGet('demoMode', false)) return false;
+    return !M.state.cases.length;
+  }
+
   function afterUnlock() {
     unlocking = true;
     return M.load().then(function () {
+      if (needsDatabase()) {
+        unlocking = false;
+        topBarNode.style.display = 'none';
+        if (tabBarNode) tabBarNode.style.display = 'none';
+        return w.UIStart.show(function () {
+          afterUnlock();
+        });
+      }
       if (!M.state.cases.length) {
         return M.seed().then(function (n) {
           if (n) w.U.toast(w.U.toFaDigits(n) + ' پروندهٔ نمونه از فایل اکسل وارد شد.', 'good');
           return M.load();
         });
       }
-    }).then(function () {
+      return null;
+    }).then(function (res) {
+      if (w.UIStart.isShowing()) return null;
+      return started();
+    }).catch(function (err) {
+      unlocking = false;
+      throw err;
+    });
+  }
+
+  function started() {
+    return Promise.resolve().then(function () {
       return w.Docs.load();
     }).then(function () {
       return w.Notes.load();
@@ -19466,6 +19930,10 @@ else if (typeof exports === 'object'){
       renderAccessBar();
       resetIdle();
       setTimeout(backupReminder, 2500);
+      // پشتیبان خودکار روزانه، اگر پوشهٔ مستندات وصل باشد
+      setTimeout(function () {
+        if (w.Docs.status().linked) w.Docs.backupNow(false);
+      }, 4000);
       var s = w.Store.status();
       if (s.mode === 'memory') {
         w.U.toast('مرورگر اجازهٔ ذخیره‌سازی نداده است؛ داده‌ها با بستن صفحه از بین می‌رود.', 'bad');
@@ -19578,6 +20046,8 @@ else if (typeof exports === 'object'){
       bindShortcuts();
       bindIdle();
       bindRouting();
+      // پرسیدن رمزِ یک فایل، کار رابط کاربری است نه لایهٔ داده
+      w.Store.onPasswordNeeded(w.UILock.askBackupPassword);
       if (w.Store.isLocked()) {
         topBarNode.style.display = 'none';
         tabBarNode.style.display = 'none';

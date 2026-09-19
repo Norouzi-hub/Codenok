@@ -6,6 +6,7 @@ const path = require('path');
 const { chromium } = require(process.env.PW || 'playwright');
 
 const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const bootApp = require('./boot');
 
 let failures = 0;
 function check(name, ok, extra) {
@@ -32,7 +33,7 @@ async function openList(page) {
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   page.on('dialog', d => d.accept());
 
-  await page.goto(APP);
+  await bootApp(page, APP);
   await openList(page);
 
   console.log('\n— یادداشت و پیگیری —');

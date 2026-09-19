@@ -327,10 +327,16 @@
           return file.text().then(function (text) {
             var payload = JSON.parse(text);
             if (!payload.encrypted) return payload;
-            // نسخهٔ پشتیبان رمزشده: رمزِ زمانِ ساختنش لازم است
+            /* نسخهٔ پشتیبان رمزشده: رمزِ زمانِ ساختنش لازم است — و همان رمز
+               روی این مرورگر هم می‌نشیند. وگرنه پشتیبانِ رمزدار را در
+               مرورگر تازه بازیابی می‌کردید و داده بی‌رمز و باز می‌ماند. */
             return w.UILock.askBackupPassword(file.name).then(function (pw) {
               if (!pw) return null;
-              return w.Vault.openSnapshot(payload, pw).catch(function () {
+              return w.Vault.openAndAdopt(payload, pw).then(function (res) {
+                return w.Store.metaSet('security', res.config).then(function () {
+                  return res.data;
+                });
+              }).catch(function () {
                 throw new Error('رمز نادرست است یا فایل آسیب دیده');
               });
             });
@@ -730,6 +736,33 @@
             }
           })
         ]));
+      }
+      /* پشتیبان خودکار: رمزنگاری محرمانگی را نگه می‌دارد، نه موجودیت را.
+         هر کسی که به فایل برسد می‌تواند پاکش کند؛ جوابش پشتیبان است. */
+      var bk = w.Docs.backupStatus();
+      var dst = w.Docs.status();
+      storageInfo.appendChild(el('div.info-note', null, [
+        el('b', { text: 'پشتیبان خودکار: ' }),
+        el('span', {
+          text: dst.linked
+            ? 'روزی یک بار، داخل پوشهٔ مستندات در زیرپوشهٔ «' + bk.folder +
+              '». آخرین ' + w.U.toFaDigits(bk.keep) + ' نسخه نگه داشته می‌شود' +
+              (bk.lastAt ? ' — آخرین‌بار ' + J.stamp(new Date(bk.lastAt)) : '') + '.'
+            : 'تا پوشهٔ مستندات وصل نشده، پشتیبان خودکار گرفته نمی‌شود. ' +
+              'فعلاً دستی «نسخهٔ پشتیبان» بگیرید.'
+        })
+      ]));
+      if (dst.linked) {
+        storageInfo.appendChild(el('button.btn.small.ghost', {
+          type: 'button', text: 'همین حالا پشتیبان بگیر',
+          onclick: function () {
+            w.Docs.backupNow(true).then(function (name) {
+              w.U.toast(name ? 'پشتیبان «' + name + '» ساخته شد.'
+                : 'پشتیبان گرفته نشد.', name ? 'good' : 'bad');
+              refreshStorage();
+            });
+          }
+        }));
       }
     }
     refreshStorage();

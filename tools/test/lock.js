@@ -6,6 +6,7 @@ const path = require('path');
 const { chromium } = require(process.env.PW || 'playwright');
 
 const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const bootApp = require('./boot');
 const PW = 'Komite@1405';
 
 const w = { toFa: n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]) };
@@ -61,7 +62,7 @@ async function openList(page) {
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   page.on('dialog', d => d.accept());
 
-  await page.goto(APP);
+  await bootApp(page, APP);
   await openList(page);
 
   console.log('\n— پیش از تعیین رمز —');
@@ -260,6 +261,17 @@ async function openList(page) {
 
   // «فایل تازه هم داده‌های قبلی را نشان می‌دهد» دیگر نباید رخ دهد
   await page.reload();
+  await page.waitForSelector('.start-screen', { timeout: 20000 });
+  const gate = await page.evaluate(() => ({
+    shown: !!document.querySelector('.start-screen'),
+    cases: window.Model.state.cases.length,
+    worklist: !!document.querySelector('.worklist')
+  }));
+  check('پس از پاک کردن، برنامه بدون دیتابیس بالا نمی‌آید',
+    gate.shown && !gate.worklist && gate.cases === 0,
+    gate.cases + ' پرونده');
+
+  await bootApp(page, APP);
   await openList(page);
   const fresh = await page.evaluate(() => ({
     locked: window.UILock.isShowing(),
@@ -267,7 +279,7 @@ async function openList(page) {
     encrypted: window.Store.status().encrypted,
     history: window.Model.state.history.length
   }));
-  check('پس از پاک کردن، برنامه از صفر بالا می‌آید',
+  check('پس از انتخاب «دادهٔ نمونه»، از صفر بالا می‌آید',
     !fresh.locked && !fresh.encrypted,
     fresh.cases + ' پرونده، رمز: ' + fresh.encrypted);
   check('داده‌های تازه فقط نمونهٔ اولیه است',

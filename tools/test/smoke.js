@@ -8,6 +8,7 @@ const os = require('os');
 const { chromium } = require(process.env.PW || 'playwright');
 
 const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const bootApp = require('./boot');
 const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'parvandeha-test-'));
 
 let failures = 0;
@@ -39,7 +40,7 @@ async function openList(page) {
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
 
   console.log('\n— بارگذاری —');
-  await page.goto(APP);
+  await bootApp(page, APP);
   await openList(page);
 
   const mode = await page.evaluate(() => window.Store.status().mode);

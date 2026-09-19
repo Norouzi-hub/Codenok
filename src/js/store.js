@@ -264,6 +264,11 @@
   // می‌شود و هنگام بازیابی، رمز نشست جاری اعمال می‌گردد.
   var HANDLE_KEYS = ['fileHandle', 'docsFolder', 'security'];
 
+  /* رابط کاربری، پرسیدن رمزِ یک فایل را اینجا وصل می‌کند. لایهٔ داده خودش
+     پنجره نمی‌سازد. */
+  var askPassword = null;
+  function onPasswordNeeded(fn) { askPassword = fn; }
+
   function snapshot() {
     return {
       app: 'parvandeha',
@@ -329,38 +334,27 @@
         return rememberHandle('fileHandle', handle);
       });
     }).then(function () {
-      return readFile();
-    }).then(function (snap) {
-      if (!snap || snap.app !== 'parvandeha') {
+      return readRaw();
+    }).then(function (payload) {
+      if (!payload || payload.app !== 'parvandeha') {
         throw new Error('این فایل، دیتابیس این برنامه نیست');
       }
-      // فایلِ انتخاب‌شده صراحتاً خواستهٔ کاربر است، پس بی‌قید‌وشرط می‌نشیند
-      mem.cases = {};
-      mem.history = {};
-      mem.docs = {};
-      mem.notes = {};
-      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
-      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
-      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
-      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
-      (snap.meta || []).forEach(function (m) {
-        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
-      });
-      return clearAll()
-        .then(function () { return put('cases', snap.cases || []); })
-        .then(function () { return put('history', snap.history || []); })
-        .then(function () {
-          return (snap.docs || []).length ? put('docs', snap.docs) : null;
-        })
-        .then(function () {
-          return (snap.notes || []).length ? put('notes', snap.notes) : null;
-        })
-        .then(function () {
-          var metas = (snap.meta || []).filter(function (m) {
-            return HANDLE_KEYS.indexOf(m.key) < 0;
-          });
-          return metas.length ? put('meta', metas) : null;
+      /* اگر فایل رمز دارد، رمزِ خودش پرسیده می‌شود — نه رمزِ این مرورگر.
+         قفل به داده بسته است، پس در هر مرورگر و هر رایانه‌ای می‌آید. */
+      if (!w.Vault.isSealed(payload)) {
+        w.Vault.clearPassword();
+        return metaSet('security', null).then(function () { return payload; });
+      }
+      if (!askPassword) throw new Error('این دیتابیس رمز دارد');
+      return askPassword(fileName).then(function (pw) {
+        if (!pw) throw new Error('بدون رمز، این دیتابیس باز نمی‌شود');
+        return w.Vault.openAndAdopt(payload, pw).then(function (res) {
+          return res.data;
         });
+      });
+    }).then(function (snap) {
+      // فایلِ انتخاب‌شده صراحتاً خواستهٔ کاربر است، پس بی‌قید‌وشرط می‌نشیند
+      return installSnapshot(snap);
     }).then(function () {
       emit();
       return { cases: Object.keys(mem.cases).length };
@@ -416,20 +410,34 @@
    * کردن فایل HTML یا پاک شدن دادهٔ مرورگر، کار از دست می‌رفت — درحالی‌که
    * فایل سرِ جایش بود. حالا برعکس است: هر وقت فایل وصل باشد، همان مبناست.
    */
-  function readFile() {
+  function readRaw() {
     if (!fileHandle) return Promise.resolve(null);
     return fileHandle.getFile()
       .then(function (f) { return f.text(); })
       .then(function (text) {
         if (!text || !text.trim()) return null;
-        var payload = JSON.parse(text);
-        return w.Vault.openSnapshot(payload);
+        return JSON.parse(text);
       })
       .catch(function (err) {
         saveError = 'خواندن فایل ناموفق بود: ' + (err.message || err);
         emit();
         return null;
       });
+  }
+
+  /** محتوای فایل، بازشده با کلیدی که همین حالا در دست است */
+  function readFile() {
+    return readRaw().then(function (payload) {
+      if (!payload) return null;
+      if (!w.Vault.isSealed(payload)) return payload;
+      // بستهٔ رمزدار را بدون رمز نمی‌شود باز کرد؛ فراخوان باید رمز بگیرد
+      return null;
+    });
+  }
+
+  /** آیا فایلِ وصل‌شده رمز دارد؟ */
+  function fileIsSealed() {
+    return readRaw().then(function (p) { return w.Vault.isSealed(p); });
   }
 
   /** چند رکورد دارد — برای مقایسهٔ فایل با انبار مرورگر */
@@ -467,6 +475,41 @@
    * انبار مرورگر خالی باشد، فایل بی‌چون‌وچرا می‌نشیند — همان حالتی که
    * کاربر فایل HTML را عوض کرده و مرورگر چیزی ندارد.
    */
+  /** یک snapshot را روی حافظه و انبار می‌نشاند */
+  function installSnapshot(snap) {
+    mem.cases = {};
+    mem.history = {};
+    mem.docs = {};
+    mem.notes = {};
+    (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+    (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+    (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+    (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
+    (snap.meta || []).forEach(function (m) {
+      if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
+    });
+    return clearAll()
+      .then(function () { return put('cases', snap.cases || []); })
+      .then(function () { return put('history', snap.history || []); })
+      .then(function () {
+        return (snap.docs || []).length ? put('docs', snap.docs) : null;
+      })
+      .then(function () {
+        return (snap.notes || []).length ? put('notes', snap.notes) : null;
+      })
+      .then(function () {
+        var metas = (snap.meta || []).filter(function (m) {
+          return HANDLE_KEYS.indexOf(m.key) < 0;
+        });
+        return metas.length ? put('meta', metas) : null;
+      })
+      .then(function () {
+        // رمزِ فایل، رمزِ این مرورگر هم می‌شود: قفل به داده بسته است نه به مرورگر
+        var cfg = w.Vault.getConfig();
+        return cfg ? metaSet('security', cfg) : null;
+      });
+  }
+
   function adoptFile() {
     return readFile().then(function (snap) {
       if (!snap || snap.app !== 'parvandeha') return false;
@@ -478,34 +521,8 @@
       var newer = !here || (theirs && (!mine || theirs > mine));
       if (!newer) return false;
       if (countOf(snap) < 0) return false;
-      mem.cases = {};
-      mem.history = {};
-      mem.docs = {};
-      mem.notes = {};
-      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
-      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
-      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
-      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
-      (snap.meta || []).forEach(function (m) {
-        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
-      });
       // انبار مرورگر فقط یک کَش است؛ با همان چیزی که از فایل آمد پر می‌شود
-      return clearAll()
-        .then(function () { return put('cases', snap.cases || []); })
-        .then(function () { return put('history', snap.history || []); })
-        .then(function () {
-          return (snap.docs || []).length ? put('docs', snap.docs) : null;
-        })
-        .then(function () {
-          return (snap.notes || []).length ? put('notes', snap.notes) : null;
-        })
-        .then(function () {
-          var metas = (snap.meta || []).filter(function (m) {
-            return HANDLE_KEYS.indexOf(m.key) < 0;
-          });
-          return metas.length ? put('meta', metas) : null;
-        })
-        .then(function () { return true; });
+      return installSnapshot(snap).then(function () { return true; });
     });
   }
 
@@ -702,6 +719,8 @@
     metaGet: metaGet, metaSet: metaSet, snapshot: snapshot, restore: restore,
     linkFile: linkFile, unlinkFile: unlinkFile, writeFile: writeFile,
     readFile: readFile, adoptFile: adoptFile, relinkFile: relinkFile,
+    fileIsSealed: fileIsSealed, onPasswordNeeded: onPasswordNeeded,
+    installSnapshot: installSnapshot,
     openFile: openFile,
     hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,

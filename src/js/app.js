@@ -680,16 +680,49 @@
   }
 
   // ----------------------------------------------------------------- شروع
+  /**
+   * آیا باید صفحهٔ شروع بیاید؟
+   *
+   * وقتی نه داده‌ای هست، نه فایلی وصل است و نه فایلی از نشست قبل ذخیره
+   * شده. در این حالت ساختن خودکارِ دادهٔ نمونه، برنامه را بی‌رمز و
+   * بی‌صاحب بالا می‌آورد — همان چیزی که در مرورگر تازه دیده می‌شود.
+   */
+  function needsDatabase() {
+    var s = w.Store.status();
+    if (s.linked || s.hasStored) return false;
+    if (w.Store.metaGet('demoMode', false)) return false;
+    return !M.state.cases.length;
+  }
+
   function afterUnlock() {
     unlocking = true;
     return M.load().then(function () {
+      if (needsDatabase()) {
+        unlocking = false;
+        topBarNode.style.display = 'none';
+        if (tabBarNode) tabBarNode.style.display = 'none';
+        return w.UIStart.show(function () {
+          afterUnlock();
+        });
+      }
       if (!M.state.cases.length) {
         return M.seed().then(function (n) {
           if (n) w.U.toast(w.U.toFaDigits(n) + ' پروندهٔ نمونه از فایل اکسل وارد شد.', 'good');
           return M.load();
         });
       }
-    }).then(function () {
+      return null;
+    }).then(function (res) {
+      if (w.UIStart.isShowing()) return null;
+      return started();
+    }).catch(function (err) {
+      unlocking = false;
+      throw err;
+    });
+  }
+
+  function started() {
+    return Promise.resolve().then(function () {
       return w.Docs.load();
     }).then(function () {
       return w.Notes.load();
@@ -704,6 +737,10 @@
       renderAccessBar();
       resetIdle();
       setTimeout(backupReminder, 2500);
+      // پشتیبان خودکار روزانه، اگر پوشهٔ مستندات وصل باشد
+      setTimeout(function () {
+        if (w.Docs.status().linked) w.Docs.backupNow(false);
+      }, 4000);
       var s = w.Store.status();
       if (s.mode === 'memory') {
         w.U.toast('مرورگر اجازهٔ ذخیره‌سازی نداده است؛ داده‌ها با بستن صفحه از بین می‌رود.', 'bad');
@@ -816,6 +853,8 @@
       bindShortcuts();
       bindIdle();
       bindRouting();
+      // پرسیدن رمزِ یک فایل، کار رابط کاربری است نه لایهٔ داده
+      w.Store.onPasswordNeeded(w.UILock.askBackupPassword);
       if (w.Store.isLocked()) {
         topBarNode.style.display = 'none';
         tabBarNode.style.display = 'none';

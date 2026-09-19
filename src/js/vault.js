@@ -146,6 +146,11 @@
     });
   }
 
+  /** آیا این بسته رمز دارد؟ (بدون اینکه بازش کنیم) */
+  function isSealed(payload) {
+    return !!(payload && payload.encrypted && payload.kdf && payload.kdf.salt);
+  }
+
   /** باز کردن بستهٔ رمزشده با رمزی که کاربر می‌دهد */
   function openSnapshot(payload, password) {
     if (!payload || !payload.encrypted) return Promise.resolve(payload);
@@ -155,12 +160,42 @@
       });
   }
 
+  /**
+   * باز کردن بسته و **پذیرفتن رمزِ خودش**.
+   *
+   * این تفاوت ریز، همان چیزی است که امنیت را واقعی می‌کند: رمز و نمکش
+   * داخل خودِ فایل‌اند، نه در انبار این مرورگر. پس هر جا فایل باز شود —
+   * مرورگر دیگر، رایانهٔ دیگر — همان رمز را می‌خواهد. تا امروز قفل به
+   * مرورگر بسته بود و با مرورگر تازه، برنامه بی‌رمز بالا می‌آمد.
+   *
+   * خروجی: { data, config } یا رد شدن با پیام «رمز نادرست».
+   */
+  function openAndAdopt(payload, password) {
+    if (!isSealed(payload)) return Promise.resolve({ data: payload, config: null });
+    var next = {
+      salt: payload.kdf.salt,
+      iterations: payload.kdf.iterations,
+      verifier: payload.verifier
+    };
+    return deriveKey(password, next.salt, next.iterations).then(function (k) {
+      return decryptWith(k, { iv: payload.iv, ct: payload.data })
+        .then(function (data) {
+          config = next;
+          key = k;
+          return { data: data, config: next };
+        });
+    }).catch(function () {
+      throw new Error('رمز نادرست است');
+    });
+  }
+
   w.Vault = {
     available: available, configure: configure, isEnabled: isEnabled,
     isUnlocked: isUnlocked, needsPassword: needsPassword,
     unlock: unlock, lock: lock, setPassword: setPassword,
     clearPassword: clearPassword, sealRecord: sealRecord, openRecord: openRecord,
     sealSnapshot: sealSnapshot, openSnapshot: openSnapshot,
+    isSealed: isSealed, openAndAdopt: openAndAdopt,
     getConfig: function () { return config; }
   };
 })(window);

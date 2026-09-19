@@ -8,6 +8,7 @@ const path = require('path');
 const { chromium } = require(process.env.PW || 'playwright');
 
 const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const bootApp = require('./boot');
 
 let failures = 0;
 function check(name, ok, extra) {
@@ -27,9 +28,7 @@ function check(name, ok, extra) {
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   page.on('dialog', d => d.accept());
 
-  await page.goto(APP);
-  await page.waitForSelector('.worklist', { timeout: 20000 });
-  await page.waitForTimeout(800);
+  await bootApp(page, APP);
 
   console.log('\n— وضعیت ذخیره —');
   await page.evaluate(() => window.App.goList());

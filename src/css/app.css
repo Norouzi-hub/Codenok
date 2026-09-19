@@ -2769,6 +2769,92 @@ select.input { cursor: pointer; }
   .access-bar { flex-wrap: wrap; margin-inline: 12px; }
 }
 
+/* ================================================================
+   صفحهٔ شروع — وقتی دیتابیسی باز نیست
+   ----------------------------------------------------------------
+   بالاتر از صفحهٔ قفل نیست، پایین‌تر هم نیست: این دو هیچ‌وقت با هم
+   نمی‌آیند. قفل یعنی «دیتابیس هست، رمزش را بده»؛ این یعنی «دیتابیسی
+   نیست، بگو کجاست».
+   ================================================================ */
+.start-screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-lock);
+  background:
+    radial-gradient(900px 520px at 80% -10%, rgba(166, 116, 27, .22), transparent 60%),
+    linear-gradient(165deg, var(--ink-800), var(--ink-900) 60%, #10121F);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+}
+.start-box {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px 26px 20px;
+  width: min(520px, 100%);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .3);
+  animation: modal-in .24s cubic-bezier(.2, .8, .3, 1);
+}
+.start-logo { font-size: 32px; line-height: 1; text-align: center; }
+.start-box h1 { font-size: 19px; margin: 10px 0 6px; text-align: center; }
+.start-lead {
+  margin: 0 0 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.9;
+}
+.start-opts { display: grid; gap: 8px; }
+.start-opt {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: start;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color .14s, background .14s, transform .1s;
+}
+.start-opt:hover { border-color: var(--brass); background: var(--paper); }
+.start-opt:active { transform: scale(.99); }
+.start-opt.primary { border-color: var(--brass); background: var(--brass-soft); }
+.start-opt-icon { line-height: 0; color: var(--brass-ink); flex: 0 0 auto; }
+.start-opt-icon svg { width: 20px; height: 20px; }
+.start-opt-text { display: grid; gap: 2px; min-width: 0; }
+.start-opt-text b { font-size: 13.5px; }
+.start-opt-text span { font-size: 11.5px; color: var(--muted); line-height: 1.7; }
+
+.start-note {
+  padding: 10px 12px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--brass-ink);
+}
+.start-msg { min-height: 18px; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+.start-msg.bad { color: var(--cinnabar); }
+.start-foot {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.9;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 11px;
+}
+.start-demo {
+  display: block;
+  margin: 10px auto 0;
+  font-size: 11.5px;
+  color: var(--ink-400);
+}
+
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
