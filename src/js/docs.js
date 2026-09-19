@@ -30,6 +30,64 @@
 
   var PERSON_ROOT = '_مدارک اشخاص';
 
+  /*
+   * دستهٔ سند از روی نوعش درمی‌آید، نه با پرسیدن دوباره از کاربر: کسی که
+   * نوع را انتخاب کرده، دسته را هم انتخاب کرده. دسته‌ها کم و درشت‌اند تا
+   * فهرست مستندات با چند بخش خوانا تمام شود، نه با بیست عنوان ریز.
+   */
+  var CATEGORIES = [
+    { key: 'letters', label: 'مکاتبات' },
+    { key: 'report', label: 'گزارش و مستندات تخلف' },
+    { key: 'identity', label: 'مدارک هویتی و شغلی' },
+    { key: 'defense', label: 'دفاعیات و استعلام' },
+    { key: 'verdict', label: 'رأی و ابلاغ' },
+    { key: 'other', label: 'سایر' }
+  ];
+
+  var KIND_CATEGORY = {
+    'نامهٔ وارده': 'letters', 'نامهٔ صادره': 'letters',
+    'نامهٔ رفع نواقص': 'letters', 'نامهٔ پیگیری دفاعیات': 'letters',
+    'نامهٔ حضور در جلسهٔ دفاع': 'letters', 'دعوت‌نامهٔ جلسه': 'letters',
+    'گزارش بازرسی': 'report', 'مدارک تکمیلی': 'report',
+    'حکم کارگزینی': 'identity', 'مدارک هویتی': 'identity',
+    'دفاعیهٔ کتبی': 'defense', 'استعلام حراست': 'defense', 'پاسخ حراست': 'defense',
+    'صورت‌جلسهٔ کمیته': 'verdict', 'رأی کمیته': 'verdict',
+    'نامهٔ ابلاغ رأی': 'verdict', 'بازگشت ابلاغ': 'verdict', 'نتیجهٔ ابلاغ': 'verdict'
+  };
+
+  /*
+   * جهت نامه — وارده، صادره، یا هیچ‌کدام. این از «نوع سند» جداست: نوع
+   * می‌گوید چه سندی است، جهت می‌گوید از بیرون آمده یا از اینجا رفته. برای
+   * نوع‌هایی که جهتشان معلوم است حدس زده می‌شود و کاربر می‌تواند عوضش کند؛
+   * برای مدرکی که اصلاً نامه نیست (شناسنامه، حکم) جهت خالی می‌ماند.
+   */
+  var DIRECTIONS = [
+    { key: '', label: 'بدون جهت (مدرک)' },
+    { key: 'in', label: 'وارده' },
+    { key: 'out', label: 'صادره' }
+  ];
+
+  var KIND_DIRECTION = {
+    'نامهٔ وارده': 'in', 'گزارش بازرسی': 'in', 'دفاعیهٔ کتبی': 'in',
+    'پاسخ حراست': 'in', 'بازگشت ابلاغ': 'in', 'نتیجهٔ ابلاغ': 'in',
+    'نامهٔ صادره': 'out', 'نامهٔ رفع نواقص': 'out', 'دعوت‌نامهٔ جلسه': 'out',
+    'نامهٔ پیگیری دفاعیات': 'out', 'نامهٔ حضور در جلسهٔ دفاع': 'out',
+    'استعلام حراست': 'out', 'نامهٔ ابلاغ رأی': 'out'
+  };
+
+  function categoryOf(kind) { return KIND_CATEGORY[kind] || 'other'; }
+  function directionOf(kind) { return KIND_DIRECTION[kind] || ''; }
+
+  function categoryLabel(key) {
+    var found = CATEGORIES.filter(function (c) { return c.key === key; })[0];
+    return found ? found.label : 'سایر';
+  }
+
+  function directionLabel(key) {
+    var found = DIRECTIONS.filter(function (d) { return d.key === key; })[0];
+    return found && key ? found.label : '';
+  }
+
   /** نوع سند → مرحلهٔ گردش‌کار، برای نشاندن سند در تایم‌لاین */
   var KIND_STAGE = {
     'نامهٔ وارده': 'intake', 'گزارش بازرسی': 'intake',
@@ -242,7 +300,10 @@
     var rec = M.get(caseId);
     if (!rec) return;
     rec._docText = (byCase[caseId] || []).map(function (d) {
-      return [d.kind, d.title, d.letterNo, d.fileName].filter(Boolean).join(' ');
+      // متن نامه هم جستجو می‌شود؛ همین است که «آن نامه‌ای که نوشته بود…»
+      // را بدون باز کردن تک‌تک فایل‌ها پیدا می‌کند.
+      return [d.kind, d.title, d.letterNo, d.body, d.fileName]
+        .filter(Boolean).join(' ');
     }).join(' ');
     M.reindex(rec);
   }
@@ -300,8 +361,11 @@
         fileName: name,
         originalName: file.name,
         kind: meta.kind || 'سایر',
+        category: meta.category || categoryOf(meta.kind),
+        direction: meta.direction == null ? directionOf(meta.kind) : meta.direction,
         title: meta.title || '',
         letterNo: meta.letterNo || '',
+        body: meta.body || '',
         docDate: meta.docDate || J.today(),
         stage: KIND_STAGE[meta.kind] || '',
         size: file.size,
@@ -354,7 +418,11 @@
         folderName: PERSON_ROOT + '/' + personFolderNameFor(person),
         fileName: name, originalName: file.name,
         kind: meta.kind || 'مدارک هویتی', title: meta.title || '',
-        letterNo: meta.letterNo || '', docDate: meta.docDate || J.today(),
+        category: meta.category || categoryOf(meta.kind || 'مدارک هویتی'),
+        direction: meta.direction == null
+          ? directionOf(meta.kind || 'مدارک هویتی') : meta.direction,
+        letterNo: meta.letterNo || '', body: meta.body || '',
+        docDate: meta.docDate || J.today(),
         stage: '', size: file.size, mime: file.type || '',
         version: 1, superseded: false,
         addedAt: new Date().toISOString(), addedAtJalali: J.stamp(),
@@ -397,6 +465,9 @@
         id: w.U.uid(), chain: oldDoc.chain, caseId: rec.id, caseNo: rec.caseNo || '',
         folderName: rec.docFolder, fileName: name, originalName: file.name,
         kind: meta.kind, title: meta.title, letterNo: meta.letterNo,
+        category: oldDoc.category || categoryOf(meta.kind),
+        direction: oldDoc.direction == null ? directionOf(meta.kind) : oldDoc.direction,
+        body: meta.body == null ? (oldDoc.body || '') : meta.body,
         docDate: meta.docDate, stage: oldDoc.stage,
         size: file.size, mime: file.type || '', version: nextVersion,
         superseded: false, addedAt: new Date().toISOString(),
@@ -497,7 +568,10 @@
         folderName: rec.docFolder || folderNameFor(rec), fileName: entry.name,
         originalName: entry.name,
         kind: (meta && meta.kind) || 'سایر', title: (meta && meta.title) || '',
-        letterNo: (meta && meta.letterNo) || '',
+        category: (meta && meta.category) || categoryOf(meta && meta.kind),
+        direction: (meta && meta.direction != null)
+          ? meta.direction : directionOf(meta && meta.kind),
+        letterNo: (meta && meta.letterNo) || '', body: (meta && meta.body) || '',
         docDate: (meta && meta.docDate) || J.today(),
         stage: KIND_STAGE[(meta && meta.kind)] || '',
         size: file.size, mime: file.type || '', version: 1, superseded: false,
@@ -565,6 +639,82 @@
     return M.state.lists.DocKinds || KINDS_DEFAULT;
   }
 
+  /**
+   * ویرایش فرادادهٔ یک سند — بدون دست زدن به خود فایل.
+   * نوع، دسته، جهت، تاریخ، شمارهٔ نامه، عنوان و متن نامه اینجا عوض می‌شوند.
+   */
+  function updateMeta(doc, patch) {
+    var before = { kind: doc.kind, direction: doc.direction, letterNo: doc.letterNo };
+    ['kind', 'category', 'direction', 'title', 'letterNo', 'body', 'docDate']
+      .forEach(function (k) {
+        if (patch[k] !== undefined) doc[k] = patch[k];
+      });
+    if (patch.kind !== undefined) {
+      doc.stage = KIND_STAGE[doc.kind] || '';
+      // دسته و جهت پیروِ نوع‌اند؛ اگر کاربر خودش نگفته، با نوع تازه به‌روز شوند
+      if (patch.category === undefined) doc.category = categoryOf(doc.kind);
+      if (patch.direction === undefined) doc.direction = directionOf(doc.kind);
+    }
+    indexDocs();
+    return persist([doc]).then(function () {
+      var rec = doc.caseId ? M.get(doc.caseId) : null;
+      if (rec && (before.kind !== doc.kind || before.letterNo !== doc.letterNo ||
+        before.direction !== doc.direction)) {
+        M.addHistory('doc-edit', rec, [], 'ویرایش مشخصات سند «' + doc.fileName +
+          '» — نوع: ' + doc.kind + (directionLabel(doc.direction)
+            ? '، ' + directionLabel(doc.direction) : ''));
+      }
+      return doc;
+    });
+  }
+
+  /**
+   * بستهٔ زیپ از چند سند.
+   *
+   * فایل‌ها با نام فارسی خودشان داخل زیپ می‌نشینند (نویسندهٔ ZIP پرچم UTF-8
+   * می‌زند) و کنارشان یک «فهرست.txt» می‌آید تا بدون باز کردن تک‌تک فایل‌ها
+   * معلوم باشد هر کدام چیست. اسنادی که فایلشان پیدا نشود، در فهرست با
+   * نشانهٔ «یافت نشد» می‌آیند و بقیهٔ بسته سالم ساخته می‌شود.
+   */
+  function bundle(list, title) {
+    var files = [], missing = [], used = {};
+    var enc = new TextEncoder();
+
+    return list.reduce(function (chain, doc) {
+      return chain.then(function () {
+        return readFile(doc).then(function (file) {
+          return file.arrayBuffer().then(function (buf) {
+            var name = doc.fileName;
+            // دو سند هم‌نام (یکی از پرونده، یکی از مدارک شخص) روی هم نیفتند
+            while (used[name]) {
+              var parts = splitExt(name);
+              name = parts.base + '-۲' + parts.ext;
+            }
+            used[name] = true;
+            files.push({ name: name, data: new Uint8Array(buf) });
+          });
+        }).catch(function () { missing.push(doc); });
+      });
+    }, Promise.resolve()).then(function () {
+      var lines = ['فهرست مدارک — ' + (title || '') , J.stamp(), ''];
+      list.forEach(function (d, i) {
+        lines.push(w.U.toFaDigits(i + 1) + ') ' + d.kind +
+          (directionLabel(d.direction) ? ' (' + directionLabel(d.direction) + ')' : '') +
+          (d.letterNo ? ' — شمارهٔ ' + d.letterNo : '') +
+          (d.docDate ? ' — ' + J.format(d.docDate) : '') +
+          (d.title ? ' — ' + d.title : '') +
+          '\n     فایل: ' + d.fileName +
+          (missing.indexOf(d) >= 0 ? '   ← یافت نشد' : ''));
+      });
+      files.push({ name: 'فهرست.txt', data: enc.encode(lines.join('\n') + '\n') });
+      return {
+        blob: w.XLSX.zip(files, 'application/zip'),
+        count: files.length - 1,
+        missing: missing.length
+      };
+    });
+  }
+
   function load() {
     return w.Store.getAll('docs').then(function (list) {
       docs = list || [];
@@ -620,6 +770,10 @@
     personFolderNameFor: personFolderNameFor,
     folderMismatch: folderMismatch, folderNameFor: folderNameFor,
     fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
-    indexDocs: indexDocs, clearMemory: clearMemory
+    indexDocs: indexDocs, clearMemory: clearMemory,
+    CATEGORIES: CATEGORIES, DIRECTIONS: DIRECTIONS,
+    categoryOf: categoryOf, categoryLabel: categoryLabel,
+    directionOf: directionOf, directionLabel: directionLabel,
+    updateMeta: updateMeta, bundle: bundle
   };
 })(window);

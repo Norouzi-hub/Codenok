@@ -259,6 +259,45 @@
       rec.noticeResultDate || rec.noticeLetterDate, limits.archive);
   }
 
+  /*
+   * از هر اقدام، یک دکمه درمی‌آید.
+   *
+   * تا امروز آلارم فقط می‌گفت «بارگذاری آخرین حکم» و کاربر باید خودش
+   * می‌رفت تب مستندات، فایل را پیدا می‌کرد و نوعش را انتخاب می‌کرد. حالا
+   * همان جمله دکمه است و مستقیم همان کار را باز می‌کند.
+   *
+   * سه جور کار داریم:
+   *   upload — بارگذاری سند، با نوعِ از پیش انتخاب‌شده
+   *   form   — ساختن یکی از فرم‌های اداری
+   *   field  — رفتن به همان فیلدِ تاریخ در فرم پرونده
+   */
+  var CTA = {
+    intake: { type: 'upload', kind: 'نامهٔ وارده', label: 'بارگذاری نامهٔ وارده' },
+    assign: { type: 'field', field: 'deliveryDate', label: 'ثبت تاریخ ارجاع' },
+    decree: { type: 'upload', kind: 'حکم کارگزینی', label: 'بارگذاری آخرین حکم' },
+    defect: { type: 'upload', kind: 'نامهٔ رفع نواقص', label: 'بارگذاری رفع نواقص' },
+    inquiry: { type: 'upload', kind: 'پاسخ حراست', label: 'بارگذاری پاسخ حراست' },
+    invite: { type: 'upload', kind: 'دعوت‌نامهٔ جلسه', label: 'بارگذاری نامهٔ دعوت' },
+    defense: { type: 'upload', kind: 'دفاعیهٔ کتبی', label: 'بارگذاری دفاعیه' },
+    chase: {
+      type: 'upload', kind: 'نامهٔ پیگیری دفاعیات',
+      label: 'بارگذاری نامهٔ پیگیری'
+    },
+    complete: { type: 'upload', kind: 'مدارک تکمیلی', label: 'بارگذاری مدارک تکمیلی' },
+    hearing: { type: 'field', field: 'committeeDate', label: 'ثبت تاریخ جلسه' },
+    hearingLetter: {
+      type: 'upload', kind: 'نامهٔ حضور در جلسهٔ دفاع',
+      label: 'بارگذاری نامهٔ حضور'
+    },
+    verdict: { type: 'form', form: 'verdict', label: 'ساخت فرم رأی' },
+    sign: { type: 'field', field: 'verdictSignedDate', label: 'ثبت تاریخ امضا' },
+    notice: { type: 'form', form: 'notice', label: 'ساخت ابلاغ رأی' },
+    result: { type: 'upload', kind: 'نتیجهٔ ابلاغ', label: 'بارگذاری نتیجهٔ ابلاغ' },
+    archive: { type: 'field', field: 'archiveDate', label: 'ثبت تاریخ بایگانی' }
+  };
+
+  function cta(action) { return CTA[action && action.key] || null; }
+
   /** «منتظر ما» در برابر «منتظر دیگران» */
   var OURS = {
     intake: 1, assign: 1, decree: 1, invite: 1, complete: 1,
@@ -394,6 +433,7 @@
   w.Worklist = {
     STAGES: STAGES, SLA: SLA, SLA_LABELS: SLA_LABELS, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
+    CTA: CTA, cta: cta,
     isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
     readyForCommittee: readyForCommittee, week: week
   };

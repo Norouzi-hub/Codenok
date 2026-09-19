@@ -69,7 +69,13 @@
     fileZip: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M10.6 5v2.2M12.4 7.2v2.2M10.6 9.4v2.2"/><rect x="10" y="13" width="3" height="3.4" rx="1"/>'),
     handoff: svg('<path d="M4.5 9.5h10"/><path d="M11.5 6.2L14.8 9.5l-3.3 3.3"/><path d="M19.5 14.5h-10"/><path d="M12.5 11.2L9.2 14.5l3.3 3.3"/>'),
     paperclip: svg('<path d="M17.5 11.2l-6 6a3.4 3.4 0 0 1-4.8-4.8l7-7a2.3 2.3 0 0 1 3.2 3.2l-6.9 7a1.1 1.1 0 0 1-1.6-1.6l6.2-6.2"/>'),
-    trash: svg('<path d="M5 7h14"/><path d="M10 7V5.2h4V7"/><path d="M6.5 7l.8 11.3A1.5 1.5 0 0 0 8.8 19.7h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.5 10.5v6M13.5 10.5v6"/>')
+    trash: svg('<path d="M5 7h14"/><path d="M10 7V5.2h4V7"/><path d="M6.5 7l.8 11.3A1.5 1.5 0 0 0 8.8 19.7h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.5 10.5v6M13.5 10.5v6"/>'),
+    chevronRight: svg('<path d="M9.5 5.5L16 12l-6.5 6.5"/>'),
+    chevronLeft: svg('<path d="M14.5 5.5L8 12l6.5 6.5"/>'),
+    download: svg('<path d="M12 4.5v10"/><path d="M8.2 10.8L12 14.5l3.8-3.7"/><path d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"/>'),
+    upload: svg('<path d="M12 19.5v-10"/><path d="M8.2 13.2L12 9.5l3.8 3.7"/><path d="M5 8V5.5A1.5 1.5 0 0 1 6.5 4h11A1.5 1.5 0 0 1 19 5.5V8"/>'),
+    pencil: svg('<path d="M16.2 4.6l3.2 3.2"/><path d="M5 19h3.2L19.4 7.8a1.6 1.6 0 0 0 0-2.3l-.9-.9a1.6 1.6 0 0 0-2.3 0L5 15.8z"/>'),
+    eye: svg('<path d="M2.8 12S6.4 6 12 6s9.2 6 9.2 6-3.6 6-9.2 6-9.2-6-9.2-6z"/><circle cx="12" cy="12" r="2.6"/>')
   };
   function icon(name) { return ICONS[name] || ''; }
 

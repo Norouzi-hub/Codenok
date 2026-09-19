@@ -129,8 +129,14 @@ function check(name, ok, extra) {
     window.Worklist.summary(window.Model.state.cases));
 
   await page.evaluate((id) => window.App.openCase(id), recId);
-  await page.waitForSelector('.case-transfer');
-  await page.evaluate(() => document.querySelector('.case-transfer').click());
+  // «ارجاع» حالا پشت «⋯» است، کنار چاپ و حذف — نوار بالا کوتاه‌تر شده
+  await page.waitForSelector('.case-more');
+  await page.evaluate(() => document.querySelector('.case-more').click());
+  await page.waitForSelector('.sheet');
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.sheet-item')]
+      .filter(b => /ارجاع به کارشناس دیگر/.test(b.textContent))[0].click();
+  });
   await page.waitForSelector('.transfer');
   await page.waitForTimeout(300);
 

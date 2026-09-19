@@ -902,7 +902,8 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
 }
 .case-title .reg-no { font-size: 17px; }
 .case-actions { display: flex; align-items: center; gap: 8px; flex: 1; }
-.case-more { display: none; }
+/* «⋯» همه‌جا هست: چاپ، ارجاع و حذف پشت آن جمع شده‌اند */
+.case-more { display: grid; place-items: center; width: 34px; height: 34px; }
 
 /* نشانهٔ «هنوز ذخیره نشده» — دکمهٔ غیرفعال به‌تنهایی این را نمی‌گوید */
 .dirty-chip {
@@ -2032,17 +2033,26 @@ select.input { cursor: pointer; }
   white-space: nowrap;
 }
 
+/* نازک، تا وسط پنل یک کادر بزرگ خالی نباشد؛ موقع کشیدن فایل باز می‌شود */
 .doc-drop {
-  border: 2px dashed var(--line);
+  border: 1px dashed var(--line);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 7px;
   text-align: center;
   color: var(--muted);
-  font-size: 12.5px;
-  margin-bottom: 12px;
-  transition: border-color .12s, background .12s;
+  font-size: 11.5px;
+  margin-bottom: 10px;
+  transition: border-color .14s, background .14s, padding .14s, color .14s;
 }
-.doc-drop.over { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+.doc-drop.over {
+  border-color: var(--brass);
+  border-width: 2px;
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  padding: 22px;
+}
+.doc-shared.empty { padding-bottom: 6px; }
+.doc-shared.empty .doc-shared-head { margin-bottom: 2px; }
 
 .doc-empty {
   text-align: center;
@@ -2274,12 +2284,278 @@ select.input { cursor: pointer; }
 /* ---------------------------------------------------------------- چاپ */
 #print-area { display: none; }
 
+/* ================================================================
+   نمایشگر سند
+   ----------------------------------------------------------------
+   کلیک روی سند، کاربر را از برنامه بیرون نمی‌اندازد: سند همین‌جا بزرگ
+   می‌شود، با فلش ورق می‌خورد و دکمهٔ دانلودش همان‌جاست.
+   ================================================================ */
+.vw-overlay { padding: 18px; }
+.vw-box {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  width: min(1100px, 100%);
+  height: min(92vh, 100%);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: vw-in .2s cubic-bezier(.2, .8, .3, 1);
+}
+@keyframes vw-in { from { opacity: 0; transform: scale(.97) translateY(10px); } }
+.vw-overlay.closing { opacity: 0; transition: opacity .15s ease; }
+
+.vw-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.vw-head-text { min-width: 0; flex: 1; }
+.vw-title {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vw-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+.vw-chip {
+  font-size: 11px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.vw-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+.vw-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--paper-2);
+  position: relative;
+}
+.vw-stage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 10px;
+}
+.vw-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  cursor: zoom-in;
+  animation: vw-fade .25s ease;
+}
+/* حالت اندازهٔ واقعی: تصویر از قاب بزرگ‌تر می‌شود و قاب می‌چرخد */
+.vw-stage.vw-fit { align-items: flex-start; justify-content: flex-start; }
+.vw-stage.vw-fit .vw-img { max-width: none; max-height: none; cursor: zoom-out; }
+@keyframes vw-fade { from { opacity: 0; } }
+.vw-pdf { width: 100%; height: 100%; border: 0; background: #fff; border-radius: 6px; }
+.vw-loading { color: var(--muted); font-size: 13px; }
+.vw-none { text-align: center; color: var(--ink-500); display: grid; gap: 8px; }
+.vw-none-icon { line-height: 0; color: var(--ink-400); }
+.vw-none-icon svg { width: 46px; height: 46px; }
+.vw-none p { margin: 0; }
+
+.vw-nav {
+  flex: 0 0 auto;
+  width: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-500);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background .14s, color .14s;
+}
+.vw-nav:hover { background: rgba(0, 0, 0, .05); color: var(--ink-900); }
+.vw-nav svg { width: 26px; height: 26px; }
+
+.vw-letter {
+  border-top: 1px solid var(--line);
+  padding: 0 14px;
+  max-height: 22vh;
+  overflow: auto;
+}
+.vw-letter:empty { display: none; }
+.vw-letter-head {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.vw-letter p { margin: 4px 0 10px; font-size: 13px; white-space: pre-wrap; }
+
+.vw-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+/* ------------------------------------------------ دسته‌بندی و زیپ مدارک */
+.doc-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 14px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.doc-cat-name { font-size: 12.5px; font-weight: 600; color: var(--ink-700); }
+.doc-cat-n {
+  font-size: 11px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.doc-cat-chip {
+  font-size: 11px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.linkish.tiny { font-size: 11px; }
+
+.doc-pickbar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  margin-bottom: 9px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  animation: pick-in .18s ease-out;
+}
+.doc-pickbar.on { display: flex; }
+@keyframes pick-in { from { opacity: 0; transform: translateY(-4px); } }
+.doc-pick { display: flex; align-items: center; padding-top: 24px; cursor: pointer; }
+.doc-pick input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--brass); }
+
+/* جهت نامه: وارده و صادره باید از یک نگاه فرق کنند */
+.doc-dir {
+  font-size: 10.5px;
+  border-radius: 999px;
+  padding: 1px 7px;
+  border: 1px solid transparent;
+}
+.doc-dir.dir-in {
+  color: var(--moss); background: var(--moss-soft); border-color: var(--moss-line);
+}
+.doc-dir.dir-out {
+  color: var(--brass-ink); background: var(--brass-soft); border-color: var(--brass-line);
+}
+
+/* اقدام‌های سطر سند: آیکن، نه سه دکمهٔ متنی */
+.doc-actions { display: flex; gap: 2px; align-items: flex-start; }
+.icon-btn.doc-act {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--ink-400);
+  transition: background .14s, color .14s, transform .1s;
+}
+.icon-btn.doc-act:hover { background: var(--paper-2); color: var(--ink-900); }
+.icon-btn.doc-act:active { transform: scale(.9); }
+.icon-btn.doc-act.danger:hover { background: var(--cinnabar-soft); color: var(--cinnabar); }
+.icon-btn.doc-act svg { width: 17px; height: 17px; }
+
+.doc-body-text > summary, .doc-add-body > summary {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  cursor: pointer;
+  padding: 3px 0;
+}
+.doc-body-text p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: var(--ink-700);
+  border-inline-start: 2px solid var(--line);
+  padding-inline-start: 8px;
+}
+.doc-add-body { margin-top: 6px; }
+.doc-add-body textarea { width: 100%; margin-top: 5px; }
+.doc-edit .doc-add-fields { margin-top: 8px; }
+
+/* ------------------------------------------------ دکمهٔ آلارم و پرش به فیلد */
+.case-next-text { min-width: 0; }
+.case-cta { flex: 0 0 auto; }
+.field-flash {
+  animation: field-flash 1.4s ease;
+  border-radius: 8px;
+}
+@keyframes field-flash {
+  0%, 70% { box-shadow: 0 0 0 3px var(--brass-soft), 0 0 0 4px var(--brass-line); }
+  100% { box-shadow: 0 0 0 3px transparent, 0 0 0 4px transparent; }
+}
+
+/* ================================================================
+   حرکت
+   ----------------------------------------------------------------
+   انیمیشن اینجا تزیین نیست، توضیح است: پنجره از جایی می‌آید، فهرست
+   ورق می‌خورد، پیش‌نمایش محو می‌شود تا ظاهر شود. همه کوتاه‌اند (زیر یک
+   پنجم ثانیه) و همه با prefers-reduced-motion خاموش می‌شوند.
+   ================================================================ */
+.overlay { animation: fade-in .16s ease; }
+.modal { animation: modal-in .2s cubic-bezier(.2, .8, .3, 1); }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+
+.toast.show { animation: toast-in .22s cubic-bezier(.2, .8, .3, 1); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+
+/* سطرها یکی‌یکی می‌آیند، ولی فقط شش‌تای اول — وگرنه فهرست بلند کُند حس می‌شود */
+.doc-list .doc-item { animation: row-in .22s ease both; }
+.doc-list .doc-item:nth-child(1) { animation-delay: .01s; }
+.doc-list .doc-item:nth-child(2) { animation-delay: .04s; }
+.doc-list .doc-item:nth-child(3) { animation-delay: .07s; }
+.doc-list .doc-item:nth-child(4) { animation-delay: .1s; }
+.doc-list .doc-item:nth-child(5) { animation-delay: .13s; }
+.doc-list .doc-item:nth-child(n+6) { animation-delay: .15s; }
+@keyframes row-in { from { opacity: 0; transform: translateY(6px); } }
+
+.doc-item { transition: border-color .14s, box-shadow .14s, transform .12s; }
+.doc-item:hover { border-color: var(--brass-line); box-shadow: var(--shadow-sm); }
+
+/* پیش‌نمایش وقتی آماده شد، محو می‌شود تا ظاهر شود — نه اینکه بپرد */
+.doc-thumb .thumb-img, .doc-thumb .thumb-pdf { animation: fade-in .3s ease; }
+.doc-thumb { transition: border-color .14s, transform .12s, box-shadow .14s; }
+.doc-thumb:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.doc-thumb:active { transform: scale(.97); }
+
+.btn { transition: background .14s, border-color .14s, color .14s, transform .09s; }
+.btn:active { transform: scale(.97); }
+
+.case-next { transition: background .16s, border-color .16s; }
+.rail-mini span { transition: background .3s ease, opacity .3s ease; }
+
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
-  .case-actions { display: none !important; }
+  .case-actions, .doc-pickbar { display: none !important; }
   #print-area { display: block; font-size: 11pt; color: #000; }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
@@ -2703,9 +2979,8 @@ select.input { cursor: pointer; }
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
   }
-  .case-back, .case-print, .case-delete, .case-transfer, .case-forms { display: none; }
+  .case-back, .case-forms { display: none; }
   .case-actions > .spacer { display: none; }   /* وگرنه «⋯» از نوار بیرون می‌افتد */
-  .case-more { display: grid; place-items: center; }
   .case-actions .btn { flex: 1; min-height: 42px; }
   .case-actions .icon-btn { flex: 0 0 auto; min-width: 42px; min-height: 42px; }
   /* دکمه‌های جابه‌جایی و چیپ کوچک‌ترند تا هر چهار عنصر در یک سطر جا شوند */

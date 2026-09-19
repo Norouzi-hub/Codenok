@@ -484,12 +484,66 @@
         fields.forEach(function (f) {
           var input = makeInput(f, draft[f.key] || '',
             function (v) { setField(f.key, v); }, app);
-          grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''), null, [
-            el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
-            input
-          ]));
+          grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
+            { 'data-field': f.key }, [
+              el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
+              input
+            ]));
         });
         panel.appendChild(grid);
+      });
+    }
+
+    /**
+     * رفتن به یک فیلد مشخص: تبِ درست را باز می‌کند، صفحه را تا آن فیلد
+     * می‌برد و یک لحظه روشنش می‌کند. آلارم‌های «تاریخ فلان را ثبت کنید»
+     * از همین استفاده می‌کنند تا کاربر دنبال فیلد نگردد.
+     */
+    function jumpToField(key) {
+      var field = null;
+      M.FIELDS.forEach(function (f) { if (f.key === key) field = f; });
+      if (!field) return;
+      var target = tabOf(field.group);
+      if (target.key !== activeTab) {
+        activeTab = target.key;
+        app.state.formTab = activeTab;
+        w.U.$$('.tab', tabs).forEach(function (t) {
+          t.classList.toggle('active', t.dataset.tab === activeTab);
+        });
+        renderPanel();
+      }
+      setTimeout(function () {
+        var node = panel.querySelector('[data-field="' + key + '"]');
+        if (!node) return;
+        node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        node.classList.add('field-flash');
+        setTimeout(function () { node.classList.remove('field-flash'); }, 1400);
+        var input = node.querySelector('input, select, textarea, button');
+        if (input) input.focus({ preventScroll: true });
+      }, 60);
+    }
+
+    /** دکمهٔ آلارم: همان کاری که اقدام بعدی می‌خواهد، با یک کلیک */
+    function ctaButton(action) {
+      var c = w.Worklist.cta(action);
+      if (!c || !existing) return null;
+      return el('button.btn.small.primary.case-cta', {
+        type: 'button', text: c.label,
+        title: 'همین‌جا انجامش بدهید',
+        onclick: function () {
+          if (c.type === 'upload') {
+            w.UIDocs.addFrom(existing, function () {
+              app.state.formTab = activeTab;
+              app.render();
+            }, { kind: c.kind });
+          } else if (c.type === 'form') {
+            var form = null;
+            w.UILetters.FORMS.forEach(function (f) { if (f.key === c.form) form = f; });
+            if (form) w.UILetters.formDialog(app, existing, form);
+          } else {
+            jumpToField(c.field);
+          }
+        }
       });
     }
 
@@ -515,9 +569,9 @@
         });
     }
 
-    /* روی گوشی، نوار اقدام‌ها چسبیده به پایین می‌ماند و فقط «ذخیره» و «⋯»
-       را نشان می‌دهد؛ چاپ و حذف داخل شیت می‌روند تا کنار دکمهٔ ذخیره،
-       دکمهٔ حذف ننشیند. */
+    /* نوار اقدام‌ها روی هر دستگاه کوتاه است: «ذخیره» و «فرم‌ها» بیرون،
+       بقیه پشت «⋯». پنج دکمهٔ کنار هم — که یکی‌شان قرمزِ «حذف پرونده» بود —
+       هم چشم را خسته می‌کرد و هم خطرناک بود. */
     var moreBtn = existing ? el('button.icon-btn.case-more', {
       type: 'button', text: '⋯', title: 'کارهای دیگر این پرونده',
       'aria-label': 'کارهای دیگر این پرونده',
@@ -563,17 +617,6 @@
       onclick: function () { w.UILetters.chooser(app, existing); }
     }) : null;
 
-    var transferBtn = existing ? el('button.btn.ghost.case-transfer', {
-      type: 'button', text: 'ارجاع به کارشناس دیگر',
-      title: 'پرونده از کارتابل شما بیرون می‌رود',
-      onclick: function () {
-        w.UITransfer.dialog(app, [existing.id], function () {
-          app.state.formTab = activeTab;
-          app.render();
-        });
-      }
-    }) : null;
-
     var actions = el('div.case-actions', null, [
       el('button.btn.ghost.case-back', {
         type: 'button', text: '← بازگشت به فهرست',
@@ -581,16 +624,7 @@
       }),
       neighbourNav(app, existing),
       el('div.spacer'),
-      // «حذف» عمداً پیش از «چاپ» نشسته تا هم‌مرز دکمهٔ ذخیره نباشد
-      existing ? el('button.btn.ghost.danger.case-delete', {
-        type: 'button', text: 'حذف پرونده', onclick: askDelete
-      }) : null,
-      transferBtn,
       formsBtn,
-      existing ? el('button.btn.ghost.case-print', {
-        type: 'button', text: 'چاپ برگ پرونده',
-        onclick: function () { w.UIPrint.printCase(existing); }
-      }) : null,
       dirtyChip,
       saveBtn,
       moreBtn
@@ -611,8 +645,12 @@
         }
         if (action.owner && action.owner !== '—') meta.push('مسئول: ' + action.owner);
         next = el('div.case-next' + (action.overdue ? '.late' : ''), null, [
-          el('span.case-next-label', { text: action.label }),
-          el('span.case-next-meta', { text: meta.join(' • ') })
+          el('div.case-next-text', null, [
+            el('span.case-next-label', { text: action.label }),
+            el('span.case-next-meta', { text: meta.join(' • ') })
+          ]),
+          el('div.spacer'),
+          ctaButton(action)
         ]);
       } else {
         // مختومه‌ای که مرحله‌هایش ناقص مانده، یعنی ثبت کار عقب است

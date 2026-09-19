@@ -67,8 +67,14 @@ function check(name, ok, extra) {
     const si = kids.indexOf(save), di = kids.indexOf(del);
     return { adjacent: Math.abs(si - di) === 1, si: si, di: di };
   });
+  // حالا اصلاً در نوار بالا نیست: پشت «⋯» رفته، کنار چاپ و ارجاع
   check('دکمهٔ حذف کنار دکمهٔ ذخیره ننشسته است', !neighbours.adjacent,
     JSON.stringify(neighbours));
+  check('نوار اقدام‌های پرونده شلوغ نیست', await page.evaluate(() => {
+    const bar = document.querySelector('.case-actions');
+    return [...bar.children].filter(c => getComputedStyle(c).display !== 'none' &&
+      c.tagName === 'BUTTON').length <= 4;
+  }));
 
   // ریل پرونده باید هم‌راستای بقیهٔ بلوک‌های صفحه باشد، نه چسبیده به لبه
   const railAlign = await page.evaluate(() => {
