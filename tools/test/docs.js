@@ -225,13 +225,40 @@ async function openList(page) {
     };
   });
   check('ناهم‌خوانی نام پوشه تشخیص داده شد', renamed.mismatch);
+  // نیم‌فاصلهٔ «آینده‌نژاد» در نام پوشه به فاصله تبدیل می‌شود: کروم نام
+  // حاوی نویسهٔ نامرئی را برای پوشه و فایل نمی‌پذیرد.
   check('پوشه به نام تازه منتقل شد',
-    renamed.newFolder === '1404308 - غلامستان آینده‌نژاد' && renamed.oldGone,
+    renamed.newFolder === '1404308 - غلامستان آینده نژاد' && renamed.oldGone,
     renamed.oldFolder + ' → ' + renamed.newFolder);
   check('همهٔ فایل‌ها منتقل شدند',
     renamed.filesMoved && renamed.fileCount === renamed.expectedCount,
     renamed.fileCount + ' از ' + renamed.expectedCount);
   check('ارجاع اسناد به پوشهٔ تازه به‌روز شد', renamed.docsRepointed);
+
+  /* نویسهٔ نامرئی در نام فایل و پوشه، File System Access کروم را می‌شکند —
+     «دعوت‌نامهٔ جلسه» و «صورت‌جلسهٔ کمیته» نیم‌فاصله دارند و بارگذاری‌شان
+     خطا می‌داد. */
+  const invisible = await page.evaluate(async () => {
+    const D = window.Docs, M = window.Model;
+    const rec = M.state.cases.find(c => c.caseNo === '1404308');
+    const bad = [];
+    const CF = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\uFEFF]/;
+    for (const kind of ['دعوت‌نامهٔ جلسه', 'صورت‌جلسهٔ کمیته', 'رأی کمیته']) {
+      const doc = await D.addFile(rec,
+        new File(['x'], 'a.pdf', { type: 'application/pdf' }),
+        { kind: kind, docDate: '14040801' });
+      if (CF.test(doc.fileName)) bad.push(doc.fileName);
+    }
+    return {
+      bad: bad,
+      folder: CF.test(rec.docFolder || '') ? rec.docFolder : '',
+      sample: D.fileNameFor({ kind: 'دعوت‌نامهٔ جلسه', docDate: '14040801' }, 'a.pdf')
+    };
+  });
+  check('نام فایل و پوشه هیچ نویسهٔ نامرئی ندارد (وگرنه کروم رد می‌کند)',
+    invisible.bad.length === 0 && !invisible.folder, invisible.sample);
+  check('نیم‌فاصله به فاصله تبدیل می‌شود، نه اینکه حذف شود',
+    /دعوت نامهٔ جلسه/.test(invisible.sample), invisible.sample);
 
   console.log('\n— مدارک شخص (مشترک بین پرونده‌ها) —');
   const personDocs = await page.evaluate(async (fileExpr) => {
@@ -325,7 +352,7 @@ async function openList(page) {
     };
   });
   check('فرادادهٔ اسناد پس از رفرش باقی ماند',
-    persisted.docs >= 4 && persisted.folder === '1404308 - غلامستان آینده‌نژاد',
+    persisted.docs >= 4 && persisted.folder === '1404308 - غلامستان آینده نژاد',
     persisted.docs + ' سند، پوشه: ' + persisted.folder);
   // در مرورگر واقعی، ارجاع پوشه در IndexedDB می‌ماند و فقط تأیید تازه لازم است؛
   // در این تست چون handle ساختگی ذخیره‌شدنی نیست، پس از رفرش خالی است.

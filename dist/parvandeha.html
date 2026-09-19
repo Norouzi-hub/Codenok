@@ -985,6 +985,18 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
   border-color: var(--cinnabar-line);
 }
 .case-next-meta { color: var(--muted); }
+/* برچسب و توضیحش در یک سطر می‌مانند و دکمه‌ها ته خط؛ سطر دوم (محاسبهٔ
+   خودکار) زیرش می‌نشیند، نه وسط جمله. */
+.case-next-text {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+.case-next-text .case-next-auto { flex-basis: 100%; }
+.case-next { align-items: flex-start; }
+.case-next > .btn { margin-top: 1px; }
 
 .tabs {
   display: flex;
@@ -2565,12 +2577,124 @@ select.input { cursor: pointer; }
 .case-next { transition: background .16s, border-color .16s; }
 .rail-mini span { transition: background .3s ease, opacity .3s ease; }
 
+/* ================================================================
+   مرحلهٔ دستی، و گیرهٔ نامه کنار فیلدها
+   ================================================================ */
+.stage-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 6px;
+  margin: 10px 0 14px;
+}
+.stage-opt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color .14s, background .14s, transform .1s;
+}
+.stage-opt:hover { border-color: var(--brass-line); background: var(--paper); }
+.stage-opt:active { transform: scale(.98); }
+.stage-opt.on {
+  border-color: var(--brass);
+  background: var(--brass-soft);
+  box-shadow: inset 0 0 0 1px var(--brass);
+}
+.stage-opt-n {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--ink-500);
+  font-size: 10.5px;
+}
+.stage-opt.on .stage-opt-n { background: var(--brass); color: #fff; }
+.stage-opt-label { flex: 1; min-width: 0; }
+.stage-opt-meta { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.stage-opt-auto {
+  font-size: 9.5px;
+  color: var(--moss);
+  background: var(--moss-soft);
+  border-radius: 999px;
+  padding: 0 6px;
+}
+.stage-when { display: flex; gap: 10px; flex-wrap: wrap; }
+.stage-when .field { flex: 1 1 180px; }
+.stage-summary {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  border: 1px solid var(--line-soft);
+  font-size: 12.5px;
+}
+
+/* پرونده‌ای که مرحله‌اش دستی تنظیم شده، باید از یک نگاه معلوم باشد */
+.case-next.manual { border-inline-start: 3px solid var(--brass); }
+.stage-manual-tag {
+  font-size: 10px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 999px;
+  padding: 0 7px;
+  margin-inline-start: 6px;
+}
+.case-next-auto {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.rail-step.manual .rail-dot {
+  box-shadow: 0 0 0 3px var(--brass-soft), 0 0 0 4px var(--brass);
+}
+.rail-step.manual .rail-date { color: var(--brass-ink); font-weight: 600; }
+
+/* گیرهٔ کاغذ کنار فیلد نامه */
+/* .field یک ستون است، پس برچسب و گیره داخل یک سطرِ خودشان می‌نشینند */
+.field-head { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.field-head .field-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.letter-clip {
+  border: 0;
+  background: transparent;
+  padding: 0 2px;
+  line-height: 0;
+  color: var(--ink-400);
+  cursor: pointer;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  vertical-align: middle;
+  transition: color .14s, background .14s, transform .1s;
+}
+.letter-clip svg { width: 14px; height: 14px; }
+.letter-clip:hover { color: var(--brass-ink); background: var(--brass-soft); }
+.letter-clip:active { transform: scale(.9); }
+.letter-clip.has { color: var(--moss); }
+.letter-clip-n { font-size: 10px; font-weight: 600; }
+
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
-  .case-actions, .doc-pickbar { display: none !important; }
+  .case-actions, .doc-pickbar, .letter-clip { display: none !important; }
   #print-area { display: block; font-size: 11pt; color: #000; }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
@@ -3236,6 +3360,20 @@ window.FIELDS = [
     "col": 67
   },
   {
+    "key": "notes",
+    "label": "توضیحات",
+    "type": "textarea",
+    "group": "case",
+    "col": 45
+  },
+  {
+    "key": "updatedAtField",
+    "label": "تاریخ بروز رسانی",
+    "type": "date",
+    "group": "case",
+    "col": 68
+  },
+  {
     "key": "transferDate",
     "label": "تاریخ ارجاع به کارشناس دیگر",
     "type": "date",
@@ -3270,6 +3408,30 @@ window.FIELDS = [
     "type": "textarea",
     "group": "case",
     "col": null
+  },
+  {
+    "key": "stageOverride",
+    "label": "مرحلهٔ تنظیم‌شدهٔ دستی",
+    "type": "text",
+    "group": "case",
+    "col": null,
+    "hidden": true
+  },
+  {
+    "key": "stageOverrideDate",
+    "label": "تاریخ تنظیم دستی مرحله",
+    "type": "date",
+    "group": "case",
+    "col": null,
+    "hidden": true
+  },
+  {
+    "key": "stageOverrideNote",
+    "label": "علت تنظیم دستی مرحله",
+    "type": "text",
+    "group": "case",
+    "col": null,
+    "hidden": true
   },
   {
     "key": "nationalId",
@@ -3482,6 +3644,20 @@ window.FIELDS = [
     "col": 56
   },
   {
+    "key": "defenseReceivedDate",
+    "label": "تاریخ اخذ دفاعیه (دریافت دفاعیات)",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defenseChaseLetterDate",
+    "label": "تاریخ نامه پیگیری دفاعیات",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
     "key": "defectLetterNo",
     "label": "شماره نامه رفع نواقص",
     "type": "text",
@@ -3491,20 +3667,6 @@ window.FIELDS = [
   {
     "key": "defectLetterDate",
     "label": "تاریخ نامه رفع نواقص",
-    "type": "date",
-    "group": "defense",
-    "col": null
-  },
-  {
-    "key": "defenseReceivedDate",
-    "label": "تاریخ دریافت دفاعیات",
-    "type": "date",
-    "group": "defense",
-    "col": null
-  },
-  {
-    "key": "defenseChaseLetterDate",
-    "label": "تاریخ نامه پیگیری دفاعیات",
     "type": "date",
     "group": "defense",
     "col": null
@@ -3663,48 +3825,6 @@ window.FIELDS = [
     "type": "date",
     "group": "enforce",
     "col": null
-  },
-  {
-    "key": "violationAdmin",
-    "label": "1-تخلفات اداری و سازمانی(غیبت، تمرد از دستور مافوق، سهل انگاری، عدم رعایت  فرآیندهای اداری، جعل مدرک، تصدی بیش از یک شغل،اعتیاد، تعارض منافع، تصدی بیش از یک شغل و...)",
-    "type": "textarea",
-    "group": "violation",
-    "col": 63
-  },
-  {
-    "key": "violationFinancial",
-    "label": "2-تخلفات مالی و معاملاتی(سوء استفاده از موقعیت شغلی، اخذ وجوه نامتعارف، اختلاس، سرقت، و...)",
-    "type": "textarea",
-    "group": "violation",
-    "col": 64
-  },
-  {
-    "key": "violationTechnical",
-    "label": "3- تخلفات  فنی و شهرسازی، خدمات  شهری و...",
-    "type": "textarea",
-    "group": "violation",
-    "col": 65
-  },
-  {
-    "key": "violationDisciplinary",
-    "label": "4- تخلفات انضباطی(نزاع و درگیری،  بی احترامی  و بدرفتاری با ارباب رجوع،، عدم رعایت شئونات اداری )",
-    "type": "textarea",
-    "group": "violation",
-    "col": 66
-  },
-  {
-    "key": "notes",
-    "label": "توضیحات",
-    "type": "textarea",
-    "group": "violation",
-    "col": 45
-  },
-  {
-    "key": "updatedAtField",
-    "label": "تاریخ بروز رسانی",
-    "type": "date",
-    "group": "violation",
-    "col": 68
   }
 ];
 window.GROUPS = [
@@ -3731,10 +3851,6 @@ window.GROUPS = [
   {
     "key": "enforce",
     "label": "ابلاغ و اجرای رأی"
-  },
-  {
-    "key": "violation",
-    "label": "دسته‌بندی تخلف و توضیحات"
   }
 ];
 window.DEFAULT_LISTS = {
@@ -9069,6 +9185,30 @@ else if (typeof exports === 'object'){
     { key: 'archive', label: 'بایگانی و اختتام', short: 'بایگانی', field: 'archiveDate' }
   ];
 
+  /*
+   * تنظیم دستی مرحله.
+   *
+   * موتور، مرحله را از روی تاریخ‌های خودِ پرونده حساب می‌کند و این معمولاً
+   * درست است. ولی همیشه نه: پرونده‌ای که عملاً سرِ جلسهٔ دفاع است ممکن است
+   * تاریخ‌های میانی‌اش هنوز وارد نشده باشد، و کارتابل آن را عقب نشان دهد.
+   * در این حالت کاربر می‌گوید پرونده کجاست و همان حرف می‌چربد.
+   *
+   * خودِ تاریخ‌ها دست نمی‌خورند — دستکاری داده نیست، فقط «الان کجاییم».
+   * هر جا مرحله دستی تنظیم شده باشد، هم در کارتابل و هم بالای پرونده صریح
+   * گفته می‌شود و با یک کلیک به حالت خودکار برمی‌گردد.
+   */
+  function stageByKey(key) {
+    var found = null;
+    STAGES.forEach(function (st) { if (st.key === key) found = st; });
+    return found;
+  }
+
+  function overrideOf(rec) {
+    var key = rec && rec.stageOverride;
+    if (!key) return null;
+    return stageByKey(key);
+  }
+
   /* رأی ممکن است تاریخ نداشته باشد ولی متنش ثبت شده باشد — پرونده‌های قدیمی
      این‌طورند. پس «رأی صادر شده» یعنی یکی از این سه. */
   function hasVerdict(rec) {
@@ -9114,12 +9254,22 @@ else if (typeof exports === 'object'){
     // مرحله‌ای که از آن گذشته‌ایم، حتی اگر تاریخش ثبت نشده، انجام‌شده است
     for (var i = 0; i < lastDone; i++) done[i] = true;
     var closed = isDone(rec);
+    // مرحلهٔ دستی، جای «اکنون» را می‌گیرد؛ ولی تیکِ مرحله‌ها همچنان از روی
+    // تاریخ‌های واقعی است، تا ریل دروغ نگوید.
+    var manual = overrideOf(rec);
+    var manualAt = -1;
+    if (manual && !closed) {
+      STAGES.forEach(function (st, i) { if (st.key === manual.key) manualAt = i; });
+    }
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
         done: done[i],
         date: st.field ? (rec[st.field] || '') : '',
-        current: !closed && !done[i] && i === lastDone + 1,
+        current: !closed && (manualAt >= 0
+          ? i === manualAt
+          : (!done[i] && i === lastDone + 1)),
+        manual: manualAt >= 0 && i === manualAt,
         optional: !!st.optional
       };
     });
@@ -9203,6 +9353,61 @@ else if (typeof exports === 'object'){
         'ارجاع‌شده به ' + (rec.transferTo || 'کارشناس دیگر'), '—', '', null);
     }
     if (isClosed(rec) || rec.archiveDate) return make('closed', 'مختومه', '—', '', null);
+
+    /* مرحلهٔ دستی، بر محاسبهٔ خودکار می‌چربد. مهلتش از همان مرحله می‌آید و
+       مبدأ انتظار، تاریخی است که کاربر مرحله را تنظیم کرده — چون تاریخ
+       مرحلهٔ قبلی ممکن است اصلاً وارد نشده باشد. */
+    var manual = overrideOf(rec);
+    if (manual) {
+      var auto = autoAction(rec, limits);
+      var a = make(manual.key, MANUAL_LABEL[manual.key] || manual.label,
+        MANUAL_OWNER[manual.key] || '—',
+        rec.stageOverrideDate || rec.intakeDate || '', limits[manual.key]);
+      a.manual = true;
+      a.autoKey = auto.key;
+      a.autoLabel = auto.label;
+      return a;
+    }
+    return autoAction(rec, limits);
+  }
+
+  /* برچسب و مسئولِ هر مرحله، وقتی دستی انتخاب شده باشد — همان‌هایی که
+     مسیر خودکار هم می‌سازد، یک جا. */
+  var MANUAL_LABEL = {
+    intake: 'ثبت تاریخ ورود پرونده', assign: 'ارجاع به کارشناس',
+    decree: 'گرفتن و بارگذاری آخرین حکم', defect: 'پیگیری رفع نواقص',
+    inquiry: 'پیگیری پاسخ حراست', invite: 'صدور نامهٔ دعوت',
+    defense: 'دریافت دفاعیات', complete: 'تکمیل سایر مستندات',
+    hearing: 'تعیین تاریخ جلسهٔ دفاع',
+    hearingLetter: 'صدور نامهٔ حضور در جلسهٔ دفاع',
+    verdict: 'صدور و ثبت متن رأی', sign: 'گرفتن امضای اعضا پای رأی',
+    notice: 'صدور ابلاغیهٔ رأی', result: 'پیگیری نتیجهٔ ابلاغ',
+    archive: 'ارسال پرونده به بایگانی و اختتام'
+  };
+
+  var MANUAL_OWNER = {
+    intake: 'دبیرخانه', assign: 'دبیرخانه', decree: 'کارشناس',
+    defect: 'واحد سازمانی', inquiry: 'حراست', invite: 'کارشناس',
+    defense: 'کارمند', complete: 'کارشناس', hearing: 'دبیر کمیته',
+    hearingLetter: 'دبیرخانه', verdict: 'دبیر کمیته', sign: 'اعضای کمیته',
+    notice: 'دبیرخانه', result: 'واحد سازمانی', archive: 'دبیرخانه'
+  };
+
+  /** همان مسیر خودکار، از روی تاریخ‌های خودِ پرونده */
+  function autoAction(rec, limits) {
+    var today = J.today();
+
+    function make(key, label, owner, since, limit) {
+      var days = since ? J.diffDays(today, since) : null;
+      if (days != null && days < 0) days = 0;
+      return {
+        key: key, label: label, owner: owner, since: since || '',
+        days: days, limit: limit,
+        due: (since && limit != null) ? J.addDays(since, limit) : '',
+        overdue: days != null && limit != null && days > limit,
+        remaining: (days != null && limit != null) ? (limit - days) : null
+      };
+    }
 
     // ۱) ثبت
     if (!rec.intakeDate) return make('intake', 'ثبت تاریخ ورود پرونده', 'دبیرخانه', '', null);
@@ -9467,6 +9672,7 @@ else if (typeof exports === 'object'){
     STAGES: STAGES, SLA: SLA, SLA_LABELS: SLA_LABELS, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
     CTA: CTA, cta: cta,
+    stageByKey: stageByKey, overrideOf: overrideOf, MANUAL_LABEL: MANUAL_LABEL,
     isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
     readyForCommittee: readyForCommittee, week: week
   };
@@ -9832,6 +10038,41 @@ else if (typeof exports === 'object'){
     return found && key ? found.label : '';
   }
 
+  /*
+   * فیلدِ نامه → نوع سند.
+   *
+   * هر جا در فرم پرونده شمارهٔ نامه یا تاریخ نامه‌ای هست، پشتش یک کاغذ
+   * واقعی وجود دارد. این نقشه می‌گوید آن کاغذ چه نوعی است، تا کنار همان
+   * فیلد بشود متن نامه و تصویرش را پیوست کرد و همه در مستندات جمع شود —
+   * بدون اینکه کاربر برود تب مستندات و دوباره نوعش را انتخاب کند.
+   */
+  var FIELD_KIND = {
+    letterNo: 'نامهٔ وارده', letterDate: 'نامهٔ وارده',
+    decreeDate: 'حکم کارگزینی',
+    defectLetterNo: 'نامهٔ رفع نواقص', defectLetterDate: 'نامهٔ رفع نواقص',
+    invitationLetterNo: 'دعوت‌نامهٔ جلسه', invitationLetterDate: 'دعوت‌نامهٔ جلسه',
+    securityOutLetterNo: 'استعلام حراست', securityOutLetterDate: 'استعلام حراست',
+    securityInLetterNo: 'پاسخ حراست', securityInLetterDate: 'پاسخ حراست',
+    defenseReceivedDate: 'دفاعیهٔ کتبی', defenseSummary: 'دفاعیهٔ کتبی',
+    defenseChaseLetterDate: 'نامهٔ پیگیری دفاعیات',
+    docsCompleteDate: 'مدارک تکمیلی',
+    hearingLetterNo: 'نامهٔ حضور در جلسهٔ دفاع',
+    hearingLetterDate: 'نامهٔ حضور در جلسهٔ دفاع',
+    committeeDate: 'صورت‌جلسهٔ کمیته',
+    committeeRegNo: 'رأی کمیته', verdictDate: 'رأی کمیته',
+    verdictFull: 'رأی کمیته', verdictSignedDate: 'رأی کمیته',
+    noticeLetterNo: 'نامهٔ ابلاغ رأی', noticeLetterDate: 'نامهٔ ابلاغ رأی',
+    noticeResultDate: 'نتیجهٔ ابلاغ', noticeReturn: 'نتیجهٔ ابلاغ',
+    transferLetterNo: 'نامهٔ صادره'
+  };
+
+  function kindForField(key) { return FIELD_KIND[key] || ''; }
+
+  /** اسناد جاریِ یک پرونده از یک نوع مشخص */
+  function ofKind(caseId, kind) {
+    return current(caseId).filter(function (d) { return d.kind === kind; });
+  }
+
   /** نوع سند → مرحلهٔ گردش‌کار، برای نشاندن سند در تایم‌لاین */
   var KIND_STAGE = {
     'نامهٔ وارده': 'intake', 'گزارش بازرسی': 'intake',
@@ -9878,12 +10119,28 @@ else if (typeof exports === 'object'){
    * نامی که هم در ویندوز و هم در مک معتبر باشد.
    * حروف فارسی مشکلی ندارند؛ مسئله نویسه‌های ممنوع و نقطه/فاصلهٔ انتهایی است.
    */
+  /*
+   * نویسه‌های نامرئیِ قالب‌بندی (ردهٔ Cf یونیکد) — مهم‌ترینشان نیم‌فاصله
+   * U+200C — در نام فایل مجاز نیستند: File System Access API کروم نامِ
+   * حاوی آن‌ها را رد می‌کند و ساخت فایل با خطا می‌افتد. دو نوع سند
+   * («دعوت‌نامهٔ جلسه» و «صورت‌جلسهٔ کمیته») و خیلی از نام‌های فارسی
+   * («حق‌بین»، «علی‌رضا») نیم‌فاصله دارند، پس بارگذاری‌شان شکست می‌خورد.
+   * نیم‌فاصله به فاصلهٔ معمولی تبدیل می‌شود — متن همان‌طور خوانده می‌شود —
+   * و بقیهٔ نویسه‌های نامرئی حذف می‌شوند. این فقط روی نام فایل روی دیسک
+   * اثر دارد؛ خودِ داده در برنامه دست‌نخورده می‌ماند.
+   */
+  var ZWNJ = /\u200C/g;
+  var INVISIBLE = /[\u00AD\u200B\u200D-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\uFEFF]/g;
+
   function safeName(name, fallback) {
     var s = String(name == null ? '' : name)
+      .replace(ZWNJ, ' ')                  // نیم‌فاصله → فاصله
+      .replace(INVISIBLE, '')              // بقیهٔ نویسه‌های نامرئی
       .replace(/[\\/:*?"<>|]/g, '-')       // ممنوع در ویندوز
       .replace(/[\x00-\x1F\x7F]/g, '')     // نویسه‌های کنترلی
       .replace(/\s+/g, ' ')
       .trim()
+      .replace(/^[. ]+/, '')               // نقطه/فاصلهٔ ابتدایی هم دردسر است
       .replace(/[. ]+$/, '');              // ویندوز نقطه/فاصلهٔ انتهایی نمی‌پذیرد
     if (WIN_RESERVED.test(s)) s = '_' + s;
     if (s.length > 120) s = s.slice(0, 120).trim().replace(/[. ]+$/, '');
@@ -9982,7 +10239,11 @@ else if (typeof exports === 'object'){
   /** پوشهٔ یک پرونده؛ نام پوشه پس از ساخت روی خود پرونده ثبت می‌شود */
   function caseFolder(rec, create) {
     return requireRoot().then(function (r) {
-      var name = rec.docFolder || folderNameFor(rec);
+      /* اگر نام پوشه از نسخه‌های قبلی نویسهٔ نامرئی داشته باشد، پاکش
+         می‌کنیم؛ وگرنه کروم همان خطای قبلی را می‌دهد. */
+      var name = rec.docFolder
+        ? safeName(rec.docFolder, folderNameFor(rec))
+        : folderNameFor(rec);
       return r.getDirectoryHandle(name, { create: !!create }).then(function (dir) {
         if (create && rec.docFolder !== name) {
           rec.docFolder = name;
@@ -10516,6 +10777,7 @@ else if (typeof exports === 'object'){
     fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
     indexDocs: indexDocs, clearMemory: clearMemory,
     CATEGORIES: CATEGORIES, DIRECTIONS: DIRECTIONS,
+    FIELD_KIND: FIELD_KIND, kindForField: kindForField, ofKind: ofKind,
     categoryOf: categoryOf, categoryLabel: categoryLabel,
     directionOf: directionOf, directionLabel: directionLabel,
     updateMeta: updateMeta, bundle: bundle
@@ -12562,8 +12824,7 @@ else if (typeof exports === 'object'){
     { key: 'case', label: 'پرونده و شخص', groups: ['case', 'person', 'job'] },
     { key: 'defense', label: 'دعوت، دفاعیات و استعلام', groups: ['defense'] },
     { key: 'verdict', label: 'جلسه و رأی', groups: ['verdict'] },
-    { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] },
-    { key: 'violation', label: 'دسته‌بندی تخلف و توضیحات', groups: ['violation'] }
+    { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] }
   ];
 
   var GROUP_LABEL = {};
@@ -12823,7 +13084,7 @@ else if (typeof exports === 'object'){
 
     FORM_TABS.forEach(function (t) {
       makeTab(t.key, t.label, M.FIELDS.filter(function (f) {
-        return t.groups.indexOf(f.group) >= 0 && draft[f.key];
+        return t.groups.indexOf(f.group) >= 0 && !f.hidden && draft[f.key];
       }).length);
     });
     makeTab('__notes', 'یادداشت و پیگیری',
@@ -12846,6 +13107,44 @@ else if (typeof exports === 'object'){
       } else if (badge) {
         badge.remove();
       }
+    }
+
+    /*
+     * گیرهٔ کاغذ کنار فیلدهای نامه.
+     *
+     * هر جا شمارهٔ نامه یا تاریخ نامه‌ای هست، پشتش یک کاغذ واقعی است. این
+     * دکمه همان‌جا یا سندِ ثبت‌شده را نشان می‌دهد، یا پنجرهٔ بارگذاری را با
+     * نوعِ درست باز می‌کند — با جای متن نامه و خود تصویر. نتیجه در همان
+     * تب مستندات جمع می‌شود، نه جای جدا.
+     */
+    function letterClip(f) {
+      if (!existing) return null;
+      var kind = w.Docs.kindForField(f.key);
+      if (!kind) return null;
+      var have = w.Docs.status().linked ? w.Docs.ofKind(existing.id, kind) : [];
+      var btn = el('button.letter-clip' + (have.length ? '.has' : ''), {
+        type: 'button',
+        title: have.length
+          ? w.U.toFaDigits(have.length) + ' سند «' + kind + '» — برای دیدن کلیک کنید'
+          : 'پیوست «' + kind + '»: متن نامه و تصویرش',
+        html: w.Mobile.icon('paperclip')
+      }, [
+        have.length ? el('span.letter-clip-n', { text: w.U.toFaDigits(have.length) }) : null
+      ]);
+      // برچسب، فیلد را فوکوس می‌کند؛ کلیک روی گیره نباید این کار را بکند
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (have.length) {
+          w.UIViewer.open(have, 0);
+          return;
+        }
+        w.UIDocs.addFrom(existing, function () {
+          app.state.formTab = activeTab;
+          app.render();
+        }, { kind: kind });
+      });
+      return btn;
     }
 
     var panel = el('div.form-panel');
@@ -12889,7 +13188,10 @@ else if (typeof exports === 'object'){
       var many = tab.groups.length > 1;
 
       tab.groups.forEach(function (gk) {
-        var fields = M.FIELDS.filter(function (f) { return f.group === gk; });
+        // فیلدهای پنهان (مثل مرحلهٔ دستی) جایشان بالای پرونده است، نه در فرم
+        var fields = M.FIELDS.filter(function (f) {
+          return f.group === gk && !f.hidden;
+        });
         if (!fields.length) return;
         // وقتی چند گروه در یک تب‌اند، هرکدام سربرگ خودش را دارد
         if (many) {
@@ -12905,9 +13207,14 @@ else if (typeof exports === 'object'){
         fields.forEach(function (f) {
           var input = makeInput(f, draft[f.key] || '',
             function (v) { setField(f.key, v); }, app);
+          var label = el('span.field-label', {
+            text: cleanLabel(f.label), title: f.label
+          });
+          var clip = letterClip(f);
           grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
             { 'data-field': f.key }, [
-              el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
+              // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
+              clip ? el('span.field-head', null, [label, clip]) : label,
               input
             ]));
         });
@@ -13065,12 +13372,31 @@ else if (typeof exports === 'object'){
             : w.U.toFaDigits(action.limit - action.days) + ' روز تا پایان مهلت');
         }
         if (action.owner && action.owner !== '—') meta.push('مسئول: ' + action.owner);
-        next = el('div.case-next' + (action.overdue ? '.late' : ''), null, [
+        next = el('div.case-next' + (action.overdue ? '.late' : '') +
+          (action.manual ? '.manual' : ''), null, [
           el('div.case-next-text', null, [
             el('span.case-next-label', { text: action.label }),
-            el('span.case-next-meta', { text: meta.join(' • ') })
+            action.manual ? el('span.stage-manual-tag', { text: 'مرحلهٔ دستی' }) : null,
+            el('span.case-next-meta', { text: meta.join(' • ') }),
+            // وقتی دستی تنظیم شده، محاسبهٔ خودکار هم گفته می‌شود تا پنهان نماند
+            action.manual && action.autoLabel && action.autoKey !== action.key
+              ? el('span.case-next-auto', {
+                text: 'بر اساس تاریخ‌های ثبت‌شده: ' + action.autoLabel
+              })
+              : null
           ]),
           el('div.spacer'),
+          el('button.btn.small.ghost.case-stage', {
+            type: 'button',
+            text: action.manual ? 'تغییر مرحله' : 'تنظیم دستی مرحله',
+            title: 'اگر مرحلهٔ واقعی پرونده با تاریخ‌های ثبت‌شده نمی‌خواند',
+            onclick: function () {
+              w.UIStage.dialog(app, existing, function () {
+                app.state.formTab = activeTab;
+                app.render();
+              });
+            }
+          }),
           ctaButton(action)
         ]);
       } else {
@@ -14861,6 +15187,175 @@ else if (typeof exports === 'object'){
 
 </script>
 <script>
+/* ==== js/ui.stage.js ==== */
+/*
+ * تنظیم دستی مرحلهٔ پرونده.
+ *
+ * موتور، مرحله را از روی تاریخ‌های خودِ پرونده حساب می‌کند و معمولاً درست
+ * می‌گوید. ولی همیشه نه: پرونده‌ای که عملاً سرِ جلسهٔ دفاع است ممکن است
+ * تاریخ‌های میانی‌اش هنوز وارد نشده باشد و کارتابل آن را چند مرحله عقب
+ * نشان دهد. آن‌وقت کاربر باید بتواند بگوید «این پرونده اینجاست».
+ *
+ * دو چیز عمداً رعایت شده:
+ *   ۱) تاریخ‌ها دست نمی‌خورند. این تنظیم فقط می‌گوید «الان کجاییم»، نه
+ *      اینکه تاریخی را جعل کند. ریل همچنان تیکِ مرحله‌ها را از روی
+ *      تاریخ‌های واقعی می‌زند.
+ *   ۲) پنهان نمی‌ماند. هر جا مرحله دستی تنظیم شده باشد، گفته می‌شود که
+ *      دستی است و محاسبهٔ خودکار چه می‌گفت، و با یک کلیک برمی‌گردد.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model, WL = w.Worklist;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  /** پنجرهٔ انتخاب مرحله */
+  function dialog(app, rec, onDone) {
+    var auto = WL.nextAction(rec);
+    var autoKey = auto.manual ? auto.autoKey : auto.key;
+    var stages = WL.stages(rec);
+    var state = {
+      key: rec.stageOverride || autoKey,
+      date: rec.stageOverrideDate || J.today(),
+      note: rec.stageOverrideNote || ''
+    };
+
+    var body = el('div.stage-set');
+    body.appendChild(el('p.muted.tiny', {
+      text: 'بگویید پرونده الان در کدام مرحله است. تاریخ‌های ثبت‌شده دست ' +
+        'نمی‌خورند؛ فقط کارتابل و آلارم‌ها از همین‌جا حساب می‌شوند.'
+    }));
+
+    var pick = el('div.stage-pick');
+    var buttons = {};
+    WL.STAGES.forEach(function (st, i) {
+      var info = stages[i];
+      var b = el('button.stage-opt', {
+        type: 'button',
+        onclick: function () {
+          state.key = st.key;
+          sync();
+        }
+      }, [
+        el('span.stage-opt-n', { text: fa(i + 1) }),
+        el('span.stage-opt-label', { text: st.label }),
+        el('span.stage-opt-meta', {
+          text: info.date ? J.format(info.date)
+            : (info.done ? 'گذشته' : (st.optional ? 'اختیاری' : '—'))
+        })
+      ]);
+      if (st.key === autoKey) b.appendChild(el('span.stage-opt-auto', { text: 'خودکار' }));
+      buttons[st.key] = b;
+      pick.appendChild(b);
+    });
+    body.appendChild(pick);
+
+    var dateField = w.DatePicker.field(state.date, function (v) {
+      state.date = v;
+      sync();
+    });
+    var noteInput = el('input.input.small', {
+      type: 'text', value: state.note,
+      placeholder: 'مثلاً: تاریخ‌های میانی هنوز وارد نشده'
+    });
+    noteInput.addEventListener('input', function () { state.note = noteInput.value; });
+
+    body.appendChild(el('div.stage-when', null, [
+      el('label.field', null, [
+        el('span.field-label', { text: 'از چه تاریخی در این مرحله است' }), dateField
+      ]),
+      el('label.field.wide', null, [
+        el('span.field-label', { text: 'علت (اختیاری)' }), noteInput
+      ])
+    ]));
+
+    var summary = el('div.stage-summary');
+    body.appendChild(summary);
+
+    function sync() {
+      Object.keys(buttons).forEach(function (k) {
+        buttons[k].classList.toggle('on', k === state.key);
+      });
+      w.U.clear(summary);
+      var st = WL.stageByKey(state.key);
+      if (!st) return;
+      var days = state.date ? J.diffDays(J.today(), state.date) : null;
+      summary.appendChild(el('span', {
+        text: 'اقدام بعدی می‌شود: «' + (WL.MANUAL_LABEL[st.key] || st.label) + '»' +
+          (days != null && days >= 0 ? ' — ' + fa(days) + ' روز است در این مرحله.' : '.')
+      }));
+      if (state.key === autoKey) {
+        summary.appendChild(el('span.muted.tiny', {
+          text: ' همین مرحله‌ای است که خودِ برنامه حساب کرده بود.'
+        }));
+      }
+    }
+    sync();
+
+    var m;
+    var foot = [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      })
+    ];
+    if (rec.stageOverride) {
+      foot.push(el('button.btn.ghost', {
+        type: 'button', text: 'برگشت به حالت خودکار',
+        title: 'دوباره از روی تاریخ‌های خود پرونده حساب شود',
+        onclick: function () { clear(app, rec, onDone, m); }
+      }));
+    }
+    foot.push(el('button.btn.primary', {
+      type: 'button', text: 'ثبت مرحله',
+      onclick: function () {
+        var st = WL.stageByKey(state.key);
+        M.applyPatches([{
+          id: rec.id,
+          patch: {
+            stageOverride: state.key,
+            stageOverrideDate: state.date,
+            stageOverrideNote: state.note.trim()
+          }
+        }], {
+          kind: 'stage',
+          note: 'مرحله دستی روی «' + (st ? st.label : state.key) + '» تنظیم شد' +
+            (state.note.trim() ? ' — ' + state.note.trim() : '')
+        }).then(function () {
+          m.close();
+          w.U.toast('مرحلهٔ پرونده روی «' + (st ? st.label : '') + '» تنظیم شد.', 'good');
+          if (onDone) onDone();
+        }).catch(function (e) {
+          w.U.toast('ثبت مرحله ناموفق بود: ' + e.message, 'bad');
+        });
+      }
+    }));
+
+    m = w.U.modal('تنظیم دستی مرحلهٔ پرونده', body, foot);
+    m.root.classList.add('stage-modal');
+    return m;
+  }
+
+  /** برگرداندن به محاسبهٔ خودکار */
+  function clear(app, rec, onDone, modal) {
+    return M.applyPatches([{
+      id: rec.id,
+      patch: { stageOverride: '', stageOverrideDate: '', stageOverrideNote: '' }
+    }], { kind: 'stage', note: 'مرحله به حالت خودکار برگشت' })
+      .then(function () {
+        if (modal) modal.close();
+        w.U.toast('مرحله دوباره از روی تاریخ‌های پرونده حساب می‌شود.', 'good');
+        if (onDone) onDone();
+      }).catch(function (e) {
+        w.U.toast('برگرداندن ناموفق بود: ' + e.message, 'bad');
+      });
+  }
+
+  w.UIStage = { dialog: dialog, clear: clear };
+})(window);
+
+</script>
+<script>
 /* ==== js/ui.viewer.js ==== */
 /*
  * نمایشگر سند — پنجرهٔ بزرگ‌نمایی.
@@ -16265,6 +16760,7 @@ else if (typeof exports === 'object'){
     var rest = M.FIELDS.filter(function (f) {
       // شماره پرونده و مشخصات هویتی دسته‌ای پر نمی‌شوند
       if (seen[f.key]) return false;
+      if (f.hidden) return false;
       if (f.key === 'caseNo' || f.key === 'nationalId') return false;
       return true;
     });
@@ -16533,12 +17029,17 @@ else if (typeof exports === 'object'){
       var cls = 'li.rail-step';
       if (st.done) cls += '.done';
       if (st.current) cls += '.current';
+      if (st.manual) cls += '.manual';
       if (i === 0) cls += '.first';
-      var node = el(cls, { title: st.label + (st.date ? ' — ' + J.format(st.date) : '') }, [
+      var node = el(cls, {
+        title: st.label + (st.date ? ' — ' + J.format(st.date) : '') +
+          (st.manual ? ' — مرحلهٔ دستی' : '')
+      }, [
         el('span.rail-dot'),
         size === 'full' ? el('span.rail-name', { text: st.short }) : null,
         size === 'full' ? el('span.rail-date', {
-          text: st.date ? J.format(st.date) : (st.current ? 'اکنون' : '')
+          text: st.date ? J.format(st.date)
+            : (st.current ? (st.manual ? 'دستی' : 'اکنون') : '')
         }) : null
       ]);
       box.appendChild(node);

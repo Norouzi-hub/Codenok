@@ -141,8 +141,7 @@
     { key: 'case', label: 'پرونده و شخص', groups: ['case', 'person', 'job'] },
     { key: 'defense', label: 'دعوت، دفاعیات و استعلام', groups: ['defense'] },
     { key: 'verdict', label: 'جلسه و رأی', groups: ['verdict'] },
-    { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] },
-    { key: 'violation', label: 'دسته‌بندی تخلف و توضیحات', groups: ['violation'] }
+    { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] }
   ];
 
   var GROUP_LABEL = {};
@@ -402,7 +401,7 @@
 
     FORM_TABS.forEach(function (t) {
       makeTab(t.key, t.label, M.FIELDS.filter(function (f) {
-        return t.groups.indexOf(f.group) >= 0 && draft[f.key];
+        return t.groups.indexOf(f.group) >= 0 && !f.hidden && draft[f.key];
       }).length);
     });
     makeTab('__notes', 'یادداشت و پیگیری',
@@ -425,6 +424,44 @@
       } else if (badge) {
         badge.remove();
       }
+    }
+
+    /*
+     * گیرهٔ کاغذ کنار فیلدهای نامه.
+     *
+     * هر جا شمارهٔ نامه یا تاریخ نامه‌ای هست، پشتش یک کاغذ واقعی است. این
+     * دکمه همان‌جا یا سندِ ثبت‌شده را نشان می‌دهد، یا پنجرهٔ بارگذاری را با
+     * نوعِ درست باز می‌کند — با جای متن نامه و خود تصویر. نتیجه در همان
+     * تب مستندات جمع می‌شود، نه جای جدا.
+     */
+    function letterClip(f) {
+      if (!existing) return null;
+      var kind = w.Docs.kindForField(f.key);
+      if (!kind) return null;
+      var have = w.Docs.status().linked ? w.Docs.ofKind(existing.id, kind) : [];
+      var btn = el('button.letter-clip' + (have.length ? '.has' : ''), {
+        type: 'button',
+        title: have.length
+          ? w.U.toFaDigits(have.length) + ' سند «' + kind + '» — برای دیدن کلیک کنید'
+          : 'پیوست «' + kind + '»: متن نامه و تصویرش',
+        html: w.Mobile.icon('paperclip')
+      }, [
+        have.length ? el('span.letter-clip-n', { text: w.U.toFaDigits(have.length) }) : null
+      ]);
+      // برچسب، فیلد را فوکوس می‌کند؛ کلیک روی گیره نباید این کار را بکند
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (have.length) {
+          w.UIViewer.open(have, 0);
+          return;
+        }
+        w.UIDocs.addFrom(existing, function () {
+          app.state.formTab = activeTab;
+          app.render();
+        }, { kind: kind });
+      });
+      return btn;
     }
 
     var panel = el('div.form-panel');
@@ -468,7 +505,10 @@
       var many = tab.groups.length > 1;
 
       tab.groups.forEach(function (gk) {
-        var fields = M.FIELDS.filter(function (f) { return f.group === gk; });
+        // فیلدهای پنهان (مثل مرحلهٔ دستی) جایشان بالای پرونده است، نه در فرم
+        var fields = M.FIELDS.filter(function (f) {
+          return f.group === gk && !f.hidden;
+        });
         if (!fields.length) return;
         // وقتی چند گروه در یک تب‌اند، هرکدام سربرگ خودش را دارد
         if (many) {
@@ -484,9 +524,14 @@
         fields.forEach(function (f) {
           var input = makeInput(f, draft[f.key] || '',
             function (v) { setField(f.key, v); }, app);
+          var label = el('span.field-label', {
+            text: cleanLabel(f.label), title: f.label
+          });
+          var clip = letterClip(f);
           grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
             { 'data-field': f.key }, [
-              el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
+              // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
+              clip ? el('span.field-head', null, [label, clip]) : label,
               input
             ]));
         });
@@ -644,12 +689,31 @@
             : w.U.toFaDigits(action.limit - action.days) + ' روز تا پایان مهلت');
         }
         if (action.owner && action.owner !== '—') meta.push('مسئول: ' + action.owner);
-        next = el('div.case-next' + (action.overdue ? '.late' : ''), null, [
+        next = el('div.case-next' + (action.overdue ? '.late' : '') +
+          (action.manual ? '.manual' : ''), null, [
           el('div.case-next-text', null, [
             el('span.case-next-label', { text: action.label }),
-            el('span.case-next-meta', { text: meta.join(' • ') })
+            action.manual ? el('span.stage-manual-tag', { text: 'مرحلهٔ دستی' }) : null,
+            el('span.case-next-meta', { text: meta.join(' • ') }),
+            // وقتی دستی تنظیم شده، محاسبهٔ خودکار هم گفته می‌شود تا پنهان نماند
+            action.manual && action.autoLabel && action.autoKey !== action.key
+              ? el('span.case-next-auto', {
+                text: 'بر اساس تاریخ‌های ثبت‌شده: ' + action.autoLabel
+              })
+              : null
           ]),
           el('div.spacer'),
+          el('button.btn.small.ghost.case-stage', {
+            type: 'button',
+            text: action.manual ? 'تغییر مرحله' : 'تنظیم دستی مرحله',
+            title: 'اگر مرحلهٔ واقعی پرونده با تاریخ‌های ثبت‌شده نمی‌خواند',
+            onclick: function () {
+              w.UIStage.dialog(app, existing, function () {
+                app.state.formTab = activeTab;
+                app.render();
+              });
+            }
+          }),
           ctaButton(action)
         ]);
       } else {

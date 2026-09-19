@@ -23,6 +23,7 @@
     var rest = M.FIELDS.filter(function (f) {
       // شماره پرونده و مشخصات هویتی دسته‌ای پر نمی‌شوند
       if (seen[f.key]) return false;
+      if (f.hidden) return false;
       if (f.key === 'caseNo' || f.key === 'nationalId') return false;
       return true;
     });

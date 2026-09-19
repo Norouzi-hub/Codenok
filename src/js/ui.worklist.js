@@ -27,12 +27,17 @@
       var cls = 'li.rail-step';
       if (st.done) cls += '.done';
       if (st.current) cls += '.current';
+      if (st.manual) cls += '.manual';
       if (i === 0) cls += '.first';
-      var node = el(cls, { title: st.label + (st.date ? ' — ' + J.format(st.date) : '') }, [
+      var node = el(cls, {
+        title: st.label + (st.date ? ' — ' + J.format(st.date) : '') +
+          (st.manual ? ' — مرحلهٔ دستی' : '')
+      }, [
         el('span.rail-dot'),
         size === 'full' ? el('span.rail-name', { text: st.short }) : null,
         size === 'full' ? el('span.rail-date', {
-          text: st.date ? J.format(st.date) : (st.current ? 'اکنون' : '')
+          text: st.date ? J.format(st.date)
+            : (st.current ? (st.manual ? 'دستی' : 'اکنون') : '')
         }) : null
       ]);
       box.appendChild(node);

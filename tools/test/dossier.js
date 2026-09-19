@@ -345,6 +345,162 @@ function fakeFile(name, text, type) {
   check('آلارمِ «ثبت تاریخ جلسه» تب درست را باز و فیلد را روشن می‌کند',
     jumped.exists && jumped.flashed, JSON.stringify(jumped));
 
+  // ---------------------------------------------------------------------
+  console.log('\n— تنظیم دستی مرحله —');
+
+  const manual = await page.evaluate(async () => {
+    const M = window.Model, WL = window.Worklist, J = window.J;
+    const rec = await M.create({
+      caseNo: '1404998', firstName: 'مریم', lastName: 'کاظمی',
+      intakeDate: J.addDays(J.today(), -40), deliveryDate: J.addDays(J.today(), -38)
+    });
+    const before = WL.nextAction(M.get(rec.id));
+    // پرونده عملاً سرِ جلسهٔ دفاع است، ولی تاریخ‌های میانی وارد نشده
+    await M.applyPatches([{ id: rec.id, patch: {
+      stageOverride: 'hearing',
+      stageOverrideDate: J.addDays(J.today(), -10),
+      stageOverrideNote: 'تاریخ‌های میانی هنوز وارد نشده'
+    } }], { kind: 'stage', note: 'آزمون' });
+    const after = WL.nextAction(M.get(rec.id));
+    const steps = WL.stages(M.get(rec.id));
+    return {
+      id: rec.id,
+      beforeKey: before.key, beforeLabel: before.label,
+      afterKey: after.key, afterLabel: after.label,
+      manual: !!after.manual, autoKey: after.autoKey, autoLabel: after.autoLabel,
+      days: after.days,
+      currentStage: (steps.filter(s => s.current)[0] || {}).key,
+      manualStage: (steps.filter(s => s.manual)[0] || {}).key,
+      // تاریخ‌ها نباید دست بخورند
+      dates: steps.filter(s => s.date).map(s => s.key).join(',')
+    };
+  });
+  check('بدون تنظیم دستی، مرحله از روی تاریخ‌ها حساب می‌شود',
+    manual.beforeKey === 'decree', manual.beforeLabel);
+  check('مرحلهٔ دستی بر محاسبهٔ خودکار می‌چربد',
+    manual.afterKey === 'hearing' && manual.manual === true, manual.afterLabel);
+  check('محاسبهٔ خودکار پنهان نمی‌شود، کنارش گفته می‌شود',
+    manual.autoKey === 'decree' && !!manual.autoLabel, manual.autoLabel);
+  check('روزشمار از تاریخی که کاربر داده حساب می‌شود', manual.days === 10,
+    manual.days + ' روز');
+  check('«اکنون» روی ریل به مرحلهٔ دستی می‌رود',
+    manual.currentStage === 'hearing' && manual.manualStage === 'hearing',
+    manual.currentStage);
+  check('تاریخ‌های ثبت‌شده دست نمی‌خورند',
+    manual.dates === 'intake,assign', manual.dates);
+
+  await page.evaluate((id) => window.App.openCase(id), manual.id);
+  await page.waitForSelector('.case-next');
+  await page.waitForTimeout(300);
+  const shown = await page.evaluate(() => ({
+    tag: !!document.querySelector('.stage-manual-tag'),
+    auto: (document.querySelector('.case-next-auto') || {}).textContent || '',
+    btn: (document.querySelector('.case-stage') || {}).textContent || '',
+    railManual: document.querySelectorAll('.rail-step.manual').length
+  }));
+  check('بالای پرونده معلوم است که مرحله دستی است',
+    shown.tag && /بر اساس تاریخ‌های ثبت‌شده/.test(shown.auto) &&
+    shown.railManual === 1, shown.auto);
+  check('دکمهٔ تغییر مرحله در دسترس است', /تغییر مرحله/.test(shown.btn), shown.btn);
+
+  await page.evaluate(() => document.querySelector('.case-stage').click());
+  await page.waitForSelector('.stage-pick');
+  await page.waitForTimeout(250);
+  const picker = await page.evaluate(() => ({
+    options: document.querySelectorAll('.stage-opt').length,
+    selected: (document.querySelector('.stage-opt.on .stage-opt-label') || {}).textContent,
+    autoMark: (document.querySelector('.stage-opt-auto') || {}).textContent,
+    canRevert: [...document.querySelectorAll('.modal-foot .btn')]
+      .some(b => /خودکار/.test(b.textContent))
+  }));
+  check('پنجرهٔ مرحله، هر پانزده مرحله را با انتخاب فعلی نشان می‌دهد',
+    picker.options === 15 && picker.selected === 'جلسهٔ دفاع' &&
+    picker.autoMark === 'خودکار', JSON.stringify(picker));
+  check('راه برگشت به حالت خودکار هست', picker.canRevert);
+
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.modal-foot .btn')]
+      .filter(b => /خودکار/.test(b.textContent))[0].click();
+  });
+  await page.waitForTimeout(700);
+  const reverted = await page.evaluate((id) =>
+    window.Worklist.nextAction(window.Model.get(id)), manual.id);
+  check('برگشت به خودکار، دوباره از تاریخ‌ها حساب می‌کند',
+    reverted.key === 'decree' && !reverted.manual, reverted.label);
+
+  // ---------------------------------------------------------------------
+  console.log('\n— پیوست نامه کنار فیلد —');
+  await page.evaluate((id) => window.App.openCase(id), recId);
+  await page.waitForSelector('.case-view');
+  // تبِ فعال از پروندهٔ قبلی به‌خاطر مانده؛ برای این سنجه باید «پرونده» باشد
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.tab')]
+      .filter(t => /پرونده و شخص/.test(t.textContent))[0].click();
+  });
+  await page.waitForTimeout(400);
+  const clips = await page.evaluate(() => {
+    const out = [];
+    document.querySelectorAll('.field[data-field]').forEach(f => {
+      const c = f.querySelector('.letter-clip');
+      if (c) out.push({ field: f.dataset.field, has: c.classList.contains('has'),
+        title: c.title });
+    });
+    return out;
+  });
+  check('کنار فیلدهای نامه، گیرهٔ پیوست هست',
+    clips.length >= 3 && clips.some(c => c.field === 'letterNo'),
+    clips.map(c => c.field).join(','));
+  check('گیره می‌گوید چه نوع سندی پیوست می‌شود',
+    clips.some(c => /نامهٔ وارده/.test(c.title)),
+    (clips[0] || {}).title);
+
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.tab')]
+      .filter(t => /دعوت، دفاعیات/.test(t.textContent))[0].click();
+  });
+  await page.waitForTimeout(300);
+  const inviteClip = await page.evaluate(() => {
+    const f = document.querySelector('[data-field="invitationLetterDate"] .letter-clip');
+    return f ? { has: f.classList.contains('has'), title: f.title,
+      n: (f.querySelector('.letter-clip-n') || {}).textContent } : null;
+  });
+  check('فیلدی که سندش ثبت شده، تعداد را روی گیره نشان می‌دهد',
+    inviteClip && inviteClip.has && inviteClip.n === '۱', JSON.stringify(inviteClip));
+
+  await page.evaluate(() =>
+    document.querySelector('[data-field="invitationLetterDate"] .letter-clip').click());
+  await page.waitForSelector('.vw-box', { timeout: 8000 });
+  await page.waitForTimeout(400);
+  const viaClip = await page.evaluate(() => {
+    const t = [...document.querySelectorAll('.vw-chip')].map(c => c.textContent);
+    document.querySelector('.vw-head .icon-btn').click();
+    return t;
+  });
+  check('کلیک روی گیره، همان سند را باز می‌کند',
+    viaClip.indexOf('دعوت‌نامهٔ جلسه') >= 0, viaClip.join(' | '));
+
+  // ---------------------------------------------------------------------
+  console.log('\n— تب دسته‌بندی تخلف حذف شده —');
+  const tabs = await page.evaluate(() =>
+    [...document.querySelectorAll('.tab')].map(t => t.textContent.trim()));
+  check('تب «دسته‌بندی تخلف» دیگر نیست',
+    !tabs.some(t => /دسته‌بندی تخلف/.test(t)), tabs.join(' | '));
+  const kept = await page.evaluate(() => {
+    const keys = window.Model.FIELDS.map(f => f.key);
+    return {
+      notes: (window.Model.FIELD_BY_KEY.notes || {}).group,
+      gone: ['violationAdmin', 'violationFinancial', 'violationTechnical',
+        'violationDisciplinary'].filter(k => keys.indexOf(k) >= 0),
+      hidden: window.Model.FIELDS.filter(f => f.hidden).map(f => f.key)
+    };
+  });
+  check('«توضیحات» حفظ شده و به تب پرونده رفته', kept.notes === 'case', kept.notes);
+  check('چهار ستون دسته‌بندی تخلف حذف شده‌اند', kept.gone.length === 0,
+    kept.gone.join(','));
+  check('فیلدهای مرحلهٔ دستی پنهان‌اند و در فرم نمی‌آیند',
+    kept.hidden.length === 3 &&
+    !clips.some(c => /stageOverride/.test(c.field)), kept.hidden.join(','));
+
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));
 

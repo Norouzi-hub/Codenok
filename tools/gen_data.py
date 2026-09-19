@@ -75,13 +75,10 @@ SCHEMA = [
     (51, 'incentiveDocs',              'textarea', 'enforce'),
     (61, 'judicialReport',             'textarea', 'enforce'),
     (62, 'multiJobViolation',          'textarea', 'enforce'),
-    # --- 7) دسته‌بندی تخلف و توضیحات --------------------------------------
-    (63, 'violationAdmin',             'textarea', 'violation'),
-    (64, 'violationFinancial',         'textarea', 'violation'),
-    (65, 'violationTechnical',         'textarea', 'violation'),
-    (66, 'violationDisciplinary',      'textarea', 'violation'),
-    (45, 'notes',                      'textarea', 'violation'),
-    (68, 'updatedAtField',             'date',     'violation'),
+    # «توضیحات» و «تاریخ به‌روزرسانی» تبِ جدا نمی‌خواهند؛ کنار خود پرونده
+    # می‌نشینند. تبِ «دسته‌بندی تخلف» به درخواست کاربر حذف شد.
+    (45, 'notes',                      'textarea', 'case'),
+    (68, 'updatedAtField',             'date',     'case'),
 ]
 
 # ستون‌هایی که عمداً در برنامه نمی‌آیند (به درخواست کاربر حذف شدند).
@@ -94,6 +91,13 @@ EXCLUDED_COLUMNS = {
     40: 'رای کمیته انضباطی5',
     59: 'سال',
     60: 'نوع گزارش',
+    # تبِ «دسته‌بندی تخلف» به درخواست کاربر حذف شد؛ این چهار ستون هم با آن
+    # رفتند. دسته‌بندی تخلف در عمل از «موضوع تخلف» و «نوع پرونده» خوانده
+    # می‌شود و این چهار ستون جای تکراری می‌گرفتند.
+    63: 'تخلفات اداری و سازمانی',
+    64: 'تخلفات مالی و معاملاتی',
+    65: 'تخلفات فنی و شهرسازی',
+    66: 'تخلفات انضباطی',
 }
 
 # --------------------------------------------------------------------------
@@ -109,10 +113,12 @@ EXTRA_FIELDS = [
     ('transferLetterNo', 'شماره نامه ارجاع', 'text', 'case'),
     ('transferReason', 'علت ارجاع به کارشناس دیگر', 'textarea', 'case'),
     ('decreeDate', 'تاریخ آخرین حکم کارگزینی', 'date', 'job'),
+    # «تاریخ اخذ دفاعیه» همان چیزی است که کاربر دنبالش می‌گردد؛ اسمش صریح
+    # شد و جایش آمد بالا، بلافاصله بعد از نامهٔ دعوت.
+    ('defenseReceivedDate', 'تاریخ اخذ دفاعیه (دریافت دفاعیات)', 'date', 'defense'),
+    ('defenseChaseLetterDate', 'تاریخ نامه پیگیری دفاعیات', 'date', 'defense'),
     ('defectLetterNo', 'شماره نامه رفع نواقص', 'text', 'defense'),
     ('defectLetterDate', 'تاریخ نامه رفع نواقص', 'date', 'defense'),
-    ('defenseReceivedDate', 'تاریخ دریافت دفاعیات', 'date', 'defense'),
-    ('defenseChaseLetterDate', 'تاریخ نامه پیگیری دفاعیات', 'date', 'defense'),
     ('docsCompleteDate', 'تاریخ تکمیل مستندات پرونده', 'date', 'defense'),
     ('hearingLetterNo', 'شماره نامه حضور در جلسه دفاع', 'text', 'verdict'),
     ('hearingLetterDate', 'تاریخ نامه حضور در جلسه دفاع', 'date', 'verdict'),
@@ -122,6 +128,14 @@ EXTRA_FIELDS = [
     ('archiveDate', 'تاریخ ارسال به بایگانی', 'date', 'enforce'),
 ]
 
+# مرحلهٔ دستی: در فرم پرونده دیده نمی‌شود (جایش بالای پرونده است، کنار خود
+# ریل)، ولی باید فیلد باشد تا ذخیره، خروجی اکسل و تاریخچه‌اش کار کند.
+HIDDEN_FIELDS = [
+    ('stageOverride', 'مرحلهٔ تنظیم‌شدهٔ دستی', 'text', 'case'),
+    ('stageOverrideDate', 'تاریخ تنظیم دستی مرحله', 'date', 'case'),
+    ('stageOverrideNote', 'علت تنظیم دستی مرحله', 'text', 'case'),
+]
+
 GROUPS = [
     ('case',      'پرونده و گزارش'),
     ('person',    'مشخصات فرد'),
@@ -129,7 +143,6 @@ GROUPS = [
     ('defense',   'دعوت، دفاعیات و استعلام حراست'),
     ('verdict',   'کمیته و رأی'),
     ('enforce',   'ابلاغ و اجرای رأی'),
-    ('violation', 'دسته‌بندی تخلف و توضیحات'),
 ]
 
 # فیلدهایی که به‌صورت پیش‌فرض در جدول فهرست دیده می‌شوند
@@ -252,6 +265,10 @@ def main(xlsx_path):
         if kind == 'select':
             f['list'] = SELECT_LISTS[key]
         fields.append(f)
+    # فیلدهای پنهان: در فرم دیده نمی‌شوند، ولی ذخیره و خروجی می‌گیرند
+    for key, label, kind, group in HIDDEN_FIELDS:
+        fields.append({'key': key, 'label': label, 'type': kind,
+                       'group': group, 'col': None, 'hidden': True})
     # داخل هر گروه، ترتیب فیلدها همان ترتیب تعریف است
     order = {g: i for i, (g, _) in enumerate(GROUPS)}
     fields.sort(key=lambda f: order.get(f['group'], 99))

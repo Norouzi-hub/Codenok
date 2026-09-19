@@ -97,6 +97,20 @@ window.FIELDS = [
     "col": 67
   },
   {
+    "key": "notes",
+    "label": "توضیحات",
+    "type": "textarea",
+    "group": "case",
+    "col": 45
+  },
+  {
+    "key": "updatedAtField",
+    "label": "تاریخ بروز رسانی",
+    "type": "date",
+    "group": "case",
+    "col": 68
+  },
+  {
     "key": "transferDate",
     "label": "تاریخ ارجاع به کارشناس دیگر",
     "type": "date",
@@ -131,6 +145,30 @@ window.FIELDS = [
     "type": "textarea",
     "group": "case",
     "col": null
+  },
+  {
+    "key": "stageOverride",
+    "label": "مرحلهٔ تنظیم‌شدهٔ دستی",
+    "type": "text",
+    "group": "case",
+    "col": null,
+    "hidden": true
+  },
+  {
+    "key": "stageOverrideDate",
+    "label": "تاریخ تنظیم دستی مرحله",
+    "type": "date",
+    "group": "case",
+    "col": null,
+    "hidden": true
+  },
+  {
+    "key": "stageOverrideNote",
+    "label": "علت تنظیم دستی مرحله",
+    "type": "text",
+    "group": "case",
+    "col": null,
+    "hidden": true
   },
   {
     "key": "nationalId",
@@ -343,6 +381,20 @@ window.FIELDS = [
     "col": 56
   },
   {
+    "key": "defenseReceivedDate",
+    "label": "تاریخ اخذ دفاعیه (دریافت دفاعیات)",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defenseChaseLetterDate",
+    "label": "تاریخ نامه پیگیری دفاعیات",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
     "key": "defectLetterNo",
     "label": "شماره نامه رفع نواقص",
     "type": "text",
@@ -352,20 +404,6 @@ window.FIELDS = [
   {
     "key": "defectLetterDate",
     "label": "تاریخ نامه رفع نواقص",
-    "type": "date",
-    "group": "defense",
-    "col": null
-  },
-  {
-    "key": "defenseReceivedDate",
-    "label": "تاریخ دریافت دفاعیات",
-    "type": "date",
-    "group": "defense",
-    "col": null
-  },
-  {
-    "key": "defenseChaseLetterDate",
-    "label": "تاریخ نامه پیگیری دفاعیات",
     "type": "date",
     "group": "defense",
     "col": null
@@ -524,48 +562,6 @@ window.FIELDS = [
     "type": "date",
     "group": "enforce",
     "col": null
-  },
-  {
-    "key": "violationAdmin",
-    "label": "1-تخلفات اداری و سازمانی(غیبت، تمرد از دستور مافوق، سهل انگاری، عدم رعایت  فرآیندهای اداری، جعل مدرک، تصدی بیش از یک شغل،اعتیاد، تعارض منافع، تصدی بیش از یک شغل و...)",
-    "type": "textarea",
-    "group": "violation",
-    "col": 63
-  },
-  {
-    "key": "violationFinancial",
-    "label": "2-تخلفات مالی و معاملاتی(سوء استفاده از موقعیت شغلی، اخذ وجوه نامتعارف، اختلاس، سرقت، و...)",
-    "type": "textarea",
-    "group": "violation",
-    "col": 64
-  },
-  {
-    "key": "violationTechnical",
-    "label": "3- تخلفات  فنی و شهرسازی، خدمات  شهری و...",
-    "type": "textarea",
-    "group": "violation",
-    "col": 65
-  },
-  {
-    "key": "violationDisciplinary",
-    "label": "4- تخلفات انضباطی(نزاع و درگیری،  بی احترامی  و بدرفتاری با ارباب رجوع،، عدم رعایت شئونات اداری )",
-    "type": "textarea",
-    "group": "violation",
-    "col": 66
-  },
-  {
-    "key": "notes",
-    "label": "توضیحات",
-    "type": "textarea",
-    "group": "violation",
-    "col": 45
-  },
-  {
-    "key": "updatedAtField",
-    "label": "تاریخ بروز رسانی",
-    "type": "date",
-    "group": "violation",
-    "col": 68
   }
 ];
 window.GROUPS = [
@@ -592,10 +588,6 @@ window.GROUPS = [
   {
     "key": "enforce",
     "label": "ابلاغ و اجرای رأی"
-  },
-  {
-    "key": "violation",
-    "label": "دسته‌بندی تخلف و توضیحات"
   }
 ];
 window.DEFAULT_LISTS = {

@@ -36,6 +36,30 @@
     { key: 'archive', label: 'بایگانی و اختتام', short: 'بایگانی', field: 'archiveDate' }
   ];
 
+  /*
+   * تنظیم دستی مرحله.
+   *
+   * موتور، مرحله را از روی تاریخ‌های خودِ پرونده حساب می‌کند و این معمولاً
+   * درست است. ولی همیشه نه: پرونده‌ای که عملاً سرِ جلسهٔ دفاع است ممکن است
+   * تاریخ‌های میانی‌اش هنوز وارد نشده باشد، و کارتابل آن را عقب نشان دهد.
+   * در این حالت کاربر می‌گوید پرونده کجاست و همان حرف می‌چربد.
+   *
+   * خودِ تاریخ‌ها دست نمی‌خورند — دستکاری داده نیست، فقط «الان کجاییم».
+   * هر جا مرحله دستی تنظیم شده باشد، هم در کارتابل و هم بالای پرونده صریح
+   * گفته می‌شود و با یک کلیک به حالت خودکار برمی‌گردد.
+   */
+  function stageByKey(key) {
+    var found = null;
+    STAGES.forEach(function (st) { if (st.key === key) found = st; });
+    return found;
+  }
+
+  function overrideOf(rec) {
+    var key = rec && rec.stageOverride;
+    if (!key) return null;
+    return stageByKey(key);
+  }
+
   /* رأی ممکن است تاریخ نداشته باشد ولی متنش ثبت شده باشد — پرونده‌های قدیمی
      این‌طورند. پس «رأی صادر شده» یعنی یکی از این سه. */
   function hasVerdict(rec) {
@@ -81,12 +105,22 @@
     // مرحله‌ای که از آن گذشته‌ایم، حتی اگر تاریخش ثبت نشده، انجام‌شده است
     for (var i = 0; i < lastDone; i++) done[i] = true;
     var closed = isDone(rec);
+    // مرحلهٔ دستی، جای «اکنون» را می‌گیرد؛ ولی تیکِ مرحله‌ها همچنان از روی
+    // تاریخ‌های واقعی است، تا ریل دروغ نگوید.
+    var manual = overrideOf(rec);
+    var manualAt = -1;
+    if (manual && !closed) {
+      STAGES.forEach(function (st, i) { if (st.key === manual.key) manualAt = i; });
+    }
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
         done: done[i],
         date: st.field ? (rec[st.field] || '') : '',
-        current: !closed && !done[i] && i === lastDone + 1,
+        current: !closed && (manualAt >= 0
+          ? i === manualAt
+          : (!done[i] && i === lastDone + 1)),
+        manual: manualAt >= 0 && i === manualAt,
         optional: !!st.optional
       };
     });
@@ -170,6 +204,61 @@
         'ارجاع‌شده به ' + (rec.transferTo || 'کارشناس دیگر'), '—', '', null);
     }
     if (isClosed(rec) || rec.archiveDate) return make('closed', 'مختومه', '—', '', null);
+
+    /* مرحلهٔ دستی، بر محاسبهٔ خودکار می‌چربد. مهلتش از همان مرحله می‌آید و
+       مبدأ انتظار، تاریخی است که کاربر مرحله را تنظیم کرده — چون تاریخ
+       مرحلهٔ قبلی ممکن است اصلاً وارد نشده باشد. */
+    var manual = overrideOf(rec);
+    if (manual) {
+      var auto = autoAction(rec, limits);
+      var a = make(manual.key, MANUAL_LABEL[manual.key] || manual.label,
+        MANUAL_OWNER[manual.key] || '—',
+        rec.stageOverrideDate || rec.intakeDate || '', limits[manual.key]);
+      a.manual = true;
+      a.autoKey = auto.key;
+      a.autoLabel = auto.label;
+      return a;
+    }
+    return autoAction(rec, limits);
+  }
+
+  /* برچسب و مسئولِ هر مرحله، وقتی دستی انتخاب شده باشد — همان‌هایی که
+     مسیر خودکار هم می‌سازد، یک جا. */
+  var MANUAL_LABEL = {
+    intake: 'ثبت تاریخ ورود پرونده', assign: 'ارجاع به کارشناس',
+    decree: 'گرفتن و بارگذاری آخرین حکم', defect: 'پیگیری رفع نواقص',
+    inquiry: 'پیگیری پاسخ حراست', invite: 'صدور نامهٔ دعوت',
+    defense: 'دریافت دفاعیات', complete: 'تکمیل سایر مستندات',
+    hearing: 'تعیین تاریخ جلسهٔ دفاع',
+    hearingLetter: 'صدور نامهٔ حضور در جلسهٔ دفاع',
+    verdict: 'صدور و ثبت متن رأی', sign: 'گرفتن امضای اعضا پای رأی',
+    notice: 'صدور ابلاغیهٔ رأی', result: 'پیگیری نتیجهٔ ابلاغ',
+    archive: 'ارسال پرونده به بایگانی و اختتام'
+  };
+
+  var MANUAL_OWNER = {
+    intake: 'دبیرخانه', assign: 'دبیرخانه', decree: 'کارشناس',
+    defect: 'واحد سازمانی', inquiry: 'حراست', invite: 'کارشناس',
+    defense: 'کارمند', complete: 'کارشناس', hearing: 'دبیر کمیته',
+    hearingLetter: 'دبیرخانه', verdict: 'دبیر کمیته', sign: 'اعضای کمیته',
+    notice: 'دبیرخانه', result: 'واحد سازمانی', archive: 'دبیرخانه'
+  };
+
+  /** همان مسیر خودکار، از روی تاریخ‌های خودِ پرونده */
+  function autoAction(rec, limits) {
+    var today = J.today();
+
+    function make(key, label, owner, since, limit) {
+      var days = since ? J.diffDays(today, since) : null;
+      if (days != null && days < 0) days = 0;
+      return {
+        key: key, label: label, owner: owner, since: since || '',
+        days: days, limit: limit,
+        due: (since && limit != null) ? J.addDays(since, limit) : '',
+        overdue: days != null && limit != null && days > limit,
+        remaining: (days != null && limit != null) ? (limit - days) : null
+      };
+    }
 
     // ۱) ثبت
     if (!rec.intakeDate) return make('intake', 'ثبت تاریخ ورود پرونده', 'دبیرخانه', '', null);
@@ -434,6 +523,7 @@
     STAGES: STAGES, SLA: SLA, SLA_LABELS: SLA_LABELS, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
     CTA: CTA, cta: cta,
+    stageByKey: stageByKey, overrideOf: overrideOf, MANUAL_LABEL: MANUAL_LABEL,
     isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
     readyForCommittee: readyForCommittee, week: week
   };

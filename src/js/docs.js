@@ -88,6 +88,41 @@
     return found && key ? found.label : '';
   }
 
+  /*
+   * فیلدِ نامه → نوع سند.
+   *
+   * هر جا در فرم پرونده شمارهٔ نامه یا تاریخ نامه‌ای هست، پشتش یک کاغذ
+   * واقعی وجود دارد. این نقشه می‌گوید آن کاغذ چه نوعی است، تا کنار همان
+   * فیلد بشود متن نامه و تصویرش را پیوست کرد و همه در مستندات جمع شود —
+   * بدون اینکه کاربر برود تب مستندات و دوباره نوعش را انتخاب کند.
+   */
+  var FIELD_KIND = {
+    letterNo: 'نامهٔ وارده', letterDate: 'نامهٔ وارده',
+    decreeDate: 'حکم کارگزینی',
+    defectLetterNo: 'نامهٔ رفع نواقص', defectLetterDate: 'نامهٔ رفع نواقص',
+    invitationLetterNo: 'دعوت‌نامهٔ جلسه', invitationLetterDate: 'دعوت‌نامهٔ جلسه',
+    securityOutLetterNo: 'استعلام حراست', securityOutLetterDate: 'استعلام حراست',
+    securityInLetterNo: 'پاسخ حراست', securityInLetterDate: 'پاسخ حراست',
+    defenseReceivedDate: 'دفاعیهٔ کتبی', defenseSummary: 'دفاعیهٔ کتبی',
+    defenseChaseLetterDate: 'نامهٔ پیگیری دفاعیات',
+    docsCompleteDate: 'مدارک تکمیلی',
+    hearingLetterNo: 'نامهٔ حضور در جلسهٔ دفاع',
+    hearingLetterDate: 'نامهٔ حضور در جلسهٔ دفاع',
+    committeeDate: 'صورت‌جلسهٔ کمیته',
+    committeeRegNo: 'رأی کمیته', verdictDate: 'رأی کمیته',
+    verdictFull: 'رأی کمیته', verdictSignedDate: 'رأی کمیته',
+    noticeLetterNo: 'نامهٔ ابلاغ رأی', noticeLetterDate: 'نامهٔ ابلاغ رأی',
+    noticeResultDate: 'نتیجهٔ ابلاغ', noticeReturn: 'نتیجهٔ ابلاغ',
+    transferLetterNo: 'نامهٔ صادره'
+  };
+
+  function kindForField(key) { return FIELD_KIND[key] || ''; }
+
+  /** اسناد جاریِ یک پرونده از یک نوع مشخص */
+  function ofKind(caseId, kind) {
+    return current(caseId).filter(function (d) { return d.kind === kind; });
+  }
+
   /** نوع سند → مرحلهٔ گردش‌کار، برای نشاندن سند در تایم‌لاین */
   var KIND_STAGE = {
     'نامهٔ وارده': 'intake', 'گزارش بازرسی': 'intake',
@@ -134,12 +169,28 @@
    * نامی که هم در ویندوز و هم در مک معتبر باشد.
    * حروف فارسی مشکلی ندارند؛ مسئله نویسه‌های ممنوع و نقطه/فاصلهٔ انتهایی است.
    */
+  /*
+   * نویسه‌های نامرئیِ قالب‌بندی (ردهٔ Cf یونیکد) — مهم‌ترینشان نیم‌فاصله
+   * U+200C — در نام فایل مجاز نیستند: File System Access API کروم نامِ
+   * حاوی آن‌ها را رد می‌کند و ساخت فایل با خطا می‌افتد. دو نوع سند
+   * («دعوت‌نامهٔ جلسه» و «صورت‌جلسهٔ کمیته») و خیلی از نام‌های فارسی
+   * («حق‌بین»، «علی‌رضا») نیم‌فاصله دارند، پس بارگذاری‌شان شکست می‌خورد.
+   * نیم‌فاصله به فاصلهٔ معمولی تبدیل می‌شود — متن همان‌طور خوانده می‌شود —
+   * و بقیهٔ نویسه‌های نامرئی حذف می‌شوند. این فقط روی نام فایل روی دیسک
+   * اثر دارد؛ خودِ داده در برنامه دست‌نخورده می‌ماند.
+   */
+  var ZWNJ = /\u200C/g;
+  var INVISIBLE = /[\u00AD\u200B\u200D-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\uFEFF]/g;
+
   function safeName(name, fallback) {
     var s = String(name == null ? '' : name)
+      .replace(ZWNJ, ' ')                  // نیم‌فاصله → فاصله
+      .replace(INVISIBLE, '')              // بقیهٔ نویسه‌های نامرئی
       .replace(/[\\/:*?"<>|]/g, '-')       // ممنوع در ویندوز
       .replace(/[\x00-\x1F\x7F]/g, '')     // نویسه‌های کنترلی
       .replace(/\s+/g, ' ')
       .trim()
+      .replace(/^[. ]+/, '')               // نقطه/فاصلهٔ ابتدایی هم دردسر است
       .replace(/[. ]+$/, '');              // ویندوز نقطه/فاصلهٔ انتهایی نمی‌پذیرد
     if (WIN_RESERVED.test(s)) s = '_' + s;
     if (s.length > 120) s = s.slice(0, 120).trim().replace(/[. ]+$/, '');
@@ -238,7 +289,11 @@
   /** پوشهٔ یک پرونده؛ نام پوشه پس از ساخت روی خود پرونده ثبت می‌شود */
   function caseFolder(rec, create) {
     return requireRoot().then(function (r) {
-      var name = rec.docFolder || folderNameFor(rec);
+      /* اگر نام پوشه از نسخه‌های قبلی نویسهٔ نامرئی داشته باشد، پاکش
+         می‌کنیم؛ وگرنه کروم همان خطای قبلی را می‌دهد. */
+      var name = rec.docFolder
+        ? safeName(rec.docFolder, folderNameFor(rec))
+        : folderNameFor(rec);
       return r.getDirectoryHandle(name, { create: !!create }).then(function (dir) {
         if (create && rec.docFolder !== name) {
           rec.docFolder = name;
@@ -772,6 +827,7 @@
     fileNameFor: fileNameFor, safeName: safeName, kinds: kinds, stats: stats,
     indexDocs: indexDocs, clearMemory: clearMemory,
     CATEGORIES: CATEGORIES, DIRECTIONS: DIRECTIONS,
+    FIELD_KIND: FIELD_KIND, kindForField: kindForField, ofKind: ofKind,
     categoryOf: categoryOf, categoryLabel: categoryLabel,
     directionOf: directionOf, directionLabel: directionLabel,
     updateMeta: updateMeta, bundle: bundle
