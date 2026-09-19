@@ -285,38 +285,62 @@
 
     var sections = [];
 
-    // پیگیری‌های دستی — اول از همه، چون قرارِ خودتان است نه حدسِ برنامه
+    /*
+     * پیگیری‌های دستی — اول از همه، چون قرارِ خودتان است نه حدسِ برنامه.
+     *
+     * اینها با سطرهای گردش‌کار فرق دارند و نباید شکل آنها را داشته باشند:
+     * آنجا یک مرحلهٔ محاسبه‌شده است، اینجا یادداشتی که خودتان نوشته‌اید و
+     * متنش مهم است. پس کارت‌اند، نه سطرِ جدول — با نوار رنگی که فوریت را
+     * می‌گوید و متن یادداشت در دو خط جا می‌شود.
+     */
     var follow = w.Notes.dueFollowUps(true);
     if (follow.length) {
-      sections.push(el('section.wl-section', null, [
+      var late = follow.filter(function (f) { return f.overdue; }).length;
+      sections.push(el('section.wl-section.follow-section', null, [
         el('div.wl-section-head', null, [
-          el('h2', { text: 'پیگیری‌های امروز' }),
+          el('h2', { text: 'قرارهای پیگیری' }),
+          el('span.wl-count' + (late ? '.late' : ''), {
+            text: late ? fa(late) + ' عقب‌افتاده از ' + fa(follow.length)
+              : fa(follow.length) + ' مورد'
+          }),
           el('p.wl-sub', { text: 'قرارهایی که خودتان روی پرونده‌ها گذاشته‌اید.' })
         ]),
-        el('div.wl-rows.follow-rows', null, follow.map(function (f) {
-          return el('div.wl-row.follow-row' + (f.overdue ? '.overdue' : ''), null, [
-            el('button.follow-open', {
-              type: 'button',
-              onclick: function () {
-                app.state.formTab = '__notes';
-                app.openCase(f.rec.id);
-              }
+        el('div.follow-grid', null, follow.map(function (f) {
+          var urgency = f.overdue ? 'late' : (f.days === 0 ? 'today' : 'soon');
+          var person = [f.rec.firstName, f.rec.lastName].filter(Boolean).join(' ')
+            || 'بدون نام';
+          var open = function () {
+            app.state.formTab = '__notes';
+            app.openCase(f.rec.id);
+          };
+          return el('article.follow-card.u-' + urgency, null, [
+            el('button.follow-main', {
+              type: 'button', title: 'باز کردن یادداشت‌های ' + person,
+              onclick: open
             }, [
-              caseNumber(f.rec),
-              el('span.wl-person', {
-                text: [f.rec.firstName, f.rec.lastName].filter(Boolean).join(' ') || 'بدون نام'
-              }),
-              el('span.follow-text', { text: w.Notes.preview(f.note.text) }),
-              el('span.wl-wait' + (f.overdue ? '.late' : ''), {
-                text: w.UINotes.relativeDay(f.note.followUp)
-              })
+              el('div.follow-top', null, [
+                caseNumber(f.rec),
+                el('span.follow-person', { text: person }),
+                el('div.spacer'),
+                el('span.follow-when', {
+                  text: w.UINotes.relativeDay(f.note.followUp)
+                })
+              ]),
+              el('p.follow-note', { text: w.Notes.preview(f.note.text, 160) })
             ]),
-            el('button.btn.small', {
-              type: 'button', text: 'انجام شد',
-              onclick: function () {
-                w.Notes.complete(f.note).then(function () { app.render(); });
-              }
-            })
+            el('div.follow-foot', null, [
+              el('span.follow-date', { text: J.format(f.note.followUp) }),
+              el('div.spacer'),
+              el('button.btn.small.ghost', {
+                type: 'button', text: 'دیدن پرونده', onclick: open
+              }),
+              el('button.btn.small', {
+                type: 'button', text: 'انجام شد',
+                onclick: function () {
+                  w.Notes.complete(f.note).then(function () { app.render(); });
+                }
+              })
+            ])
           ]);
         }))
       ]));

@@ -259,7 +259,8 @@ function check(name, ok, extra) {
     after.sla === 300 && after.overdue < before,
     before + ' ← ' + after.overdue);
 
-  await page.reload();
+  // رفرش حالا به همان نمای قبلی برمی‌گردد، پس صریح به کارتابل می‌رویم
+  await page.goto(APP + '#/');
   await page.waitForSelector('.worklist', { timeout: 20000 });
   await page.waitForTimeout(800);
   const persisted = await page.evaluate(() => window.Worklist.sla().assign);
@@ -286,6 +287,60 @@ function check(name, ok, extra) {
     return getComputedStyle(sum, '::after').content;
   });
   check('گروه فیلترها نشانهٔ باز/بسته دارد', caret && caret !== 'none', caret);
+
+  // ---------------------------------------------------------------------
+  console.log('\n— نشانی صفحه و دکمهٔ «قبلی» —');
+  await page.evaluate(() => window.App.goWork());
+  await page.waitForTimeout(250);
+  const homeHash = await page.evaluate(() => location.hash);
+  check('کارتابل نشانی خودش را دارد', homeHash === '#/', homeHash);
+
+  const caseNo = await page.evaluate(() => {
+    const c = window.Model.state.cases.slice()
+      .sort((a, b) => (a.caseNo || '') < (b.caseNo || '') ? -1 : 1)[0];
+    window.App.openCase(c.id);
+    return c.caseNo;
+  });
+  await page.waitForTimeout(300);
+  const caseHash = await page.evaluate(() => location.hash);
+  check('نشانی پرونده شمارهٔ خودش را دارد، نه شناسهٔ داخلی',
+    caseHash === '#/case/' + caseNo, caseHash);
+
+  await page.evaluate(() => window.App.goList());
+  await page.waitForTimeout(250);
+  await page.goBack();
+  await page.waitForTimeout(500);
+  const back = await page.evaluate(() => ({
+    hash: location.hash, view: window.App.state.view,
+    title: (document.querySelector('.case-title') || {}).textContent || ''
+  }));
+  check('دکمهٔ «قبلی» مرورگر به همان پرونده برمی‌گردد',
+    back.view === 'case' && back.hash === '#/case/' + caseNo &&
+    back.title.indexOf(caseNo) >= 0, back.hash);
+
+  await page.goForward();
+  await page.waitForTimeout(400);
+  const fwd = await page.evaluate(() => ({
+    hash: location.hash, view: window.App.state.view
+  }));
+  check('«بعدی» هم کار می‌کند', fwd.view === 'list' && fwd.hash === '#/list', fwd.hash);
+
+  // رفرش روی یک پرونده باید همان‌جا برگردد، نه خانهٔ اول
+  await page.goto(APP + '#/case/' + caseNo);
+  await page.waitForSelector('.case-view', { timeout: 20000 });
+  await page.waitForTimeout(600);
+  const reloaded = await page.evaluate(() => ({
+    view: window.App.state.view,
+    title: (document.querySelector('.case-title') || {}).textContent || ''
+  }));
+  check('رفرش روی یک پرونده، همان پرونده را برمی‌گرداند',
+    reloaded.view === 'case' && reloaded.title.indexOf(caseNo) >= 0, reloaded.title);
+
+  await page.goto(APP + '#/case/0000000');
+  await page.waitForTimeout(1500);
+  const missing = await page.evaluate(() => window.App.state.view);
+  check('نشانی پروندهٔ ناموجود، به فهرست می‌رود نه صفحهٔ خالی',
+    missing === 'list', missing);
 
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));

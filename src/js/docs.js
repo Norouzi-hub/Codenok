@@ -604,15 +604,39 @@
   }
 
   /** فایل‌هایی که در پوشه هستند ولی در برنامه ثبت نشده‌اند (مثلاً خروجی اسکنر) */
+  /**
+   * فایل‌های ثبت‌نشدهٔ داخل زیرپوشهٔ این پرونده.
+   *
+   * قبلاً هر خطایی را می‌بلعید و آرایهٔ خالی برمی‌گرداند؛ نتیجه‌اش این بود
+   * که «پوشه هنوز ساخته نشده»، «اجازه از بین رفته» و «فایل تازه‌ای نبود»
+   * هر سه یک پیام می‌دادند و کاربر فکر می‌کرد دکمه کار نمی‌کند. حالا علت
+   * را هم برمی‌گرداند تا پیام درست گفته شود.
+   *
+   * خروجی: { entries, reason, folder }
+   *   reason: '' (سالم) | 'no-root' | 'no-folder' | 'error'
+   */
   function scan(rec) {
+    var folder = rec.docFolder || folderNameFor(rec);
+    if (!root) {
+      return Promise.resolve({ entries: [], reason: 'no-root', folder: folder });
+    }
     return caseFolder(rec, false).then(listDir).then(function (entries) {
       var known = {};
       forCase(rec.id).forEach(function (d) { known[d.fileName.toLowerCase()] = true; });
-      return entries.filter(function (e) {
-        return e.kind === 'file' && !known[e.name.toLowerCase()] &&
-          e.name.charAt(0) !== '.';
-      });
-    }).catch(function () { return []; });
+      return {
+        entries: entries.filter(function (e) {
+          return e.kind === 'file' && !known[e.name.toLowerCase()] &&
+            e.name.charAt(0) !== '.';
+        }),
+        reason: '', folder: folder
+      };
+    }).catch(function (err) {
+      return {
+        entries: [],
+        reason: (err && err.name === 'NotFoundError') ? 'no-folder' : 'error',
+        message: err && err.message, folder: folder
+      };
+    });
   }
 
   /** ثبت یک فایل موجود در پوشه، بدون جابه‌جا کردنش */

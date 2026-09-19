@@ -360,28 +360,58 @@
    *   form   — ساختن یکی از فرم‌های اداری
    *   field  — رفتن به همان فیلدِ تاریخ در فرم پرونده
    */
+  /*
+   * هر اقدامِ «بارگذاری» یک فیلد تاریخ هم دارد: همان تاریخی که آن مرحله را
+   * تمام‌شده اعلام می‌کند. بدون این، کاربر حکم را بارگذاری می‌کرد و آلارم
+   * سرِ جایش می‌ماند — چون آلارم به تاریخ نگاه می‌کند نه به سند. حالا وقتی
+   * سند ثبت شد، همان تاریخ هم از روی تاریخ سند پر می‌شود و مرحله جلو می‌رود.
+   */
   var CTA = {
-    intake: { type: 'upload', kind: 'نامهٔ وارده', label: 'بارگذاری نامهٔ وارده' },
+    intake: {
+      type: 'upload', kind: 'نامهٔ وارده', field: 'intakeDate',
+      label: 'بارگذاری نامهٔ وارده'
+    },
     assign: { type: 'field', field: 'deliveryDate', label: 'ثبت تاریخ ارجاع' },
-    decree: { type: 'upload', kind: 'حکم کارگزینی', label: 'بارگذاری آخرین حکم' },
-    defect: { type: 'upload', kind: 'نامهٔ رفع نواقص', label: 'بارگذاری رفع نواقص' },
-    inquiry: { type: 'upload', kind: 'پاسخ حراست', label: 'بارگذاری پاسخ حراست' },
-    invite: { type: 'upload', kind: 'دعوت‌نامهٔ جلسه', label: 'بارگذاری نامهٔ دعوت' },
-    defense: { type: 'upload', kind: 'دفاعیهٔ کتبی', label: 'بارگذاری دفاعیه' },
+    decree: {
+      type: 'upload', kind: 'حکم کارگزینی', field: 'decreeDate',
+      label: 'بارگذاری آخرین حکم'
+    },
+    defect: {
+      type: 'upload', kind: 'نامهٔ رفع نواقص', field: 'defectLetterDate',
+      label: 'بارگذاری رفع نواقص'
+    },
+    inquiry: {
+      type: 'upload', kind: 'پاسخ حراست', field: 'securityInLetterDate',
+      label: 'بارگذاری پاسخ حراست'
+    },
+    invite: {
+      type: 'upload', kind: 'دعوت‌نامهٔ جلسه', field: 'invitationLetterDate',
+      label: 'بارگذاری نامهٔ دعوت'
+    },
+    defense: {
+      type: 'upload', kind: 'دفاعیهٔ کتبی', field: 'defenseReceivedDate',
+      label: 'بارگذاری دفاعیه'
+    },
     chase: {
       type: 'upload', kind: 'نامهٔ پیگیری دفاعیات',
-      label: 'بارگذاری نامهٔ پیگیری'
+      field: 'defenseChaseLetterDate', label: 'بارگذاری نامهٔ پیگیری'
     },
-    complete: { type: 'upload', kind: 'مدارک تکمیلی', label: 'بارگذاری مدارک تکمیلی' },
+    complete: {
+      type: 'upload', kind: 'مدارک تکمیلی', field: 'docsCompleteDate',
+      label: 'بارگذاری مدارک تکمیلی'
+    },
     hearing: { type: 'field', field: 'committeeDate', label: 'ثبت تاریخ جلسه' },
     hearingLetter: {
       type: 'upload', kind: 'نامهٔ حضور در جلسهٔ دفاع',
-      label: 'بارگذاری نامهٔ حضور'
+      field: 'hearingLetterDate', label: 'بارگذاری نامهٔ حضور'
     },
     verdict: { type: 'form', form: 'verdict', label: 'ساخت فرم رأی' },
     sign: { type: 'field', field: 'verdictSignedDate', label: 'ثبت تاریخ امضا' },
     notice: { type: 'form', form: 'notice', label: 'ساخت ابلاغ رأی' },
-    result: { type: 'upload', kind: 'نتیجهٔ ابلاغ', label: 'بارگذاری نتیجهٔ ابلاغ' },
+    result: {
+      type: 'upload', kind: 'نتیجهٔ ابلاغ', field: 'noticeResultDate',
+      label: 'بارگذاری نتیجهٔ ابلاغ'
+    },
     archive: { type: 'field', field: 'archiveDate', label: 'ثبت تاریخ بایگانی' }
   };
 

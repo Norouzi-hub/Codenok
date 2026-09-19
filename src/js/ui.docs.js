@@ -324,7 +324,8 @@
         }, Promise.resolve()).then(function () {
           m.close();
           w.U.toast(w.U.toFaDigits(rows.length) + ' سند در پوشهٔ پرونده ذخیره شد.', 'good');
-          onDone();
+          // تاریخ سند برمی‌گردد تا فراخوان بتواند مرحله را جلو ببرد
+          onDone({ rows: rows.length, docDate: rows[0] && rows[0].docDate });
         }).catch(function (err) {
           busy = false;
           save.textContent = 'ثبت دوباره';
@@ -698,16 +699,31 @@
           });
         }
       }),
+      /* این دکمه پوشه را «باز» نمی‌کند — مرورگر چنین اجازه‌ای ندارد. کارش
+         این است که داخل زیرپوشهٔ همین پرونده را می‌خوانَد و فایل‌هایی را که
+         مستقیم آنجا ریخته‌اید (مثلاً خروجی اسکنر) برای ثبت پیشنهاد می‌دهد.
+         اسمش هم همین را بگوید. */
       el('button.btn.small.ghost', {
-        type: 'button', text: 'پویش پوشه',
-        title: 'فایل‌هایی که مستقیم در پوشه گذاشته‌اید (مثلاً خروجی اسکنر)',
+        type: 'button', text: 'خواندن فایل‌های پوشه',
+        title: 'داخل زیرپوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
+          '» را می‌خوانَد و فایل‌های ثبت‌نشده را پیدا می‌کند ' +
+          '(مثلاً چیزی که مستقیم اسکن کرده‌اید). پوشه را باز نمی‌کند.',
         onclick: function () {
-          D.scan(rec).then(function (entries) {
-            if (!entries.length) {
-              w.U.toast('فایل ثبت‌نشده‌ای در پوشه نبود.', 'good');
+          D.scan(rec).then(function (res) {
+            if (res.entries.length) {
+              scanDialog(rec, res.entries, refresh);
               return;
             }
-            scanDialog(rec, entries, refresh);
+            if (res.reason === 'no-root') {
+              w.U.toast('اول پوشهٔ مستندات را وصل کنید.', 'warn');
+            } else if (res.reason === 'no-folder') {
+              w.U.toast('زیرپوشهٔ «' + res.folder + '» هنوز ساخته نشده است؛ ' +
+                'با ثبت اولین سند خودکار ساخته می‌شود.', 'warn');
+            } else if (res.reason === 'error') {
+              w.U.toast('خواندن پوشه ناموفق بود: ' + (res.message || ''), 'bad');
+            } else {
+              w.U.toast('داخل «' + res.folder + '» فایل ثبت‌نشده‌ای نبود.', 'good');
+            }
           });
         }
       }),

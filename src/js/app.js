@@ -29,6 +29,113 @@
 
   var mount, searchInput, statusChip, navButtons;
 
+  /* ================================================================
+     نشانی صفحه
+     ----------------------------------------------------------------
+     تا امروز رفرش کردن یعنی برگشتن به خانهٔ اول، و دکمهٔ «قبلی» مرورگر
+     از کل برنامه بیرون می‌انداخت. حالا هر نما نشانی خودش را دارد:
+
+       #/                    کارتابل
+       #/list                فهرست پرونده‌ها
+       #/case/1404308        یک پرونده، با شمارهٔ خودش
+       #/case/new            پروندهٔ تازه
+       #/person/<کلید>       پروندهٔ شخص
+       #/report              گزارش‌ها
+
+     شمارهٔ پرونده در نشانی می‌آید نه شناسهٔ داخلی، چون نشانی را آدم
+     می‌خواند و شاید برای همکارش بفرستد.
+     ================================================================ */
+  var applyingRoute = false;
+
+  function routeOf() {
+    var st = app.state;
+    if (st.view === 'case') {
+      if (!st.caseId) return '#/case/new';
+      var rec = M.get(st.caseId);
+      var no = rec && rec.caseNo ? w.U.toLatinDigits(rec.caseNo) : '';
+      return no ? '#/case/' + encodeURIComponent(no) : '#/list';
+    }
+    if (st.view === 'person') {
+      return st.personKey ? '#/person/' + encodeURIComponent(st.personKey) : '#/people';
+    }
+    if (st.view === 'people') return '#/people';
+    if (st.view === 'report') return '#/report';
+    if (st.view === 'list') return '#/list';
+    return '#/';
+  }
+
+  /** نشانی را با نمای فعلی هم‌خط می‌کند، بدون اینکه دوباره رندر شود */
+  function syncRoute(replace) {
+    if (applyingRoute) return;
+    var want = routeOf();
+    if (w.location.hash === want) return;
+    applyingRoute = true;
+    try {
+      if (replace) w.history.replaceState(null, '', want);
+      else w.history.pushState(null, '', want);
+    } catch (e) {
+      w.location.hash = want;          // file:// در بعضی مرورگرها pushState ندارد
+    }
+    applyingRoute = false;
+  }
+
+  /** پرونده را با شمارهٔ خودش پیدا می‌کند */
+  function caseByNo(no) {
+    var want = w.U.toLatinDigits(no || '').trim();
+    var found = null;
+    M.state.cases.forEach(function (c) {
+      if (w.U.toLatinDigits(c.caseNo || '').trim() === want) found = c;
+    });
+    return found;
+  }
+
+  /** نشانی فعلی را روی نما می‌نشاند. از boot و از دکمهٔ «قبلی» صدا می‌شود. */
+  function applyRoute() {
+    var hash = String(w.location.hash || '').replace(/^#\/?/, '');
+    var parts = hash.split('/').filter(function (x) { return x !== ''; });
+    var st = app.state;
+    st.dirty = false;
+
+    if (!parts.length) { st.view = 'work'; st.caseId = null; }
+    else if (parts[0] === 'list') { st.view = 'list'; st.caseId = null; }
+    else if (parts[0] === 'report') { st.view = 'report'; st.caseId = null; }
+    else if (parts[0] === 'people') { st.view = 'people'; st.personKey = null; }
+    else if (parts[0] === 'person' && parts[1]) {
+      st.view = 'person';
+      st.personKey = decodeURIComponent(parts[1]);
+      st.caseId = null;
+    } else if (parts[0] === 'case' && parts[1] === 'new') {
+      st.view = 'case'; st.caseId = null; st.formTab = 'case';
+    } else if (parts[0] === 'case' && parts[1]) {
+      var rec = caseByNo(decodeURIComponent(parts[1]));
+      if (rec) { st.view = 'case'; st.caseId = rec.id; }
+      else {
+        // پرونده‌ای با این شماره نیست — شاید پاک شده یا نشانی دستی خورده
+        st.view = 'list'; st.caseId = null;
+        w.U.toast('پرونده‌ای با شمارهٔ ' + w.U.toFaDigits(parts[1]) + ' پیدا نشد.', 'warn');
+      }
+    } else { st.view = 'work'; st.caseId = null; }
+
+    applyingRoute = true;
+    app.render();
+    applyingRoute = false;
+    // نشانی خالی («فایل را همین‌طور باز کرده») به  #/  تبدیل شود، بدون
+    // اینکه یک ورودی الکی در تاریخچهٔ مرورگر بسازد
+    syncRoute(true);
+  }
+
+  function bindRouting() {
+    w.addEventListener('popstate', function () {
+      if (w.Store.isLocked && w.Store.isLocked()) return;
+      applyRoute();
+    });
+    w.addEventListener('hashchange', function () {
+      if (applyingRoute) return;
+      if (w.Store.isLocked && w.Store.isLocked()) return;
+      if (w.location.hash !== routeOf()) applyRoute();
+    });
+  }
+
   app.setDirty = function (v) { app.state.dirty = v; };
 
   app.goList = function () {
@@ -194,6 +301,7 @@
     }
     updateNav();
     updateStatusChip();
+    syncRoute(applyingRoute);
   };
 
   var NAV_FOR_VIEW = {
@@ -591,7 +699,9 @@
       }
       topBarNode.style.display = '';
       if (tabBarNode) tabBarNode.style.display = '';
-      app.render();
+      // نشانی فعلی مبناست: رفرش و دکمهٔ «قبلی» همان‌جا برمی‌گردند
+      applyRoute();
+      renderAccessBar();
       resetIdle();
       setTimeout(backupReminder, 2500);
       var s = w.Store.status();
@@ -607,6 +717,84 @@
 
   var topBarNode = null;
   var tabBarNode = null;
+  var accessBar = null;
+
+  /*
+   * نوار دسترسی.
+   *
+   * مرورگر اجازهٔ فایل و پوشه را با بستن صفحه فراموش می‌کند — قاعدهٔ امنیتی
+   * خود کروم است و دور زدنی نیست. کاری که از ما برمی‌آید این است که هر بار
+   * یک کلیک باشد، نه گشتن در تنظیمات و تب مستندات. این نوار هر دو را با هم
+   * می‌گیرد و وقتی چیزی لازم نیست، اصلاً دیده نمی‌شود.
+   */
+  function needsAccess() {
+    var s = w.Store.status();
+    var d = w.Docs.status();
+    return {
+      file: !!(s.canLink && !s.linked && s.hasStored),
+      folder: !!(d.supported && !d.linked && d.hasStored),
+      fileName: s.storedName, folderName: d.storedName
+    };
+  }
+
+  function renderAccessBar() {
+    var need = needsAccess();
+    if (!need.file && !need.folder) {
+      if (accessBar) { accessBar.remove(); accessBar = null; }
+      return;
+    }
+    var what = [];
+    if (need.file) what.push('دیتابیس «' + need.fileName + '»');
+    if (need.folder) what.push('پوشهٔ مستندات «' + need.folderName + '»');
+
+    var btn = el('button.btn.small.primary', {
+      type: 'button', text: 'اجازه بده',
+      onclick: function () {
+        btn.disabled = true;
+        btn.textContent = 'در حال گرفتن اجازه…';
+        var chain = need.file
+          ? w.Store.relinkFile(true).then(function (ok) {
+            if (ok) w.Store.flushNow();
+            return ok;
+          })
+          : Promise.resolve(true);
+        chain.then(function () {
+          return need.folder ? w.Docs.relinkFolder(true) : true;
+        }).then(function () {
+          var left = needsAccess();
+          renderAccessBar();
+          app.render();
+          if (!left.file && !left.folder) {
+            w.U.toast('دسترسی برقرار شد؛ داده‌ها از روی فایل خوانده شدند.', 'good');
+          } else {
+            w.U.toast('یک مورد باقی ماند؛ دوباره «اجازه بده» را بزنید.', 'warn');
+          }
+        }).catch(function () {
+          btn.disabled = false;
+          btn.textContent = 'اجازه بده';
+          renderAccessBar();
+        });
+      }
+    });
+
+    var node = el('div.access-bar', null, [
+      el('span.access-icon', { html: w.Mobile.icon('lock') }),
+      el('span.access-text', null, [
+        el('b', { text: 'برای ادامه، یک بار اجازه لازم است: ' }),
+        el('span', { text: what.join(' و ') + '.' }),
+        el('span.access-why', {
+          text: ' مرورگر این اجازه را با بستن صفحه فراموش می‌کند؛ ' +
+            'داده‌ها سر جایشان هستند.'
+        })
+      ]),
+      el('div.spacer'),
+      btn
+    ]);
+    if (accessBar) accessBar.replaceWith(node); else mount.parentNode.insertBefore(node, mount);
+    accessBar = node;
+  }
+
+  app.refreshAccessBar = renderAccessBar;
 
   function boot() {
     mount = $('#main');
@@ -627,6 +815,7 @@
     w.Store.init().then(function () {
       bindShortcuts();
       bindIdle();
+      bindRouting();
       if (w.Store.isLocked()) {
         topBarNode.style.display = 'none';
         tabBarNode.style.display = 'none';

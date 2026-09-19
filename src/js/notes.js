@@ -69,9 +69,10 @@
     });
   }
 
-  function preview(text) {
+  function preview(text, max) {
+    var limit = max || 60;
     var t = String(text).replace(/\s+/g, ' ').trim();
-    return t.length > 60 ? t.slice(0, 60) + '…' : t;
+    return t.length > limit ? t.slice(0, limit) + '…' : t;
   }
 
   function update(note, patch) {

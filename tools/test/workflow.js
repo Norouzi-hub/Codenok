@@ -98,12 +98,20 @@ async function openList(page) {
   console.log('\n— پیگیری در کارتابل و صفحهٔ پرونده —');
   await page.evaluate(() => window.App.goWork());
   await page.waitForSelector('.worklist');
+  // پیگیری‌ها حالا کارت‌اند، نه سطرِ جدول
   const inWork = await page.evaluate(() => ({
-    rows: document.querySelectorAll('.follow-row').length,
-    late: document.querySelectorAll('.follow-row.overdue').length,
+    rows: document.querySelectorAll('.follow-card').length,
+    late: document.querySelectorAll('.follow-card.u-late').length,
     stat: [...document.querySelectorAll('.wl-stat')].some(
-      s => s.textContent.indexOf('پیگیری باز') >= 0)
+      s => s.textContent.indexOf('پیگیری باز') >= 0),
+    hasText: [...document.querySelectorAll('.follow-note')]
+      .some(n => n.textContent.trim().length > 0),
+    hasDone: [...document.querySelectorAll('.follow-foot .btn')]
+      .some(b => b.textContent === 'انجام شد')
   }));
+  check('متن یادداشت و دکمهٔ «انجام شد» روی کارت هست',
+    inWork.hasText && inWork.hasDone,
+    inWork.rows + ' کارت');
   check('پیگیری‌ها در کارتابل دیده می‌شوند',
     inWork.rows === 2 && inWork.late === 1 && inWork.stat,
     inWork.rows + ' سطر، ' + inWork.late + ' دیرکرد');

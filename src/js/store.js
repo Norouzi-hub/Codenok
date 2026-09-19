@@ -214,6 +214,19 @@
 
   function metaSet(key, value) { return put('meta', [{ key: key, value: value }]); }
 
+  /*
+   * ارجاع فایل و پوشه را IndexedDB معمولاً می‌پذیرد (کروم این دسته‌ها را
+   * structured-clone می‌کند)، ولی همه‌جا نه. اگر نشد، نباید کلِ وصل شدن
+   * شکست بخورد: این نشست کار می‌کند و فقط دفعهٔ بعد باید دوباره انتخاب شود.
+   */
+  function rememberHandle(key, handle) {
+    return metaSet(key, handle).catch(function (err) {
+      console.warn('ارجاع ' + key + ' ذخیره نشد:', err && err.message);
+      mem.meta[key] = { key: key, value: handle };
+      return null;
+    });
+  }
+
   // ---------------------------------------------------- فایل پشتیبان روی دیسک
 
   var fileHandle = null;
@@ -286,10 +299,72 @@
       fileHandle = handle;
       fileName = handle.name;
       saveError = null;
-      return metaSet('fileHandle', handle);
+      return rememberHandle('fileHandle', handle);
     }).then(function () {
       return writeFile();
     }).then(function () { emit(); return true; });
+  }
+
+  /**
+   * باز کردن یک فایل دیتابیسِ موجود.
+   *
+   * جدا از linkFile است و باید هم باشد: linkFile با پنجرهٔ «ذخیره» کار
+   * می‌کند و هرچه انتخاب شود را بازنویسی می‌کند. برای فایلی که از قبل داده
+   * دارد، این فاجعه است. اینجا با پنجرهٔ «باز کردن» می‌آید و اول می‌خوانَد.
+   */
+  function openFile() {
+    if (!supportsFileSystem() || !w.showOpenFilePicker) {
+      return Promise.reject(new Error('این مرورگر از باز کردن فایل پشتیبانی نمی‌کند'));
+    }
+    return w.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: 'دیتابیس پرونده‌ها', accept: { 'application/json': ['.json'] } }]
+    }).then(function (handles) {
+      var handle = handles[0];
+      return verifyPermission(handle, true).then(function (ok) {
+        if (!ok) throw new Error('اجازهٔ نوشتن روی فایل داده نشد');
+        fileHandle = handle;
+        fileName = handle.name;
+        saveError = null;
+        return rememberHandle('fileHandle', handle);
+      });
+    }).then(function () {
+      return readFile();
+    }).then(function (snap) {
+      if (!snap || snap.app !== 'parvandeha') {
+        throw new Error('این فایل، دیتابیس این برنامه نیست');
+      }
+      // فایلِ انتخاب‌شده صراحتاً خواستهٔ کاربر است، پس بی‌قید‌وشرط می‌نشیند
+      mem.cases = {};
+      mem.history = {};
+      mem.docs = {};
+      mem.notes = {};
+      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
+      (snap.meta || []).forEach(function (m) {
+        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
+      });
+      return clearAll()
+        .then(function () { return put('cases', snap.cases || []); })
+        .then(function () { return put('history', snap.history || []); })
+        .then(function () {
+          return (snap.docs || []).length ? put('docs', snap.docs) : null;
+        })
+        .then(function () {
+          return (snap.notes || []).length ? put('notes', snap.notes) : null;
+        })
+        .then(function () {
+          var metas = (snap.meta || []).filter(function (m) {
+            return HANDLE_KEYS.indexOf(m.key) < 0;
+          });
+          return metas.length ? put('meta', metas) : null;
+        });
+    }).then(function () {
+      emit();
+      return { cases: Object.keys(mem.cases).length };
+    });
   }
 
   function unlinkFile() {
@@ -328,8 +403,110 @@
       fileName = handle.name;
       saveError = null;
       emit();
-      return true;
+      // اجازه که گرفته شد، محتوای فایل مبناست
+      return adoptFile().then(function () { return true; });
     }).catch(function () { return false; });
+  }
+
+  /**
+   * خواندن فایل دیتابیس از دیسک.
+   *
+   * تا امروز فایل فقط نوشته می‌شد و هیچ‌وقت خوانده نمی‌شد: منبعِ حقیقت،
+   * IndexedDB مرورگر بود و فایل فقط یک آینه. نتیجه‌اش این بود که با عوض
+   * کردن فایل HTML یا پاک شدن دادهٔ مرورگر، کار از دست می‌رفت — درحالی‌که
+   * فایل سرِ جایش بود. حالا برعکس است: هر وقت فایل وصل باشد، همان مبناست.
+   */
+  function readFile() {
+    if (!fileHandle) return Promise.resolve(null);
+    return fileHandle.getFile()
+      .then(function (f) { return f.text(); })
+      .then(function (text) {
+        if (!text || !text.trim()) return null;
+        var payload = JSON.parse(text);
+        return w.Vault.openSnapshot(payload);
+      })
+      .catch(function (err) {
+        saveError = 'خواندن فایل ناموفق بود: ' + (err.message || err);
+        emit();
+        return null;
+      });
+  }
+
+  /** چند رکورد دارد — برای مقایسهٔ فایل با انبار مرورگر */
+  function countOf(snap) {
+    if (!snap) return -1;
+    return (snap.cases || []).length + (snap.history || []).length +
+      (snap.docs || []).length + (snap.notes || []).length;
+  }
+
+  /*
+   * تازه‌ترین تغییرِ اینجا.
+   *
+   * اول این را با «آخرین باری که ما روی فایل نوشتیم» می‌سنجیدم، ولی آن
+   * مقدار خودش داخل همان فایل ذخیره می‌شد و یک نسل عقب بود — نتیجه‌اش این
+   * شد که فایلِ کهنه، دادهٔ تازه‌تر را می‌بلعید. مبنای درست، خودِ رکوردهاست:
+   * اگر اینجا رکوردی هست که بعد از ساخته‌شدن فایل عوض شده، فایل عقب است.
+   */
+  function newestLocalChange() {
+    var max = '';
+    ['cases', 'history', 'docs', 'notes'].forEach(function (store) {
+      Object.keys(mem[store]).forEach(function (k) {
+        var r = mem[store][k] || {};
+        var t = r.updatedAt || r.at || r.addedAt || r.createdAt || '';
+        if (t > max) max = t;
+      });
+    });
+    return max;
+  }
+
+  /**
+   * فایل را با انبار مرورگر آشتی می‌دهد.
+   *
+   * قاعده ساده و محافظه‌کارانه است: فایل وقتی جایگزین می‌شود که تازه‌تر
+   * باشد. «تازه‌تر» یعنی زمان صادرشدنش از آخرین نوشتنِ ما جلوتر است. اگر
+   * انبار مرورگر خالی باشد، فایل بی‌چون‌وچرا می‌نشیند — همان حالتی که
+   * کاربر فایل HTML را عوض کرده و مرورگر چیزی ندارد.
+   */
+  function adoptFile() {
+    return readFile().then(function (snap) {
+      if (!snap || snap.app !== 'parvandeha') return false;
+      var here = Object.keys(mem.cases).length + Object.keys(mem.history).length +
+        Object.keys(mem.docs).length + Object.keys(mem.notes).length;
+      var mine = newestLocalChange();
+      var theirs = snap.exportedAt || '';
+      // انبار خالی: فایل بی‌چون‌وچرا. وگرنه فقط اگر فایل جلوتر باشد.
+      var newer = !here || (theirs && (!mine || theirs > mine));
+      if (!newer) return false;
+      if (countOf(snap) < 0) return false;
+      mem.cases = {};
+      mem.history = {};
+      mem.docs = {};
+      mem.notes = {};
+      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
+      (snap.meta || []).forEach(function (m) {
+        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
+      });
+      // انبار مرورگر فقط یک کَش است؛ با همان چیزی که از فایل آمد پر می‌شود
+      return clearAll()
+        .then(function () { return put('cases', snap.cases || []); })
+        .then(function () { return put('history', snap.history || []); })
+        .then(function () {
+          return (snap.docs || []).length ? put('docs', snap.docs) : null;
+        })
+        .then(function () {
+          return (snap.notes || []).length ? put('notes', snap.notes) : null;
+        })
+        .then(function () {
+          var metas = (snap.meta || []).filter(function (m) {
+            return HANDLE_KEYS.indexOf(m.key) < 0;
+          });
+          return metas.length ? put('meta', metas) : null;
+        })
+        .then(function () { return true; });
+    });
   }
 
   function writeFile() {
@@ -401,6 +578,10 @@
         (res[3] || []).forEach(function (n) { mem.notes[n.id] = n; });
         dataLoaded = true;
         return relinkFile(false);
+      })
+      .then(function (linked) {
+        // فایل وصل شد و اجازه‌اش از قبل بود: همان مبناست، نه انبار مرورگر
+        return linked ? adoptFile() : false;
       })
       .then(function () { return status(); });
   }
@@ -520,6 +701,8 @@
     init: init, getAll: getAll, put: put, remove: remove, clearAll: clearAll,
     metaGet: metaGet, metaSet: metaSet, snapshot: snapshot, restore: restore,
     linkFile: linkFile, unlinkFile: unlinkFile, writeFile: writeFile,
+    readFile: readFile, adoptFile: adoptFile, relinkFile: relinkFile,
+    openFile: openFile,
     hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,
     status: status, onStatusChange: onStatusChange,

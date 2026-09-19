@@ -333,8 +333,9 @@ function overflow(page) {
   check('اقدام دسته‌ای با لمس تا آخر انجام می‌شود', bulkTouch === 2,
     bulkTouch + ' پرونده');
 
-  // ماندگاری همهٔ این کارها پس از رفرش
-  await page.reload();
+  // ماندگاری همهٔ این کارها پس از رفرش. رفرش حالا به همان نمای قبلی
+  // برمی‌گردد، پس صریح به کارتابل می‌رویم.
+  await page.goto(APP + '#/');
   await page.waitForSelector('.worklist');
   await page.waitForTimeout(900);
   const persistedTouch = await page.evaluate(() => ({

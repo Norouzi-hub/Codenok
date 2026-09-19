@@ -76,6 +76,20 @@
   --font-ui: 'Vazirmatn', 'Segoe UI', Tahoma, 'Geeza Pro', sans-serif;
   --font-reg: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
+  /*
+   * لایه‌ها، یک جا و به ترتیب.
+   *
+   * تا امروز هر بخش عدد خودش را داشت و دو تا قاطی شده بودند: تقویم زیر
+   * پنجره می‌رفت و دیده نمی‌شد، و پنجرهٔ «حذف کامل داده‌ها» پشت صفحهٔ قفل
+   * می‌ماند. ترتیب درست از پایین به بالا: صفحهٔ قفل → پنجره‌ها → تقویمی که
+   * از داخل پنجره باز می‌شود → پیام، که باید همیشه دیده شود.
+   */
+  --z-tip: 350;
+  --z-lock: 500;
+  --z-overlay: 700;
+  --z-pop: 800;
+  --z-toast: 900;
+
   /* سازگاری با نام‌های قدیمی که در بخش‌های دیگر به کار رفته‌اند */
   --bg: var(--paper);
   --panel: var(--card);
@@ -1181,7 +1195,7 @@ select.input { cursor: pointer; }
 /* ---------------------------------------------------------------- تقویم */
 .dp-pop {
   position: absolute;
-  z-index: 200;
+  z-index: var(--z-pop);
   background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1238,7 +1252,7 @@ select.input { cursor: pointer; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 300;
+  z-index: var(--z-overlay);
   padding: 20px;
 }
 .modal {
@@ -1336,7 +1350,7 @@ select.input { cursor: pointer; }
 .lock-screen {
   position: fixed;
   inset: 0;
-  z-index: 500;
+  z-index: var(--z-lock);
   background:
     radial-gradient(900px 520px at 80% -10%, rgba(166, 116, 27, .22), transparent 60%),
     linear-gradient(165deg, var(--ink-800), var(--ink-900) 60%, #10121F);
@@ -1408,7 +1422,7 @@ select.input { cursor: pointer; }
   transform: translateY(12px);
   pointer-events: none;
   transition: opacity .2s, transform .2s;
-  z-index: 400;
+  z-index: var(--z-toast);
   max-width: 420px;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
@@ -1565,7 +1579,7 @@ select.input { cursor: pointer; }
 /* ---------------------------------------------------------------- تولتیپ */
 .chart-tip {
   position: absolute;
-  z-index: 350;
+  z-index: var(--z-tip);
   background: #1b2430;
   color: #fff;
   border-radius: 7px;
@@ -2016,32 +2030,87 @@ select.input { cursor: pointer; }
   border-color: var(--brass-line);
 }
 
-/* پیگیری‌ها در کارتابل */
-.follow-rows .follow-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 15px;
+/* ------------------------------------------------ قرارهای پیگیری
+   اینها سطرِ جدول نیستند: یادداشتی است که خودتان نوشته‌اید و متنش مهم
+   است. پس کارت‌اند، با نوار رنگیِ فوریت و جا برای دو خط متن. */
+.follow-section .wl-section-head { flex-wrap: wrap; }
+.wl-count {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 1px 9px;
 }
-.follow-open {
+.wl-count.late {
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border: 1px solid var(--cinnabar-line);
+}
+.follow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(305px, 1fr));
+  gap: 10px;
+  padding: 4px 15px 14px;
+}
+.follow-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+  border-inline-start: 3px solid var(--line);
+  transition: border-color .14s, box-shadow .14s, transform .12s;
+  animation: row-in .22s ease both;
+}
+.follow-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.follow-card.u-late { border-inline-start-color: var(--cinnabar); }
+.follow-card.u-today { border-inline-start-color: var(--brass); }
+.follow-card.u-soon { border-inline-start-color: var(--moss); }
+
+.follow-main {
   font: inherit;
   text-align: start;
   background: none;
   border: 0;
-  padding: 0;
+  padding: 10px 12px 8px;
   cursor: pointer;
-  flex: 1;
-  display: grid;
-  grid-template-columns: 82px minmax(0, 1fr) minmax(0, 2fr) 96px;
-  align-items: center;
-  gap: 12px;
+  display: block;
+  width: 100%;
 }
-.follow-text {
+.follow-top { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.follow-person {
+  font-weight: 600;
   font-size: 12.5px;
-  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.follow-when { font-size: 11px; white-space: nowrap; color: var(--muted); }
+.u-late .follow-when { color: var(--cinnabar); font-weight: 600; }
+.u-today .follow-when { color: var(--brass-ink); font-weight: 600; }
+.follow-note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-700);
+  line-height: 1.75;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.2em;
+}
+.follow-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--paper);
+}
+.follow-date { font-size: 11px; color: var(--muted); font-family: var(--font-reg); }
+@media (max-width: 720px) {
+  .follow-grid { grid-template-columns: 1fr; padding-inline: 12px; }
 }
 
 /* ---------------------------------------------------------------- مستندات */
@@ -2689,12 +2758,38 @@ select.input { cursor: pointer; }
 .letter-clip.has { color: var(--moss); }
 .letter-clip-n { font-size: 10px; font-weight: 600; }
 
+/* ------------------------------------------------- نوار اجازهٔ دسترسی
+   مرورگر اجازهٔ فایل و پوشه را با بستن صفحه فراموش می‌کند. این نوار آن را
+   با یک کلیک برمی‌گرداند و وقتی لازم نیست اصلاً ساخته نمی‌شود. */
+.access-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 14px;
+  max-width: 1120px;
+  padding: 9px 14px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--brass-ink);
+  animation: access-in .22s ease-out;
+}
+@keyframes access-in { from { opacity: 0; transform: translateY(-6px); } }
+.access-icon { line-height: 0; flex: 0 0 auto; }
+.access-icon svg { width: 17px; height: 17px; }
+.access-text { min-width: 0; }
+.access-why { color: var(--muted); }
+@media (max-width: 720px) {
+  .access-bar { flex-wrap: wrap; margin-inline: 12px; }
+}
+
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
-  .case-actions, .doc-pickbar, .letter-clip { display: none !important; }
+  .case-actions, .doc-pickbar, .letter-clip, .access-bar { display: none !important; }
   #print-area { display: block; font-size: 11pt; color: #000; }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
@@ -3229,7 +3324,7 @@ select.input { cursor: pointer; }
     width: auto;
     max-width: 340px;
     margin-inline: auto;
-    z-index: 400;
+    z-index: var(--z-pop);
   }
   .dp-cell { min-height: 34px; }
 
@@ -5844,6 +5939,19 @@ window.SEED_CASES = [
 
   function metaSet(key, value) { return put('meta', [{ key: key, value: value }]); }
 
+  /*
+   * ارجاع فایل و پوشه را IndexedDB معمولاً می‌پذیرد (کروم این دسته‌ها را
+   * structured-clone می‌کند)، ولی همه‌جا نه. اگر نشد، نباید کلِ وصل شدن
+   * شکست بخورد: این نشست کار می‌کند و فقط دفعهٔ بعد باید دوباره انتخاب شود.
+   */
+  function rememberHandle(key, handle) {
+    return metaSet(key, handle).catch(function (err) {
+      console.warn('ارجاع ' + key + ' ذخیره نشد:', err && err.message);
+      mem.meta[key] = { key: key, value: handle };
+      return null;
+    });
+  }
+
   // ---------------------------------------------------- فایل پشتیبان روی دیسک
 
   var fileHandle = null;
@@ -5916,10 +6024,72 @@ window.SEED_CASES = [
       fileHandle = handle;
       fileName = handle.name;
       saveError = null;
-      return metaSet('fileHandle', handle);
+      return rememberHandle('fileHandle', handle);
     }).then(function () {
       return writeFile();
     }).then(function () { emit(); return true; });
+  }
+
+  /**
+   * باز کردن یک فایل دیتابیسِ موجود.
+   *
+   * جدا از linkFile است و باید هم باشد: linkFile با پنجرهٔ «ذخیره» کار
+   * می‌کند و هرچه انتخاب شود را بازنویسی می‌کند. برای فایلی که از قبل داده
+   * دارد، این فاجعه است. اینجا با پنجرهٔ «باز کردن» می‌آید و اول می‌خوانَد.
+   */
+  function openFile() {
+    if (!supportsFileSystem() || !w.showOpenFilePicker) {
+      return Promise.reject(new Error('این مرورگر از باز کردن فایل پشتیبانی نمی‌کند'));
+    }
+    return w.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: 'دیتابیس پرونده‌ها', accept: { 'application/json': ['.json'] } }]
+    }).then(function (handles) {
+      var handle = handles[0];
+      return verifyPermission(handle, true).then(function (ok) {
+        if (!ok) throw new Error('اجازهٔ نوشتن روی فایل داده نشد');
+        fileHandle = handle;
+        fileName = handle.name;
+        saveError = null;
+        return rememberHandle('fileHandle', handle);
+      });
+    }).then(function () {
+      return readFile();
+    }).then(function (snap) {
+      if (!snap || snap.app !== 'parvandeha') {
+        throw new Error('این فایل، دیتابیس این برنامه نیست');
+      }
+      // فایلِ انتخاب‌شده صراحتاً خواستهٔ کاربر است، پس بی‌قید‌وشرط می‌نشیند
+      mem.cases = {};
+      mem.history = {};
+      mem.docs = {};
+      mem.notes = {};
+      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
+      (snap.meta || []).forEach(function (m) {
+        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
+      });
+      return clearAll()
+        .then(function () { return put('cases', snap.cases || []); })
+        .then(function () { return put('history', snap.history || []); })
+        .then(function () {
+          return (snap.docs || []).length ? put('docs', snap.docs) : null;
+        })
+        .then(function () {
+          return (snap.notes || []).length ? put('notes', snap.notes) : null;
+        })
+        .then(function () {
+          var metas = (snap.meta || []).filter(function (m) {
+            return HANDLE_KEYS.indexOf(m.key) < 0;
+          });
+          return metas.length ? put('meta', metas) : null;
+        });
+    }).then(function () {
+      emit();
+      return { cases: Object.keys(mem.cases).length };
+    });
   }
 
   function unlinkFile() {
@@ -5958,8 +6128,110 @@ window.SEED_CASES = [
       fileName = handle.name;
       saveError = null;
       emit();
-      return true;
+      // اجازه که گرفته شد، محتوای فایل مبناست
+      return adoptFile().then(function () { return true; });
     }).catch(function () { return false; });
+  }
+
+  /**
+   * خواندن فایل دیتابیس از دیسک.
+   *
+   * تا امروز فایل فقط نوشته می‌شد و هیچ‌وقت خوانده نمی‌شد: منبعِ حقیقت،
+   * IndexedDB مرورگر بود و فایل فقط یک آینه. نتیجه‌اش این بود که با عوض
+   * کردن فایل HTML یا پاک شدن دادهٔ مرورگر، کار از دست می‌رفت — درحالی‌که
+   * فایل سرِ جایش بود. حالا برعکس است: هر وقت فایل وصل باشد، همان مبناست.
+   */
+  function readFile() {
+    if (!fileHandle) return Promise.resolve(null);
+    return fileHandle.getFile()
+      .then(function (f) { return f.text(); })
+      .then(function (text) {
+        if (!text || !text.trim()) return null;
+        var payload = JSON.parse(text);
+        return w.Vault.openSnapshot(payload);
+      })
+      .catch(function (err) {
+        saveError = 'خواندن فایل ناموفق بود: ' + (err.message || err);
+        emit();
+        return null;
+      });
+  }
+
+  /** چند رکورد دارد — برای مقایسهٔ فایل با انبار مرورگر */
+  function countOf(snap) {
+    if (!snap) return -1;
+    return (snap.cases || []).length + (snap.history || []).length +
+      (snap.docs || []).length + (snap.notes || []).length;
+  }
+
+  /*
+   * تازه‌ترین تغییرِ اینجا.
+   *
+   * اول این را با «آخرین باری که ما روی فایل نوشتیم» می‌سنجیدم، ولی آن
+   * مقدار خودش داخل همان فایل ذخیره می‌شد و یک نسل عقب بود — نتیجه‌اش این
+   * شد که فایلِ کهنه، دادهٔ تازه‌تر را می‌بلعید. مبنای درست، خودِ رکوردهاست:
+   * اگر اینجا رکوردی هست که بعد از ساخته‌شدن فایل عوض شده، فایل عقب است.
+   */
+  function newestLocalChange() {
+    var max = '';
+    ['cases', 'history', 'docs', 'notes'].forEach(function (store) {
+      Object.keys(mem[store]).forEach(function (k) {
+        var r = mem[store][k] || {};
+        var t = r.updatedAt || r.at || r.addedAt || r.createdAt || '';
+        if (t > max) max = t;
+      });
+    });
+    return max;
+  }
+
+  /**
+   * فایل را با انبار مرورگر آشتی می‌دهد.
+   *
+   * قاعده ساده و محافظه‌کارانه است: فایل وقتی جایگزین می‌شود که تازه‌تر
+   * باشد. «تازه‌تر» یعنی زمان صادرشدنش از آخرین نوشتنِ ما جلوتر است. اگر
+   * انبار مرورگر خالی باشد، فایل بی‌چون‌وچرا می‌نشیند — همان حالتی که
+   * کاربر فایل HTML را عوض کرده و مرورگر چیزی ندارد.
+   */
+  function adoptFile() {
+    return readFile().then(function (snap) {
+      if (!snap || snap.app !== 'parvandeha') return false;
+      var here = Object.keys(mem.cases).length + Object.keys(mem.history).length +
+        Object.keys(mem.docs).length + Object.keys(mem.notes).length;
+      var mine = newestLocalChange();
+      var theirs = snap.exportedAt || '';
+      // انبار خالی: فایل بی‌چون‌وچرا. وگرنه فقط اگر فایل جلوتر باشد.
+      var newer = !here || (theirs && (!mine || theirs > mine));
+      if (!newer) return false;
+      if (countOf(snap) < 0) return false;
+      mem.cases = {};
+      mem.history = {};
+      mem.docs = {};
+      mem.notes = {};
+      (snap.cases || []).forEach(function (c) { mem.cases[c.id] = c; });
+      (snap.history || []).forEach(function (h) { mem.history[h.id] = h; });
+      (snap.docs || []).forEach(function (d) { mem.docs[d.id] = d; });
+      (snap.notes || []).forEach(function (n) { mem.notes[n.id] = n; });
+      (snap.meta || []).forEach(function (m) {
+        if (HANDLE_KEYS.indexOf(m.key) < 0) mem.meta[m.key] = m;
+      });
+      // انبار مرورگر فقط یک کَش است؛ با همان چیزی که از فایل آمد پر می‌شود
+      return clearAll()
+        .then(function () { return put('cases', snap.cases || []); })
+        .then(function () { return put('history', snap.history || []); })
+        .then(function () {
+          return (snap.docs || []).length ? put('docs', snap.docs) : null;
+        })
+        .then(function () {
+          return (snap.notes || []).length ? put('notes', snap.notes) : null;
+        })
+        .then(function () {
+          var metas = (snap.meta || []).filter(function (m) {
+            return HANDLE_KEYS.indexOf(m.key) < 0;
+          });
+          return metas.length ? put('meta', metas) : null;
+        })
+        .then(function () { return true; });
+    });
   }
 
   function writeFile() {
@@ -6031,6 +6303,10 @@ window.SEED_CASES = [
         (res[3] || []).forEach(function (n) { mem.notes[n.id] = n; });
         dataLoaded = true;
         return relinkFile(false);
+      })
+      .then(function (linked) {
+        // فایل وصل شد و اجازه‌اش از قبل بود: همان مبناست، نه انبار مرورگر
+        return linked ? adoptFile() : false;
       })
       .then(function () { return status(); });
   }
@@ -6150,6 +6426,8 @@ window.SEED_CASES = [
     init: init, getAll: getAll, put: put, remove: remove, clearAll: clearAll,
     metaGet: metaGet, metaSet: metaSet, snapshot: snapshot, restore: restore,
     linkFile: linkFile, unlinkFile: unlinkFile, writeFile: writeFile,
+    readFile: readFile, adoptFile: adoptFile, relinkFile: relinkFile,
+    openFile: openFile,
     hasStoredFile: hasStoredFile, storedFileName: storedFileName,
     scheduleSave: scheduleSave, flushNow: flushNow, isDirty: isDirty,
     status: status, onStatusChange: onStatusChange,
@@ -9060,9 +9338,10 @@ else if (typeof exports === 'object'){
     });
   }
 
-  function preview(text) {
+  function preview(text, max) {
+    var limit = max || 60;
     var t = String(text).replace(/\s+/g, ' ').trim();
-    return t.length > 60 ? t.slice(0, 60) + '…' : t;
+    return t.length > limit ? t.slice(0, limit) + '…' : t;
   }
 
   function update(note, patch) {
@@ -9509,28 +9788,58 @@ else if (typeof exports === 'object'){
    *   form   — ساختن یکی از فرم‌های اداری
    *   field  — رفتن به همان فیلدِ تاریخ در فرم پرونده
    */
+  /*
+   * هر اقدامِ «بارگذاری» یک فیلد تاریخ هم دارد: همان تاریخی که آن مرحله را
+   * تمام‌شده اعلام می‌کند. بدون این، کاربر حکم را بارگذاری می‌کرد و آلارم
+   * سرِ جایش می‌ماند — چون آلارم به تاریخ نگاه می‌کند نه به سند. حالا وقتی
+   * سند ثبت شد، همان تاریخ هم از روی تاریخ سند پر می‌شود و مرحله جلو می‌رود.
+   */
   var CTA = {
-    intake: { type: 'upload', kind: 'نامهٔ وارده', label: 'بارگذاری نامهٔ وارده' },
+    intake: {
+      type: 'upload', kind: 'نامهٔ وارده', field: 'intakeDate',
+      label: 'بارگذاری نامهٔ وارده'
+    },
     assign: { type: 'field', field: 'deliveryDate', label: 'ثبت تاریخ ارجاع' },
-    decree: { type: 'upload', kind: 'حکم کارگزینی', label: 'بارگذاری آخرین حکم' },
-    defect: { type: 'upload', kind: 'نامهٔ رفع نواقص', label: 'بارگذاری رفع نواقص' },
-    inquiry: { type: 'upload', kind: 'پاسخ حراست', label: 'بارگذاری پاسخ حراست' },
-    invite: { type: 'upload', kind: 'دعوت‌نامهٔ جلسه', label: 'بارگذاری نامهٔ دعوت' },
-    defense: { type: 'upload', kind: 'دفاعیهٔ کتبی', label: 'بارگذاری دفاعیه' },
+    decree: {
+      type: 'upload', kind: 'حکم کارگزینی', field: 'decreeDate',
+      label: 'بارگذاری آخرین حکم'
+    },
+    defect: {
+      type: 'upload', kind: 'نامهٔ رفع نواقص', field: 'defectLetterDate',
+      label: 'بارگذاری رفع نواقص'
+    },
+    inquiry: {
+      type: 'upload', kind: 'پاسخ حراست', field: 'securityInLetterDate',
+      label: 'بارگذاری پاسخ حراست'
+    },
+    invite: {
+      type: 'upload', kind: 'دعوت‌نامهٔ جلسه', field: 'invitationLetterDate',
+      label: 'بارگذاری نامهٔ دعوت'
+    },
+    defense: {
+      type: 'upload', kind: 'دفاعیهٔ کتبی', field: 'defenseReceivedDate',
+      label: 'بارگذاری دفاعیه'
+    },
     chase: {
       type: 'upload', kind: 'نامهٔ پیگیری دفاعیات',
-      label: 'بارگذاری نامهٔ پیگیری'
+      field: 'defenseChaseLetterDate', label: 'بارگذاری نامهٔ پیگیری'
     },
-    complete: { type: 'upload', kind: 'مدارک تکمیلی', label: 'بارگذاری مدارک تکمیلی' },
+    complete: {
+      type: 'upload', kind: 'مدارک تکمیلی', field: 'docsCompleteDate',
+      label: 'بارگذاری مدارک تکمیلی'
+    },
     hearing: { type: 'field', field: 'committeeDate', label: 'ثبت تاریخ جلسه' },
     hearingLetter: {
       type: 'upload', kind: 'نامهٔ حضور در جلسهٔ دفاع',
-      label: 'بارگذاری نامهٔ حضور'
+      field: 'hearingLetterDate', label: 'بارگذاری نامهٔ حضور'
     },
     verdict: { type: 'form', form: 'verdict', label: 'ساخت فرم رأی' },
     sign: { type: 'field', field: 'verdictSignedDate', label: 'ثبت تاریخ امضا' },
     notice: { type: 'form', form: 'notice', label: 'ساخت ابلاغ رأی' },
-    result: { type: 'upload', kind: 'نتیجهٔ ابلاغ', label: 'بارگذاری نتیجهٔ ابلاغ' },
+    result: {
+      type: 'upload', kind: 'نتیجهٔ ابلاغ', field: 'noticeResultDate',
+      label: 'بارگذاری نتیجهٔ ابلاغ'
+    },
     archive: { type: 'field', field: 'archiveDate', label: 'ثبت تاریخ بایگانی' }
   };
 
@@ -10554,15 +10863,39 @@ else if (typeof exports === 'object'){
   }
 
   /** فایل‌هایی که در پوشه هستند ولی در برنامه ثبت نشده‌اند (مثلاً خروجی اسکنر) */
+  /**
+   * فایل‌های ثبت‌نشدهٔ داخل زیرپوشهٔ این پرونده.
+   *
+   * قبلاً هر خطایی را می‌بلعید و آرایهٔ خالی برمی‌گرداند؛ نتیجه‌اش این بود
+   * که «پوشه هنوز ساخته نشده»، «اجازه از بین رفته» و «فایل تازه‌ای نبود»
+   * هر سه یک پیام می‌دادند و کاربر فکر می‌کرد دکمه کار نمی‌کند. حالا علت
+   * را هم برمی‌گرداند تا پیام درست گفته شود.
+   *
+   * خروجی: { entries, reason, folder }
+   *   reason: '' (سالم) | 'no-root' | 'no-folder' | 'error'
+   */
   function scan(rec) {
+    var folder = rec.docFolder || folderNameFor(rec);
+    if (!root) {
+      return Promise.resolve({ entries: [], reason: 'no-root', folder: folder });
+    }
     return caseFolder(rec, false).then(listDir).then(function (entries) {
       var known = {};
       forCase(rec.id).forEach(function (d) { known[d.fileName.toLowerCase()] = true; });
-      return entries.filter(function (e) {
-        return e.kind === 'file' && !known[e.name.toLowerCase()] &&
-          e.name.charAt(0) !== '.';
-      });
-    }).catch(function () { return []; });
+      return {
+        entries: entries.filter(function (e) {
+          return e.kind === 'file' && !known[e.name.toLowerCase()] &&
+            e.name.charAt(0) !== '.';
+        }),
+        reason: '', folder: folder
+      };
+    }).catch(function (err) {
+      return {
+        entries: [],
+        reason: (err && err.name === 'NotFoundError') ? 'no-folder' : 'error',
+        message: err && err.message, folder: folder
+      };
+    });
   }
 
   /** ثبت یک فایل موجود در پوشه، بدون جابه‌جا کردنش */
@@ -13251,6 +13584,33 @@ else if (typeof exports === 'object'){
       }, 60);
     }
 
+    /**
+     * بعد از بارگذاری سند، تاریخ مرحله را پر می‌کند.
+     *
+     * فقط وقتی فیلد خالی است — اگر کاربر خودش تاریخی گذاشته، دست نمی‌خورد.
+     * تاریخ از خود سند می‌آید، نه از امروز: نامه‌ای که دیروز رسیده، تاریخش
+     * دیروز است.
+     */
+    function advanceStage(c, res) {
+      var done = function () { app.render(); };
+      if (!c || !c.field || !existing) return done();
+      var date = (res && res.docDate) || J.today();
+      var fresh = M.get(existing.id);
+      if (!fresh || fresh[c.field]) return done();
+      var patch = {};
+      patch[c.field] = date;
+      var label = '';
+      M.FIELDS.forEach(function (f) { if (f.key === c.field) label = f.label; });
+      M.applyPatches([{ id: existing.id, patch: patch }], {
+        kind: 'stage',
+        note: 'با ثبت سند، «' + cleanLabel(label) + '» روی ' + J.format(date) + ' تنظیم شد'
+      }).then(function () {
+        w.U.toast('«' + cleanLabel(label) + '» روی ' + J.format(date) +
+          ' ثبت شد و مرحله جلو رفت.', 'good');
+        done();
+      }).catch(done);
+    }
+
     /** دکمهٔ آلارم: همان کاری که اقدام بعدی می‌خواهد، با یک کلیک */
     function ctaButton(action) {
       var c = w.Worklist.cta(action);
@@ -13260,9 +13620,11 @@ else if (typeof exports === 'object'){
         title: 'همین‌جا انجامش بدهید',
         onclick: function () {
           if (c.type === 'upload') {
-            w.UIDocs.addFrom(existing, function () {
+            w.UIDocs.addFrom(existing, function (res) {
               app.state.formTab = activeTab;
-              app.render();
+              // سند که ثبت شد، تاریخ همان مرحله هم پر می‌شود — وگرنه آلارم
+              // سرِ جایش می‌ماند و کاربر فکر می‌کند کارش انجام نشده.
+              advanceStage(c, res);
             }, { kind: c.kind });
           } else if (c.type === 'form') {
             var form = null;
@@ -14814,16 +15176,28 @@ else if (typeof exports === 'object'){
         text: 'انبار داده: ' + ({ idb: 'IndexedDB (پیشنهادی)',
           localStorage: 'localStorage (محدود)', memory: 'فقط حافظه — داده ذخیره نمی‌شود!' })[s.mode]
       }));
-      // چرا «فایل را حذف کردم ولی داده‌ها هنوز هستند»
-      storageInfo.appendChild(el('div.info-note', null, [
-        el('b', { text: 'داده‌ها به مرورگر بسته‌اند، نه به فایل. ' }),
-        el('span', {
-          text: 'همهٔ صفحه‌هایی که با file:// باز می‌شوند یک «مبدأ» مشترک دارند، ' +
-            'پس دیتابیس «' + w.Store.dbName() + '» در کروم می‌ماند. ' +
-            'اگر این فایل را حذف کنید و نسخهٔ تازه‌ای بگذارید، همان داده‌های قبلی ' +
-            'دوباره نشان داده می‌شوند. برای شروع واقعاً تازه، از دکمهٔ زیر استفاده کنید.'
-        })
-      ]));
+      /* دو حالت کاملاً فرق دارند و باید فرقشان گفته شود: با فایل وصل،
+         مبنا خودِ فایل است و مرورگر فقط کَش؛ بدون فایل، همه‌چیز در مرورگر
+         است و با پاک شدن دادهٔ مرورگر از بین می‌رود. */
+      storageInfo.appendChild(el('div.info-note', null, s.linked
+        ? [
+          el('b', { text: 'مبنا، همین فایل روی دیسک است. ' }),
+          el('span', {
+            text: 'هر بار که برنامه باز می‌شود، داده‌ها از روی «' + s.fileName +
+              '» خوانده می‌شوند و انبار مرورگر فقط یک کپیِ کاری است. پس ' +
+              'می‌توانید فایل HTML برنامه را با نسخهٔ تازه عوض کنید؛ کافی است ' +
+              'یک بار اجازهٔ همین فایل را بدهید.'
+          })
+        ]
+        : [
+          el('b', { text: 'فعلاً داده‌ها فقط در مرورگرند. ' }),
+          el('span', {
+            text: 'همهٔ صفحه‌هایی که با file:// باز می‌شوند یک «مبدأ» مشترک ' +
+              'دارند، پس دیتابیس «' + w.Store.dbName() + '» در کروم می‌ماند و با ' +
+              'پاک شدن دادهٔ مرورگر از بین می‌رود. اگر به یک فایل روی دیسک وصل ' +
+              'کنید، مبنا همان فایل می‌شود.'
+          })
+        ]));
       storageInfo.appendChild(el('p', {
         text: s.linked
           ? 'ذخیرهٔ خودکار روی فایل: ' + s.fileName +
@@ -14865,20 +15239,43 @@ else if (typeof exports === 'object'){
             }
           }));
         }
-        storageInfo.appendChild(el('button.btn.small', {
-          type: 'button',
-          text: s.linked ? 'تغییر فایل دیتابیس'
-            : (s.hasStored ? 'انتخاب فایل دیگر' : 'اتصال به فایل دیتابیس'),
-          onclick: function () {
-            w.Store.linkFile().then(function () {
-              w.U.toast('از این پس تغییرات خودکار روی فایل ذخیره می‌شود.', 'good');
-              refreshStorage();
-            }).catch(function (e) {
-              if (e && e.name === 'AbortError') return;
-              w.U.toast('اتصال ناموفق بود: ' + e.message, 'bad');
-            });
-          }
-        }));
+        /* دو دکمهٔ جدا، چون دو کار کاملاً متفاوت‌اند و قاطی‌شدنشان گران
+           تمام می‌شود: «باز کردن» فایلِ موجود را می‌خوانَد، «ساختن» فایل
+           تازه می‌سازد و هرچه آنجا بوده را بازنویسی می‌کند. */
+        storageInfo.appendChild(el('div.btn-row', null, [
+          el('button.btn.small' + (s.linked ? '' : '.primary'), {
+            type: 'button', text: 'باز کردن دیتابیس موجود',
+            title: 'فایل دیتابیسی که از قبل دارید؛ داده‌هایش خوانده می‌شود',
+            onclick: function () {
+              w.Store.openFile().then(function (res) {
+                w.U.toast(w.U.toFaDigits(res.cases) +
+                  ' پرونده از فایل خوانده شد.', 'good');
+                refreshStorage();
+                m.close();
+                return M.reload();
+              }).then(function () {
+                if (app) app.render();
+              }).catch(function (e) {
+                if (e && e.name === 'AbortError') return;
+                w.U.toast('باز کردن ناموفق بود: ' + e.message, 'bad');
+              });
+            }
+          }),
+          el('button.btn.small', {
+            type: 'button',
+            text: s.linked ? 'ساخت فایل تازه' : 'ساخت فایل دیتابیس',
+            title: 'یک فایل تازه؛ محتوای فعلی برنامه داخلش نوشته می‌شود',
+            onclick: function () {
+              w.Store.linkFile().then(function () {
+                w.U.toast('از این پس تغییرات خودکار روی فایل ذخیره می‌شود.', 'good');
+                refreshStorage();
+              }).catch(function (e) {
+                if (e && e.name === 'AbortError') return;
+                w.U.toast('اتصال ناموفق بود: ' + e.message, 'bad');
+              });
+            }
+          })
+        ]));
       }
     }
     refreshStorage();
@@ -15907,7 +16304,8 @@ else if (typeof exports === 'object'){
         }, Promise.resolve()).then(function () {
           m.close();
           w.U.toast(w.U.toFaDigits(rows.length) + ' سند در پوشهٔ پرونده ذخیره شد.', 'good');
-          onDone();
+          // تاریخ سند برمی‌گردد تا فراخوان بتواند مرحله را جلو ببرد
+          onDone({ rows: rows.length, docDate: rows[0] && rows[0].docDate });
         }).catch(function (err) {
           busy = false;
           save.textContent = 'ثبت دوباره';
@@ -16281,16 +16679,31 @@ else if (typeof exports === 'object'){
           });
         }
       }),
+      /* این دکمه پوشه را «باز» نمی‌کند — مرورگر چنین اجازه‌ای ندارد. کارش
+         این است که داخل زیرپوشهٔ همین پرونده را می‌خوانَد و فایل‌هایی را که
+         مستقیم آنجا ریخته‌اید (مثلاً خروجی اسکنر) برای ثبت پیشنهاد می‌دهد.
+         اسمش هم همین را بگوید. */
       el('button.btn.small.ghost', {
-        type: 'button', text: 'پویش پوشه',
-        title: 'فایل‌هایی که مستقیم در پوشه گذاشته‌اید (مثلاً خروجی اسکنر)',
+        type: 'button', text: 'خواندن فایل‌های پوشه',
+        title: 'داخل زیرپوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
+          '» را می‌خوانَد و فایل‌های ثبت‌نشده را پیدا می‌کند ' +
+          '(مثلاً چیزی که مستقیم اسکن کرده‌اید). پوشه را باز نمی‌کند.',
         onclick: function () {
-          D.scan(rec).then(function (entries) {
-            if (!entries.length) {
-              w.U.toast('فایل ثبت‌نشده‌ای در پوشه نبود.', 'good');
+          D.scan(rec).then(function (res) {
+            if (res.entries.length) {
+              scanDialog(rec, res.entries, refresh);
               return;
             }
-            scanDialog(rec, entries, refresh);
+            if (res.reason === 'no-root') {
+              w.U.toast('اول پوشهٔ مستندات را وصل کنید.', 'warn');
+            } else if (res.reason === 'no-folder') {
+              w.U.toast('زیرپوشهٔ «' + res.folder + '» هنوز ساخته نشده است؛ ' +
+                'با ثبت اولین سند خودکار ساخته می‌شود.', 'warn');
+            } else if (res.reason === 'error') {
+              w.U.toast('خواندن پوشه ناموفق بود: ' + (res.message || ''), 'bad');
+            } else {
+              w.U.toast('داخل «' + res.folder + '» فایل ثبت‌نشده‌ای نبود.', 'good');
+            }
           });
         }
       }),
@@ -17287,38 +17700,62 @@ else if (typeof exports === 'object'){
 
     var sections = [];
 
-    // پیگیری‌های دستی — اول از همه، چون قرارِ خودتان است نه حدسِ برنامه
+    /*
+     * پیگیری‌های دستی — اول از همه، چون قرارِ خودتان است نه حدسِ برنامه.
+     *
+     * اینها با سطرهای گردش‌کار فرق دارند و نباید شکل آنها را داشته باشند:
+     * آنجا یک مرحلهٔ محاسبه‌شده است، اینجا یادداشتی که خودتان نوشته‌اید و
+     * متنش مهم است. پس کارت‌اند، نه سطرِ جدول — با نوار رنگی که فوریت را
+     * می‌گوید و متن یادداشت در دو خط جا می‌شود.
+     */
     var follow = w.Notes.dueFollowUps(true);
     if (follow.length) {
-      sections.push(el('section.wl-section', null, [
+      var late = follow.filter(function (f) { return f.overdue; }).length;
+      sections.push(el('section.wl-section.follow-section', null, [
         el('div.wl-section-head', null, [
-          el('h2', { text: 'پیگیری‌های امروز' }),
+          el('h2', { text: 'قرارهای پیگیری' }),
+          el('span.wl-count' + (late ? '.late' : ''), {
+            text: late ? fa(late) + ' عقب‌افتاده از ' + fa(follow.length)
+              : fa(follow.length) + ' مورد'
+          }),
           el('p.wl-sub', { text: 'قرارهایی که خودتان روی پرونده‌ها گذاشته‌اید.' })
         ]),
-        el('div.wl-rows.follow-rows', null, follow.map(function (f) {
-          return el('div.wl-row.follow-row' + (f.overdue ? '.overdue' : ''), null, [
-            el('button.follow-open', {
-              type: 'button',
-              onclick: function () {
-                app.state.formTab = '__notes';
-                app.openCase(f.rec.id);
-              }
+        el('div.follow-grid', null, follow.map(function (f) {
+          var urgency = f.overdue ? 'late' : (f.days === 0 ? 'today' : 'soon');
+          var person = [f.rec.firstName, f.rec.lastName].filter(Boolean).join(' ')
+            || 'بدون نام';
+          var open = function () {
+            app.state.formTab = '__notes';
+            app.openCase(f.rec.id);
+          };
+          return el('article.follow-card.u-' + urgency, null, [
+            el('button.follow-main', {
+              type: 'button', title: 'باز کردن یادداشت‌های ' + person,
+              onclick: open
             }, [
-              caseNumber(f.rec),
-              el('span.wl-person', {
-                text: [f.rec.firstName, f.rec.lastName].filter(Boolean).join(' ') || 'بدون نام'
-              }),
-              el('span.follow-text', { text: w.Notes.preview(f.note.text) }),
-              el('span.wl-wait' + (f.overdue ? '.late' : ''), {
-                text: w.UINotes.relativeDay(f.note.followUp)
-              })
+              el('div.follow-top', null, [
+                caseNumber(f.rec),
+                el('span.follow-person', { text: person }),
+                el('div.spacer'),
+                el('span.follow-when', {
+                  text: w.UINotes.relativeDay(f.note.followUp)
+                })
+              ]),
+              el('p.follow-note', { text: w.Notes.preview(f.note.text, 160) })
             ]),
-            el('button.btn.small', {
-              type: 'button', text: 'انجام شد',
-              onclick: function () {
-                w.Notes.complete(f.note).then(function () { app.render(); });
-              }
-            })
+            el('div.follow-foot', null, [
+              el('span.follow-date', { text: J.format(f.note.followUp) }),
+              el('div.spacer'),
+              el('button.btn.small.ghost', {
+                type: 'button', text: 'دیدن پرونده', onclick: open
+              }),
+              el('button.btn.small', {
+                type: 'button', text: 'انجام شد',
+                onclick: function () {
+                  w.Notes.complete(f.note).then(function () { app.render(); });
+                }
+              })
+            ])
           ]);
         }))
       ]));
@@ -18354,6 +18791,113 @@ else if (typeof exports === 'object'){
 
   var mount, searchInput, statusChip, navButtons;
 
+  /* ================================================================
+     نشانی صفحه
+     ----------------------------------------------------------------
+     تا امروز رفرش کردن یعنی برگشتن به خانهٔ اول، و دکمهٔ «قبلی» مرورگر
+     از کل برنامه بیرون می‌انداخت. حالا هر نما نشانی خودش را دارد:
+
+       #/                    کارتابل
+       #/list                فهرست پرونده‌ها
+       #/case/1404308        یک پرونده، با شمارهٔ خودش
+       #/case/new            پروندهٔ تازه
+       #/person/<کلید>       پروندهٔ شخص
+       #/report              گزارش‌ها
+
+     شمارهٔ پرونده در نشانی می‌آید نه شناسهٔ داخلی، چون نشانی را آدم
+     می‌خواند و شاید برای همکارش بفرستد.
+     ================================================================ */
+  var applyingRoute = false;
+
+  function routeOf() {
+    var st = app.state;
+    if (st.view === 'case') {
+      if (!st.caseId) return '#/case/new';
+      var rec = M.get(st.caseId);
+      var no = rec && rec.caseNo ? w.U.toLatinDigits(rec.caseNo) : '';
+      return no ? '#/case/' + encodeURIComponent(no) : '#/list';
+    }
+    if (st.view === 'person') {
+      return st.personKey ? '#/person/' + encodeURIComponent(st.personKey) : '#/people';
+    }
+    if (st.view === 'people') return '#/people';
+    if (st.view === 'report') return '#/report';
+    if (st.view === 'list') return '#/list';
+    return '#/';
+  }
+
+  /** نشانی را با نمای فعلی هم‌خط می‌کند، بدون اینکه دوباره رندر شود */
+  function syncRoute(replace) {
+    if (applyingRoute) return;
+    var want = routeOf();
+    if (w.location.hash === want) return;
+    applyingRoute = true;
+    try {
+      if (replace) w.history.replaceState(null, '', want);
+      else w.history.pushState(null, '', want);
+    } catch (e) {
+      w.location.hash = want;          // file:// در بعضی مرورگرها pushState ندارد
+    }
+    applyingRoute = false;
+  }
+
+  /** پرونده را با شمارهٔ خودش پیدا می‌کند */
+  function caseByNo(no) {
+    var want = w.U.toLatinDigits(no || '').trim();
+    var found = null;
+    M.state.cases.forEach(function (c) {
+      if (w.U.toLatinDigits(c.caseNo || '').trim() === want) found = c;
+    });
+    return found;
+  }
+
+  /** نشانی فعلی را روی نما می‌نشاند. از boot و از دکمهٔ «قبلی» صدا می‌شود. */
+  function applyRoute() {
+    var hash = String(w.location.hash || '').replace(/^#\/?/, '');
+    var parts = hash.split('/').filter(function (x) { return x !== ''; });
+    var st = app.state;
+    st.dirty = false;
+
+    if (!parts.length) { st.view = 'work'; st.caseId = null; }
+    else if (parts[0] === 'list') { st.view = 'list'; st.caseId = null; }
+    else if (parts[0] === 'report') { st.view = 'report'; st.caseId = null; }
+    else if (parts[0] === 'people') { st.view = 'people'; st.personKey = null; }
+    else if (parts[0] === 'person' && parts[1]) {
+      st.view = 'person';
+      st.personKey = decodeURIComponent(parts[1]);
+      st.caseId = null;
+    } else if (parts[0] === 'case' && parts[1] === 'new') {
+      st.view = 'case'; st.caseId = null; st.formTab = 'case';
+    } else if (parts[0] === 'case' && parts[1]) {
+      var rec = caseByNo(decodeURIComponent(parts[1]));
+      if (rec) { st.view = 'case'; st.caseId = rec.id; }
+      else {
+        // پرونده‌ای با این شماره نیست — شاید پاک شده یا نشانی دستی خورده
+        st.view = 'list'; st.caseId = null;
+        w.U.toast('پرونده‌ای با شمارهٔ ' + w.U.toFaDigits(parts[1]) + ' پیدا نشد.', 'warn');
+      }
+    } else { st.view = 'work'; st.caseId = null; }
+
+    applyingRoute = true;
+    app.render();
+    applyingRoute = false;
+    // نشانی خالی («فایل را همین‌طور باز کرده») به  #/  تبدیل شود، بدون
+    // اینکه یک ورودی الکی در تاریخچهٔ مرورگر بسازد
+    syncRoute(true);
+  }
+
+  function bindRouting() {
+    w.addEventListener('popstate', function () {
+      if (w.Store.isLocked && w.Store.isLocked()) return;
+      applyRoute();
+    });
+    w.addEventListener('hashchange', function () {
+      if (applyingRoute) return;
+      if (w.Store.isLocked && w.Store.isLocked()) return;
+      if (w.location.hash !== routeOf()) applyRoute();
+    });
+  }
+
   app.setDirty = function (v) { app.state.dirty = v; };
 
   app.goList = function () {
@@ -18519,6 +19063,7 @@ else if (typeof exports === 'object'){
     }
     updateNav();
     updateStatusChip();
+    syncRoute(applyingRoute);
   };
 
   var NAV_FOR_VIEW = {
@@ -18916,7 +19461,9 @@ else if (typeof exports === 'object'){
       }
       topBarNode.style.display = '';
       if (tabBarNode) tabBarNode.style.display = '';
-      app.render();
+      // نشانی فعلی مبناست: رفرش و دکمهٔ «قبلی» همان‌جا برمی‌گردند
+      applyRoute();
+      renderAccessBar();
       resetIdle();
       setTimeout(backupReminder, 2500);
       var s = w.Store.status();
@@ -18932,6 +19479,84 @@ else if (typeof exports === 'object'){
 
   var topBarNode = null;
   var tabBarNode = null;
+  var accessBar = null;
+
+  /*
+   * نوار دسترسی.
+   *
+   * مرورگر اجازهٔ فایل و پوشه را با بستن صفحه فراموش می‌کند — قاعدهٔ امنیتی
+   * خود کروم است و دور زدنی نیست. کاری که از ما برمی‌آید این است که هر بار
+   * یک کلیک باشد، نه گشتن در تنظیمات و تب مستندات. این نوار هر دو را با هم
+   * می‌گیرد و وقتی چیزی لازم نیست، اصلاً دیده نمی‌شود.
+   */
+  function needsAccess() {
+    var s = w.Store.status();
+    var d = w.Docs.status();
+    return {
+      file: !!(s.canLink && !s.linked && s.hasStored),
+      folder: !!(d.supported && !d.linked && d.hasStored),
+      fileName: s.storedName, folderName: d.storedName
+    };
+  }
+
+  function renderAccessBar() {
+    var need = needsAccess();
+    if (!need.file && !need.folder) {
+      if (accessBar) { accessBar.remove(); accessBar = null; }
+      return;
+    }
+    var what = [];
+    if (need.file) what.push('دیتابیس «' + need.fileName + '»');
+    if (need.folder) what.push('پوشهٔ مستندات «' + need.folderName + '»');
+
+    var btn = el('button.btn.small.primary', {
+      type: 'button', text: 'اجازه بده',
+      onclick: function () {
+        btn.disabled = true;
+        btn.textContent = 'در حال گرفتن اجازه…';
+        var chain = need.file
+          ? w.Store.relinkFile(true).then(function (ok) {
+            if (ok) w.Store.flushNow();
+            return ok;
+          })
+          : Promise.resolve(true);
+        chain.then(function () {
+          return need.folder ? w.Docs.relinkFolder(true) : true;
+        }).then(function () {
+          var left = needsAccess();
+          renderAccessBar();
+          app.render();
+          if (!left.file && !left.folder) {
+            w.U.toast('دسترسی برقرار شد؛ داده‌ها از روی فایل خوانده شدند.', 'good');
+          } else {
+            w.U.toast('یک مورد باقی ماند؛ دوباره «اجازه بده» را بزنید.', 'warn');
+          }
+        }).catch(function () {
+          btn.disabled = false;
+          btn.textContent = 'اجازه بده';
+          renderAccessBar();
+        });
+      }
+    });
+
+    var node = el('div.access-bar', null, [
+      el('span.access-icon', { html: w.Mobile.icon('lock') }),
+      el('span.access-text', null, [
+        el('b', { text: 'برای ادامه، یک بار اجازه لازم است: ' }),
+        el('span', { text: what.join(' و ') + '.' }),
+        el('span.access-why', {
+          text: ' مرورگر این اجازه را با بستن صفحه فراموش می‌کند؛ ' +
+            'داده‌ها سر جایشان هستند.'
+        })
+      ]),
+      el('div.spacer'),
+      btn
+    ]);
+    if (accessBar) accessBar.replaceWith(node); else mount.parentNode.insertBefore(node, mount);
+    accessBar = node;
+  }
+
+  app.refreshAccessBar = renderAccessBar;
 
   function boot() {
     mount = $('#main');
@@ -18952,6 +19577,7 @@ else if (typeof exports === 'object'){
     w.Store.init().then(function () {
       bindShortcuts();
       bindIdle();
+      bindRouting();
       if (w.Store.isLocked()) {
         topBarNode.style.display = 'none';
         tabBarNode.style.display = 'none';

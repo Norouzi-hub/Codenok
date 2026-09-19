@@ -151,11 +151,19 @@ async function openList(page) {
 
     const found = await window.Docs.scan(rec);
     const before = window.Docs.current(rec.id).length;
-    await window.Docs.register(rec, found[0], { kind: 'گزارش بازرسی', docDate: '14040901' });
+    await window.Docs.register(rec, found.entries[0],
+      { kind: 'گزارش بازرسی', docDate: '14040901' });
     const afterScan = await window.Docs.scan(rec);
+    // پرونده‌ای که هنوز زیرپوشه ندارد، باید علتش را بگوید نه «چیزی نبود»
+    const fresh = await window.Model.create({
+      caseNo: '1404901', firstName: 'بدون', lastName: 'پوشه'
+    });
+    const missing = await window.Docs.scan(window.Model.get(fresh.id));
     return {
-      foundNames: found.map(f => f.name), before: before,
-      after: window.Docs.current(rec.id).length, leftover: afterScan.length
+      foundNames: found.entries.map(f => f.name), reason: found.reason,
+      before: before, after: window.Docs.current(rec.id).length,
+      leftover: afterScan.entries.length,
+      missingReason: missing.reason, missingFolder: missing.folder
     };
   });
   check('فایل ثبت‌نشدهٔ داخل پوشه پیدا شد',
@@ -164,6 +172,10 @@ async function openList(page) {
   check('ثبت فایل موجود، بدون جابه‌جایی انجام شد',
     scanned.after === scanned.before + 1 && scanned.leftover === 0,
     scanned.before + ' → ' + scanned.after);
+  check('پوشهٔ ساخته‌نشده، علتش را می‌گوید نه «فایلی نبود»',
+    scanned.reason === '' && scanned.missingReason === 'no-folder' &&
+    /1404901/.test(scanned.missingFolder),
+    scanned.missingReason + ' — ' + scanned.missingFolder);
 
   console.log('\n— تاریخچه، جستجو و تایم‌لاین —');
   const wired = await page.evaluate(() => {

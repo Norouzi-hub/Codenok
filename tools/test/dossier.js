@@ -429,6 +429,85 @@ function fakeFile(name, text, type) {
     reverted.key === 'decree' && !reverted.manual, reverted.label);
 
   // ---------------------------------------------------------------------
+  console.log('\n— آلارم بعد از بارگذاری خاموش می‌شود —');
+
+  const freshId = await page.evaluate(async () => {
+    const r = await window.Model.create({
+      caseNo: '1404997', firstName: 'نرگس', lastName: 'رستمی',
+      intakeDate: window.J.today(), deliveryDate: window.J.today()
+    });
+    return r.id;
+  });
+  await page.evaluate((id) => window.App.openCase(id), freshId);
+  await page.waitForSelector('.case-cta');
+  await page.waitForTimeout(300);
+  const beforeUpload = await page.evaluate(() => ({
+    label: document.querySelector('.case-next-label').textContent,
+    cta: document.querySelector('.case-cta').textContent
+  }));
+  check('آلارم «بارگذاری آخرین حکم» است',
+    /بارگذاری آخرین حکم/.test(beforeUpload.label), beforeUpload.label);
+
+  // دکمهٔ آلارم، انتخاب‌گر فایل را باز می‌کند؛ همان‌جا فایل را می‌دهیم
+  const chooser = page.waitForEvent('filechooser', { timeout: 8000 });
+  await page.evaluate(() => document.querySelector('.case-cta').click());
+  const fc = await chooser;
+  const tmp = path.join(OUT, 'hokm.pdf');
+  fs.writeFileSync(tmp, '%PDF-1.4 test');
+  await fc.setFiles(tmp);
+  await page.waitForSelector('.doc-add', { timeout: 8000 });
+  await page.waitForTimeout(300);
+
+  const preset = await page.evaluate(() =>
+    document.querySelector('.doc-add-fields select').value);
+  check('نوع سند از پیش روی «حکم کارگزینی» است', preset === 'حکم کارگزینی', preset);
+
+  // تاریخ سند را عقب‌تر از امروز می‌گذاریم تا معلوم شود از سند می‌آید نه از امروز
+  const docDay = await page.evaluate(() => {
+    const d = window.J.addDays(window.J.today(), -3);
+    window.__wanted = d;
+    const inp = document.querySelector('.doc-add-fields .date-input');
+    inp.value = window.J.format(d, { latin: true });
+    inp.dispatchEvent(new Event('change', { bubbles: true }));
+    return d;
+  });
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.modal-foot .btn')].pop().click();
+  });
+  await page.waitForTimeout(1200);
+
+  const afterUpload = await page.evaluate((id) => {
+    const rec = window.Model.get(id);
+    const a = window.Worklist.nextAction(rec);
+    return {
+      decreeDate: rec.decreeDate || '',
+      label: (document.querySelector('.case-next-label') || {}).textContent || '',
+      actionKey: a.key,
+      docs: window.Docs.current(id).length
+    };
+  }, freshId);
+  check('سند ثبت شد و تاریخ مرحله از روی تاریخِ سند پر شد',
+    afterUpload.docs === 1 && afterUpload.decreeDate === docDay,
+    afterUpload.decreeDate + ' (انتظار ' + docDay + ')');
+  check('آلارم عوض شد و روی مرحلهٔ بعدی رفت',
+    afterUpload.actionKey !== 'decree' && !/بارگذاری آخرین حکم/.test(afterUpload.label),
+    afterUpload.label);
+
+  const notOverwritten = await page.evaluate(async (id) => {
+    const M = window.Model;
+    const rec = M.get(id);
+    const keep = rec.invitationLetterDate || window.J.addDays(window.J.today(), -20);
+    await M.applyPatches([{ id: id, patch: { invitationLetterDate: keep } }],
+      { kind: 'test', note: 'آزمون' });
+    await window.Docs.addFile(M.get(id),
+      new File(['x'], 'davat.pdf', { type: 'application/pdf' }),
+      { kind: 'دعوت‌نامهٔ جلسه', docDate: window.J.today() });
+    return { keep: keep, now: M.get(id).invitationLetterDate };
+  }, freshId);
+  check('تاریخی که کاربر خودش گذاشته، با سند تازه بازنویسی نمی‌شود',
+    notOverwritten.keep === notOverwritten.now, JSON.stringify(notOverwritten));
+
+  // ---------------------------------------------------------------------
   console.log('\n— پیوست نامه کنار فیلد —');
   await page.evaluate((id) => window.App.openCase(id), recId);
   await page.waitForSelector('.case-view');

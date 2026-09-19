@@ -630,16 +630,28 @@
         text: 'انبار داده: ' + ({ idb: 'IndexedDB (پیشنهادی)',
           localStorage: 'localStorage (محدود)', memory: 'فقط حافظه — داده ذخیره نمی‌شود!' })[s.mode]
       }));
-      // چرا «فایل را حذف کردم ولی داده‌ها هنوز هستند»
-      storageInfo.appendChild(el('div.info-note', null, [
-        el('b', { text: 'داده‌ها به مرورگر بسته‌اند، نه به فایل. ' }),
-        el('span', {
-          text: 'همهٔ صفحه‌هایی که با file:// باز می‌شوند یک «مبدأ» مشترک دارند، ' +
-            'پس دیتابیس «' + w.Store.dbName() + '» در کروم می‌ماند. ' +
-            'اگر این فایل را حذف کنید و نسخهٔ تازه‌ای بگذارید، همان داده‌های قبلی ' +
-            'دوباره نشان داده می‌شوند. برای شروع واقعاً تازه، از دکمهٔ زیر استفاده کنید.'
-        })
-      ]));
+      /* دو حالت کاملاً فرق دارند و باید فرقشان گفته شود: با فایل وصل،
+         مبنا خودِ فایل است و مرورگر فقط کَش؛ بدون فایل، همه‌چیز در مرورگر
+         است و با پاک شدن دادهٔ مرورگر از بین می‌رود. */
+      storageInfo.appendChild(el('div.info-note', null, s.linked
+        ? [
+          el('b', { text: 'مبنا، همین فایل روی دیسک است. ' }),
+          el('span', {
+            text: 'هر بار که برنامه باز می‌شود، داده‌ها از روی «' + s.fileName +
+              '» خوانده می‌شوند و انبار مرورگر فقط یک کپیِ کاری است. پس ' +
+              'می‌توانید فایل HTML برنامه را با نسخهٔ تازه عوض کنید؛ کافی است ' +
+              'یک بار اجازهٔ همین فایل را بدهید.'
+          })
+        ]
+        : [
+          el('b', { text: 'فعلاً داده‌ها فقط در مرورگرند. ' }),
+          el('span', {
+            text: 'همهٔ صفحه‌هایی که با file:// باز می‌شوند یک «مبدأ» مشترک ' +
+              'دارند، پس دیتابیس «' + w.Store.dbName() + '» در کروم می‌ماند و با ' +
+              'پاک شدن دادهٔ مرورگر از بین می‌رود. اگر به یک فایل روی دیسک وصل ' +
+              'کنید، مبنا همان فایل می‌شود.'
+          })
+        ]));
       storageInfo.appendChild(el('p', {
         text: s.linked
           ? 'ذخیرهٔ خودکار روی فایل: ' + s.fileName +
@@ -681,20 +693,43 @@
             }
           }));
         }
-        storageInfo.appendChild(el('button.btn.small', {
-          type: 'button',
-          text: s.linked ? 'تغییر فایل دیتابیس'
-            : (s.hasStored ? 'انتخاب فایل دیگر' : 'اتصال به فایل دیتابیس'),
-          onclick: function () {
-            w.Store.linkFile().then(function () {
-              w.U.toast('از این پس تغییرات خودکار روی فایل ذخیره می‌شود.', 'good');
-              refreshStorage();
-            }).catch(function (e) {
-              if (e && e.name === 'AbortError') return;
-              w.U.toast('اتصال ناموفق بود: ' + e.message, 'bad');
-            });
-          }
-        }));
+        /* دو دکمهٔ جدا، چون دو کار کاملاً متفاوت‌اند و قاطی‌شدنشان گران
+           تمام می‌شود: «باز کردن» فایلِ موجود را می‌خوانَد، «ساختن» فایل
+           تازه می‌سازد و هرچه آنجا بوده را بازنویسی می‌کند. */
+        storageInfo.appendChild(el('div.btn-row', null, [
+          el('button.btn.small' + (s.linked ? '' : '.primary'), {
+            type: 'button', text: 'باز کردن دیتابیس موجود',
+            title: 'فایل دیتابیسی که از قبل دارید؛ داده‌هایش خوانده می‌شود',
+            onclick: function () {
+              w.Store.openFile().then(function (res) {
+                w.U.toast(w.U.toFaDigits(res.cases) +
+                  ' پرونده از فایل خوانده شد.', 'good');
+                refreshStorage();
+                m.close();
+                return M.reload();
+              }).then(function () {
+                if (app) app.render();
+              }).catch(function (e) {
+                if (e && e.name === 'AbortError') return;
+                w.U.toast('باز کردن ناموفق بود: ' + e.message, 'bad');
+              });
+            }
+          }),
+          el('button.btn.small', {
+            type: 'button',
+            text: s.linked ? 'ساخت فایل تازه' : 'ساخت فایل دیتابیس',
+            title: 'یک فایل تازه؛ محتوای فعلی برنامه داخلش نوشته می‌شود',
+            onclick: function () {
+              w.Store.linkFile().then(function () {
+                w.U.toast('از این پس تغییرات خودکار روی فایل ذخیره می‌شود.', 'good');
+                refreshStorage();
+              }).catch(function (e) {
+                if (e && e.name === 'AbortError') return;
+                w.U.toast('اتصال ناموفق بود: ' + e.message, 'bad');
+              });
+            }
+          })
+        ]));
       }
     }
     refreshStorage();

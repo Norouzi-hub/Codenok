@@ -568,6 +568,33 @@
       }, 60);
     }
 
+    /**
+     * بعد از بارگذاری سند، تاریخ مرحله را پر می‌کند.
+     *
+     * فقط وقتی فیلد خالی است — اگر کاربر خودش تاریخی گذاشته، دست نمی‌خورد.
+     * تاریخ از خود سند می‌آید، نه از امروز: نامه‌ای که دیروز رسیده، تاریخش
+     * دیروز است.
+     */
+    function advanceStage(c, res) {
+      var done = function () { app.render(); };
+      if (!c || !c.field || !existing) return done();
+      var date = (res && res.docDate) || J.today();
+      var fresh = M.get(existing.id);
+      if (!fresh || fresh[c.field]) return done();
+      var patch = {};
+      patch[c.field] = date;
+      var label = '';
+      M.FIELDS.forEach(function (f) { if (f.key === c.field) label = f.label; });
+      M.applyPatches([{ id: existing.id, patch: patch }], {
+        kind: 'stage',
+        note: 'با ثبت سند، «' + cleanLabel(label) + '» روی ' + J.format(date) + ' تنظیم شد'
+      }).then(function () {
+        w.U.toast('«' + cleanLabel(label) + '» روی ' + J.format(date) +
+          ' ثبت شد و مرحله جلو رفت.', 'good');
+        done();
+      }).catch(done);
+    }
+
     /** دکمهٔ آلارم: همان کاری که اقدام بعدی می‌خواهد، با یک کلیک */
     function ctaButton(action) {
       var c = w.Worklist.cta(action);
@@ -577,9 +604,11 @@
         title: 'همین‌جا انجامش بدهید',
         onclick: function () {
           if (c.type === 'upload') {
-            w.UIDocs.addFrom(existing, function () {
+            w.UIDocs.addFrom(existing, function (res) {
               app.state.formTab = activeTab;
-              app.render();
+              // سند که ثبت شد، تاریخ همان مرحله هم پر می‌شود — وگرنه آلارم
+              // سرِ جایش می‌ماند و کاربر فکر می‌کند کارش انجام نشده.
+              advanceStage(c, res);
             }, { kind: c.kind });
           } else if (c.type === 'form') {
             var form = null;

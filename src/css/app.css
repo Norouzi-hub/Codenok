@@ -61,6 +61,20 @@
   --font-ui: 'Vazirmatn', 'Segoe UI', Tahoma, 'Geeza Pro', sans-serif;
   --font-reg: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
+  /*
+   * لایه‌ها، یک جا و به ترتیب.
+   *
+   * تا امروز هر بخش عدد خودش را داشت و دو تا قاطی شده بودند: تقویم زیر
+   * پنجره می‌رفت و دیده نمی‌شد، و پنجرهٔ «حذف کامل داده‌ها» پشت صفحهٔ قفل
+   * می‌ماند. ترتیب درست از پایین به بالا: صفحهٔ قفل → پنجره‌ها → تقویمی که
+   * از داخل پنجره باز می‌شود → پیام، که باید همیشه دیده شود.
+   */
+  --z-tip: 350;
+  --z-lock: 500;
+  --z-overlay: 700;
+  --z-pop: 800;
+  --z-toast: 900;
+
   /* سازگاری با نام‌های قدیمی که در بخش‌های دیگر به کار رفته‌اند */
   --bg: var(--paper);
   --panel: var(--card);
@@ -1166,7 +1180,7 @@ select.input { cursor: pointer; }
 /* ---------------------------------------------------------------- تقویم */
 .dp-pop {
   position: absolute;
-  z-index: 200;
+  z-index: var(--z-pop);
   background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1223,7 +1237,7 @@ select.input { cursor: pointer; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 300;
+  z-index: var(--z-overlay);
   padding: 20px;
 }
 .modal {
@@ -1321,7 +1335,7 @@ select.input { cursor: pointer; }
 .lock-screen {
   position: fixed;
   inset: 0;
-  z-index: 500;
+  z-index: var(--z-lock);
   background:
     radial-gradient(900px 520px at 80% -10%, rgba(166, 116, 27, .22), transparent 60%),
     linear-gradient(165deg, var(--ink-800), var(--ink-900) 60%, #10121F);
@@ -1393,7 +1407,7 @@ select.input { cursor: pointer; }
   transform: translateY(12px);
   pointer-events: none;
   transition: opacity .2s, transform .2s;
-  z-index: 400;
+  z-index: var(--z-toast);
   max-width: 420px;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
@@ -1550,7 +1564,7 @@ select.input { cursor: pointer; }
 /* ---------------------------------------------------------------- تولتیپ */
 .chart-tip {
   position: absolute;
-  z-index: 350;
+  z-index: var(--z-tip);
   background: #1b2430;
   color: #fff;
   border-radius: 7px;
@@ -2001,32 +2015,87 @@ select.input { cursor: pointer; }
   border-color: var(--brass-line);
 }
 
-/* پیگیری‌ها در کارتابل */
-.follow-rows .follow-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 15px;
+/* ------------------------------------------------ قرارهای پیگیری
+   اینها سطرِ جدول نیستند: یادداشتی است که خودتان نوشته‌اید و متنش مهم
+   است. پس کارت‌اند، با نوار رنگیِ فوریت و جا برای دو خط متن. */
+.follow-section .wl-section-head { flex-wrap: wrap; }
+.wl-count {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 1px 9px;
 }
-.follow-open {
+.wl-count.late {
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border: 1px solid var(--cinnabar-line);
+}
+.follow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(305px, 1fr));
+  gap: 10px;
+  padding: 4px 15px 14px;
+}
+.follow-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+  border-inline-start: 3px solid var(--line);
+  transition: border-color .14s, box-shadow .14s, transform .12s;
+  animation: row-in .22s ease both;
+}
+.follow-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.follow-card.u-late { border-inline-start-color: var(--cinnabar); }
+.follow-card.u-today { border-inline-start-color: var(--brass); }
+.follow-card.u-soon { border-inline-start-color: var(--moss); }
+
+.follow-main {
   font: inherit;
   text-align: start;
   background: none;
   border: 0;
-  padding: 0;
+  padding: 10px 12px 8px;
   cursor: pointer;
-  flex: 1;
-  display: grid;
-  grid-template-columns: 82px minmax(0, 1fr) minmax(0, 2fr) 96px;
-  align-items: center;
-  gap: 12px;
+  display: block;
+  width: 100%;
 }
-.follow-text {
+.follow-top { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.follow-person {
+  font-weight: 600;
   font-size: 12.5px;
-  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.follow-when { font-size: 11px; white-space: nowrap; color: var(--muted); }
+.u-late .follow-when { color: var(--cinnabar); font-weight: 600; }
+.u-today .follow-when { color: var(--brass-ink); font-weight: 600; }
+.follow-note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-700);
+  line-height: 1.75;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.2em;
+}
+.follow-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--paper);
+}
+.follow-date { font-size: 11px; color: var(--muted); font-family: var(--font-reg); }
+@media (max-width: 720px) {
+  .follow-grid { grid-template-columns: 1fr; padding-inline: 12px; }
 }
 
 /* ---------------------------------------------------------------- مستندات */
@@ -2674,12 +2743,38 @@ select.input { cursor: pointer; }
 .letter-clip.has { color: var(--moss); }
 .letter-clip-n { font-size: 10px; font-weight: 600; }
 
+/* ------------------------------------------------- نوار اجازهٔ دسترسی
+   مرورگر اجازهٔ فایل و پوشه را با بستن صفحه فراموش می‌کند. این نوار آن را
+   با یک کلیک برمی‌گرداند و وقتی لازم نیست اصلاً ساخته نمی‌شود. */
+.access-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 14px;
+  max-width: 1120px;
+  padding: 9px 14px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--brass-ink);
+  animation: access-in .22s ease-out;
+}
+@keyframes access-in { from { opacity: 0; transform: translateY(-6px); } }
+.access-icon { line-height: 0; flex: 0 0 auto; }
+.access-icon svg { width: 17px; height: 17px; }
+.access-text { min-width: 0; }
+.access-why { color: var(--muted); }
+@media (max-width: 720px) {
+  .access-bar { flex-wrap: wrap; margin-inline: 12px; }
+}
+
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
-  .case-actions, .doc-pickbar, .letter-clip { display: none !important; }
+  .case-actions, .doc-pickbar, .letter-clip, .access-bar { display: none !important; }
   #print-area { display: block; font-size: 11pt; color: #000; }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
@@ -3214,7 +3309,7 @@ select.input { cursor: pointer; }
     width: auto;
     max-width: 340px;
     margin-inline: auto;
-    z-index: 400;
+    z-index: var(--z-pop);
   }
   .dp-cell { min-height: 34px; }
 
