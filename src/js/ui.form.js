@@ -133,6 +133,29 @@
     ]);
   }
 
+  /**
+   * تب‌های فرم. یک تب می‌تواند چند گروه فیلد را کنار هم بگذارد — «پرونده و
+   * شخص» سه بخش دارد ولی یک تب است، چون در عمل هر سه را با هم پر می‌کنید.
+   */
+  var FORM_TABS = [
+    { key: 'case', label: 'پرونده و شخص', groups: ['case', 'person', 'job'] },
+    { key: 'defense', label: 'دعوت، دفاعیات و استعلام', groups: ['defense'] },
+    { key: 'verdict', label: 'جلسه و رأی', groups: ['verdict'] },
+    { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] },
+    { key: 'violation', label: 'دسته‌بندی تخلف و توضیحات', groups: ['violation'] }
+  ];
+
+  var GROUP_LABEL = {};
+  (w.GROUPS || []).forEach(function (g) { GROUP_LABEL[g.key] = g.label; });
+
+  function tabOf(groupKey) {
+    var found = FORM_TABS[0];
+    FORM_TABS.forEach(function (t) {
+      if (t.groups.indexOf(groupKey) >= 0) found = t;
+    });
+    return found;
+  }
+
   function renderTimeline(rec) {
     var items = M.timelineFor(rec);
     if (!items.length) return el('p.muted', { text: 'هنوز رویدادی ثبت نشده است.' });
@@ -150,7 +173,7 @@
         box.appendChild(el('li.tl-item.tl-doc', null, [
           el('span.tl-date', { text: J.format(it.date) }),
           el('span.tl-body', null, [
-            el('span.doc-icon', { text: w.UIDocs.iconFor(d.fileName) }),
+            el('span.doc-icon', { html: w.UIDocs.iconFor(d.fileName) }),
             el('b', { text: d.kind }),
             el('span.muted', {
               text: ' — ' + (d.title || d.letterNo || d.originalName || d.fileName) + ' '
@@ -313,7 +336,7 @@
       var data = collect();
       if (!data.caseNo) {
         w.U.toast('شمارهٔ پرونده الزامی است.', 'bad');
-        app.state.formTab = 'case';
+        app.state.formTab = tabOf('case').key;
         app.render();
         return;
       }
@@ -377,9 +400,9 @@
       return tab;
     }
 
-    w.GROUPS.forEach(function (g) {
-      makeTab(g.key, g.label, M.FIELDS.filter(function (f) {
-        return f.group === g.key && draft[f.key];
+    FORM_TABS.forEach(function (t) {
+      makeTab(t.key, t.label, M.FIELDS.filter(function (f) {
+        return t.groups.indexOf(f.group) >= 0 && draft[f.key];
       }).length);
     });
     makeTab('__notes', 'یادداشت و پیگیری',
@@ -439,16 +462,35 @@
 
         return;
       }
-      var fields = M.FIELDS.filter(function (f) { return f.group === activeTab; });
-      var grid = el('div.field-grid');
-      fields.forEach(function (f) {
-        var input = makeInput(f, draft[f.key] || '', function (v) { setField(f.key, v); }, app);
-        grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''), null, [
-          el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
-          input
-        ]));
+      var tab = null;
+      FORM_TABS.forEach(function (t) { if (t.key === activeTab) tab = t; });
+      if (!tab) tab = FORM_TABS[0];
+      var many = tab.groups.length > 1;
+
+      tab.groups.forEach(function (gk) {
+        var fields = M.FIELDS.filter(function (f) { return f.group === gk; });
+        if (!fields.length) return;
+        // وقتی چند گروه در یک تب‌اند، هرکدام سربرگ خودش را دارد
+        if (many) {
+          var filled = fields.filter(function (f) { return draft[f.key]; }).length;
+          panel.appendChild(el('div.form-section-head', null, [
+            el('h4', { text: GROUP_LABEL[gk] || gk }),
+            el('span.form-section-count', {
+              text: w.U.toFaDigits(filled) + ' از ' + w.U.toFaDigits(fields.length) + ' پرشده'
+            })
+          ]));
+        }
+        var grid = el('div.field-grid');
+        fields.forEach(function (f) {
+          var input = makeInput(f, draft[f.key] || '',
+            function (v) { setField(f.key, v); }, app);
+          grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''), null, [
+            el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
+            input
+          ]));
+        });
+        panel.appendChild(grid);
       });
-      panel.appendChild(grid);
     }
 
     warnBox = el('div.warn-box');

@@ -163,7 +163,7 @@
     }
     box.appendChild(el('ul.doc-list', null, shared.map(function (doc) {
       return el('li.doc-item.person-doc', null, [
-        el('span.doc-icon', { text: w.UIDocs.iconFor(doc.fileName) }),
+        el('span.doc-icon', { html: w.UIDocs.iconFor(doc.fileName) }),
         el('div.doc-body', null, [
           el('div.doc-head', null, [
             el('span.doc-kind', { text: doc.kind }),
@@ -202,7 +202,7 @@
         bodyNodes = [caseTag, el('b', { text: it.label })];
       } else if (it.type === 'doc') {
         bodyNodes = [caseTag,
-          el('span.doc-icon', { text: w.UIDocs.iconFor(it.doc.fileName) }),
+          el('span.doc-icon', { html: w.UIDocs.iconFor(it.doc.fileName) }),
           el('b', { text: it.doc.kind }),
           el('span.muted', {
             text: ' — ' + (it.doc.title || it.doc.letterNo || it.doc.originalName) + ' '

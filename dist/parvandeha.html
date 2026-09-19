@@ -375,8 +375,23 @@ a { color: var(--ink-700); }
   box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--brass-soft);
 }
 
-/* ریز — داخل سطرهای فهرست و کارتابل */
-.rail-mini { --dot: 8px; --dot-mid: 3px; width: 92px; flex: 0 0 92px; gap: 0; }
+/* ریز — داخل سطرهای فهرست و کارتابل.
+   با پانزده مرحله، نقطه‌ها در ۹۰ پیکسل به هم می‌چسبند و خوانده نمی‌شوند؛
+   پس همان ریل به نوار قطعه‌قطعه تبدیل می‌شود: هر قطعه یک مرحله. */
+.rail-mini { width: 104px; flex: 0 0 104px; gap: 2px; align-items: center; }
+.rail-mini .rail-step::before { display: none; }
+.rail-mini .rail-dot {
+  width: 100%;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--line);
+  box-shadow: none;
+}
+.rail-mini .rail-step.done .rail-dot { background: var(--moss); box-shadow: none; }
+.rail-mini .rail-step.current .rail-dot {
+  background: var(--brass);
+  box-shadow: 0 0 0 1.5px var(--brass-soft);
+}
 
 /* کامل — بالای صفحهٔ پرونده */
 .rail-full {
@@ -938,7 +953,9 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: 14px 22px 12px;
-  margin: 12px 0 16px;
+  /* auto لازم است: بقیهٔ بلوک‌های صفحهٔ پرونده با margin-inline: auto وسط
+     می‌نشینند و اگر اینجا صفر بگذاریم، فقط همین کارت به لبه می‌چسبد. */
+  margin: 12px auto 16px;
   box-shadow: var(--shadow-sm);
 }
 .case-next {
@@ -999,6 +1016,19 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
   padding: 20px 22px;
   box-shadow: var(--shadow-sm);
 }
+/* سربرگ بخش داخل یک تب — وقتی چند گروه فیلد در یک تب جمع شده‌اند */
+.form-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 22px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.form-section-head:first-child { margin-top: 0; }
+.form-section-head h4 { margin: 0; font-size: 13.5px; color: var(--ink-800); }
+.form-section-count { font-size: 11.5px; color: var(--muted); }
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -1839,6 +1869,33 @@ select.input { cursor: pointer; }
 .note-form-row .date-field { min-width: 158px; }
 .note-form-row .date-hint { display: none; }
 
+/* بارگذاری سند از داخل تب یادداشت */
+.note-attach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.note-attach-btn { display: flex; align-items: center; gap: 7px; }
+.note-attach-icon { line-height: 0; color: var(--brass); }
+.note-attach-icon svg { width: 16px; height: 16px; }
+.note-docs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.note-doc { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 62px; }
+.note-doc-name {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .note-list { list-style: none; margin: 0; padding: 0; }
 .note {
   display: flex;
@@ -1968,7 +2025,8 @@ select.input { cursor: pointer; }
   background: #fcfcfb;
 }
 .doc-item.missing { border-color: #e9bdb9; background: #fdf7f6; }
-.doc-icon { font-size: 17px; line-height: 1.4; flex: 0 0 auto; }
+.doc-icon { line-height: 0; flex: 0 0 auto; color: var(--ink-400); }
+.doc-icon svg { width: 17px; height: 17px; }
 
 /* پیش‌نمایش سند: تصویر یا صفحهٔ اول PDF */
 .doc-thumb {
@@ -1986,9 +2044,34 @@ select.input { cursor: pointer; }
   justify-content: center;
   cursor: pointer;
 }
-.doc-thumb:hover { border-color: var(--brand); }
-.doc-thumb.icon-only { background: #f5f7fa; }
-.doc-thumb .doc-icon { font-size: 22px; opacity: .65; }
+.doc-thumb:hover { border-color: var(--brass); }
+
+/* کاشیِ نوع فایل: آیکن خطی + خودِ پسوند. رنگ فقط برای تشخیص سریع خانواده
+   است؛ پسوند همیشه نوشته می‌شود، پس رنگ تنها حامل معنا نیست. */
+.doc-thumb.icon-only {
+  background: var(--paper);
+  flex-direction: column;
+  gap: 5px;
+}
+.doc-thumb .doc-icon { line-height: 0; color: var(--ink-400); }
+.doc-thumb .doc-icon svg { width: 24px; height: 24px; }
+.doc-thumb .doc-ext {
+  font-family: var(--font-reg);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--ink-500);
+}
+.doc-thumb:not(.icon-only) .doc-icon,
+.doc-thumb:not(.icon-only) .doc-ext { display: none; }
+.doc-thumb.fam-doc { background: #F2F4FB; }
+.doc-thumb.fam-doc .doc-icon, .doc-thumb.fam-doc .doc-ext { color: #4C5BC0; }
+.doc-thumb.fam-sheet { background: #EFF7F3; }
+.doc-thumb.fam-sheet .doc-icon, .doc-thumb.fam-sheet .doc-ext { color: #1F8A6B; }
+.doc-thumb.fam-slide { background: #FDF3EC; }
+.doc-thumb.fam-slide .doc-icon, .doc-thumb.fam-slide .doc-ext { color: #C4632A; }
+.doc-thumb.fam-archive { background: var(--brass-soft); }
+.doc-thumb.fam-archive .doc-icon, .doc-thumb.fam-archive .doc-ext { color: var(--brass-ink); }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* نمایشگر PDF مرورگر در اندازهٔ واقعی رندر و سپس کوچک می‌شود تا خوانا بماند */
 .thumb-pdf {
@@ -2017,7 +2100,7 @@ select.input { cursor: pointer; }
   letter-spacing: .5px;
 }
 .doc-item { align-items: center; }
-.tl-doc .doc-icon { font-size: 14px; }
+.tl-doc .doc-icon svg { width: 14px; height: 14px; }
 .doc-body { flex: 1; min-width: 0; }
 .doc-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .doc-kind {
@@ -2108,7 +2191,8 @@ select.input { cursor: pointer; }
 .scan-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tl-doc .tl-body::before { background: var(--brand-soft); border-color: var(--brand); }
-.tl-doc .doc-icon { font-size: 14px; margin-inline-end: 4px; }
+.tl-doc .doc-icon { margin-inline-end: 4px; }
+.tl-doc .doc-icon svg { width: 14px; height: 14px; }
 
 /* ------------------------------------------------------- نوار برش گزارش */
 .filter-note {
@@ -2869,6 +2953,13 @@ window.FIELDS = [
     "list": "Eshteghal"
   },
   {
+    "key": "decreeDate",
+    "label": "تاریخ آخرین حکم کارگزینی",
+    "type": "date",
+    "group": "job",
+    "col": null
+  },
+  {
     "key": "invitationLetterNo",
     "label": "شماره نامه جهت دعوت به کمیته(اخذ دفاعیه)",
     "type": "text",
@@ -2925,6 +3016,41 @@ window.FIELDS = [
     "col": 56
   },
   {
+    "key": "defectLetterNo",
+    "label": "شماره نامه رفع نواقص",
+    "type": "text",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defectLetterDate",
+    "label": "تاریخ نامه رفع نواقص",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defenseReceivedDate",
+    "label": "تاریخ دریافت دفاعیات",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defenseChaseLetterDate",
+    "label": "تاریخ نامه پیگیری دفاعیات",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "docsCompleteDate",
+    "label": "تاریخ تکمیل مستندات پرونده",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
     "key": "committeeDate",
     "label": "تاریخ طرح در کمیته(2)",
     "type": "date",
@@ -2951,6 +3077,34 @@ window.FIELDS = [
     "type": "textarea",
     "group": "verdict",
     "col": 35
+  },
+  {
+    "key": "hearingLetterNo",
+    "label": "شماره نامه حضور در جلسه دفاع",
+    "type": "text",
+    "group": "verdict",
+    "col": null
+  },
+  {
+    "key": "hearingLetterDate",
+    "label": "تاریخ نامه حضور در جلسه دفاع",
+    "type": "date",
+    "group": "verdict",
+    "col": null
+  },
+  {
+    "key": "verdictDate",
+    "label": "تاریخ صدور رأی",
+    "type": "date",
+    "group": "verdict",
+    "col": null
+  },
+  {
+    "key": "verdictSignedDate",
+    "label": "تاریخ امضای رأی توسط اعضا",
+    "type": "date",
+    "group": "verdict",
+    "col": null
   },
   {
     "key": "noticeLetterNo",
@@ -3029,6 +3183,20 @@ window.FIELDS = [
     "type": "textarea",
     "group": "enforce",
     "col": 62
+  },
+  {
+    "key": "noticeResultDate",
+    "label": "تاریخ دریافت نتیجه ابلاغ",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "archiveDate",
+    "label": "تاریخ ارسال به بایگانی",
+    "type": "date",
+    "group": "enforce",
+    "col": null
   },
   {
     "key": "violationAdmin",
@@ -3179,6 +3347,14 @@ window.MILESTONES = [
     "label": "تحویل پرونده به کارشناس"
   },
   {
+    "key": "decreeDate",
+    "label": "بارگذاری آخرین حکم کارگزینی"
+  },
+  {
+    "key": "defectLetterDate",
+    "label": "ارسال نامه رفع نواقص"
+  },
+  {
     "key": "securityOutLetterDate",
     "label": "ارسال استعلام حراست"
   },
@@ -3191,12 +3367,44 @@ window.MILESTONES = [
     "label": "دعوت به کمیته جهت اخذ دفاعیه"
   },
   {
+    "key": "defenseChaseLetterDate",
+    "label": "ارسال نامه پیگیری دفاعیات"
+  },
+  {
+    "key": "defenseReceivedDate",
+    "label": "دریافت دفاعیات"
+  },
+  {
+    "key": "docsCompleteDate",
+    "label": "تکمیل مستندات پرونده"
+  },
+  {
     "key": "committeeDate",
-    "label": "طرح پرونده در کمیته"
+    "label": "جلسه دفاع / طرح در کمیته"
+  },
+  {
+    "key": "hearingLetterDate",
+    "label": "ارسال نامه حضور در جلسه دفاع"
+  },
+  {
+    "key": "verdictDate",
+    "label": "صدور رأی"
+  },
+  {
+    "key": "verdictSignedDate",
+    "label": "امضای رأی توسط اعضا"
   },
   {
     "key": "noticeLetterDate",
     "label": "صدور نامه ابلاغ رأی"
+  },
+  {
+    "key": "noticeResultDate",
+    "label": "دریافت نتیجه ابلاغ"
+  },
+  {
+    "key": "archiveDate",
+    "label": "ارسال به بایگانی"
   }
 ];
 
@@ -4375,6 +4583,13 @@ window.SEED_CASES = [
     clock: svg('<circle cx="12" cy="12" r="7.5"/><path d="M12 7.8V12l2.8 1.8"/>'),
     info: svg('<circle cx="12" cy="12" r="7.5"/><path d="M12 11.3v4.5"/><path d="M12 8.4v.1"/>'),
     ok: svg('<circle cx="12" cy="12" r="7.5"/><path d="M8.6 12.2l2.5 2.5 4.4-5"/>'),
+    file: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/>'),
+    fileText: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M9 12.5h6M9 15.5h4"/>'),
+    fileSheet: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M8.8 12.3h6.4M8.8 15.6h6.4M12 12.3v4.9"/>'),
+    filePdf: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M8.6 16.4c2.2-.6 3.6-2.2 4.3-4 .5-1.3-.9-1.9-1.4-.7-.6 1.5.4 3.7 2.4 4.4"/>'),
+    fileImage: svg('<rect x="5" y="5.5" width="14" height="13" rx="1.8"/><circle cx="9.3" cy="9.8" r="1.2"/><path d="M5.6 16.3l3.6-3.3 2.6 2.3 2.6-2.6 4 3.8"/>'),
+    fileZip: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M10.6 5v2.2M12.4 7.2v2.2M10.6 9.4v2.2"/><rect x="10" y="13" width="3" height="3.4" rx="1"/>'),
+    paperclip: svg('<path d="M17.5 11.2l-6 6a3.4 3.4 0 0 1-4.8-4.8l7-7a2.3 2.3 0 0 1 3.2 3.2l-6.9 7a1.1 1.1 0 0 1-1.6-1.6l6.2-6.2"/>'),
     trash: svg('<path d="M5 7h14"/><path d="M10 7V5.2h4V7"/><path d="M6.5 7l.8 11.3A1.5 1.5 0 0 0 8.8 19.7h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.5 10.5v6M13.5 10.5v6"/>')
   };
   function icon(name) { return ICONS[name] || ''; }
@@ -8075,29 +8290,42 @@ else if (typeof exports === 'object'){
    * انجام‌شده حساب می‌شود.
    */
   var STAGES = [
-    { key: 'intake', label: 'ثبت در دبیرخانه', short: 'ثبت', field: 'intakeDate' },
+    { key: 'intake', label: 'دریافت و ثبت مستندات', short: 'ثبت', field: 'intakeDate' },
     { key: 'assign', label: 'ارجاع به کارشناس', short: 'ارجاع', field: 'deliveryDate' },
+    { key: 'decree', label: 'بارگذاری آخرین حکم', short: 'حکم', field: 'decreeDate' },
+    { key: 'defect', label: 'نامهٔ رفع نواقص', short: 'نواقص',
+      field: 'defectLetterDate', optional: true },
     { key: 'inquiry', label: 'استعلام حراست', short: 'استعلام',
       field: 'securityInLetterDate', optional: true },
-    { key: 'defense', label: 'دعوت و اخذ دفاعیه', short: 'دفاعیه',
-      field: 'invitationLetterDate' },
-    { key: 'committee', label: 'طرح در کمیته', short: 'کمیته', field: 'committeeDate' },
-    { key: 'verdict', label: 'صدور رأی', short: 'رأی', field: null },
+    { key: 'invite', label: 'نامهٔ دعوت', short: 'دعوت', field: 'invitationLetterDate' },
+    { key: 'defense', label: 'دریافت دفاعیات', short: 'دفاعیه', field: 'defenseReceivedDate' },
+    { key: 'complete', label: 'تکمیل مستندات', short: 'تکمیل', field: 'docsCompleteDate' },
+    { key: 'hearing', label: 'جلسهٔ دفاع', short: 'جلسه', field: 'committeeDate' },
+    { key: 'hearingLetter', label: 'نامهٔ حضور در جلسه', short: 'حضور',
+      field: 'hearingLetterDate', optional: true },
+    { key: 'verdict', label: 'صدور رأی', short: 'رأی', field: 'verdictDate' },
+    { key: 'sign', label: 'امضای رأی توسط اعضا', short: 'امضا', field: 'verdictSignedDate' },
     { key: 'notice', label: 'ابلاغ رأی', short: 'ابلاغ', field: 'noticeLetterDate' },
-    { key: 'enforce', label: 'بازگشت ابلاغ و اجرا', short: 'اجرا', field: null }
+    { key: 'result', label: 'دریافت نتیجهٔ ابلاغ', short: 'نتیجه', field: 'noticeResultDate' },
+    { key: 'archive', label: 'بایگانی و اختتام', short: 'بایگانی', field: 'archiveDate' }
   ];
 
+  /* رأی ممکن است تاریخ نداشته باشد ولی متنش ثبت شده باشد — پرونده‌های قدیمی
+     این‌طورند. پس «رأی صادر شده» یعنی یکی از این سه. */
   function hasVerdict(rec) {
-    return !!(rec.verdictFull || rec.committeeRegNo);
+    return !!(rec.verdictDate || rec.verdictFull || rec.committeeRegNo);
   }
 
-  function hasEnforcement(rec) {
-    return !!(rec.noticeReturn || rec.enforcementNotes);
+  /* نتیجهٔ ابلاغ هم یا تاریخ دارد یا در فیلد انتخابی «بازگشت ابلاغ» ثبت شده */
+  function hasNoticeResult(rec) {
+    return !!(rec.noticeResultDate ||
+      (rec.noticeReturn && rec.noticeReturn !== 'در انتظار بازگشت'));
   }
 
   function stageDone(rec, stage) {
     if (stage.key === 'verdict') return hasVerdict(rec);
-    if (stage.key === 'enforce') return hasEnforcement(rec);
+    if (stage.key === 'result') return hasNoticeResult(rec);
+    if (stage.key === 'archive') return !!(rec.archiveDate || isClosed(rec));
     return !!rec[stage.field];
   }
 
@@ -8128,10 +8356,45 @@ else if (typeof exports === 'object'){
     });
   }
 
-  /** مهلت پیش‌فرض هر اقدام، به روز */
+  /**
+   * مهلت پیش‌فرض هر اقدام، به روز. هر عدد یعنی «از تاریخ مرحلهٔ قبل، چند روز
+   * فرصت هست». همه در تنظیمات قابل تغییرند، چون رویهٔ هر دبیرخانه فرق دارد.
+   */
   var SLA = {
-    assign: 3, inquiry: 20, defense: 15, committee: 30,
-    verdictText: 7, notice: 10, noticeReturn: 20, enforce: 30
+    assign: 3,          // از ثبت تا ارجاع به کارشناس
+    decree: 5,          // از ارجاع تا گرفتن و بارگذاری آخرین حکم
+    defect: 7,          // از نامهٔ رفع نواقص تا وصول جواب
+    inquiry: 20,        // از ارسال استعلام حراست تا پاسخ
+    invite: 7,          // از آماده شدن پرونده تا صدور نامهٔ دعوت
+    defense: 10,        // مهلت کارمند برای دادن دفاعیه
+    chase: 7,           // از نامهٔ پیگیری دفاعیات تا پاسخ
+    complete: 7,        // از دریافت دفاعیه تا تکمیل مستندات
+    hearing: 21,        // از تکمیل مستندات تا تعیین جلسهٔ دفاع
+    hearingLetter: 3,   // نامهٔ حضور، پیش از جلسه
+    verdict: 7,         // از جلسه تا صدور رأی
+    sign: 7,            // امضای رأی توسط اعضا
+    notice: 5,          // از امضا تا صدور ابلاغیه
+    result: 10,         // از ابلاغ تا دریافت نتیجه
+    archive: 7          // از نتیجهٔ ابلاغ تا بایگانی
+  };
+
+  /** برچسب فارسی هر مهلت، برای صفحهٔ تنظیمات */
+  var SLA_LABELS = {
+    assign: 'ارجاع به کارشناس، از تاریخ ثبت',
+    decree: 'بارگذاری آخرین حکم، از تاریخ ارجاع',
+    defect: 'پاسخ رفع نواقص، از تاریخ نامه',
+    inquiry: 'پاسخ استعلام حراست، از تاریخ نامهٔ صادره',
+    invite: 'صدور نامهٔ دعوت، از آماده شدن پرونده',
+    defense: 'مهلت دفاعیهٔ کارمند، از تاریخ دعوت‌نامه',
+    chase: 'پاسخ به نامهٔ پیگیری دفاعیات',
+    complete: 'تکمیل مستندات، از دریافت دفاعیه',
+    hearing: 'تعیین جلسهٔ دفاع، از تکمیل مستندات',
+    hearingLetter: 'نامهٔ حضور در جلسه، از تعیین جلسه',
+    verdict: 'صدور رأی، از تاریخ جلسه',
+    sign: 'امضای رأی توسط اعضا، از صدور رأی',
+    notice: 'صدور ابلاغیه، از امضای رأی',
+    result: 'دریافت نتیجهٔ ابلاغ، از تاریخ ابلاغیه',
+    archive: 'ارسال به بایگانی، از دریافت نتیجه'
   };
 
   function sla() {
@@ -8146,7 +8409,8 @@ else if (typeof exports === 'object'){
 
   /**
    * اقدام بعدیِ یک پرونده: چه کاری، از کِی منتظر است، و آیا از مهلت گذشته.
-   * ترتیب بررسی همان ترتیب واقعی کار در دبیرخانه است.
+   * ترتیب بررسی، همان ترتیب واقعی کار در دبیرخانه است — از دریافت مستندات
+   * تا بایگانی. هر شرط یعنی «تا این کار نشود، کار بعدی معنا ندارد».
    */
   function nextAction(rec) {
     var limits = sla();
@@ -8165,41 +8429,101 @@ else if (typeof exports === 'object'){
       };
     }
 
-    if (isClosed(rec)) return make('closed', 'مختومه', '—', '', null);
-    if (!rec.intakeDate) return make('intake', 'ثبت تاریخ ورود', 'دبیرخانه', '', null);
+    if (isClosed(rec) || rec.archiveDate) return make('closed', 'مختومه', '—', '', null);
+
+    // ۱) ثبت
+    if (!rec.intakeDate) return make('intake', 'ثبت تاریخ ورود پرونده', 'دبیرخانه', '', null);
+
+    // ۲) ارجاع به کارشناس
     if (!rec.deliveryDate) {
       return make('assign', 'ارجاع به کارشناس', 'دبیرخانه', rec.intakeDate, limits.assign);
     }
-    // استعلام اختیاری است؛ فقط وقتی فرستاده شده و بی‌پاسخ مانده پیگیری لازم است
+
+    // ۳) آخرین حکم کارگزینی
+    if (!rec.decreeDate) {
+      return make('decree', 'گرفتن و بارگذاری آخرین حکم', 'کارشناس',
+        rec.deliveryDate, limits.decree);
+    }
+
+    // ۴) رفع نواقص — فقط اگر نامه‌اش رفته و هنوز پرونده کامل نشده
+    if (rec.defectLetterDate && !rec.docsCompleteDate && !rec.invitationLetterDate) {
+      return make('defect', 'پیگیری رفع نواقص', 'واحد سازمانی',
+        rec.defectLetterDate, limits.defect);
+    }
+
+    // ۵) استعلام حراست — اختیاری؛ فقط وقتی فرستاده شده و بی‌پاسخ مانده
     if (rec.securityOutLetterDate && !rec.securityInLetterDate) {
       return make('inquiry', 'پیگیری پاسخ حراست', 'حراست',
         rec.securityOutLetterDate, limits.inquiry);
     }
-    if (!rec.invitationLetterDate && !rec.committeeDate) {
-      return make('defense', 'دعوت به جلسه و اخذ دفاعیه', 'کارشناس',
-        rec.deliveryDate, limits.defense);
+
+    // ۶) نامهٔ دعوت
+    if (!rec.invitationLetterDate) {
+      return make('invite', 'صدور نامهٔ دعوت', 'کارشناس', rec.decreeDate, limits.invite);
     }
+
+    // ۷) دفاعیات — اگر نیامد، اول پیگیری، بعد مهلت پیگیری
+    if (!rec.defenseReceivedDate) {
+      if (rec.defenseChaseLetterDate) {
+        return make('chase', 'پیگیری دفاعیات (نامهٔ پیگیری رفته)', 'کارمند',
+          rec.defenseChaseLetterDate, limits.chase);
+      }
+      return make('defense', 'دریافت دفاعیات', 'کارمند',
+        rec.invitationLetterDate, limits.defense);
+    }
+
+    // ۸) تکمیل مستندات
+    if (!rec.docsCompleteDate) {
+      return make('complete', 'تکمیل سایر مستندات', 'کارشناس',
+        rec.defenseReceivedDate, limits.complete);
+    }
+
+    // ۹) تعیین جلسهٔ دفاع
     if (!rec.committeeDate) {
-      return make('committee', 'درج در دستور کار جلسه', 'کارشناس',
-        rec.invitationLetterDate || rec.deliveryDate, limits.committee);
+      return make('hearing', 'تعیین تاریخ جلسهٔ دفاع', 'دبیر کمیته',
+        rec.docsCompleteDate, limits.hearing);
     }
+
+    // ۱۰) نامهٔ حضور در جلسه — فقط تا وقتی جلسه نرسیده
+    if (!rec.hearingLetterDate && J.diffDays(rec.committeeDate, today) > 0) {
+      return make('hearingLetter', 'صدور نامهٔ حضور در جلسهٔ دفاع', 'دبیرخانه',
+        rec.committeeDate, limits.hearingLetter);
+    }
+
+    // ۱۱) صدور رأی
     if (!hasVerdict(rec)) {
-      return make('verdictText', 'ثبت متن رأی', 'دبیر کمیته',
-        rec.committeeDate, limits.verdictText);
+      return make('verdict', 'صدور و ثبت متن رأی', 'دبیر کمیته',
+        rec.committeeDate, limits.verdict);
     }
+
+    // ۱۲) امضای رأی توسط اعضا
+    if (!rec.verdictSignedDate) {
+      return make('sign', 'گرفتن امضای اعضا پای رأی', 'اعضای کمیته',
+        rec.verdictDate || rec.committeeDate, limits.sign);
+    }
+
+    // ۱۳) ابلاغ رأی
     if (!rec.noticeLetterDate) {
-      return make('notice', 'صدور ابلاغیه', 'دبیرخانه', rec.committeeDate, limits.notice);
+      return make('notice', 'صدور ابلاغیهٔ رأی', 'دبیرخانه',
+        rec.verdictSignedDate, limits.notice);
     }
-    if (!rec.noticeReturn) {
-      return make('noticeReturn', 'پیگیری بازگشت ابلاغ', 'دبیرخانه',
-        rec.noticeLetterDate, limits.noticeReturn);
+
+    // ۱۴) نتیجهٔ ابلاغ
+    if (!hasNoticeResult(rec)) {
+      return make('result', 'پیگیری نتیجهٔ ابلاغ', 'واحد سازمانی',
+        rec.noticeLetterDate, limits.result);
     }
-    return make('enforce', 'پیگیری اجرای رأی', 'واحد سازمانی',
-      rec.noticeLetterDate, limits.enforce);
+
+    // ۱۵) بایگانی
+    return make('archive', 'ارسال پرونده به بایگانی و اختتام', 'دبیرخانه',
+      rec.noticeResultDate || rec.noticeLetterDate, limits.archive);
   }
 
   /** «منتظر ما» در برابر «منتظر دیگران» */
-  var OURS = { intake: 1, assign: 1, defense: 1, committee: 1, verdictText: 1, notice: 1 };
+  var OURS = {
+    intake: 1, assign: 1, decree: 1, invite: 1, complete: 1,
+    hearing: 1, hearingLetter: 1, verdict: 1, notice: 1, archive: 1
+  };
 
   function isOurs(action) { return !!OURS[action.key]; }
 
@@ -8262,13 +8586,17 @@ else if (typeof exports === 'object'){
     };
   }
 
-  /** پرونده‌هایی که همه‌چیزشان آماده است و فقط باید در جلسه مطرح شوند */
+  /**
+   * پرونده‌هایی که آمادهٔ جلسهٔ دفاع‌اند: دفاعیه گرفته شده، مستندات تکمیل شده،
+   * استعلامی معطل نمانده و هنوز تاریخ جلسه نخورده‌اند.
+   */
   function readyForCommittee(cases) {
     return cases.filter(function (rec) {
       if (isClosed(rec) || rec.committeeDate) return false;
-      if (!rec.deliveryDate) return false;
+      if (!rec.deliveryDate || !rec.invitationLetterDate) return false;
       if (rec.securityOutLetterDate && !rec.securityInLetterDate) return false;
-      return !!rec.invitationLetterDate;
+      // دفاعیه یا گرفته شده، یا مهلتش گذشته و پیگیری هم شده
+      return !!(rec.defenseReceivedDate || rec.docsCompleteDate);
     }).sort(function (a, b) {
       return (a.intakeDate || '') < (b.intakeDate || '') ? -1 : 1;
     });
@@ -8322,7 +8650,7 @@ else if (typeof exports === 'object'){
   }
 
   w.Worklist = {
-    STAGES: STAGES, SLA: SLA, sla: sla, stages: stages, nextAction: nextAction,
+    STAGES: STAGES, SLA: SLA, SLA_LABELS: SLA_LABELS, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
     isClosed: isClosed, readyForCommittee: readyForCommittee, week: week
   };
@@ -8608,10 +8936,16 @@ else if (typeof exports === 'object'){
 
   var J = w.J, M = w.Model;
 
+  /* نوع سندها به ترتیب همان گردش‌کار واقعی پرونده چیده شده‌اند، تا موقع
+     بارگذاری، گزینهٔ درست همان‌جایی باشد که چشم دنبالش می‌گردد. */
   var KINDS_DEFAULT = [
-    'نامهٔ وارده', 'نامهٔ صادره', 'گزارش بازرسی', 'دعوت‌نامهٔ جلسه',
-    'دفاعیهٔ کتبی', 'استعلام حراست', 'پاسخ حراست', 'صورت‌جلسهٔ کمیته',
-    'رأی کمیته', 'نامهٔ ابلاغ رأی', 'بازگشت ابلاغ', 'حکم کارگزینی',
+    'نامهٔ وارده', 'نامهٔ صادره', 'گزارش بازرسی',
+    'حکم کارگزینی', 'نامهٔ رفع نواقص',
+    'استعلام حراست', 'پاسخ حراست',
+    'دعوت‌نامهٔ جلسه', 'دفاعیهٔ کتبی', 'نامهٔ پیگیری دفاعیات',
+    'مدارک تکمیلی', 'نامهٔ حضور در جلسهٔ دفاع',
+    'صورت‌جلسهٔ کمیته', 'رأی کمیته', 'نامهٔ ابلاغ رأی',
+    'بازگشت ابلاغ', 'نتیجهٔ ابلاغ',
     'مدارک هویتی', 'سایر'
   ];
 
@@ -9165,6 +9499,11 @@ else if (typeof exports === 'object'){
       indexDocs();
       if (!M.state.lists.DocKinds) {
         M.state.lists.DocKinds = KINDS_DEFAULT.slice();
+      } else {
+        // نسخه‌های قبلی فهرست کوتاه‌تری داشتند؛ نوع‌های تازه اضافه می‌شوند
+        KINDS_DEFAULT.forEach(function (k) {
+          if (M.state.lists.DocKinds.indexOf(k) < 0) M.state.lists.DocKinds.push(k);
+        });
       }
       return relinkFolder(false);
     });
@@ -9485,6 +9824,7 @@ else if (typeof exports === 'object'){
         var patch = { committeeDate: head.date, session: head.session };
         if (r.outcome === 'verdict') {
           patch.status = STATUS_VERDICT;
+          patch.verdictDate = head.date;          // رأی همان روز جلسه صادر شده
           if (r.verdict.trim()) patch.verdictFull = r.verdict.trim();
           var reg = (r.regNo || head.regNo || '').trim();
           if (reg) patch.committeeRegNo = reg;
@@ -9709,7 +10049,7 @@ else if (typeof exports === 'object'){
     var fields = M.state.columns.map(function (k) { return M.FIELD_BY_KEY[k]; })
       .filter(Boolean);
     // ستون ثابت گردش‌کار، پیش از ستون‌های انتخابی کاربر
-    var template = '38px 104px ' + fields.map(function (f) {
+    var template = '38px 116px ' + fields.map(function (f) {
       return colWidth(f) + 'px';
     }).join(' ');
 
@@ -10263,6 +10603,29 @@ else if (typeof exports === 'object'){
     ]);
   }
 
+  /**
+   * تب‌های فرم. یک تب می‌تواند چند گروه فیلد را کنار هم بگذارد — «پرونده و
+   * شخص» سه بخش دارد ولی یک تب است، چون در عمل هر سه را با هم پر می‌کنید.
+   */
+  var FORM_TABS = [
+    { key: 'case', label: 'پرونده و شخص', groups: ['case', 'person', 'job'] },
+    { key: 'defense', label: 'دعوت، دفاعیات و استعلام', groups: ['defense'] },
+    { key: 'verdict', label: 'جلسه و رأی', groups: ['verdict'] },
+    { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] },
+    { key: 'violation', label: 'دسته‌بندی تخلف و توضیحات', groups: ['violation'] }
+  ];
+
+  var GROUP_LABEL = {};
+  (w.GROUPS || []).forEach(function (g) { GROUP_LABEL[g.key] = g.label; });
+
+  function tabOf(groupKey) {
+    var found = FORM_TABS[0];
+    FORM_TABS.forEach(function (t) {
+      if (t.groups.indexOf(groupKey) >= 0) found = t;
+    });
+    return found;
+  }
+
   function renderTimeline(rec) {
     var items = M.timelineFor(rec);
     if (!items.length) return el('p.muted', { text: 'هنوز رویدادی ثبت نشده است.' });
@@ -10280,7 +10643,7 @@ else if (typeof exports === 'object'){
         box.appendChild(el('li.tl-item.tl-doc', null, [
           el('span.tl-date', { text: J.format(it.date) }),
           el('span.tl-body', null, [
-            el('span.doc-icon', { text: w.UIDocs.iconFor(d.fileName) }),
+            el('span.doc-icon', { html: w.UIDocs.iconFor(d.fileName) }),
             el('b', { text: d.kind }),
             el('span.muted', {
               text: ' — ' + (d.title || d.letterNo || d.originalName || d.fileName) + ' '
@@ -10443,7 +10806,7 @@ else if (typeof exports === 'object'){
       var data = collect();
       if (!data.caseNo) {
         w.U.toast('شمارهٔ پرونده الزامی است.', 'bad');
-        app.state.formTab = 'case';
+        app.state.formTab = tabOf('case').key;
         app.render();
         return;
       }
@@ -10507,9 +10870,9 @@ else if (typeof exports === 'object'){
       return tab;
     }
 
-    w.GROUPS.forEach(function (g) {
-      makeTab(g.key, g.label, M.FIELDS.filter(function (f) {
-        return f.group === g.key && draft[f.key];
+    FORM_TABS.forEach(function (t) {
+      makeTab(t.key, t.label, M.FIELDS.filter(function (f) {
+        return t.groups.indexOf(f.group) >= 0 && draft[f.key];
       }).length);
     });
     makeTab('__notes', 'یادداشت و پیگیری',
@@ -10569,16 +10932,35 @@ else if (typeof exports === 'object'){
 
         return;
       }
-      var fields = M.FIELDS.filter(function (f) { return f.group === activeTab; });
-      var grid = el('div.field-grid');
-      fields.forEach(function (f) {
-        var input = makeInput(f, draft[f.key] || '', function (v) { setField(f.key, v); }, app);
-        grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''), null, [
-          el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
-          input
-        ]));
+      var tab = null;
+      FORM_TABS.forEach(function (t) { if (t.key === activeTab) tab = t; });
+      if (!tab) tab = FORM_TABS[0];
+      var many = tab.groups.length > 1;
+
+      tab.groups.forEach(function (gk) {
+        var fields = M.FIELDS.filter(function (f) { return f.group === gk; });
+        if (!fields.length) return;
+        // وقتی چند گروه در یک تب‌اند، هرکدام سربرگ خودش را دارد
+        if (many) {
+          var filled = fields.filter(function (f) { return draft[f.key]; }).length;
+          panel.appendChild(el('div.form-section-head', null, [
+            el('h4', { text: GROUP_LABEL[gk] || gk }),
+            el('span.form-section-count', {
+              text: w.U.toFaDigits(filled) + ' از ' + w.U.toFaDigits(fields.length) + ' پرشده'
+            })
+          ]));
+        }
+        var grid = el('div.field-grid');
+        fields.forEach(function (f) {
+          var input = makeInput(f, draft[f.key] || '',
+            function (v) { setField(f.key, v); }, app);
+          grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''), null, [
+            el('span.field-label', { text: cleanLabel(f.label), title: f.label }),
+            input
+          ]));
+        });
+        panel.appendChild(grid);
       });
-      panel.appendChild(grid);
     }
 
     warnBox = el('div.warn-box');
@@ -12242,17 +12624,9 @@ else if (typeof exports === 'object'){
 
     /* مهلت‌ها: همهٔ «دیرکرد»های کارتابل از همین عددها درمی‌آیند، پس باید
        قابل تنظیم باشند — وگرنه اگر همه‌چیز قرمز شود، قرمز معنایش را
-       از دست می‌دهد و کارتابل به درد نمی‌خورد. */
-    var SLA_LABELS = {
-      assign: 'ارجاع به کارشناس، از تاریخ ورود',
-      inquiry: 'پاسخ استعلام حراست، از تاریخ نامهٔ صادره',
-      defense: 'دعوت و اخذ دفاعیه، از تاریخ ارجاع',
-      committee: 'طرح در کمیته، از تاریخ دعوت‌نامه',
-      verdictText: 'ثبت متن رأی، از تاریخ جلسه',
-      notice: 'صدور ابلاغیه، از تاریخ جلسه',
-      noticeReturn: 'بازگشت ابلاغ، از تاریخ ابلاغیه',
-      enforce: 'پیگیری اجرای رأی، از تاریخ ابلاغیه'
-    };
+       از دست می‌دهد و کارتابل به درد نمی‌خورد.
+       فهرست مرحله‌ها از خود موتور گردش‌کار می‌آید، نه از یک کپی اینجا. */
+    var SLA_LABELS = w.Worklist.SLA_LABELS;
     var slaInputs = {};
     var slaBox = el('div.sla-editor');
     var currentSla = w.Worklist.sla();
@@ -12371,20 +12745,42 @@ else if (typeof exports === 'object'){
 
   var el = w.U.el, J = w.J, M = w.Model, D = w.Docs;
 
-  var ICONS = {
-    pdf: '📕', jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', webp: '🖼',
-    doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', zip: '🗜', rar: '🗜',
-    txt: '📄', tif: '🖼', tiff: '🖼'
-  };
-
-  function iconFor(name) {
-    var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
-    return (m && ICONS[m[1].toLowerCase()]) || '📎';
-  }
-
   function extOf(name) {
     var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
     return m ? m[1].toLowerCase() : '';
+  }
+
+  /* خانوادهٔ فایل: تصویر و PDF پیش‌نمایش واقعی می‌گیرند، بقیه یک کاشیِ
+     نوع‌دار — آیکن خطی + خودِ پسوند. پسوند، بیشتر از هر شکلکی می‌گوید
+     فایل چیست. */
+  var FAMILY = {
+    doc: ['doc', 'docx', 'rtf', 'odt'],
+    sheet: ['xls', 'xlsx', 'csv', 'ods'],
+    slide: ['ppt', 'pptx', 'odp'],
+    archive: ['zip', 'rar', '7z', 'tar', 'gz'],
+    text: ['txt', 'md', 'log'],
+    image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'tif', 'tiff'],
+    pdf: ['pdf']
+  };
+
+  function familyOf(name) {
+    var ext = extOf(name);
+    var found = 'other';
+    Object.keys(FAMILY).forEach(function (fam) {
+      if (FAMILY[fam].indexOf(ext) >= 0) found = fam;
+    });
+    return found;
+  }
+
+  var FAMILY_ICON = {
+    doc: 'fileText', sheet: 'fileSheet', slide: 'fileSheet',
+    archive: 'fileZip', text: 'fileText', image: 'fileImage',
+    pdf: 'filePdf', other: 'file'
+  };
+
+  /** آیکن خطیِ نوع فایل، برای سطرها و تایم‌لاین */
+  function iconFor(name) {
+    return w.Mobile.icon(FAMILY_ICON[familyOf(name)] || 'file');
   }
 
   var IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif'];
@@ -12478,14 +12874,19 @@ else if (typeof exports === 'object'){
     return observer;
   }
 
-  /** جعبهٔ پیش‌نمایش: تصویر یا صفحهٔ اول PDF، وگرنه آیکن نوع فایل */
+  /** جعبهٔ پیش‌نمایش: تصویر یا صفحهٔ اول PDF، وگرنه کاشیِ نوع فایل */
   function thumb(doc, onOpen) {
     var previewable = isImage(doc) || isPdf(doc);
-    var box = el('button.doc-thumb' + (previewable ? '' : '.icon-only'), {
+    var fam = familyOf(doc.fileName);
+    var ext = extOf(doc.fileName);
+    var box = el('button.doc-thumb.fam-' + fam + (previewable ? '' : '.icon-only'), {
       type: 'button',
       title: previewable ? 'باز کردن ' + doc.fileName : doc.fileName,
       onclick: onOpen
-    }, [el('span.doc-icon', { text: iconFor(doc.fileName) })]);
+    }, [
+      el('span.doc-icon', { html: w.Mobile.icon(FAMILY_ICON[fam]) }),
+      ext ? el('span.doc-ext', { text: ext.toUpperCase() }) : null
+    ]);
     if (!previewable || !D.status().linked) return box;
     box._doc = doc;
     var obs = getObserver();
@@ -12581,7 +12982,7 @@ else if (typeof exports === 'object'){
 
       state.node = el('div.doc-add-row', null, [
         el('div.doc-add-file', null, [
-          el('span.doc-icon', { text: iconFor(file.name) }),
+          el('span.doc-icon', { html: iconFor(file.name) }),
           el('span.doc-add-name', { text: file.name, title: file.name }),
           el('span.muted.tiny', { text: sizeText(file.size) })
         ]),
@@ -12971,7 +13372,7 @@ else if (typeof exports === 'object'){
       kindSel.addEventListener('change', function () { state.kind = kindSel.value; });
       state.node = el('label.scan-row', null, [
         cb,
-        el('span.doc-icon', { text: iconFor(entry.name) }),
+        el('span.doc-icon', { html: iconFor(entry.name) }),
         el('span.scan-name', { text: entry.name, title: entry.name }),
         kindSel
       ]);
@@ -13009,9 +13410,30 @@ else if (typeof exports === 'object'){
     ]);
   }
 
+  /**
+   * افزودن سند از هر جای دیگر برنامه (مثلاً از تب یادداشت): همان پنجرهٔ
+   * افزودن، با همان نام‌گذاری و نسخه‌بندی و همان پوشهٔ روی دیسک.
+   */
+  function addFrom(rec, onDone) {
+    var st = D.status();
+    if (!st.supported) {
+      w.U.toast(w.Mobile.isPhone() ? w.Mobile.NO_FOLDER_MSG
+        : 'این مرورگر از ذخیرهٔ مستندات در پوشه پشتیبانی نمی‌کند.', 'warn');
+      return;
+    }
+    if (!st.linked) {
+      w.U.toast('اول از تب «مستندات»، پوشهٔ مستندات را انتخاب کنید.', 'warn');
+      return;
+    }
+    pickFiles(true).then(function (files) {
+      if (files.length) addDialog(rec, files, onDone);
+    });
+  }
+
   w.UIDocs = {
     render: render, iconFor: iconFor, sizeText: sizeText, thumb: thumb,
-    isImage: isImage, isPdf: isPdf, releaseThumbs: releaseThumbs
+    isImage: isImage, isPdf: isPdf, releaseThumbs: releaseThumbs,
+    addFrom: addFrom, familyOf: familyOf
   };
 })(window);
 
@@ -13148,6 +13570,35 @@ else if (typeof exports === 'object'){
         save
       ])
     ]));
+
+    /* بارگذاری سند از همین‌جا: خیلی وقت‌ها یادداشت و سند با هم می‌آیند
+       («نامه‌اش رسید» + خود نامه)، و رفتن به تب دیگر یعنی نصفه رها کردن کار. */
+    panel.appendChild(el('div.note-attach', null, [
+      el('button.btn.small.ghost.note-attach-btn', {
+        type: 'button',
+        title: 'همان پنجرهٔ افزودن سند تب مستندات',
+        onclick: function () { w.UIDocs.addFrom(rec, refresh); }
+      }, [
+        el('span.note-attach-icon', { html: w.Mobile.icon('paperclip') }),
+        el('span', { text: 'بارگذاری سند برای این پرونده' })
+      ]),
+      el('span.muted.tiny', {
+        text: 'عکس، PDF، ورد، اکسل یا زیپ — در پوشهٔ همین پرونده روی دیسک می‌نشیند.'
+      })
+    ]));
+
+    // چند سند آخر، همین‌جا دیده شوند تا معلوم باشد چه چیزی بارگذاری شده
+    var recentDocs = w.Docs.current(rec.id).slice(-4).reverse();
+    if (recentDocs.length) {
+      panel.appendChild(el('div.note-docs', null, recentDocs.map(function (d) {
+        return el('div.note-doc', null, [
+          w.UIDocs.thumb(d, function () {
+            w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+          }),
+          el('span.note-doc-name', { text: d.kind || d.fileName, title: d.fileName })
+        ]);
+      })));
+    }
 
     // --- فهرست ---
     var list = N.forCase(rec.id);
@@ -14012,7 +14463,7 @@ else if (typeof exports === 'object'){
     }
     box.appendChild(el('ul.doc-list', null, shared.map(function (doc) {
       return el('li.doc-item.person-doc', null, [
-        el('span.doc-icon', { text: w.UIDocs.iconFor(doc.fileName) }),
+        el('span.doc-icon', { html: w.UIDocs.iconFor(doc.fileName) }),
         el('div.doc-body', null, [
           el('div.doc-head', null, [
             el('span.doc-kind', { text: doc.kind }),
@@ -14051,7 +14502,7 @@ else if (typeof exports === 'object'){
         bodyNodes = [caseTag, el('b', { text: it.label })];
       } else if (it.type === 'doc') {
         bodyNodes = [caseTag,
-          el('span.doc-icon', { text: w.UIDocs.iconFor(it.doc.fileName) }),
+          el('span.doc-icon', { html: w.UIDocs.iconFor(it.doc.fileName) }),
           el('b', { text: it.doc.kind }),
           el('span.muted', {
             text: ' — ' + (it.doc.title || it.doc.letterNo || it.doc.originalName) + ' '

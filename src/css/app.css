@@ -360,8 +360,23 @@ a { color: var(--ink-700); }
   box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--brass-soft);
 }
 
-/* ریز — داخل سطرهای فهرست و کارتابل */
-.rail-mini { --dot: 8px; --dot-mid: 3px; width: 92px; flex: 0 0 92px; gap: 0; }
+/* ریز — داخل سطرهای فهرست و کارتابل.
+   با پانزده مرحله، نقطه‌ها در ۹۰ پیکسل به هم می‌چسبند و خوانده نمی‌شوند؛
+   پس همان ریل به نوار قطعه‌قطعه تبدیل می‌شود: هر قطعه یک مرحله. */
+.rail-mini { width: 104px; flex: 0 0 104px; gap: 2px; align-items: center; }
+.rail-mini .rail-step::before { display: none; }
+.rail-mini .rail-dot {
+  width: 100%;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--line);
+  box-shadow: none;
+}
+.rail-mini .rail-step.done .rail-dot { background: var(--moss); box-shadow: none; }
+.rail-mini .rail-step.current .rail-dot {
+  background: var(--brass);
+  box-shadow: 0 0 0 1.5px var(--brass-soft);
+}
 
 /* کامل — بالای صفحهٔ پرونده */
 .rail-full {
@@ -923,7 +938,9 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: 14px 22px 12px;
-  margin: 12px 0 16px;
+  /* auto لازم است: بقیهٔ بلوک‌های صفحهٔ پرونده با margin-inline: auto وسط
+     می‌نشینند و اگر اینجا صفر بگذاریم، فقط همین کارت به لبه می‌چسبد. */
+  margin: 12px auto 16px;
   box-shadow: var(--shadow-sm);
 }
 .case-next {
@@ -984,6 +1001,19 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
   padding: 20px 22px;
   box-shadow: var(--shadow-sm);
 }
+/* سربرگ بخش داخل یک تب — وقتی چند گروه فیلد در یک تب جمع شده‌اند */
+.form-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 22px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.form-section-head:first-child { margin-top: 0; }
+.form-section-head h4 { margin: 0; font-size: 13.5px; color: var(--ink-800); }
+.form-section-count { font-size: 11.5px; color: var(--muted); }
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -1824,6 +1854,33 @@ select.input { cursor: pointer; }
 .note-form-row .date-field { min-width: 158px; }
 .note-form-row .date-hint { display: none; }
 
+/* بارگذاری سند از داخل تب یادداشت */
+.note-attach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.note-attach-btn { display: flex; align-items: center; gap: 7px; }
+.note-attach-icon { line-height: 0; color: var(--brass); }
+.note-attach-icon svg { width: 16px; height: 16px; }
+.note-docs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.note-doc { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 62px; }
+.note-doc-name {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .note-list { list-style: none; margin: 0; padding: 0; }
 .note {
   display: flex;
@@ -1953,7 +2010,8 @@ select.input { cursor: pointer; }
   background: #fcfcfb;
 }
 .doc-item.missing { border-color: #e9bdb9; background: #fdf7f6; }
-.doc-icon { font-size: 17px; line-height: 1.4; flex: 0 0 auto; }
+.doc-icon { line-height: 0; flex: 0 0 auto; color: var(--ink-400); }
+.doc-icon svg { width: 17px; height: 17px; }
 
 /* پیش‌نمایش سند: تصویر یا صفحهٔ اول PDF */
 .doc-thumb {
@@ -1971,9 +2029,34 @@ select.input { cursor: pointer; }
   justify-content: center;
   cursor: pointer;
 }
-.doc-thumb:hover { border-color: var(--brand); }
-.doc-thumb.icon-only { background: #f5f7fa; }
-.doc-thumb .doc-icon { font-size: 22px; opacity: .65; }
+.doc-thumb:hover { border-color: var(--brass); }
+
+/* کاشیِ نوع فایل: آیکن خطی + خودِ پسوند. رنگ فقط برای تشخیص سریع خانواده
+   است؛ پسوند همیشه نوشته می‌شود، پس رنگ تنها حامل معنا نیست. */
+.doc-thumb.icon-only {
+  background: var(--paper);
+  flex-direction: column;
+  gap: 5px;
+}
+.doc-thumb .doc-icon { line-height: 0; color: var(--ink-400); }
+.doc-thumb .doc-icon svg { width: 24px; height: 24px; }
+.doc-thumb .doc-ext {
+  font-family: var(--font-reg);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--ink-500);
+}
+.doc-thumb:not(.icon-only) .doc-icon,
+.doc-thumb:not(.icon-only) .doc-ext { display: none; }
+.doc-thumb.fam-doc { background: #F2F4FB; }
+.doc-thumb.fam-doc .doc-icon, .doc-thumb.fam-doc .doc-ext { color: #4C5BC0; }
+.doc-thumb.fam-sheet { background: #EFF7F3; }
+.doc-thumb.fam-sheet .doc-icon, .doc-thumb.fam-sheet .doc-ext { color: #1F8A6B; }
+.doc-thumb.fam-slide { background: #FDF3EC; }
+.doc-thumb.fam-slide .doc-icon, .doc-thumb.fam-slide .doc-ext { color: #C4632A; }
+.doc-thumb.fam-archive { background: var(--brass-soft); }
+.doc-thumb.fam-archive .doc-icon, .doc-thumb.fam-archive .doc-ext { color: var(--brass-ink); }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* نمایشگر PDF مرورگر در اندازهٔ واقعی رندر و سپس کوچک می‌شود تا خوانا بماند */
 .thumb-pdf {
@@ -2002,7 +2085,7 @@ select.input { cursor: pointer; }
   letter-spacing: .5px;
 }
 .doc-item { align-items: center; }
-.tl-doc .doc-icon { font-size: 14px; }
+.tl-doc .doc-icon svg { width: 14px; height: 14px; }
 .doc-body { flex: 1; min-width: 0; }
 .doc-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .doc-kind {
@@ -2093,7 +2176,8 @@ select.input { cursor: pointer; }
 .scan-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tl-doc .tl-body::before { background: var(--brand-soft); border-color: var(--brand); }
-.tl-doc .doc-icon { font-size: 14px; margin-inline-end: 4px; }
+.tl-doc .doc-icon { margin-inline-end: 4px; }
+.tl-doc .doc-icon svg { width: 14px; height: 14px; }
 
 /* ------------------------------------------------------- نوار برش گزارش */
 .filter-note {

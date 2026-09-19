@@ -96,6 +96,26 @@ EXCLUDED_COLUMNS = {
     60: 'نوع گزارش',
 }
 
+# --------------------------------------------------------------------------
+# فیلدهایی که در فایل اکسل نبودند ولی گردش‌کار واقعی کمیته به آنها نیاز دارد.
+# هر کدام یک مرحله از مسیر پرونده را تاریخ‌دار می‌کند، تا کارتابل بتواند
+# بگوید پرونده کجا ایستاده و چند روز است که ایستاده.
+#   (key, label, type, group)
+EXTRA_FIELDS = [
+    ('decreeDate', 'تاریخ آخرین حکم کارگزینی', 'date', 'job'),
+    ('defectLetterNo', 'شماره نامه رفع نواقص', 'text', 'defense'),
+    ('defectLetterDate', 'تاریخ نامه رفع نواقص', 'date', 'defense'),
+    ('defenseReceivedDate', 'تاریخ دریافت دفاعیات', 'date', 'defense'),
+    ('defenseChaseLetterDate', 'تاریخ نامه پیگیری دفاعیات', 'date', 'defense'),
+    ('docsCompleteDate', 'تاریخ تکمیل مستندات پرونده', 'date', 'defense'),
+    ('hearingLetterNo', 'شماره نامه حضور در جلسه دفاع', 'text', 'verdict'),
+    ('hearingLetterDate', 'تاریخ نامه حضور در جلسه دفاع', 'date', 'verdict'),
+    ('verdictDate', 'تاریخ صدور رأی', 'date', 'verdict'),
+    ('verdictSignedDate', 'تاریخ امضای رأی توسط اعضا', 'date', 'verdict'),
+    ('noticeResultDate', 'تاریخ دریافت نتیجه ابلاغ', 'date', 'enforce'),
+    ('archiveDate', 'تاریخ ارسال به بایگانی', 'date', 'enforce'),
+]
+
 GROUPS = [
     ('case',      'پرونده و گزارش'),
     ('person',    'مشخصات فرد'),
@@ -136,13 +156,23 @@ EXTRA_OPTIONS = {
 
 # رویدادهای تایم‌لاین که خودکار از روی فیلدهای تاریخ ساخته می‌شوند
 MILESTONES = [
-    ('intakeDate',           'ورود پرونده به دبیرخانه کمیته'),
-    ('deliveryDate',         'تحویل پرونده به کارشناس'),
-    ('securityOutLetterDate','ارسال استعلام حراست'),
-    ('securityInLetterDate', 'وصول پاسخ استعلام حراست'),
-    ('invitationLetterDate', 'دعوت به کمیته جهت اخذ دفاعیه'),
-    ('committeeDate',        'طرح پرونده در کمیته'),
-    ('noticeLetterDate',     'صدور نامه ابلاغ رأی'),
+    ('intakeDate',              'ورود پرونده به دبیرخانه کمیته'),
+    ('deliveryDate',            'تحویل پرونده به کارشناس'),
+    ('decreeDate',              'بارگذاری آخرین حکم کارگزینی'),
+    ('defectLetterDate',        'ارسال نامه رفع نواقص'),
+    ('securityOutLetterDate',   'ارسال استعلام حراست'),
+    ('securityInLetterDate',    'وصول پاسخ استعلام حراست'),
+    ('invitationLetterDate',    'دعوت به کمیته جهت اخذ دفاعیه'),
+    ('defenseChaseLetterDate',  'ارسال نامه پیگیری دفاعیات'),
+    ('defenseReceivedDate',     'دریافت دفاعیات'),
+    ('docsCompleteDate',        'تکمیل مستندات پرونده'),
+    ('committeeDate',           'جلسه دفاع / طرح در کمیته'),
+    ('hearingLetterDate',       'ارسال نامه حضور در جلسه دفاع'),
+    ('verdictDate',             'صدور رأی'),
+    ('verdictSignedDate',       'امضای رأی توسط اعضا'),
+    ('noticeLetterDate',        'صدور نامه ابلاغ رأی'),
+    ('noticeResultDate',        'دریافت نتیجه ابلاغ'),
+    ('archiveDate',             'ارسال به بایگانی'),
 ]
 
 PERSIAN_DIGITS = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
@@ -208,6 +238,13 @@ def main(xlsx_path):
         if kind == 'select':
             f['list'] = SELECT_LISTS[key]
         fields.append(f)
+    # فیلدهای گردش‌کار، بعد از فیلدهای اکسل و در گروه خودشان
+    for key, label, kind, group in EXTRA_FIELDS:
+        fields.append({'key': key, 'label': label, 'type': kind,
+                       'group': group, 'col': None})
+    # داخل هر گروه، ترتیب فیلدها همان ترتیب تعریف است
+    order = {g: i for i, (g, _) in enumerate(GROUPS)}
+    fields.sort(key=lambda f: order.get(f['group'], 99))
 
     js = ['// این فایل به‌صورت خودکار از روی فایل اکسل ساخته شده است — دستی ویرایش نکنید.',
           '// tools/gen_data.py', '']

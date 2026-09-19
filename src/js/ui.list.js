@@ -127,7 +127,7 @@
     var fields = M.state.columns.map(function (k) { return M.FIELD_BY_KEY[k]; })
       .filter(Boolean);
     // ستون ثابت گردش‌کار، پیش از ستون‌های انتخابی کاربر
-    var template = '38px 104px ' + fields.map(function (f) {
+    var template = '38px 116px ' + fields.map(function (f) {
       return colWidth(f) + 'px';
     }).join(' ');
 

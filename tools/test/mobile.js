@@ -358,14 +358,17 @@ function overflow(page) {
     for (const c of open.slice(0, 2)) {
       await M.update(c.id, Object.assign({}, c, {
         deliveryDate: c.deliveryDate || J.addDays(J.today(), -20),
-        invitationLetterDate: J.addDays(J.today(), -5),
+        decreeDate: J.addDays(J.today(), -18),
+        invitationLetterDate: J.addDays(J.today(), -12),
+        defenseReceivedDate: J.addDays(J.today(), -6),
+        docsCompleteDate: J.addDays(J.today(), -4),
         committeeDate: '', securityOutLetterDate: '', securityInLetterDate: ''
       }));
     }
     for (const [i, c] of open.slice(5, 7).entries()) {
       await M.update(c.id, Object.assign({}, c, {
-        deliveryDate: J.addDays(J.today(), -13 + i),
-        invitationLetterDate: '', committeeDate: '',
+        deliveryDate: J.addDays(J.today(), -3 + i),
+        decreeDate: '', invitationLetterDate: '', committeeDate: '',
         securityOutLetterDate: '', securityInLetterDate: ''
       }));
     }

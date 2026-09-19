@@ -244,6 +244,13 @@ window.FIELDS = [
     "list": "Eshteghal"
   },
   {
+    "key": "decreeDate",
+    "label": "تاریخ آخرین حکم کارگزینی",
+    "type": "date",
+    "group": "job",
+    "col": null
+  },
+  {
     "key": "invitationLetterNo",
     "label": "شماره نامه جهت دعوت به کمیته(اخذ دفاعیه)",
     "type": "text",
@@ -300,6 +307,41 @@ window.FIELDS = [
     "col": 56
   },
   {
+    "key": "defectLetterNo",
+    "label": "شماره نامه رفع نواقص",
+    "type": "text",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defectLetterDate",
+    "label": "تاریخ نامه رفع نواقص",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defenseReceivedDate",
+    "label": "تاریخ دریافت دفاعیات",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "defenseChaseLetterDate",
+    "label": "تاریخ نامه پیگیری دفاعیات",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "docsCompleteDate",
+    "label": "تاریخ تکمیل مستندات پرونده",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
     "key": "committeeDate",
     "label": "تاریخ طرح در کمیته(2)",
     "type": "date",
@@ -326,6 +368,34 @@ window.FIELDS = [
     "type": "textarea",
     "group": "verdict",
     "col": 35
+  },
+  {
+    "key": "hearingLetterNo",
+    "label": "شماره نامه حضور در جلسه دفاع",
+    "type": "text",
+    "group": "verdict",
+    "col": null
+  },
+  {
+    "key": "hearingLetterDate",
+    "label": "تاریخ نامه حضور در جلسه دفاع",
+    "type": "date",
+    "group": "verdict",
+    "col": null
+  },
+  {
+    "key": "verdictDate",
+    "label": "تاریخ صدور رأی",
+    "type": "date",
+    "group": "verdict",
+    "col": null
+  },
+  {
+    "key": "verdictSignedDate",
+    "label": "تاریخ امضای رأی توسط اعضا",
+    "type": "date",
+    "group": "verdict",
+    "col": null
   },
   {
     "key": "noticeLetterNo",
@@ -404,6 +474,20 @@ window.FIELDS = [
     "type": "textarea",
     "group": "enforce",
     "col": 62
+  },
+  {
+    "key": "noticeResultDate",
+    "label": "تاریخ دریافت نتیجه ابلاغ",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "archiveDate",
+    "label": "تاریخ ارسال به بایگانی",
+    "type": "date",
+    "group": "enforce",
+    "col": null
   },
   {
     "key": "violationAdmin",
@@ -554,6 +638,14 @@ window.MILESTONES = [
     "label": "تحویل پرونده به کارشناس"
   },
   {
+    "key": "decreeDate",
+    "label": "بارگذاری آخرین حکم کارگزینی"
+  },
+  {
+    "key": "defectLetterDate",
+    "label": "ارسال نامه رفع نواقص"
+  },
+  {
     "key": "securityOutLetterDate",
     "label": "ارسال استعلام حراست"
   },
@@ -566,11 +658,43 @@ window.MILESTONES = [
     "label": "دعوت به کمیته جهت اخذ دفاعیه"
   },
   {
+    "key": "defenseChaseLetterDate",
+    "label": "ارسال نامه پیگیری دفاعیات"
+  },
+  {
+    "key": "defenseReceivedDate",
+    "label": "دریافت دفاعیات"
+  },
+  {
+    "key": "docsCompleteDate",
+    "label": "تکمیل مستندات پرونده"
+  },
+  {
     "key": "committeeDate",
-    "label": "طرح پرونده در کمیته"
+    "label": "جلسه دفاع / طرح در کمیته"
+  },
+  {
+    "key": "hearingLetterDate",
+    "label": "ارسال نامه حضور در جلسه دفاع"
+  },
+  {
+    "key": "verdictDate",
+    "label": "صدور رأی"
+  },
+  {
+    "key": "verdictSignedDate",
+    "label": "امضای رأی توسط اعضا"
   },
   {
     "key": "noticeLetterDate",
     "label": "صدور نامه ابلاغ رأی"
+  },
+  {
+    "key": "noticeResultDate",
+    "label": "دریافت نتیجه ابلاغ"
+  },
+  {
+    "key": "archiveDate",
+    "label": "ارسال به بایگانی"
   }
 ];

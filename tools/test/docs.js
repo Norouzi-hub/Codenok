@@ -437,6 +437,74 @@ async function openList(page) {
   check('ارجاع پوشه وارد پشتیبان نمی‌شود و JSON سالم است',
     !backup.hasHandles && backup.serializable);
 
+  console.log('\n— هر نوع فایلی، با کاشی نوع‌دار —');
+  // بعد از رفرش، پوشهٔ ساختگی رفته است؛ دوباره وصلش می‌کنیم
+  await page.evaluate(MOCK_FS);
+  await page.evaluate(() => window.Docs.linkFolder());
+  const types = await page.evaluate(async () => {
+    const rec = window.Model.state.cases[0];
+    const files = [
+      new File(['x'], 'dadkhast.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
+      new File(['x'], 'jadval.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      new File(['x'], 'peyvast.zip', { type: 'application/zip' }),
+      new File(['x'], 'scan.png', { type: 'image/png' }),
+      new File(['x'], 'ray.pdf', { type: 'application/pdf' })
+    ];
+    for (const f of files) {
+      await window.Docs.addFile(rec, f, { kind: 'سایر', docDate: window.J.today() });
+    }
+    const added = window.Docs.current(rec.id).filter(
+      d => ['docx', 'xlsx', 'zip', 'png', 'pdf'].some(e => d.fileName.endsWith('.' + e)));
+    return {
+      count: added.length,
+      families: added.map(d => window.UIDocs.familyOf(d.fileName)).sort(),
+      recId: rec.id
+    };
+  });
+  check('ورد، اکسل، زیپ، عکس و PDF همگی بارگذاری می‌شوند', types.count === 5,
+    types.count + ' فایل');
+  check('هر کدام خانوادهٔ خودش را می‌گیرد',
+    types.families.join(',') === 'archive,doc,image,pdf,sheet', types.families.join(','));
+
+  const tiles = await page.evaluate((recId) => {
+    window.App.state.formTab = '__docs';
+    window.App.openCase(recId);
+    const box = {};
+    document.querySelectorAll('.doc-thumb').forEach(t => {
+      const fam = [...t.classList].find(c => c.indexOf('fam-') === 0);
+      box[fam] = (box[fam] || 0) + 1;
+    });
+    return {
+      fams: box,
+      exts: [...document.querySelectorAll('.doc-thumb .doc-ext')].map(e => e.textContent),
+      svg: document.querySelectorAll('.doc-thumb .doc-icon svg').length,
+      emoji: [...document.querySelectorAll('.doc-icon')]
+        .filter(e => !e.querySelector('svg') && e.textContent.trim()).length
+    };
+  }, types.recId);
+  check('کاشی هر فایل، پسوندش را می‌نویسد',
+    tiles.exts.indexOf('DOCX') >= 0 && tiles.exts.indexOf('XLSX') >= 0 &&
+    tiles.exts.indexOf('ZIP') >= 0, tiles.exts.join('/'));
+  check('آیکن فایل‌ها خطی است، نه شکلک',
+    tiles.svg > 0 && tiles.emoji === 0,
+    tiles.svg + ' آیکن خطی، ' + tiles.emoji + ' شکلک');
+
+  console.log('\n— بارگذاری از تب یادداشت —');
+  const fromNotes = await page.evaluate((recId) => {
+    window.App.state.formTab = '__notes';
+    window.App.openCase(recId);
+    return {
+      button: !!document.querySelector('.note-attach-btn'),
+      hint: (document.querySelector('.note-attach') || {}).textContent || '',
+      recent: document.querySelectorAll('.note-doc').length
+    };
+  }, types.recId);
+  check('تب یادداشت دکمهٔ بارگذاری سند دارد', fromNotes.button);
+  check('چند سند آخر در تب یادداشت دیده می‌شوند', fromNotes.recent > 0,
+    fromNotes.recent + ' سند');
+  check('راهنما می‌گوید چه فرمت‌هایی قبول است',
+    /عکس/.test(fromNotes.hint) && /زیپ/.test(fromNotes.hint));
+
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));
 

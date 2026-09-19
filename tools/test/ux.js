@@ -70,6 +70,21 @@ function check(name, ok, extra) {
   check('دکمهٔ حذف کنار دکمهٔ ذخیره ننشسته است', !neighbours.adjacent,
     JSON.stringify(neighbours));
 
+  // ریل پرونده باید هم‌راستای بقیهٔ بلوک‌های صفحه باشد، نه چسبیده به لبه
+  const railAlign = await page.evaluate(() => {
+    const rail = document.querySelector('.case-rail').getBoundingClientRect();
+    const head = document.querySelector('.case-head').getBoundingClientRect();
+    const panel = document.querySelector('.form-panel').getBoundingClientRect();
+    return {
+      dRight: Math.round(rail.right - head.right),
+      dLeft: Math.round(rail.left - head.left),
+      samePanel: Math.abs(rail.left - panel.left) < 2
+    };
+  });
+  check('ریل گردش‌کار با بقیهٔ صفحه هم‌راستاست',
+    Math.abs(railAlign.dRight) < 2 && Math.abs(railAlign.dLeft) < 2 &&
+    railAlign.samePanel, JSON.stringify(railAlign));
+
   console.log('\n— رفتن به پروندهٔ بعدی —');
   const nav = await page.evaluate(() => {
     const before = window.App.state.caseId;
@@ -132,6 +147,24 @@ function check(name, ok, extra) {
   check('کلیک روی کارت، همان پرونده‌ها را در فهرست می‌آورد',
     statClick.view === 'list' && statClick.got === statClick.expected,
     statClick.got + ' از ' + statClick.expected + ' — ' + statClick.note);
+
+  // ریل ریزِ پانزده‌مرحله‌ای باید به‌شکل نوار قطعه‌قطعه خوانده شود، نه نقطه‌های چسبیده
+  await page.evaluate(() => { window.App.setDirty(false); window.App.goList(); });
+  await page.waitForSelector('.tr .rail-mini', { timeout: 20000 });
+  const miniRail = await page.evaluate(() => {
+    const r = document.querySelector('.tr .rail-mini');
+    if (!r) return { missing: true };
+    const seg = r.children[0].querySelector('.rail-dot').getBoundingClientRect();
+    return {
+      steps: r.children.length,
+      width: Math.round(r.getBoundingClientRect().width),
+      segWidth: Math.round(seg.width * 10) / 10,
+      shape: getComputedStyle(r.children[0].querySelector('.rail-dot')).borderRadius
+    };
+  });
+  check('ریل ریز با پانزده مرحله هم خوانا می‌ماند',
+    miniRail.steps === 15 && miniRail.segWidth >= 4,
+    miniRail.steps + ' قطعه، هرکدام ' + miniRail.segWidth + 'px در ' + miniRail.width + 'px');
 
   console.log('\n— فهرست خالی —');
   await page.evaluate(() => { window.App.clearFilterNote(); });
@@ -204,7 +237,7 @@ function check(name, ok, extra) {
   await page.waitForSelector('.sla-editor');
   const slaFields = await page.evaluate(() =>
     document.querySelectorAll('.sla-input').length);
-  check('همهٔ هشت مهلت در تنظیمات قابل ویرایش‌اند', slaFields === 8,
+  check('مهلت همهٔ مرحله‌ها در تنظیمات قابل ویرایش است', slaFields === 15,
     slaFields + ' فیلد');
 
   await page.evaluate(() => {

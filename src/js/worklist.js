@@ -16,29 +16,42 @@
    * انجام‌شده حساب می‌شود.
    */
   var STAGES = [
-    { key: 'intake', label: 'ثبت در دبیرخانه', short: 'ثبت', field: 'intakeDate' },
+    { key: 'intake', label: 'دریافت و ثبت مستندات', short: 'ثبت', field: 'intakeDate' },
     { key: 'assign', label: 'ارجاع به کارشناس', short: 'ارجاع', field: 'deliveryDate' },
+    { key: 'decree', label: 'بارگذاری آخرین حکم', short: 'حکم', field: 'decreeDate' },
+    { key: 'defect', label: 'نامهٔ رفع نواقص', short: 'نواقص',
+      field: 'defectLetterDate', optional: true },
     { key: 'inquiry', label: 'استعلام حراست', short: 'استعلام',
       field: 'securityInLetterDate', optional: true },
-    { key: 'defense', label: 'دعوت و اخذ دفاعیه', short: 'دفاعیه',
-      field: 'invitationLetterDate' },
-    { key: 'committee', label: 'طرح در کمیته', short: 'کمیته', field: 'committeeDate' },
-    { key: 'verdict', label: 'صدور رأی', short: 'رأی', field: null },
+    { key: 'invite', label: 'نامهٔ دعوت', short: 'دعوت', field: 'invitationLetterDate' },
+    { key: 'defense', label: 'دریافت دفاعیات', short: 'دفاعیه', field: 'defenseReceivedDate' },
+    { key: 'complete', label: 'تکمیل مستندات', short: 'تکمیل', field: 'docsCompleteDate' },
+    { key: 'hearing', label: 'جلسهٔ دفاع', short: 'جلسه', field: 'committeeDate' },
+    { key: 'hearingLetter', label: 'نامهٔ حضور در جلسه', short: 'حضور',
+      field: 'hearingLetterDate', optional: true },
+    { key: 'verdict', label: 'صدور رأی', short: 'رأی', field: 'verdictDate' },
+    { key: 'sign', label: 'امضای رأی توسط اعضا', short: 'امضا', field: 'verdictSignedDate' },
     { key: 'notice', label: 'ابلاغ رأی', short: 'ابلاغ', field: 'noticeLetterDate' },
-    { key: 'enforce', label: 'بازگشت ابلاغ و اجرا', short: 'اجرا', field: null }
+    { key: 'result', label: 'دریافت نتیجهٔ ابلاغ', short: 'نتیجه', field: 'noticeResultDate' },
+    { key: 'archive', label: 'بایگانی و اختتام', short: 'بایگانی', field: 'archiveDate' }
   ];
 
+  /* رأی ممکن است تاریخ نداشته باشد ولی متنش ثبت شده باشد — پرونده‌های قدیمی
+     این‌طورند. پس «رأی صادر شده» یعنی یکی از این سه. */
   function hasVerdict(rec) {
-    return !!(rec.verdictFull || rec.committeeRegNo);
+    return !!(rec.verdictDate || rec.verdictFull || rec.committeeRegNo);
   }
 
-  function hasEnforcement(rec) {
-    return !!(rec.noticeReturn || rec.enforcementNotes);
+  /* نتیجهٔ ابلاغ هم یا تاریخ دارد یا در فیلد انتخابی «بازگشت ابلاغ» ثبت شده */
+  function hasNoticeResult(rec) {
+    return !!(rec.noticeResultDate ||
+      (rec.noticeReturn && rec.noticeReturn !== 'در انتظار بازگشت'));
   }
 
   function stageDone(rec, stage) {
     if (stage.key === 'verdict') return hasVerdict(rec);
-    if (stage.key === 'enforce') return hasEnforcement(rec);
+    if (stage.key === 'result') return hasNoticeResult(rec);
+    if (stage.key === 'archive') return !!(rec.archiveDate || isClosed(rec));
     return !!rec[stage.field];
   }
 
@@ -69,10 +82,45 @@
     });
   }
 
-  /** مهلت پیش‌فرض هر اقدام، به روز */
+  /**
+   * مهلت پیش‌فرض هر اقدام، به روز. هر عدد یعنی «از تاریخ مرحلهٔ قبل، چند روز
+   * فرصت هست». همه در تنظیمات قابل تغییرند، چون رویهٔ هر دبیرخانه فرق دارد.
+   */
   var SLA = {
-    assign: 3, inquiry: 20, defense: 15, committee: 30,
-    verdictText: 7, notice: 10, noticeReturn: 20, enforce: 30
+    assign: 3,          // از ثبت تا ارجاع به کارشناس
+    decree: 5,          // از ارجاع تا گرفتن و بارگذاری آخرین حکم
+    defect: 7,          // از نامهٔ رفع نواقص تا وصول جواب
+    inquiry: 20,        // از ارسال استعلام حراست تا پاسخ
+    invite: 7,          // از آماده شدن پرونده تا صدور نامهٔ دعوت
+    defense: 10,        // مهلت کارمند برای دادن دفاعیه
+    chase: 7,           // از نامهٔ پیگیری دفاعیات تا پاسخ
+    complete: 7,        // از دریافت دفاعیه تا تکمیل مستندات
+    hearing: 21,        // از تکمیل مستندات تا تعیین جلسهٔ دفاع
+    hearingLetter: 3,   // نامهٔ حضور، پیش از جلسه
+    verdict: 7,         // از جلسه تا صدور رأی
+    sign: 7,            // امضای رأی توسط اعضا
+    notice: 5,          // از امضا تا صدور ابلاغیه
+    result: 10,         // از ابلاغ تا دریافت نتیجه
+    archive: 7          // از نتیجهٔ ابلاغ تا بایگانی
+  };
+
+  /** برچسب فارسی هر مهلت، برای صفحهٔ تنظیمات */
+  var SLA_LABELS = {
+    assign: 'ارجاع به کارشناس، از تاریخ ثبت',
+    decree: 'بارگذاری آخرین حکم، از تاریخ ارجاع',
+    defect: 'پاسخ رفع نواقص، از تاریخ نامه',
+    inquiry: 'پاسخ استعلام حراست، از تاریخ نامهٔ صادره',
+    invite: 'صدور نامهٔ دعوت، از آماده شدن پرونده',
+    defense: 'مهلت دفاعیهٔ کارمند، از تاریخ دعوت‌نامه',
+    chase: 'پاسخ به نامهٔ پیگیری دفاعیات',
+    complete: 'تکمیل مستندات، از دریافت دفاعیه',
+    hearing: 'تعیین جلسهٔ دفاع، از تکمیل مستندات',
+    hearingLetter: 'نامهٔ حضور در جلسه، از تعیین جلسه',
+    verdict: 'صدور رأی، از تاریخ جلسه',
+    sign: 'امضای رأی توسط اعضا، از صدور رأی',
+    notice: 'صدور ابلاغیه، از امضای رأی',
+    result: 'دریافت نتیجهٔ ابلاغ، از تاریخ ابلاغیه',
+    archive: 'ارسال به بایگانی، از دریافت نتیجه'
   };
 
   function sla() {
@@ -87,7 +135,8 @@
 
   /**
    * اقدام بعدیِ یک پرونده: چه کاری، از کِی منتظر است، و آیا از مهلت گذشته.
-   * ترتیب بررسی همان ترتیب واقعی کار در دبیرخانه است.
+   * ترتیب بررسی، همان ترتیب واقعی کار در دبیرخانه است — از دریافت مستندات
+   * تا بایگانی. هر شرط یعنی «تا این کار نشود، کار بعدی معنا ندارد».
    */
   function nextAction(rec) {
     var limits = sla();
@@ -106,41 +155,101 @@
       };
     }
 
-    if (isClosed(rec)) return make('closed', 'مختومه', '—', '', null);
-    if (!rec.intakeDate) return make('intake', 'ثبت تاریخ ورود', 'دبیرخانه', '', null);
+    if (isClosed(rec) || rec.archiveDate) return make('closed', 'مختومه', '—', '', null);
+
+    // ۱) ثبت
+    if (!rec.intakeDate) return make('intake', 'ثبت تاریخ ورود پرونده', 'دبیرخانه', '', null);
+
+    // ۲) ارجاع به کارشناس
     if (!rec.deliveryDate) {
       return make('assign', 'ارجاع به کارشناس', 'دبیرخانه', rec.intakeDate, limits.assign);
     }
-    // استعلام اختیاری است؛ فقط وقتی فرستاده شده و بی‌پاسخ مانده پیگیری لازم است
+
+    // ۳) آخرین حکم کارگزینی
+    if (!rec.decreeDate) {
+      return make('decree', 'گرفتن و بارگذاری آخرین حکم', 'کارشناس',
+        rec.deliveryDate, limits.decree);
+    }
+
+    // ۴) رفع نواقص — فقط اگر نامه‌اش رفته و هنوز پرونده کامل نشده
+    if (rec.defectLetterDate && !rec.docsCompleteDate && !rec.invitationLetterDate) {
+      return make('defect', 'پیگیری رفع نواقص', 'واحد سازمانی',
+        rec.defectLetterDate, limits.defect);
+    }
+
+    // ۵) استعلام حراست — اختیاری؛ فقط وقتی فرستاده شده و بی‌پاسخ مانده
     if (rec.securityOutLetterDate && !rec.securityInLetterDate) {
       return make('inquiry', 'پیگیری پاسخ حراست', 'حراست',
         rec.securityOutLetterDate, limits.inquiry);
     }
-    if (!rec.invitationLetterDate && !rec.committeeDate) {
-      return make('defense', 'دعوت به جلسه و اخذ دفاعیه', 'کارشناس',
-        rec.deliveryDate, limits.defense);
+
+    // ۶) نامهٔ دعوت
+    if (!rec.invitationLetterDate) {
+      return make('invite', 'صدور نامهٔ دعوت', 'کارشناس', rec.decreeDate, limits.invite);
     }
+
+    // ۷) دفاعیات — اگر نیامد، اول پیگیری، بعد مهلت پیگیری
+    if (!rec.defenseReceivedDate) {
+      if (rec.defenseChaseLetterDate) {
+        return make('chase', 'پیگیری دفاعیات (نامهٔ پیگیری رفته)', 'کارمند',
+          rec.defenseChaseLetterDate, limits.chase);
+      }
+      return make('defense', 'دریافت دفاعیات', 'کارمند',
+        rec.invitationLetterDate, limits.defense);
+    }
+
+    // ۸) تکمیل مستندات
+    if (!rec.docsCompleteDate) {
+      return make('complete', 'تکمیل سایر مستندات', 'کارشناس',
+        rec.defenseReceivedDate, limits.complete);
+    }
+
+    // ۹) تعیین جلسهٔ دفاع
     if (!rec.committeeDate) {
-      return make('committee', 'درج در دستور کار جلسه', 'کارشناس',
-        rec.invitationLetterDate || rec.deliveryDate, limits.committee);
+      return make('hearing', 'تعیین تاریخ جلسهٔ دفاع', 'دبیر کمیته',
+        rec.docsCompleteDate, limits.hearing);
     }
+
+    // ۱۰) نامهٔ حضور در جلسه — فقط تا وقتی جلسه نرسیده
+    if (!rec.hearingLetterDate && J.diffDays(rec.committeeDate, today) > 0) {
+      return make('hearingLetter', 'صدور نامهٔ حضور در جلسهٔ دفاع', 'دبیرخانه',
+        rec.committeeDate, limits.hearingLetter);
+    }
+
+    // ۱۱) صدور رأی
     if (!hasVerdict(rec)) {
-      return make('verdictText', 'ثبت متن رأی', 'دبیر کمیته',
-        rec.committeeDate, limits.verdictText);
+      return make('verdict', 'صدور و ثبت متن رأی', 'دبیر کمیته',
+        rec.committeeDate, limits.verdict);
     }
+
+    // ۱۲) امضای رأی توسط اعضا
+    if (!rec.verdictSignedDate) {
+      return make('sign', 'گرفتن امضای اعضا پای رأی', 'اعضای کمیته',
+        rec.verdictDate || rec.committeeDate, limits.sign);
+    }
+
+    // ۱۳) ابلاغ رأی
     if (!rec.noticeLetterDate) {
-      return make('notice', 'صدور ابلاغیه', 'دبیرخانه', rec.committeeDate, limits.notice);
+      return make('notice', 'صدور ابلاغیهٔ رأی', 'دبیرخانه',
+        rec.verdictSignedDate, limits.notice);
     }
-    if (!rec.noticeReturn) {
-      return make('noticeReturn', 'پیگیری بازگشت ابلاغ', 'دبیرخانه',
-        rec.noticeLetterDate, limits.noticeReturn);
+
+    // ۱۴) نتیجهٔ ابلاغ
+    if (!hasNoticeResult(rec)) {
+      return make('result', 'پیگیری نتیجهٔ ابلاغ', 'واحد سازمانی',
+        rec.noticeLetterDate, limits.result);
     }
-    return make('enforce', 'پیگیری اجرای رأی', 'واحد سازمانی',
-      rec.noticeLetterDate, limits.enforce);
+
+    // ۱۵) بایگانی
+    return make('archive', 'ارسال پرونده به بایگانی و اختتام', 'دبیرخانه',
+      rec.noticeResultDate || rec.noticeLetterDate, limits.archive);
   }
 
   /** «منتظر ما» در برابر «منتظر دیگران» */
-  var OURS = { intake: 1, assign: 1, defense: 1, committee: 1, verdictText: 1, notice: 1 };
+  var OURS = {
+    intake: 1, assign: 1, decree: 1, invite: 1, complete: 1,
+    hearing: 1, hearingLetter: 1, verdict: 1, notice: 1, archive: 1
+  };
 
   function isOurs(action) { return !!OURS[action.key]; }
 
@@ -203,13 +312,17 @@
     };
   }
 
-  /** پرونده‌هایی که همه‌چیزشان آماده است و فقط باید در جلسه مطرح شوند */
+  /**
+   * پرونده‌هایی که آمادهٔ جلسهٔ دفاع‌اند: دفاعیه گرفته شده، مستندات تکمیل شده،
+   * استعلامی معطل نمانده و هنوز تاریخ جلسه نخورده‌اند.
+   */
   function readyForCommittee(cases) {
     return cases.filter(function (rec) {
       if (isClosed(rec) || rec.committeeDate) return false;
-      if (!rec.deliveryDate) return false;
+      if (!rec.deliveryDate || !rec.invitationLetterDate) return false;
       if (rec.securityOutLetterDate && !rec.securityInLetterDate) return false;
-      return !!rec.invitationLetterDate;
+      // دفاعیه یا گرفته شده، یا مهلتش گذشته و پیگیری هم شده
+      return !!(rec.defenseReceivedDate || rec.docsCompleteDate);
     }).sort(function (a, b) {
       return (a.intakeDate || '') < (b.intakeDate || '') ? -1 : 1;
     });
@@ -263,7 +376,7 @@
   }
 
   w.Worklist = {
-    STAGES: STAGES, SLA: SLA, sla: sla, stages: stages, nextAction: nextAction,
+    STAGES: STAGES, SLA: SLA, SLA_LABELS: SLA_LABELS, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
     isClosed: isClosed, readyForCommittee: readyForCommittee, week: week
   };

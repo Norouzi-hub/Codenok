@@ -4,20 +4,42 @@
 
   var el = w.U.el, J = w.J, M = w.Model, D = w.Docs;
 
-  var ICONS = {
-    pdf: '📕', jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', webp: '🖼',
-    doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', zip: '🗜', rar: '🗜',
-    txt: '📄', tif: '🖼', tiff: '🖼'
-  };
-
-  function iconFor(name) {
-    var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
-    return (m && ICONS[m[1].toLowerCase()]) || '📎';
-  }
-
   function extOf(name) {
     var m = /\.([A-Za-z0-9]+)$/.exec(name || '');
     return m ? m[1].toLowerCase() : '';
+  }
+
+  /* خانوادهٔ فایل: تصویر و PDF پیش‌نمایش واقعی می‌گیرند، بقیه یک کاشیِ
+     نوع‌دار — آیکن خطی + خودِ پسوند. پسوند، بیشتر از هر شکلکی می‌گوید
+     فایل چیست. */
+  var FAMILY = {
+    doc: ['doc', 'docx', 'rtf', 'odt'],
+    sheet: ['xls', 'xlsx', 'csv', 'ods'],
+    slide: ['ppt', 'pptx', 'odp'],
+    archive: ['zip', 'rar', '7z', 'tar', 'gz'],
+    text: ['txt', 'md', 'log'],
+    image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'tif', 'tiff'],
+    pdf: ['pdf']
+  };
+
+  function familyOf(name) {
+    var ext = extOf(name);
+    var found = 'other';
+    Object.keys(FAMILY).forEach(function (fam) {
+      if (FAMILY[fam].indexOf(ext) >= 0) found = fam;
+    });
+    return found;
+  }
+
+  var FAMILY_ICON = {
+    doc: 'fileText', sheet: 'fileSheet', slide: 'fileSheet',
+    archive: 'fileZip', text: 'fileText', image: 'fileImage',
+    pdf: 'filePdf', other: 'file'
+  };
+
+  /** آیکن خطیِ نوع فایل، برای سطرها و تایم‌لاین */
+  function iconFor(name) {
+    return w.Mobile.icon(FAMILY_ICON[familyOf(name)] || 'file');
   }
 
   var IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif'];
@@ -111,14 +133,19 @@
     return observer;
   }
 
-  /** جعبهٔ پیش‌نمایش: تصویر یا صفحهٔ اول PDF، وگرنه آیکن نوع فایل */
+  /** جعبهٔ پیش‌نمایش: تصویر یا صفحهٔ اول PDF، وگرنه کاشیِ نوع فایل */
   function thumb(doc, onOpen) {
     var previewable = isImage(doc) || isPdf(doc);
-    var box = el('button.doc-thumb' + (previewable ? '' : '.icon-only'), {
+    var fam = familyOf(doc.fileName);
+    var ext = extOf(doc.fileName);
+    var box = el('button.doc-thumb.fam-' + fam + (previewable ? '' : '.icon-only'), {
       type: 'button',
       title: previewable ? 'باز کردن ' + doc.fileName : doc.fileName,
       onclick: onOpen
-    }, [el('span.doc-icon', { text: iconFor(doc.fileName) })]);
+    }, [
+      el('span.doc-icon', { html: w.Mobile.icon(FAMILY_ICON[fam]) }),
+      ext ? el('span.doc-ext', { text: ext.toUpperCase() }) : null
+    ]);
     if (!previewable || !D.status().linked) return box;
     box._doc = doc;
     var obs = getObserver();
@@ -214,7 +241,7 @@
 
       state.node = el('div.doc-add-row', null, [
         el('div.doc-add-file', null, [
-          el('span.doc-icon', { text: iconFor(file.name) }),
+          el('span.doc-icon', { html: iconFor(file.name) }),
           el('span.doc-add-name', { text: file.name, title: file.name }),
           el('span.muted.tiny', { text: sizeText(file.size) })
         ]),
@@ -604,7 +631,7 @@
       kindSel.addEventListener('change', function () { state.kind = kindSel.value; });
       state.node = el('label.scan-row', null, [
         cb,
-        el('span.doc-icon', { text: iconFor(entry.name) }),
+        el('span.doc-icon', { html: iconFor(entry.name) }),
         el('span.scan-name', { text: entry.name, title: entry.name }),
         kindSel
       ]);
@@ -642,8 +669,29 @@
     ]);
   }
 
+  /**
+   * افزودن سند از هر جای دیگر برنامه (مثلاً از تب یادداشت): همان پنجرهٔ
+   * افزودن، با همان نام‌گذاری و نسخه‌بندی و همان پوشهٔ روی دیسک.
+   */
+  function addFrom(rec, onDone) {
+    var st = D.status();
+    if (!st.supported) {
+      w.U.toast(w.Mobile.isPhone() ? w.Mobile.NO_FOLDER_MSG
+        : 'این مرورگر از ذخیرهٔ مستندات در پوشه پشتیبانی نمی‌کند.', 'warn');
+      return;
+    }
+    if (!st.linked) {
+      w.U.toast('اول از تب «مستندات»، پوشهٔ مستندات را انتخاب کنید.', 'warn');
+      return;
+    }
+    pickFiles(true).then(function (files) {
+      if (files.length) addDialog(rec, files, onDone);
+    });
+  }
+
   w.UIDocs = {
     render: render, iconFor: iconFor, sizeText: sizeText, thumb: thumb,
-    isImage: isImage, isPdf: isPdf, releaseThumbs: releaseThumbs
+    isImage: isImage, isPdf: isPdf, releaseThumbs: releaseThumbs,
+    addFrom: addFrom, familyOf: familyOf
   };
 })(window);

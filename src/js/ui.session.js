@@ -267,6 +267,7 @@
         var patch = { committeeDate: head.date, session: head.session };
         if (r.outcome === 'verdict') {
           patch.status = STATUS_VERDICT;
+          patch.verdictDate = head.date;          // رأی همان روز جلسه صادر شده
           if (r.verdict.trim()) patch.verdictFull = r.verdict.trim();
           var reg = (r.regNo || head.regNo || '').trim();
           if (reg) patch.committeeRegNo = reg;

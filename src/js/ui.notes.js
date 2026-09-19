@@ -129,6 +129,35 @@
       ])
     ]));
 
+    /* بارگذاری سند از همین‌جا: خیلی وقت‌ها یادداشت و سند با هم می‌آیند
+       («نامه‌اش رسید» + خود نامه)، و رفتن به تب دیگر یعنی نصفه رها کردن کار. */
+    panel.appendChild(el('div.note-attach', null, [
+      el('button.btn.small.ghost.note-attach-btn', {
+        type: 'button',
+        title: 'همان پنجرهٔ افزودن سند تب مستندات',
+        onclick: function () { w.UIDocs.addFrom(rec, refresh); }
+      }, [
+        el('span.note-attach-icon', { html: w.Mobile.icon('paperclip') }),
+        el('span', { text: 'بارگذاری سند برای این پرونده' })
+      ]),
+      el('span.muted.tiny', {
+        text: 'عکس، PDF، ورد، اکسل یا زیپ — در پوشهٔ همین پرونده روی دیسک می‌نشیند.'
+      })
+    ]));
+
+    // چند سند آخر، همین‌جا دیده شوند تا معلوم باشد چه چیزی بارگذاری شده
+    var recentDocs = w.Docs.current(rec.id).slice(-4).reverse();
+    if (recentDocs.length) {
+      panel.appendChild(el('div.note-docs', null, recentDocs.map(function (d) {
+        return el('div.note-doc', null, [
+          w.UIDocs.thumb(d, function () {
+            w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+          }),
+          el('span.note-doc-name', { text: d.kind || d.fileName, title: d.fileName })
+        ]);
+      })));
+    }
+
     // --- فهرست ---
     var list = N.forCase(rec.id);
     if (!list.length) {

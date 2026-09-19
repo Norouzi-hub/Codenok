@@ -27,7 +27,10 @@ async function seedScenario(page) {
     for (const c of ready) {
       await M.update(c.id, Object.assign({}, c, {
         deliveryDate: c.deliveryDate || J.addDays(J.today(), -20),
-        invitationLetterDate: J.addDays(J.today(), -5),
+        decreeDate: J.addDays(J.today(), -18),
+        invitationLetterDate: J.addDays(J.today(), -12),
+        defenseReceivedDate: J.addDays(J.today(), -6),
+        docsCompleteDate: J.addDays(J.today(), -4),
         committeeDate: '', securityOutLetterDate: '', securityInLetterDate: ''
       }));
     }
@@ -35,8 +38,9 @@ async function seedScenario(page) {
     const soon = open.slice(6, 9);
     for (let i = 0; i < soon.length; i++) {
       await M.update(soon[i].id, Object.assign({}, soon[i], {
-        deliveryDate: J.addDays(J.today(), -13 + i),   // مهلت ۱۵ روزه
-        invitationLetterDate: '', committeeDate: '',
+        // مهلت «بارگذاری آخرین حکم» پنج روز است → سررسید در روزهای آینده
+        deliveryDate: J.addDays(J.today(), -3 + i),
+        decreeDate: '', invitationLetterDate: '', committeeDate: '',
         securityOutLetterDate: '', securityInLetterDate: ''
       }));
     }
