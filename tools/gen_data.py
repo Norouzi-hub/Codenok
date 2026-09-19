@@ -102,6 +102,12 @@ EXCLUDED_COLUMNS = {
 # بگوید پرونده کجا ایستاده و چند روز است که ایستاده.
 #   (key, label, type, group)
 EXTRA_FIELDS = [
+    # ارجاع به کارشناس دیگر: پرونده از دست دبیرخانهٔ ما خارج می‌شود
+    ('transferDate', 'تاریخ ارجاع به کارشناس دیگر', 'date', 'case'),
+    ('transferTo', 'ارجاع به (کارشناس جدید)', 'select', 'case'),
+    ('transferFrom', 'کارشناس قبلی', 'text', 'case'),
+    ('transferLetterNo', 'شماره نامه ارجاع', 'text', 'case'),
+    ('transferReason', 'علت ارجاع به کارشناس دیگر', 'textarea', 'case'),
     ('decreeDate', 'تاریخ آخرین حکم کارگزینی', 'date', 'job'),
     ('defectLetterNo', 'شماره نامه رفع نواقص', 'text', 'defense'),
     ('defectLetterDate', 'تاریخ نامه رفع نواقص', 'date', 'defense'),
@@ -145,11 +151,13 @@ SELECT_LISTS = {
     'employmentStatus': 'Eshteghal',
     'caseType': 'NoeParvande',
     'noticeReturn': 'Eblagh',
+    'transferTo': 'Karshenas',
 }
 
 # گزینه‌هایی که در فایل نمونه نبودند ولی منطقاً لازم‌اند
 EXTRA_OPTIONS = {
     'Eblagh': ['ابلاغ شد', 'ابلاغ نشد', 'مستنکف از ابلاغ', 'در انتظار بازگشت'],
+    'vazeiat': ['ارجاع به کارشناس دیگر'],
     'Eshteghal': ['شاغل', 'بازنشسته', 'خاتمه همکاری', 'تعلیق'],
     'NoeParvande': ['تنبیه', 'تشویق', 'غیبت', 'سایر'],
 }
@@ -240,8 +248,10 @@ def main(xlsx_path):
         fields.append(f)
     # فیلدهای گردش‌کار، بعد از فیلدهای اکسل و در گروه خودشان
     for key, label, kind, group in EXTRA_FIELDS:
-        fields.append({'key': key, 'label': label, 'type': kind,
-                       'group': group, 'col': None})
+        f = {'key': key, 'label': label, 'type': kind, 'group': group, 'col': None}
+        if kind == 'select':
+            f['list'] = SELECT_LISTS[key]
+        fields.append(f)
     # داخل هر گروه، ترتیب فیلدها همان ترتیب تعریف است
     order = {g: i for i, (g, _) in enumerate(GROUPS)}
     fields.sort(key=lambda f: order.get(f['group'], 99))

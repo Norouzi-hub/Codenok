@@ -443,6 +443,7 @@ async function openList(page) {
   await page.evaluate(() => window.Docs.linkFolder());
   const types = await page.evaluate(async () => {
     const rec = window.Model.state.cases[0];
+    const before = window.Docs.current(rec.id).map(d => d.id);
     const files = [
       new File(['x'], 'dadkhast.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
       new File(['x'], 'jadval.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
@@ -453,8 +454,9 @@ async function openList(page) {
     for (const f of files) {
       await window.Docs.addFile(rec, f, { kind: 'سایر', docDate: window.J.today() });
     }
-    const added = window.Docs.current(rec.id).filter(
-      d => ['docx', 'xlsx', 'zip', 'png', 'pdf'].some(e => d.fileName.endsWith('.' + e)));
+    // نام ذخیره‌شده از تاریخ و نوع سند ساخته می‌شود، نه از نام اصلی؛
+    // پس تازه‌ها را با شناسه‌های پیش از افزودن جدا می‌کنیم
+    const added = window.Docs.current(rec.id).filter(d => before.indexOf(d.id) < 0);
     return {
       count: added.length,
       families: added.map(d => window.UIDocs.familyOf(d.fileName)).sort(),

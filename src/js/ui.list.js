@@ -34,6 +34,7 @@
 
   function statusClass(status) {
     if (!status) return '';
+    if (status.indexOf('ارجاع به کارشناس') >= 0) return 'st-moved';
     if (status.indexOf('مختومه') >= 0) return 'st-done';
     if (status.indexOf('انتظار') >= 0) return 'st-wait';
     if (status.indexOf('مفتوح') >= 0) return 'st-open';
@@ -517,6 +518,16 @@
       selBar.appendChild(el('button.btn.small.ghost', {
         type: 'button', text: 'برداشتن انتخاب',
         onclick: function () { app.clearSelection(); app.render(); }
+      }));
+      selBar.appendChild(el('button.btn.small.ghost', {
+        type: 'button', text: 'ارجاع به کارشناس دیگر',
+        title: 'این پرونده‌ها از کارتابل شما بیرون می‌روند',
+        onclick: function () {
+          w.UITransfer.dialog(app, ids, function () {
+            app.clearSelection();
+            app.render();
+          });
+        }
       }));
       selBar.appendChild(el('button.btn.small.primary', {
         type: 'button', text: 'اقدام دسته‌ای',

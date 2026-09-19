@@ -97,6 +97,42 @@ window.FIELDS = [
     "col": 67
   },
   {
+    "key": "transferDate",
+    "label": "تاریخ ارجاع به کارشناس دیگر",
+    "type": "date",
+    "group": "case",
+    "col": null
+  },
+  {
+    "key": "transferTo",
+    "label": "ارجاع به (کارشناس جدید)",
+    "type": "select",
+    "group": "case",
+    "col": null,
+    "list": "Karshenas"
+  },
+  {
+    "key": "transferFrom",
+    "label": "کارشناس قبلی",
+    "type": "text",
+    "group": "case",
+    "col": null
+  },
+  {
+    "key": "transferLetterNo",
+    "label": "شماره نامه ارجاع",
+    "type": "text",
+    "group": "case",
+    "col": null
+  },
+  {
+    "key": "transferReason",
+    "label": "علت ارجاع به کارشناس دیگر",
+    "type": "textarea",
+    "group": "case",
+    "col": null
+  },
+  {
     "key": "nationalId",
     "label": "کد ملی*(1)",
     "type": "text",
@@ -568,6 +604,7 @@ window.DEFAULT_LISTS = {
   ],
   "vazeiat": [
     "ابلاغ و مختومه شد",
+    "ارجاع به کارشناس دیگر",
     "در انتظار وصول استعلام",
     "در دستور کار قرار گرفت",
     "رای صادر، ثبت و در انتظارابلاغ رای قرار گرفت",

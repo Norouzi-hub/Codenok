@@ -58,6 +58,16 @@
   function isClosed(rec) { return /مختومه/.test(rec.status || ''); }
 
   /**
+   * ارجاع به کارشناس دیگر: پرونده از دست ما خارج شده است.
+   * نه مختومه است (رأیی صادر نشده) و نه در جریانِ ما؛ حالت سومی است که
+   * باید از کارتابل بیرون برود ولی در گزارش‌ها جای خودش را داشته باشد.
+   */
+  function isTransferred(rec) { return !!rec.transferDate; }
+
+  /** «دیگر کار ما نیست» — چه مختومه، چه ارجاع‌شده */
+  function isDone(rec) { return isClosed(rec) || isTransferred(rec); }
+
+  /**
    * وضعیت هر هشت مرحله برای یک پرونده.
    * done: انجام شده · current: مرحله‌ای که الان روی آن ایستاده‌ایم
    */
@@ -70,7 +80,7 @@
     });
     // مرحله‌ای که از آن گذشته‌ایم، حتی اگر تاریخش ثبت نشده، انجام‌شده است
     for (var i = 0; i < lastDone; i++) done[i] = true;
-    var closed = isClosed(rec);
+    var closed = isDone(rec);
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
@@ -155,6 +165,10 @@
       };
     }
 
+    if (isTransferred(rec)) {
+      return make('transferred',
+        'ارجاع‌شده به ' + (rec.transferTo || 'کارشناس دیگر'), '—', '', null);
+    }
     if (isClosed(rec) || rec.archiveDate) return make('closed', 'مختومه', '—', '', null);
 
     // ۱) ثبت
@@ -261,7 +275,7 @@
     var map = {};
     cases.forEach(function (rec) {
       var action = nextAction(rec);
-      if (action.key === 'closed') return;
+      if (action.key === 'closed' || action.key === 'transferred') return;
       var b = map[action.key] || (map[action.key] = {
         key: action.key, label: action.label, owner: action.owner,
         ours: isOurs(action), limit: action.limit, items: [], overdue: 0
@@ -298,7 +312,8 @@
   }
 
   function summary(cases) {
-    var open = cases.filter(function (c) { return !isClosed(c); });
+    var open = cases.filter(function (c) { return !isDone(c); });
+    var transferred = cases.filter(isTransferred).length;
     var overdue = 0, ours = 0, theirs = 0;
     open.forEach(function (rec) {
       var a = nextAction(rec);
@@ -307,7 +322,8 @@
     });
     return {
       total: cases.length, open: open.length,
-      closed: cases.length - open.length,
+      closed: cases.filter(isClosed).length,
+      transferred: transferred,
       overdue: overdue, ours: ours, theirs: theirs
     };
   }
@@ -318,7 +334,7 @@
    */
   function readyForCommittee(cases) {
     return cases.filter(function (rec) {
-      if (isClosed(rec) || rec.committeeDate) return false;
+      if (isDone(rec) || rec.committeeDate) return false;
       if (!rec.deliveryDate || !rec.invitationLetterDate) return false;
       if (rec.securityOutLetterDate && !rec.securityInLetterDate) return false;
       // دفاعیه یا گرفته شده، یا مهلتش گذشته و پیگیری هم شده
@@ -353,7 +369,7 @@
 
     cases.forEach(function (rec) {
       var a = nextAction(rec);
-      if (a.key === 'closed' || !a.due) return;
+      if (a.key === 'closed' || a.key === 'transferred' || !a.due) return;
       var slot = byDate[a.due];
       if (slot) slot.deadlines.push({ rec: rec, action: a });
     });
@@ -378,6 +394,7 @@
   w.Worklist = {
     STAGES: STAGES, SLA: SLA, SLA_LABELS: SLA_LABELS, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
-    isClosed: isClosed, readyForCommittee: readyForCommittee, week: week
+    isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
+    readyForCommittee: readyForCommittee, week: week
   };
 })(window);

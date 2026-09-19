@@ -197,6 +197,9 @@
     } else {
       headline = fa(sum.open) + ' پروندهٔ در جریان، همه در مهلت.';
     }
+    if (sum.transferred) {
+      headline += ' (' + fa(sum.transferred) + ' پرونده به کارشناس دیگری ارجاع شده.)';
+    }
 
     /* هر پنج کارت آمار یک شکل‌اند، پس هر پنج‌تا هم باید کار کنند: کارتی که
        مثل دکمه دیده می‌شود ولی کاری نمی‌کند، به کاربر دروغ می‌گوید. */
@@ -248,6 +251,10 @@
           var seen = {};
           w.Notes.dueFollowUps(false).forEach(function (f) { seen[f.rec.id] = 1; });
           return Object.keys(seen);
+        }),
+      statCard(sum.transferred, 'ارجاع‌شده',
+        'پرونده‌هایی که به کارشناس دیگری ارجاع شده‌اند', function () {
+          return idsWhere(function (c) { return WL.isTransferred(c); });
         }),
       statCard(sum.closed, 'مختومه', 'پرونده‌های مختومه‌شده', function () {
         return idsWhere(function (c) { return WL.isClosed(c); });

@@ -30,6 +30,12 @@
     return /مختومه/.test(rec.status || '');
   }
 
+  /* ارجاع‌شده به کارشناس دیگر: از جریانِ کار ما بیرون است ولی مختومه نیست.
+     در هیچ آماری نباید به‌جای «مختومه» یا «در جریان» شمرده شود. */
+  function isTransferred(rec) { return !!rec.transferDate; }
+
+  function isOut(rec) { return isClosed(rec) || isTransferred(rec); }
+
   /** تاریخ پایان پرونده: ابلاغ رأی، وگرنه تاریخ طرح در کمیته */
   function closeDate(rec) {
     if (!isClosed(rec)) return null;
@@ -187,7 +193,8 @@
   // ------------------------------------------------------------------ سنجه‌ها
   function kpis(cases, prevCases) {
     var closed = cases.filter(isClosed);
-    var open = cases.filter(function (c) { return !isClosed(c); });
+    var transferred = cases.filter(isTransferred);
+    var open = cases.filter(function (c) { return !isOut(c); });
     var toCommittee = [];
     cases.forEach(function (c) {
       if (c.intakeDate && c.committeeDate) {
@@ -206,6 +213,7 @@
       total: cases.length,
       open: open.length,
       closed: closed.length,
+      transferred: transferred.length,
       closedPct: cases.length ? Math.round((closed.length / cases.length) * 100) : 0,
       medianToCommittee: median(toCommittee),
       meanToCommittee: mean(toCommittee),
@@ -395,7 +403,7 @@
       { label: 'بیش از ۱۸۰ روز', max: Infinity, value: 0, ids: [] }
     ];
     cases.forEach(function (c) {
-      if (isClosed(c) || !c.intakeDate) return;
+      if (isOut(c) || !c.intakeDate) return;
       var age = J.diffDays(today, c.intakeDate);
       if (age == null || age < 0) return;
       for (var i = 0; i < buckets.length; i++) {
@@ -414,9 +422,13 @@
     var by = {};
     cases.forEach(function (c) {
       var k = (c.expert || '').trim() || 'ارجاع‌نشده';
-      var e = by[k] || (by[k] = { label: k, value: 0, open: 0, closed: 0, days: [] });
+      var e = by[k] || (by[k] = {
+        label: k, value: 0, open: 0, closed: 0, transferred: 0, days: []
+      });
       e.value++;
-      if (isClosed(c)) e.closed++; else e.open++;
+      if (isTransferred(c)) e.transferred++;
+      else if (isClosed(c)) e.closed++;
+      else e.open++;
       if (c.intakeDate && c.committeeDate) {
         var d = J.diffDays(c.committeeDate, c.intakeDate);
         if (d != null && d >= 0) e.days.push(d);
@@ -452,7 +464,7 @@
     add('critical', '⏳', 'پرونده‌های راکد بالای ۹۰ روز',
       'اینها هنوز در کمیته طرح نشده‌اند. پیشنهاد: در دستور کار نزدیک‌ترین جلسه قرار بگیرند.',
       cases.filter(function (c) {
-        if (isClosed(c) || c.committeeDate || !c.intakeDate) return false;
+        if (isOut(c) || c.committeeDate || !c.intakeDate) return false;
         var d = J.diffDays(today, c.intakeDate);
         return d != null && d > 90;
       }));
@@ -478,7 +490,7 @@
     // ۴) پرونده‌های بدون کارشناس
     add('warning', '👤', 'پروندهٔ بدون کارشناس',
       'کارشناس پرونده تعیین نشده است؛ تا زمان ارجاع، گردش‌کار متوقف می‌ماند.',
-      cases.filter(function (c) { return !isClosed(c) && !(c.expert || '').trim(); }));
+      cases.filter(function (c) { return !isOut(c) && !(c.expert || '').trim(); }));
 
     // ۵) ناسازگاری تاریخ‌ها
     add('critical', '📅', 'تاریخ‌های ناسازگار',
@@ -520,7 +532,7 @@
 
     // ۷-ب) پرونده‌های باز هم‌زمانِ یک نفر — بهتر است با هم دیده شوند
     var concurrent = rp.repeaters.filter(function (p) {
-      return p.cases.filter(function (c) { return !isClosed(c); }).length > 1;
+      return p.cases.filter(function (c) { return !isOut(c); }).length > 1;
     });
     if (concurrent.length) {
       out.push({
@@ -529,7 +541,7 @@
           'یکجا معمولاً درست‌تر از رأی جداگانه است.',
         count: concurrent.length, people: concurrent,
         ids: concurrent.reduce(function (acc, p) {
-          return acc.concat(p.cases.filter(function (c) { return !isClosed(c); })
+          return acc.concat(p.cases.filter(function (c) { return !isOut(c); })
             .map(function (c) { return c.id; }));
         }, [])
       });
@@ -582,7 +594,7 @@
       add('warning', '🗂', 'پرونده‌های بدون هیچ سند',
         'هیچ مدرکی برای این پرونده‌ها بارگذاری نشده است.',
         cases.filter(function (c) {
-          return !isClosed(c) && !w.Docs.forCase(c.id).length;
+          return !isOut(c) && !w.Docs.forCase(c.id).length;
         }));
     }
 
@@ -676,7 +688,8 @@
     build: build, rangeOf: rangeOf, previousRange: previousRange,
     scope: scope, kpis: kpis, trend: trend, funnel: funnel,
     byField: byField, durations: durations, aging: aging, experts: experts,
-    findings: findings, docKinds: docKinds, isClosed: isClosed, closeDate: closeDate,
+    findings: findings, docKinds: docKinds, isClosed: isClosed,
+    isTransferred: isTransferred, isOut: isOut, closeDate: closeDate,
     STAGES: STAGES, reachedStage: reachedStage,
     addDays: addDays, median: median, mean: mean, monthLabel: monthLabel,
     yearsInData: yearsInData

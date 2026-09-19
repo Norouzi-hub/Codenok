@@ -524,6 +524,11 @@
       onclick: function () {
         w.Mobile.sheet('پروندهٔ ' + w.U.toLatinDigits(existing.caseNo || ''), [
           {
+            icon: 'fileText', label: 'فرم‌های اداری',
+            hint: 'خلاصهٔ پرونده، تفهیم اتهام، رأی، ابلاغ رأی',
+            onclick: function () { w.UILetters.chooser(app, existing); }
+          },
+          {
             icon: 'print', label: 'چاپ برگ پرونده',
             onclick: function () { w.UIPrint.printCase(existing); }
           },
@@ -533,11 +538,39 @@
           },
           { sep: true },
           {
+            icon: 'handoff', label: 'ارجاع به کارشناس دیگر',
+            hint: 'پرونده از کارتابل شما بیرون می‌رود',
+            onclick: function () {
+              w.UITransfer.dialog(app, [existing.id], function () {
+                app.state.formTab = activeTab;
+                app.render();
+              });
+            }
+          },
+          { sep: true },
+          {
             icon: 'trash', label: 'حذف پرونده', kind: 'danger',
             hint: 'برگشت‌ناپذیر است',
             onclick: askDelete
           }
         ]);
+      }
+    }) : null;
+
+    var formsBtn = existing ? el('button.btn.ghost.case-forms', {
+      type: 'button', text: 'فرم‌ها',
+      title: 'خلاصهٔ پرونده، تفهیم اتهام، رأی و ابلاغ رأی',
+      onclick: function () { w.UILetters.chooser(app, existing); }
+    }) : null;
+
+    var transferBtn = existing ? el('button.btn.ghost.case-transfer', {
+      type: 'button', text: 'ارجاع به کارشناس دیگر',
+      title: 'پرونده از کارتابل شما بیرون می‌رود',
+      onclick: function () {
+        w.UITransfer.dialog(app, [existing.id], function () {
+          app.state.formTab = activeTab;
+          app.render();
+        });
       }
     }) : null;
 
@@ -552,6 +585,8 @@
       existing ? el('button.btn.ghost.danger.case-delete', {
         type: 'button', text: 'حذف پرونده', onclick: askDelete
       }) : null,
+      transferBtn,
+      formsBtn,
       existing ? el('button.btn.ghost.case-print', {
         type: 'button', text: 'چاپ برگ پرونده',
         onclick: function () { w.UIPrint.printCase(existing); }
@@ -595,6 +630,30 @@
           })
         ]);
       }
+      // پرونده‌ای که از دست ما خارج شده، باید همان بالا معلوم باشد
+      var transferNode = null;
+      if (w.Worklist.isTransferred(existing)) {
+        transferNode = el('div.case-next.transferred', null, [
+          el('span.case-next-label', { text: 'ارجاع‌شده' }),
+          el('span.case-next-meta', {
+            text: 'در ' + J.format(existing.transferDate) + ' به «' +
+              (existing.transferTo || 'کارشناس دیگر') + '» ارجاع شد' +
+              (existing.transferFrom ? ' (پیش از آن: ' + existing.transferFrom + ')' : '') +
+              '. این پرونده در کارتابل شما نمی‌آید.'
+          }),
+          el('div.spacer'),
+          el('button.btn.small.ghost', {
+            type: 'button', text: 'برگرداندن به کارتابل',
+            onclick: function () {
+              w.UITransfer.undo(app, existing, function () {
+                app.state.formTab = activeTab;
+                app.render();
+              });
+            }
+          })
+        ]);
+      }
+
       // پیگیری دستی، اگر گذاشته شده، کنار اقدام خودکار می‌آید
       var followUp = w.Notes.openFollowUp(existing.id);
       var followNode = null;
@@ -622,7 +681,7 @@
       }
       return el('div.case-rail', null, [
         w.UIWorklist.rail(existing, 'full'),
-        next,
+        transferNode || next,
         followNode
       ]);
     }

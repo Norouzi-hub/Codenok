@@ -180,7 +180,7 @@
 
   // ------------------------------------------------------------ سنجه‌های سرآمد
   function heroRow(app, k) {
-    var tiles = [
+    var tiles = ([
       {
         label: 'پروندهٔ در جریان', value: fa(k.open),
         note: k.total ? fa(100 - k.closedPct) + '٪ از کل' : ''
@@ -189,6 +189,11 @@
         label: 'مختومه‌شده', value: fa(k.closed),
         note: k.total ? fa(k.closedPct) + '٪ از کل' : ''
       },
+      // ارجاع‌شده جدا شمرده می‌شود: نه در جریان است نه مختومه
+      k.transferred ? {
+        label: 'ارجاع به کارشناس دیگر', value: fa(k.transferred),
+        note: 'از دست دبیرخانه خارج شده'
+      } : null,
       {
         label: 'میانهٔ روز تا طرح در کمیته',
         value: k.medianToCommittee == null ? '—' : fa(k.medianToCommittee),
@@ -202,7 +207,7 @@
         value: k.oldestOpen ? fa(k.oldestOpen) : '—',
         note: k.oldestOpen ? 'روز از تاریخ ورود' : ''
       }
-    ];
+    ]).filter(Boolean);
 
     var delta = null;
     if (k.delta != null) {

@@ -864,6 +864,8 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
   white-space: nowrap;
 }
 .st-done { background: var(--moss-soft); border-color: var(--moss-line); color: #1F5B41; }
+/* ارجاع‌شده: خاکستریِ «دیگر دست ما نیست»، نه سبزِ مختومه */
+.st-moved { background: var(--paper-2); border-color: var(--line); color: var(--ink-500); }
 .st-wait { background: var(--brass-soft); border-color: var(--brass-line); color: var(--brass-ink); }
 .st-open { background: #EEEFF7; border-color: #D2D5E8; color: var(--ink-700); }
 .st-queued { background: #F1EDF8; border-color: #DCD2EC; color: #4A3574; }
@@ -871,6 +873,7 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
 .st-none { color: var(--muted); }
 .stat-fill.st-none { background: #A8A294; }
 .stat-fill.st-done { background: var(--moss); }
+.stat-fill.st-moved { background: var(--ink-400); }
 .stat-fill.st-wait { background: var(--brass); }
 .stat-fill.st-open { background: var(--ink-700); }
 .stat-fill.st-queued { background: #6A4FA3; }
@@ -1939,6 +1942,58 @@ select.input { cursor: pointer; }
 .note-done-box { margin-top: 10px; }
 .note-done-box > summary { cursor: pointer; font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
 
+/* پروندهٔ ارجاع‌شده: نه سبزِ مختومه، نه برنجیِ در جریان — خاکستریِ «دیگر
+   دست ما نیست»، با راه برگشت اگر اشتباه ثبت شده باشد. */
+.case-next.transferred {
+  background: var(--paper-2);
+  border-color: var(--line);
+  align-items: center;
+}
+.case-next.transferred .case-next-label {
+  background: var(--ink-500);
+  color: #fff;
+  border-color: var(--ink-500);
+}
+
+/* پنجرهٔ ارجاع */
+.transfer { font-size: 13px; }
+.transfer-lead { margin-bottom: 14px; }
+.transfer-head {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.transfer-head .field.wide { grid-column: 1 / -1; }
+.transfer-head .date-hint { display: none; }
+.transfer-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  max-height: 210px;
+  overflow-y: auto;
+}
+.transfer-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 2px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.transfer-name { font-weight: 600; }
+.transfer-stage { margin-inline-start: auto; font-size: 11.5px; color: var(--muted); }
+.transfer-summary {
+  margin-top: 14px;
+  padding: 10px 13px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.transfer-warn { color: var(--brass-ink); font-weight: 600; }
+.transfer-modal { width: min(720px, 100%); }
+
 .case-next.follow {
   margin-top: 9px;
   padding-top: 9px;
@@ -2209,13 +2264,37 @@ select.input { cursor: pointer; }
 }
 .fn-icon { color: var(--brand); }
 
+/* تنظیمات سربرگ و اعضای کمیته */
+.letters-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px 14px;
+  margin: 10px 0 14px;
+}
+.members-editor { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.member-row { display: grid; grid-template-columns: 22px 1fr 1fr; gap: 8px; align-items: center; }
+.member-num { font-size: 11.5px; color: var(--muted); text-align: center; }
+
+/* پنجرهٔ فرم‌های اداری */
+.letters-form { font-size: 13px; }
+.letters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.letters-grid .field.wide { grid-column: 1 / -1; }
+.letters-modal { width: min(680px, 100%); }
+
 /* ---------------------------------------------------------------- چاپ */
 #print-area { display: none; }
 
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
-  .topbar, #main, .toast, .overlay, .dp-pop { display: none !important; }
+  /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
+  .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
+  .case-actions { display: none !important; }
   #print-area { display: block; font-size: 11pt; color: #000; }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
@@ -2230,6 +2309,82 @@ select.input { cursor: pointer; }
     border-right: 3px solid #000;
     margin: 0 0 5px;
   }
+  /* ------------------------------------------------ فرم‌های اداری
+     چیدمان این‌ها از روی نمونه‌های خود دبیرخانه است: کادر تمام‌دور،
+     برچسب و مقدار در یک خانه، و جای خالی برای دست‌نویس. */
+  .lf { font-size: 11pt; line-height: 1.9; }
+  .lf-title { font-size: 13pt; font-weight: 700; text-align: center; margin: 0 0 8px; }
+  .lf-subtitle { font-size: 12pt; font-weight: 700; text-align: center; margin: 0 0 14px; }
+  .lf-verdict-mark { font-size: 12pt; font-weight: 700; text-align: center; margin: 0 0 12px; }
+  .lf-h3 { font-size: 11pt; font-weight: 700; margin: 10px 0 4px; }
+  .lf-para { margin: 0 0 8px; }
+  .lf-justify { text-align: justify; }
+  .lf-bold { font-weight: 700; }
+
+  .lf-summary { width: 100%; border-collapse: collapse; font-size: 11pt; }
+  .lf-summary th, .lf-summary td {
+    border: 1px solid #000;
+    padding: 5px 8px;
+    text-align: right;
+    vertical-align: top;
+  }
+  .lf-summary th { width: 160px; font-weight: 700; }
+  .lf-summary tr.lf-tall td, .lf-summary tr.lf-tall th { height: 42mm; }
+  .lf-summary tr:nth-last-child(2) td { height: 18mm; }
+
+  .lf-grid { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 10px; }
+  .lf-grid td {
+    border: 1px solid #000;
+    padding: 5px 7px;
+    text-align: right;
+    vertical-align: top;
+  }
+  .lf-k { font-weight: 700; }
+  .lf-k::after { content: ': '; }
+  .lf-v { font-weight: 400; }
+  .lf-line { display: inline-block; min-width: 60%; }
+
+  .lf-box { border: 1px solid #000; padding: 8px; margin-top: 8px; }
+  .lf-box-head { margin: 0 0 6px; font-weight: 700; }
+  .lf-blank { height: 88mm; }
+  .lf-sign-row { display: flex; justify-content: space-between; font-weight: 700; }
+
+  .lf-verdict-box { border: 1px solid #000; padding: 8px; margin: 8px 0 14px; }
+  .lf-verdict-text { min-height: 18mm; margin: 4px 0 6px; text-align: justify; }
+  .lf-final { font-weight: 700; margin: 0; }
+
+  .lf-members {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px 8px;
+    margin: 8px 0 10px;
+    text-align: center;
+    break-inside: avoid;
+  }
+  .lf-member-name { font-weight: 700; font-size: 10pt; }
+  .lf-member-role { font-size: 9.5pt; }
+
+  .lf-notice { border-top: 1px solid #000; padding-top: 10px; break-inside: avoid; }
+  .lf-notice-row { margin-bottom: 8px; font-weight: 700; font-size: 10pt; }
+
+  .lf-letter-no { text-align: left; font-size: 10pt; margin-bottom: 10px; }
+  .lf-to { font-weight: 700; margin-bottom: 10px; line-height: 2; }
+  .lf-subject { margin-top: 2px; }
+  .lf-quote {
+    margin: 8px 0;
+    padding: 6px 10px;
+    font-weight: 700;
+    text-align: justify;
+    border-inline-start: 2px solid #000;
+  }
+  .lf-signer { margin-top: 14mm; text-align: center; width: 45%; margin-inline-start: auto; }
+  .lf-signer-name { font-weight: 700; }
+  .lf-foot { margin-top: 10mm; break-inside: avoid; }
+  .lf-cc { font-size: 8.5pt; }
+  .lf-cc-head { font-weight: 700; }
+  .lf-cc-list { margin: 2px 0 0; padding-inline-start: 14px; line-height: 1.7; }
+  .lf-prepared { font-size: 8.5pt; margin-top: 4px; }
+
   .p-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
   .p-table th, .p-table td { border: 1px solid #999; padding: 3px 6px; text-align: right; vertical-align: top; }
   .p-table th { background: #f3f3f3; width: 190px; font-weight: 700; }
@@ -2563,7 +2718,7 @@ select.input { cursor: pointer; }
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
   }
-  .case-back, .case-print, .case-delete { display: none; }
+  .case-back, .case-print, .case-delete, .case-transfer, .case-forms { display: none; }
   .case-actions > .spacer { display: none; }   /* وگرنه «⋯» از نوار بیرون می‌افتد */
   .case-more { display: grid; place-items: center; }
   .case-actions .btn { flex: 1; min-height: 42px; }
@@ -2804,6 +2959,42 @@ window.FIELDS = [
     "type": "textarea",
     "group": "case",
     "col": 67
+  },
+  {
+    "key": "transferDate",
+    "label": "تاریخ ارجاع به کارشناس دیگر",
+    "type": "date",
+    "group": "case",
+    "col": null
+  },
+  {
+    "key": "transferTo",
+    "label": "ارجاع به (کارشناس جدید)",
+    "type": "select",
+    "group": "case",
+    "col": null,
+    "list": "Karshenas"
+  },
+  {
+    "key": "transferFrom",
+    "label": "کارشناس قبلی",
+    "type": "text",
+    "group": "case",
+    "col": null
+  },
+  {
+    "key": "transferLetterNo",
+    "label": "شماره نامه ارجاع",
+    "type": "text",
+    "group": "case",
+    "col": null
+  },
+  {
+    "key": "transferReason",
+    "label": "علت ارجاع به کارشناس دیگر",
+    "type": "textarea",
+    "group": "case",
+    "col": null
   },
   {
     "key": "nationalId",
@@ -3277,6 +3468,7 @@ window.DEFAULT_LISTS = {
   ],
   "vazeiat": [
     "ابلاغ و مختومه شد",
+    "ارجاع به کارشناس دیگر",
     "در انتظار وصول استعلام",
     "در دستور کار قرار گرفت",
     "رای صادر، ثبت و در انتظارابلاغ رای قرار گرفت",
@@ -4589,6 +4781,7 @@ window.SEED_CASES = [
     filePdf: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M8.6 16.4c2.2-.6 3.6-2.2 4.3-4 .5-1.3-.9-1.9-1.4-.7-.6 1.5.4 3.7 2.4 4.4"/>'),
     fileImage: svg('<rect x="5" y="5.5" width="14" height="13" rx="1.8"/><circle cx="9.3" cy="9.8" r="1.2"/><path d="M5.6 16.3l3.6-3.3 2.6 2.3 2.6-2.6 4 3.8"/>'),
     fileZip: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M10.6 5v2.2M12.4 7.2v2.2M10.6 9.4v2.2"/><rect x="10" y="13" width="3" height="3.4" rx="1"/>'),
+    handoff: svg('<path d="M4.5 9.5h10"/><path d="M11.5 6.2L14.8 9.5l-3.3 3.3"/><path d="M19.5 14.5h-10"/><path d="M12.5 11.2L9.2 14.5l3.3 3.3"/>'),
     paperclip: svg('<path d="M17.5 11.2l-6 6a3.4 3.4 0 0 1-4.8-4.8l7-7a2.3 2.3 0 0 1 3.2 3.2l-6.9 7a1.1 1.1 0 0 1-1.6-1.6l6.2-6.2"/>'),
     trash: svg('<path d="M5 7h14"/><path d="M10 7V5.2h4V7"/><path d="M6.5 7l.8 11.3A1.5 1.5 0 0 0 8.8 19.7h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.5 10.5v6M13.5 10.5v6"/>')
   };
@@ -7458,6 +7651,12 @@ else if (typeof exports === 'object'){
     return /مختومه/.test(rec.status || '');
   }
 
+  /* ارجاع‌شده به کارشناس دیگر: از جریانِ کار ما بیرون است ولی مختومه نیست.
+     در هیچ آماری نباید به‌جای «مختومه» یا «در جریان» شمرده شود. */
+  function isTransferred(rec) { return !!rec.transferDate; }
+
+  function isOut(rec) { return isClosed(rec) || isTransferred(rec); }
+
   /** تاریخ پایان پرونده: ابلاغ رأی، وگرنه تاریخ طرح در کمیته */
   function closeDate(rec) {
     if (!isClosed(rec)) return null;
@@ -7615,7 +7814,8 @@ else if (typeof exports === 'object'){
   // ------------------------------------------------------------------ سنجه‌ها
   function kpis(cases, prevCases) {
     var closed = cases.filter(isClosed);
-    var open = cases.filter(function (c) { return !isClosed(c); });
+    var transferred = cases.filter(isTransferred);
+    var open = cases.filter(function (c) { return !isOut(c); });
     var toCommittee = [];
     cases.forEach(function (c) {
       if (c.intakeDate && c.committeeDate) {
@@ -7634,6 +7834,7 @@ else if (typeof exports === 'object'){
       total: cases.length,
       open: open.length,
       closed: closed.length,
+      transferred: transferred.length,
       closedPct: cases.length ? Math.round((closed.length / cases.length) * 100) : 0,
       medianToCommittee: median(toCommittee),
       meanToCommittee: mean(toCommittee),
@@ -7823,7 +8024,7 @@ else if (typeof exports === 'object'){
       { label: 'بیش از ۱۸۰ روز', max: Infinity, value: 0, ids: [] }
     ];
     cases.forEach(function (c) {
-      if (isClosed(c) || !c.intakeDate) return;
+      if (isOut(c) || !c.intakeDate) return;
       var age = J.diffDays(today, c.intakeDate);
       if (age == null || age < 0) return;
       for (var i = 0; i < buckets.length; i++) {
@@ -7842,9 +8043,13 @@ else if (typeof exports === 'object'){
     var by = {};
     cases.forEach(function (c) {
       var k = (c.expert || '').trim() || 'ارجاع‌نشده';
-      var e = by[k] || (by[k] = { label: k, value: 0, open: 0, closed: 0, days: [] });
+      var e = by[k] || (by[k] = {
+        label: k, value: 0, open: 0, closed: 0, transferred: 0, days: []
+      });
       e.value++;
-      if (isClosed(c)) e.closed++; else e.open++;
+      if (isTransferred(c)) e.transferred++;
+      else if (isClosed(c)) e.closed++;
+      else e.open++;
       if (c.intakeDate && c.committeeDate) {
         var d = J.diffDays(c.committeeDate, c.intakeDate);
         if (d != null && d >= 0) e.days.push(d);
@@ -7880,7 +8085,7 @@ else if (typeof exports === 'object'){
     add('critical', '⏳', 'پرونده‌های راکد بالای ۹۰ روز',
       'اینها هنوز در کمیته طرح نشده‌اند. پیشنهاد: در دستور کار نزدیک‌ترین جلسه قرار بگیرند.',
       cases.filter(function (c) {
-        if (isClosed(c) || c.committeeDate || !c.intakeDate) return false;
+        if (isOut(c) || c.committeeDate || !c.intakeDate) return false;
         var d = J.diffDays(today, c.intakeDate);
         return d != null && d > 90;
       }));
@@ -7906,7 +8111,7 @@ else if (typeof exports === 'object'){
     // ۴) پرونده‌های بدون کارشناس
     add('warning', '👤', 'پروندهٔ بدون کارشناس',
       'کارشناس پرونده تعیین نشده است؛ تا زمان ارجاع، گردش‌کار متوقف می‌ماند.',
-      cases.filter(function (c) { return !isClosed(c) && !(c.expert || '').trim(); }));
+      cases.filter(function (c) { return !isOut(c) && !(c.expert || '').trim(); }));
 
     // ۵) ناسازگاری تاریخ‌ها
     add('critical', '📅', 'تاریخ‌های ناسازگار',
@@ -7948,7 +8153,7 @@ else if (typeof exports === 'object'){
 
     // ۷-ب) پرونده‌های باز هم‌زمانِ یک نفر — بهتر است با هم دیده شوند
     var concurrent = rp.repeaters.filter(function (p) {
-      return p.cases.filter(function (c) { return !isClosed(c); }).length > 1;
+      return p.cases.filter(function (c) { return !isOut(c); }).length > 1;
     });
     if (concurrent.length) {
       out.push({
@@ -7957,7 +8162,7 @@ else if (typeof exports === 'object'){
           'یکجا معمولاً درست‌تر از رأی جداگانه است.',
         count: concurrent.length, people: concurrent,
         ids: concurrent.reduce(function (acc, p) {
-          return acc.concat(p.cases.filter(function (c) { return !isClosed(c); })
+          return acc.concat(p.cases.filter(function (c) { return !isOut(c); })
             .map(function (c) { return c.id; }));
         }, [])
       });
@@ -8010,7 +8215,7 @@ else if (typeof exports === 'object'){
       add('warning', '🗂', 'پرونده‌های بدون هیچ سند',
         'هیچ مدرکی برای این پرونده‌ها بارگذاری نشده است.',
         cases.filter(function (c) {
-          return !isClosed(c) && !w.Docs.forCase(c.id).length;
+          return !isOut(c) && !w.Docs.forCase(c.id).length;
         }));
     }
 
@@ -8104,7 +8309,8 @@ else if (typeof exports === 'object'){
     build: build, rangeOf: rangeOf, previousRange: previousRange,
     scope: scope, kpis: kpis, trend: trend, funnel: funnel,
     byField: byField, durations: durations, aging: aging, experts: experts,
-    findings: findings, docKinds: docKinds, isClosed: isClosed, closeDate: closeDate,
+    findings: findings, docKinds: docKinds, isClosed: isClosed,
+    isTransferred: isTransferred, isOut: isOut, closeDate: closeDate,
     STAGES: STAGES, reachedStage: reachedStage,
     addDays: addDays, median: median, mean: mean, monthLabel: monthLabel,
     yearsInData: yearsInData
@@ -8332,6 +8538,16 @@ else if (typeof exports === 'object'){
   function isClosed(rec) { return /مختومه/.test(rec.status || ''); }
 
   /**
+   * ارجاع به کارشناس دیگر: پرونده از دست ما خارج شده است.
+   * نه مختومه است (رأیی صادر نشده) و نه در جریانِ ما؛ حالت سومی است که
+   * باید از کارتابل بیرون برود ولی در گزارش‌ها جای خودش را داشته باشد.
+   */
+  function isTransferred(rec) { return !!rec.transferDate; }
+
+  /** «دیگر کار ما نیست» — چه مختومه، چه ارجاع‌شده */
+  function isDone(rec) { return isClosed(rec) || isTransferred(rec); }
+
+  /**
    * وضعیت هر هشت مرحله برای یک پرونده.
    * done: انجام شده · current: مرحله‌ای که الان روی آن ایستاده‌ایم
    */
@@ -8344,7 +8560,7 @@ else if (typeof exports === 'object'){
     });
     // مرحله‌ای که از آن گذشته‌ایم، حتی اگر تاریخش ثبت نشده، انجام‌شده است
     for (var i = 0; i < lastDone; i++) done[i] = true;
-    var closed = isClosed(rec);
+    var closed = isDone(rec);
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
@@ -8429,6 +8645,10 @@ else if (typeof exports === 'object'){
       };
     }
 
+    if (isTransferred(rec)) {
+      return make('transferred',
+        'ارجاع‌شده به ' + (rec.transferTo || 'کارشناس دیگر'), '—', '', null);
+    }
     if (isClosed(rec) || rec.archiveDate) return make('closed', 'مختومه', '—', '', null);
 
     // ۱) ثبت
@@ -8535,7 +8755,7 @@ else if (typeof exports === 'object'){
     var map = {};
     cases.forEach(function (rec) {
       var action = nextAction(rec);
-      if (action.key === 'closed') return;
+      if (action.key === 'closed' || action.key === 'transferred') return;
       var b = map[action.key] || (map[action.key] = {
         key: action.key, label: action.label, owner: action.owner,
         ours: isOurs(action), limit: action.limit, items: [], overdue: 0
@@ -8572,7 +8792,8 @@ else if (typeof exports === 'object'){
   }
 
   function summary(cases) {
-    var open = cases.filter(function (c) { return !isClosed(c); });
+    var open = cases.filter(function (c) { return !isDone(c); });
+    var transferred = cases.filter(isTransferred).length;
     var overdue = 0, ours = 0, theirs = 0;
     open.forEach(function (rec) {
       var a = nextAction(rec);
@@ -8581,7 +8802,8 @@ else if (typeof exports === 'object'){
     });
     return {
       total: cases.length, open: open.length,
-      closed: cases.length - open.length,
+      closed: cases.filter(isClosed).length,
+      transferred: transferred,
       overdue: overdue, ours: ours, theirs: theirs
     };
   }
@@ -8592,7 +8814,7 @@ else if (typeof exports === 'object'){
    */
   function readyForCommittee(cases) {
     return cases.filter(function (rec) {
-      if (isClosed(rec) || rec.committeeDate) return false;
+      if (isDone(rec) || rec.committeeDate) return false;
       if (!rec.deliveryDate || !rec.invitationLetterDate) return false;
       if (rec.securityOutLetterDate && !rec.securityInLetterDate) return false;
       // دفاعیه یا گرفته شده، یا مهلتش گذشته و پیگیری هم شده
@@ -8627,7 +8849,7 @@ else if (typeof exports === 'object'){
 
     cases.forEach(function (rec) {
       var a = nextAction(rec);
-      if (a.key === 'closed' || !a.due) return;
+      if (a.key === 'closed' || a.key === 'transferred' || !a.due) return;
       var slot = byDate[a.due];
       if (slot) slot.deadlines.push({ rec: rec, action: a });
     });
@@ -8652,7 +8874,8 @@ else if (typeof exports === 'object'){
   w.Worklist = {
     STAGES: STAGES, SLA: SLA, SLA_LABELS: SLA_LABELS, sla: sla, stages: stages, nextAction: nextAction,
     buckets: buckets, pipeline: pipeline, summary: summary, isOurs: isOurs,
-    isClosed: isClosed, readyForCommittee: readyForCommittee, week: week
+    isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
+    readyForCommittee: readyForCommittee, week: week
   };
 })(window);
 
@@ -9919,6 +10142,753 @@ else if (typeof exports === 'object'){
 
 </script>
 <script>
+/* ==== js/ui.transfer.js ==== */
+/*
+ * ارجاع به کارشناس دیگر.
+ *
+ * گاهی پرونده از دست دبیرخانهٔ ما خارج می‌شود و به کارشناس بعدی می‌رود.
+ * این نه «مختومه» است (رأیی صادر نشده) و نه «در جریان» (کاری از ما برنمی‌آید).
+ * پس حالت سوم خودش را دارد: پرونده از کارتابل بیرون می‌رود، ولی در گزارش‌ها
+ * جدا از مختومه‌ها شمرده می‌شود و معلوم است کِی، به که، و چرا رفته است.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  var STATUS_TRANSFERRED = 'ارجاع به کارشناس دیگر';
+
+  function personOf(rec) {
+    return [rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بدون نام';
+  }
+
+  /** فهرست کارشناسان، از همان لیست کشویی خودِ برنامه */
+  function expertOptions() {
+    var list = (M.state.lists.Karshenas || []).slice();
+    return list;
+  }
+
+  /**
+   * پنجرهٔ ارجاع.
+   * ids: یک یا چند پرونده · onDone: بعد از ثبت موفق
+   */
+  function dialog(app, ids, onDone) {
+    var recs = ids.map(function (id) { return M.get(id); }).filter(Boolean);
+    if (!recs.length) return null;
+
+    var state = { to: '', date: J.today(), letterNo: '', reason: '' };
+    var apply, m;
+
+    var body = el('div.transfer');
+
+    body.appendChild(el('p.transfer-lead', null, [
+      el('b', { text: fa(recs.length) + ' پرونده' }),
+      el('span', {
+        text: ' به کارشناس دیگری ارجاع می‌شود. پس از ثبت، این پرونده‌ها از ' +
+          'کارتابل شما بیرون می‌روند و دیگر «منتظر اقدام ما» شمرده نمی‌شوند.'
+      })
+    ]));
+
+    // --- کارشناس مقصد: از لیست، یا نامی تازه ---
+    var select = el('select.input.small');
+    select.appendChild(el('option', { value: '', text: '— انتخاب کنید —' }));
+    expertOptions().forEach(function (name) {
+      select.appendChild(el('option', { value: name, text: name }));
+    });
+    select.appendChild(el('option', { value: '__new', text: '+ کارشناس تازه…' }));
+
+    var newName = el('input.input.small', {
+      type: 'text', placeholder: 'نام کارشناس یا واحد مقصد'
+    });
+    newName.style.display = 'none';
+    newName.addEventListener('input', function () {
+      state.to = newName.value.trim();
+      refresh();
+    });
+    select.addEventListener('change', function () {
+      if (select.value === '__new') {
+        newName.style.display = '';
+        state.to = newName.value.trim();
+        newName.focus();
+      } else {
+        newName.style.display = 'none';
+        state.to = select.value;
+      }
+      refresh();
+    });
+
+    var dateField = w.DatePicker.field(state.date, function (v) {
+      state.date = v;
+      refresh();
+    });
+    var letterInput = el('input.input.small.reg-input', {
+      type: 'text', placeholder: 'اختیاری'
+    });
+    letterInput.addEventListener('input', function () {
+      state.letterNo = letterInput.value.trim();
+    });
+    var reason = el('textarea.input.area', {
+      rows: '2', placeholder: 'مثلاً: خارج از صلاحیت این کمیته / تجمیع با پروندهٔ مرتبط'
+    });
+    reason.addEventListener('input', function () { state.reason = reason.value; });
+
+    body.appendChild(el('div.transfer-head', null, [
+      el('label.field', null, [
+        el('span.field-label', { text: 'ارجاع به' }), select, newName
+      ]),
+      el('label.field', null, [
+        el('span.field-label', { text: 'تاریخ ارجاع' }), dateField
+      ]),
+      el('label.field', null, [
+        el('span.field-label', { text: 'شمارهٔ نامهٔ ارجاع' }), letterInput
+      ]),
+      el('label.field.wide', null, [
+        el('span.field-label', { text: 'علت ارجاع' }), reason
+      ])
+    ]));
+
+    // --- فهرست پرونده‌ها ---
+    body.appendChild(el('ul.transfer-list', null, recs.slice(0, 12).map(function (rec) {
+      var action = w.Worklist.nextAction(rec);
+      return el('li.transfer-row', null, [
+        el('span.reg-no', { text: w.U.toLatinDigits(rec.caseNo || '—') }),
+        el('span.transfer-name', { text: personOf(rec) }),
+        el('span.transfer-stage', {
+          text: action.key === 'closed' ? 'مختومه'
+            : (action.key === 'transferred' ? 'قبلاً ارجاع شده' : action.label)
+        })
+      ]);
+    }).concat(recs.length > 12
+      ? [el('li.transfer-row.muted', { text: 'و ' + fa(recs.length - 12) + ' پروندهٔ دیگر' })]
+      : [])));
+
+    var summary = el('div.transfer-summary');
+    body.appendChild(summary);
+
+    function alreadyGone() {
+      return recs.filter(function (r) { return w.Worklist.isTransferred(r); }).length;
+    }
+
+    function refresh() {
+      w.U.clear(summary);
+      var gone = alreadyGone();
+      if (!state.to) {
+        summary.appendChild(el('span.transfer-warn', {
+          text: 'کارشناس مقصد را انتخاب کنید.'
+        }));
+      } else {
+        summary.appendChild(el('span', {
+          text: fa(recs.length - gone) + ' پرونده به «' + state.to + '» ارجاع می‌شود' +
+            (state.date ? ' با تاریخ ' + J.format(state.date) : '') + '.'
+        }));
+      }
+      if (gone) {
+        summary.appendChild(el('span.transfer-warn', {
+          text: ' ' + fa(gone) + ' پرونده از قبل ارجاع شده بود؛ ارجاعش به‌روز می‌شود.'
+        }));
+      }
+      if (apply) apply.disabled = !(state.to && state.date);
+    }
+
+    function save() {
+      var text = fa(recs.length) + ' پرونده به «' + state.to + '» ارجاع می‌شود و از ' +
+        'کارتابل شما بیرون می‌رود. وضعیتشان «' + STATUS_TRANSFERRED + '» ثبت می‌شود ' +
+        'و تغییر هر پرونده در تاریخچهٔ خودش می‌ماند. ادامه می‌دهید؟';
+      return w.U.confirmBox('ارجاع به کارشناس دیگر', text, 'ارجاع بده')
+        .then(function (ok) {
+          if (!ok) return null;
+          apply.disabled = true;
+          apply.textContent = 'در حال ثبت…';
+          var list = recs.map(function (rec) {
+            var patch = {
+              transferDate: state.date,
+              transferTo: state.to,
+              // کارشناس قبلی همان کسی است که تا امروز پرونده دستش بوده
+              transferFrom: rec.expert || '',
+              status: STATUS_TRANSFERRED
+            };
+            if (state.letterNo) patch.transferLetterNo = state.letterNo;
+            if (state.reason.trim()) patch.transferReason = state.reason.trim();
+            return { id: rec.id, patch: patch };
+          });
+          return M.applyPatches(list, {
+            kind: 'transfer',
+            note: 'ارجاع به ' + state.to + ' — ' + J.format(state.date)
+          }).then(function (res) {
+            m.close();
+            w.U.toast(fa(res.changed) + ' پرونده به «' + state.to + '» ارجاع شد.', 'good');
+            if (onDone) onDone(res);
+            return res;
+          });
+        }).catch(function (e) {
+          apply.disabled = false;
+          apply.textContent = 'ثبت ارجاع';
+          w.U.toast('ثبت ارجاع ناموفق بود: ' + e.message, 'bad');
+        });
+    }
+
+    apply = el('button.btn.primary', {
+      type: 'button', text: 'ثبت ارجاع', onclick: save
+    });
+    refresh();
+
+    m = w.U.modal('ارجاع به کارشناس دیگر', body, [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      apply
+    ]);
+    m.root.classList.add('transfer-modal');
+    setTimeout(function () { select.focus(); }, 60);
+    return m;
+  }
+
+  /** بازگرداندن پرونده به جریان — اگر ارجاع اشتباه ثبت شده باشد */
+  function undo(app, rec, onDone) {
+    return w.U.confirmBox('برگرداندن پرونده',
+      'ارجاع پروندهٔ ' + w.U.toFaDigits(rec.caseNo || '') + ' برداشته شود و ' +
+      'دوباره به کارتابل برگردد؟', 'برگردان').then(function (ok) {
+        if (!ok) return null;
+        return M.applyPatches([{
+          id: rec.id,
+          patch: {
+            transferDate: '', transferTo: '', transferFrom: '',
+            transferLetterNo: '', transferReason: '',
+            status: rec.transferFrom ? 'مفتوح رسیدگی' : (rec.status || 'مفتوح رسیدگی')
+          }
+        }], { kind: 'transfer', note: 'برگرداندن پرونده از ارجاع' })
+          .then(function (res) {
+            w.U.toast('پرونده به کارتابل برگشت.', 'good');
+            if (onDone) onDone(res);
+            return res;
+          });
+      });
+  }
+
+  w.UITransfer = { dialog: dialog, undo: undo, STATUS: STATUS_TRANSFERRED };
+})(window);
+
+</script>
+<script>
+/* ==== js/ui.letters.js ==== */
+/*
+ * فرم‌های اداری: همان برگه‌هایی که تا امروز دستی تایپ می‌شدند.
+ *
+ * چهار فرم، دقیقاً با چیدمان نمونه‌های خود دبیرخانه:
+ *   ۱) خلاصهٔ پرونده        — روی کاغذ سفید A4
+ *   ۲) تفهیم اتهام و دفاعیه — روی کاغذ سفید A4
+ *   ۳) رأی صادره            — روی سربرگ
+ *   ۴) ابلاغ رأی            — روی سربرگ
+ *
+ * «روی سربرگ» یعنی بالای صفحه خالی می‌ماند تا روی کاغذ چاپیِ سازمان بنشیند؛
+ * اندازهٔ این فضا در تنظیمات قابل تغییر است، چون سربرگ هر اداره فرق دارد.
+ *
+ * هرچه از پرونده درمی‌آید خودکار پر می‌شود؛ باقی‌مانده (چیزهایی که در دیتابیس
+ * نیستند، مثل نام شهردار یا سابقهٔ کار) یک بار پرسیده می‌شود و جواب‌های ثابت
+ * (اعضای کمیته، رونوشت‌ها، امضاکننده) در تنظیمات می‌ماند تا دوباره پرسیده نشود.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+  /* در نامهٔ اداری، ارقام فارسی نوشته می‌شوند — حتی شناسه‌ها؛ برخلاف صفحهٔ
+     نمایش که شناسه را لاتین نگه می‌دارد تا کپی و مقایسه آسان باشد. */
+  function val(v) { return w.U.toFaDigits(String(v == null ? '' : v).trim()); }
+  function dash(v) { return val(v) || '—'; }
+  function dots(v) { return val(v) || '......................'; }
+
+  var DEFAULT_MEMBERS = [
+    { name: '', role: 'نمایندهٔ کارکنان' },
+    { name: '', role: 'نمایندهٔ کارکنان' },
+    { name: '', role: 'نمایندهٔ کارکنان' },
+    { name: '', role: 'نمایندهٔ سرپرستان' },
+    { name: '', role: 'نمایندهٔ مدیریت' },
+    { name: '', role: 'نمایندهٔ مدیریت' },
+    { name: '', role: 'نمایندهٔ مدیریت' }
+  ];
+
+  var DEFAULT_CC = [
+    'ریاست محترم سازمان بازرسی شهرداری تهران برای استحضار.',
+    'معاون محترم حفاظت پرسنلی سازمان حراست شهرداری تهران برای استحضار.',
+    'نمایندهٔ محترم شهردار و دبیر هیئت مرکزی گزینش شهرداری تهران برای استحضار.',
+    'مدیر کل محترم دفتر هماهنگی هیئت‌های رسیدگی به تخلفات اداری کارمندان برای آگاهی.',
+    'ادارهٔ کمیتهٔ انضباط کار برای اطلاع.',
+    'ادارهٔ امور مرخصی‌ها برای اطلاع و اقدام لازم.',
+    'ادارهٔ کارکنان قراردادی مناطق و واحدهای ستادی برای اطلاع و اقدام لازم.'
+  ];
+
+  var DEFAULTS = {
+    orgTitle: 'کمیتهٔ انضباط کار شهرداری تهران',
+    letterheadTop: 45,          // میلی‌متر فضای خالی برای سربرگ چاپی
+    letterheadBottom: 25,
+    signerName: '',
+    signerRole: 'مدیر کل',
+    preparedBy: '',
+    regulation: 'آیین‌نامهٔ انضباط کار مصوب ۱۴۰۲/۰۵/۰۸ وزارت تعاون، کار و رفاه اجتماعی',
+    members: DEFAULT_MEMBERS,
+    cc: DEFAULT_CC
+  };
+
+  /** تنظیمات فرم‌ها، با پیش‌فرض‌های پر */
+  function conf() {
+    var saved = M.state.settings.letters || {};
+    var out = {};
+    Object.keys(DEFAULTS).forEach(function (k) {
+      out[k] = saved[k] != null && saved[k] !== '' ? saved[k] : DEFAULTS[k];
+    });
+    if (!Array.isArray(out.members) || !out.members.length) out.members = DEFAULT_MEMBERS;
+    if (!Array.isArray(out.cc)) out.cc = DEFAULT_CC;
+    return out;
+  }
+
+  function saveConf(patch) {
+    var next = Object.assign({}, conf(), patch);
+    return M.saveSettings({ letters: next });
+  }
+
+  // ------------------------------------------------------------------ چاپ
+  function area() {
+    var node = document.getElementById('print-area');
+    w.U.clear(node);
+    return node;
+  }
+
+  function run(title) {
+    var prev = document.title;
+    document.title = title;
+    document.body.classList.add('printing');
+    var restore = function () {
+      document.body.classList.remove('printing');
+      document.title = prev;
+      window.removeEventListener('afterprint', restore);
+    };
+    window.addEventListener('afterprint', restore);
+    window.print();
+    setTimeout(restore, 1500);
+  }
+
+  /** فضای خالی بالای صفحه، به‌اندازهٔ سربرگ چاپی */
+  function letterheadSpace(c) {
+    var sp = el('div.lf-head-space');
+    sp.style.height = (c.letterheadTop || 0) + 'mm';
+    return sp;
+  }
+
+  /** ردیف دوستونی «برچسب: مقدار» داخل جدول فرم */
+  function cell(label, value, cls) {
+    return el('td' + (cls ? '.' + cls : ''), null, [
+      el('span.lf-k', { text: label }),
+      el('span.lf-v', { text: dash(value) })
+    ]);
+  }
+
+  function personRows(rec, extra) {
+    return [
+      el('tr', null, [
+        cell('نام', rec.firstName),
+        cell('نام خانوادگی', rec.lastName),
+        cell('نام پدر', rec.fatherName)
+      ]),
+      el('tr', null, [
+        cell('کد ملی', rec.nationalId),
+        cell('کد پرسنلی', rec.personnelCode),
+        cell('شمارهٔ تماس', rec.phone)
+      ]),
+      el('tr', null, [
+        cell('عنوان شغل فعلی', rec.jobTitle || rec.postTitle),
+        cell('مدرک تحصیلی', rec.education),
+        cell('واحد سازمانی', rec.orgUnit)
+      ]),
+      el('tr', null, [
+        cell('نوع استخدام', rec.employmentStatus || rec.contractType),
+        cell('نام شرکت', extra.company || rec.contractType),
+        cell('محل خدمت', rec.servicePlace)
+      ])
+    ];
+  }
+
+  // ------------------------------------------------- ۱) خلاصهٔ پرونده
+  function printSummary(rec, extra) {
+    var c = conf();
+    var node = area();
+    var rows = [
+      ['نام', rec.firstName],
+      ['نام خانوادگی', rec.lastName],
+      ['واحد محل خدمت', rec.servicePlace || rec.orgUnit],
+      ['نوع قرارداد', rec.contractType],
+      ['عنوان شغلی', rec.jobTitle || rec.postTitle],
+      ['سابقهٔ کار در شهرداری', extra.service],
+      ['تحصیلات', rec.education],
+      ['سابقهٔ تخلف', rec.priorRecord],
+      ['مرجع گزارش‌دهنده', rec.reporterOrg],
+      ['موضوع تخلف', rec.reportSubject],
+      ['خلاصهٔ دفاعیه', rec.defenseSummary]
+    ];
+    var table = el('table.lf-summary');
+    rows.forEach(function (r, i) {
+      var tall = i >= 9;          // موضوع تخلف و خلاصهٔ دفاعیه، جای نوشتن دارند
+      table.appendChild(el('tr' + (tall ? '.lf-tall' : ''), null, [
+        el('th', { text: r[0] }),
+        el('td', { text: val(r[1]) })
+      ]));
+    });
+    node.appendChild(el('div.lf.lf-plain', null, [
+      el('h1.lf-title', { text: 'خلاصهٔ پرونده' }),
+      table
+    ]));
+    run('خلاصهٔ پرونده');
+  }
+
+  // ------------------------------------------- ۲) تفهیم اتهام و دفاعیه
+  function printDefense(rec, extra) {
+    var c = conf();
+    var node = area();
+    var p = J.unpack(rec.invitationLetterDate || J.today());
+    var table = el('table.lf-grid', null, [
+      el('tr', null, [
+        cell('نام', rec.firstName), cell('نام خانوادگی', rec.lastName),
+        cell('نام پدر', rec.fatherName), cell('نوع استخدام', rec.employmentStatus)
+      ]),
+      el('tr', null, [
+        cell('کد پرسنلی', rec.personnelCode), cell('شمارهٔ تماس', rec.phone),
+        cell('مدرک تحصیلی', rec.education),
+        cell('نام شرکت', extra.company || rec.contractType)
+      ]),
+      el('tr', null, [
+        cell('کد ملی', rec.nationalId),
+        cell('عنوان شغل فعلی', rec.jobTitle || rec.postTitle),
+        cell('واحد سازمانی', rec.orgUnit), cell('محل خدمت', rec.servicePlace)
+      ]),
+      el('tr', null, [
+        el('td.lf-wide', { colspan: '4' }, [
+          el('span.lf-k', { text: 'مدت سابقهٔ کار در شهرداری تهران' }),
+          el('span.lf-v', { text: dots(extra.service) }),
+          el('span.lf-k', { text: ' از تاریخ' }),
+          el('span.lf-v', { text: dots(extra.serviceFrom) }),
+          el('span.lf-k', { text: ' تا تاریخ' }),
+          el('span.lf-v', { text: dots(extra.serviceTo) })
+        ])
+      ]),
+      el('tr', null, [
+        el('td.lf-wide', { colspan: '4' }, [
+          el('span.lf-k', { text: 'آدرس محل سکونت' }),
+          el('span.lf-v.lf-line', { text: dots(extra.address) })
+        ])
+      ]),
+      el('tr', null, [
+        el('td.lf-wide', { colspan: '2' }, [
+          el('span.lf-k', { text: 'شمارهٔ تلفن ثابت' }),
+          el('span.lf-v', { text: dots(extra.phoneFixed) })
+        ]),
+        el('td.lf-wide', { colspan: '2' }, [
+          el('span.lf-k', { text: 'شمارهٔ تماس ضروری (بستگان)' }),
+          el('span.lf-v', { text: dots(extra.phoneKin) })
+        ])
+      ])
+    ]);
+
+    node.appendChild(el('div.lf.lf-plain', null, [
+      el('h1.lf-title', { text: 'فرم تفهیم اتهام و دفاعیه' }),
+      el('h2.lf-subtitle', { text: 'دبیرخانهٔ ' + c.orgTitle }),
+      table,
+      el('p.lf-para', {
+        text: 'در تاریخ ' + (p ? J.format(J.pack(p.jy, p.jm, p.jd)) : '   /   /    ') +
+          ' به دبیرخانهٔ کمیتهٔ انضباط کار دعوت و پس از تفهیم علت حضور، دفاعیات ' +
+          'خود را به شرح ذیل اعلام می‌نمایند.'
+      }),
+      el('div.lf-box', null, [
+        el('p.lf-box-head', {
+          text: 'با عنایت به نامهٔ شمارهٔ ' + dash(rec.letterNo) + ' مورخ ' +
+            (rec.letterDate ? J.format(rec.letterDate) : '—') + ' ' +
+            dash(rec.reporterOrg) + ' در خصوص شما مبنی بر «' +
+            (val(rec.reportSubject) || '—') + '»، دفاعیات خود را کتباً اعلام نمایید.'
+        }),
+        el('div.lf-blank'),
+        el('div.lf-sign-row', null, [
+          el('span', { text: 'نام و نام خانوادگی' }),
+          el('span', { text: 'امضاء' }),
+          el('span', { text: 'تاریخ' })
+        ])
+      ])
+    ]));
+    run('تفهیم اتهام و دفاعیه');
+  }
+
+  // ------------------------------------------------------ ۳) رأی صادره
+  function printVerdict(rec, extra) {
+    var c = conf();
+    var node = area();
+    var members = c.members.filter(function (m) { return val(m.name) || val(m.role); });
+
+    var grid = el('table.lf-grid', null, personRows(rec, extra).concat([
+      el('tr', null, [
+        el('td.lf-wide', { colspan: '3' }, [
+          el('span.lf-k', { text: 'موضوع' }),
+          el('span.lf-v', { text: dash(rec.reportSubject) })
+        ])
+      ])
+    ]));
+
+    var body = el('div.lf.lf-letterhead', null, [
+      letterheadSpace(c),
+      el('h1.lf-title', { text: c.orgTitle }),
+      el('h2.lf-verdict-mark', { text: '» رأی صادره «' }),
+      el('p.lf-para', {
+        text: 'جلسهٔ کمیتهٔ انضباط کار شهرداری تهران در تاریخ ' +
+          (rec.committeeDate ? J.format(rec.committeeDate) : '..........') +
+          ' با حضور اعضاء جهت رسیدگی به اتهام/اتهامات پرسنل ذیل تشکیل گردید.'
+      }),
+      grid,
+      el('h3.lf-h3', { text: 'گردش کار:' }),
+      el('p.lf-para.lf-justify', {
+        text: 'پس از ملاحظهٔ مدارک و مستندات موجود در پرونده و با توجه به مفاد مندرج ' +
+          'در ' + c.regulation + ' و بر اساس نامهٔ شمارهٔ ' + dash(rec.letterNo) +
+          ' مورخ ' + (rec.letterDate ? J.format(rec.letterDate) : '—') + ' ' +
+          dash(rec.reporterOrg) + '، اتهام/اتهامات فوق به نامبرده تفهیم و اعضاء پس از ' +
+          'مطالعه و بررسی محتویات پرونده، شواهد و قرائن موجود، مبادرت به صدور و اعلام ' +
+          'رأی به شرح ذیل می‌نماید.'
+      }),
+      el('div.lf-verdict-box', null, [
+        el('div.lf-k', { text: 'متن رأی' }),
+        el('p.lf-verdict-text', { text: val(extra.verdictText) || val(rec.verdictFull) }),
+        el('p.lf-final', { text: 'این رأی قطعی و لازم‌الاجرا می‌باشد.' })
+      ]),
+      el('div.lf-members', null, members.map(function (mb) {
+        return el('div.lf-member', null, [
+          el('div.lf-member-name', { text: dots(mb.name) }),
+          el('div.lf-member-role', { text: val(mb.role) })
+        ]);
+      })),
+      el('div.lf-notice', null, [
+        el('div.lf-notice-row', {
+          text: 'نام و نام خانوادگی ابلاغ‌شونده: ....................................' +
+            '      امضاء ....................................'
+        }),
+        el('div.lf-notice-row', {
+          text: 'نام و نام خانوادگی مأمور ابلاغ: ....................................' +
+            '      امضاء ....................................'
+        }),
+        el('div.lf-notice-row', {
+          text: 'محل ابلاغ (سکونت / کار): ....................................' +
+            '      تاریخ ابلاغ ....................................'
+        })
+      ])
+    ]);
+    node.appendChild(body);
+    run('رأی کمیتهٔ انضباط کار');
+  }
+
+  // ------------------------------------------------------ ۴) ابلاغ رأی
+  function printNotice(rec, extra) {
+    var c = conf();
+    var node = area();
+    var person = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
+    var honor = (rec.gender === 'زن') ? 'خانم' : 'آقای';
+
+    var body = el('div.lf.lf-letterhead', null, [
+      letterheadSpace(c),
+      el('div.lf-letter-no', {
+        text: val(extra.outLetterNo) || (rec.noticeLetterNo || '')
+      }),
+      el('div.lf-to', null, [
+        el('div', { text: 'جناب ' + (val(extra.addressee) ? 'آقای ' + extra.addressee : 'آقای ...') }),
+        el('div', { text: val(extra.addresseeRole) || 'شهردار محترم ...' }),
+        el('div.lf-subject', {
+          text: 'موضوع: ابلاغ رأی کمیتهٔ انضباط کار شهرداری تهران'
+        })
+      ]),
+      el('p.lf-para', { text: 'با سلام و احترام؛' }),
+      el('p.lf-para.lf-justify', {
+        text: 'بازگشت به نامهٔ شمارهٔ ' + dash(rec.letterNo) + ' مورخ ' +
+          (rec.letterDate ? J.format(rec.letterDate) : '—') + '، در خصوص ' + honor +
+          ' ' + (person || '...') + ' (کد ملی: ' + dash(rec.nationalId) + ')، از کارکنان ' +
+          'طرف قرارداد ' + dash(rec.contractType) + ' شاغل در آن ' +
+          dash(rec.orgUnit) + ' به آگاهی می‌رساند؛'
+      }),
+      el('p.lf-para.lf-justify', {
+        text: 'موضوع تخلف نامبرده در جلسهٔ مورخ ' +
+          (rec.committeeDate ? J.format(rec.committeeDate) : '...') +
+          ' کمیتهٔ انضباط کار شهرداری تهران مطرح و منتج به صدور رأی به شمارهٔ ' +
+          dash(rec.committeeRegNo) + ' به شرح ذیل گردید:'
+      }),
+      el('blockquote.lf-quote', {
+        text: '«' + (val(extra.verdictText) || val(rec.verdictFull) || '...') + '»'
+      }),
+      el('p.lf-para.lf-justify', {
+        text: 'لذا شایسته است دستور فرمایید ضمن اخذ تعهد از نامبرده (فرم پیوست)، ' +
+          'نسبت به ابلاغ رأی و اخذ رسید از ایشان اقدام و تصویر نسخه‌ای از رأی مذکور ' +
+          'به نامبرده تحویل و اصل نسخهٔ رأی را به منظور درج در پروندهٔ اتهامی ' +
+          'مشارالیه در اسرع وقت به این اداره کل ارسال نمایند.'
+      }),
+      el('p.lf-para.lf-bold', {
+        text: 'شایان ذکر است ارسال اصل رأی صادره پس از ابلاغ به نامبرده جهت درج در ' +
+          'پروندهٔ اتهامی ایشان به دبیرخانهٔ کمیتهٔ انضباط کار الزامی می‌باشد.'
+      }),
+      el('div.lf-signer', null, [
+        el('div.lf-signer-name', { text: dots(c.signerName) }),
+        el('div.lf-signer-role', { text: val(c.signerRole) })
+      ]),
+      // رونوشت و تهیه‌کننده یک بلوک‌اند تا نصفه‌نصفه بین دو صفحه نیفتند
+      el('div.lf-foot', null, [
+        c.cc.length ? el('div.lf-cc', null, [
+          el('div.lf-cc-head', { text: 'رونوشت:' }),
+          el('ul.lf-cc-list', null, c.cc.map(function (line) {
+            return el('li', { text: line });
+          }))
+        ]) : null,
+        val(c.preparedBy) ? el('div.lf-prepared', {
+          text: 'تهیه‌کننده: ' + c.preparedBy
+        }) : null
+      ])
+    ]);
+    node.appendChild(body);
+    run('ابلاغ رأی');
+  }
+
+  // ------------------------------------------------------------- پنجره
+  var FORMS = [
+    {
+      key: 'summary', label: 'خلاصهٔ پرونده', paper: 'کاغذ سفید A4',
+      hint: 'مشخصات، سابقه، موضوع تخلف و خلاصهٔ دفاعیه در یک جدول',
+      fn: printSummary, fields: ['service']
+    },
+    {
+      key: 'defense', label: 'تفهیم اتهام و دفاعیه', paper: 'کاغذ سفید A4',
+      hint: 'برگهٔ حضور در دبیرخانه، با جای خالی برای نوشتن دفاعیه',
+      fn: printDefense,
+      fields: ['company', 'service', 'serviceFrom', 'serviceTo', 'address',
+        'phoneFixed', 'phoneKin']
+    },
+    {
+      key: 'verdict', label: 'رأی صادره', paper: 'سربرگ',
+      hint: 'متن رأی با مشخصات، گردش کار، امضای اعضا و محل ابلاغ',
+      fn: printVerdict, fields: ['company', 'verdictText']
+    },
+    {
+      key: 'notice', label: 'ابلاغ رأی', paper: 'سربرگ',
+      hint: 'نامهٔ ابلاغ به واحد سازمانی، با متن رأی و رونوشت‌ها',
+      fn: printNotice,
+      fields: ['addressee', 'addresseeRole', 'outLetterNo', 'verdictText']
+    }
+  ];
+
+  var FIELD_LABELS = {
+    company: 'نام شرکت',
+    service: 'سابقهٔ کار در شهرداری',
+    serviceFrom: 'سابقه از تاریخ',
+    serviceTo: 'سابقه تا تاریخ',
+    address: 'آدرس محل سکونت',
+    phoneFixed: 'تلفن ثابت',
+    phoneKin: 'تلفن ضروری (بستگان)',
+    addressee: 'نام مخاطب نامه',
+    addresseeRole: 'سمت مخاطب',
+    outLetterNo: 'شمارهٔ نامهٔ صادره',
+    verdictText: 'متن رأی'
+  };
+
+  /** چیزهایی که در پرونده نیستند، از خود پرونده یا آخرین بار حدس زده می‌شوند */
+  function guess(rec, key) {
+    if (key === 'company') return rec.contractType || '';
+    if (key === 'verdictText') return rec.verdictFull || '';
+    if (key === 'addresseeRole') return 'شهردار محترم ' + (rec.orgUnit || '');
+    if (key === 'outLetterNo') return rec.noticeLetterNo || '';
+    if (key === 'phoneFixed') return rec.phone || '';
+    var remembered = (M.state.settings.letterExtras || {})[key];
+    return remembered || '';
+  }
+
+  /** پنجرهٔ یک فرم: چند فیلدِ باقی‌مانده را می‌پرسد و چاپ می‌کند */
+  function formDialog(app, rec, form) {
+    var extra = {};
+    var inputs = {};
+    var body = el('div.letters-form');
+
+    body.appendChild(el('p.muted.tiny', {
+      text: form.hint + ' — ' + (form.paper === 'سربرگ'
+        ? 'روی سربرگ چاپ می‌شود؛ بالای صفحه به‌اندازهٔ تنظیمات خالی می‌ماند.'
+        : 'روی کاغذ سفید A4 چاپ می‌شود.')
+    }));
+
+    var grid = el('div.letters-grid');
+    form.fields.forEach(function (key) {
+      extra[key] = guess(rec, key);
+      var input;
+      if (key === 'verdictText' || key === 'address') {
+        input = el('textarea.input.area', { rows: key === 'verdictText' ? '4' : '2' });
+      } else {
+        input = el('input.input.small', { type: 'text' });
+      }
+      input.value = extra[key];
+      input.addEventListener('input', function () { extra[key] = input.value; });
+      inputs[key] = input;
+      grid.appendChild(el('label.field' + (key === 'verdictText' ? '.wide' : ''), null, [
+        el('span.field-label', { text: FIELD_LABELS[key] || key }),
+        input
+      ]));
+    });
+    if (!form.fields.length) {
+      grid.appendChild(el('p.muted', { text: 'همه‌چیز از خود پرونده پر می‌شود.' }));
+    }
+    body.appendChild(grid);
+
+    var m = w.U.modal('چاپ ' + form.label, body, [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'چاپ فرم',
+        onclick: function () {
+          // مقدارهای عمومی برای دفعهٔ بعد یادداشت می‌شوند
+          var remember = {};
+          ['service', 'serviceFrom', 'serviceTo', 'addressee', 'addresseeRole']
+            .forEach(function (k) {
+              if (extra[k]) remember[k] = extra[k];
+            });
+          if (Object.keys(remember).length) {
+            M.saveSettings({
+              letterExtras: Object.assign({}, M.state.settings.letterExtras, remember)
+            });
+          }
+          m.close();
+          setTimeout(function () { form.fn(rec, extra); }, 60);
+        }
+      })
+    ]);
+    m.root.classList.add('letters-modal');
+    return m;
+  }
+
+  /** فهرست فرم‌ها برای یک پرونده */
+  function chooser(app, rec) {
+    if (!rec) {
+      w.U.toast('اول پرونده را ذخیره کنید.', 'warn');
+      return null;
+    }
+    return w.Mobile.sheet('فرم‌های پروندهٔ ' + w.U.toLatinDigits(rec.caseNo || ''),
+      FORMS.map(function (form) {
+        return {
+          icon: form.paper === 'سربرگ' ? 'fileText' : 'file',
+          label: form.label,
+          hint: form.paper + ' — ' + form.hint,
+          onclick: function () { formDialog(app, rec, form); }
+        };
+      }));
+  }
+
+  w.UILetters = {
+    chooser: chooser, formDialog: formDialog, FORMS: FORMS,
+    conf: conf, saveConf: saveConf, DEFAULTS: DEFAULTS,
+    printSummary: printSummary, printDefense: printDefense,
+    printVerdict: printVerdict, printNotice: printNotice
+  };
+})(window);
+
+</script>
+<script>
 /* ==== js/ui.list.js ==== */
 /* نمای فهرست: جستجو، فیلترها و جدول با رندر مجازی */
 (function (w) {
@@ -9956,6 +10926,7 @@ else if (typeof exports === 'object'){
 
   function statusClass(status) {
     if (!status) return '';
+    if (status.indexOf('ارجاع به کارشناس') >= 0) return 'st-moved';
     if (status.indexOf('مختومه') >= 0) return 'st-done';
     if (status.indexOf('انتظار') >= 0) return 'st-wait';
     if (status.indexOf('مفتوح') >= 0) return 'st-open';
@@ -10439,6 +11410,16 @@ else if (typeof exports === 'object'){
       selBar.appendChild(el('button.btn.small.ghost', {
         type: 'button', text: 'برداشتن انتخاب',
         onclick: function () { app.clearSelection(); app.render(); }
+      }));
+      selBar.appendChild(el('button.btn.small.ghost', {
+        type: 'button', text: 'ارجاع به کارشناس دیگر',
+        title: 'این پرونده‌ها از کارتابل شما بیرون می‌روند',
+        onclick: function () {
+          w.UITransfer.dialog(app, ids, function () {
+            app.clearSelection();
+            app.render();
+          });
+        }
       }));
       selBar.appendChild(el('button.btn.small.primary', {
         type: 'button', text: 'اقدام دسته‌ای',
@@ -10994,6 +11975,11 @@ else if (typeof exports === 'object'){
       onclick: function () {
         w.Mobile.sheet('پروندهٔ ' + w.U.toLatinDigits(existing.caseNo || ''), [
           {
+            icon: 'fileText', label: 'فرم‌های اداری',
+            hint: 'خلاصهٔ پرونده، تفهیم اتهام، رأی، ابلاغ رأی',
+            onclick: function () { w.UILetters.chooser(app, existing); }
+          },
+          {
             icon: 'print', label: 'چاپ برگ پرونده',
             onclick: function () { w.UIPrint.printCase(existing); }
           },
@@ -11003,11 +11989,39 @@ else if (typeof exports === 'object'){
           },
           { sep: true },
           {
+            icon: 'handoff', label: 'ارجاع به کارشناس دیگر',
+            hint: 'پرونده از کارتابل شما بیرون می‌رود',
+            onclick: function () {
+              w.UITransfer.dialog(app, [existing.id], function () {
+                app.state.formTab = activeTab;
+                app.render();
+              });
+            }
+          },
+          { sep: true },
+          {
             icon: 'trash', label: 'حذف پرونده', kind: 'danger',
             hint: 'برگشت‌ناپذیر است',
             onclick: askDelete
           }
         ]);
+      }
+    }) : null;
+
+    var formsBtn = existing ? el('button.btn.ghost.case-forms', {
+      type: 'button', text: 'فرم‌ها',
+      title: 'خلاصهٔ پرونده، تفهیم اتهام، رأی و ابلاغ رأی',
+      onclick: function () { w.UILetters.chooser(app, existing); }
+    }) : null;
+
+    var transferBtn = existing ? el('button.btn.ghost.case-transfer', {
+      type: 'button', text: 'ارجاع به کارشناس دیگر',
+      title: 'پرونده از کارتابل شما بیرون می‌رود',
+      onclick: function () {
+        w.UITransfer.dialog(app, [existing.id], function () {
+          app.state.formTab = activeTab;
+          app.render();
+        });
       }
     }) : null;
 
@@ -11022,6 +12036,8 @@ else if (typeof exports === 'object'){
       existing ? el('button.btn.ghost.danger.case-delete', {
         type: 'button', text: 'حذف پرونده', onclick: askDelete
       }) : null,
+      transferBtn,
+      formsBtn,
       existing ? el('button.btn.ghost.case-print', {
         type: 'button', text: 'چاپ برگ پرونده',
         onclick: function () { w.UIPrint.printCase(existing); }
@@ -11065,6 +12081,30 @@ else if (typeof exports === 'object'){
           })
         ]);
       }
+      // پرونده‌ای که از دست ما خارج شده، باید همان بالا معلوم باشد
+      var transferNode = null;
+      if (w.Worklist.isTransferred(existing)) {
+        transferNode = el('div.case-next.transferred', null, [
+          el('span.case-next-label', { text: 'ارجاع‌شده' }),
+          el('span.case-next-meta', {
+            text: 'در ' + J.format(existing.transferDate) + ' به «' +
+              (existing.transferTo || 'کارشناس دیگر') + '» ارجاع شد' +
+              (existing.transferFrom ? ' (پیش از آن: ' + existing.transferFrom + ')' : '') +
+              '. این پرونده در کارتابل شما نمی‌آید.'
+          }),
+          el('div.spacer'),
+          el('button.btn.small.ghost', {
+            type: 'button', text: 'برگرداندن به کارتابل',
+            onclick: function () {
+              w.UITransfer.undo(app, existing, function () {
+                app.state.formTab = activeTab;
+                app.render();
+              });
+            }
+          })
+        ]);
+      }
+
       // پیگیری دستی، اگر گذاشته شده، کنار اقدام خودکار می‌آید
       var followUp = w.Notes.openFollowUp(existing.id);
       var followNode = null;
@@ -11092,7 +12132,7 @@ else if (typeof exports === 'object'){
       }
       return el('div.case-rail', null, [
         w.UIWorklist.rail(existing, 'full'),
-        next,
+        transferNode || next,
         followNode
       ]);
     }
@@ -12659,6 +13699,59 @@ else if (typeof exports === 'object'){
       slaBox
     ]));
 
+    /* سربرگ و فرم‌های اداری: چیزهایی که هر بار یکی‌اند و نباید هر بار
+       پرسیده شوند — اندازهٔ سربرگ، امضاکننده، اعضای کمیته و رونوشت‌ها. */
+    var lconf = w.UILetters.conf();
+    var lInputs = {};
+    function lField(key, label, hint, type) {
+      var input = type === 'area'
+        ? el('textarea.input.area', { rows: '3' })
+        : el('input.input.small', { type: type || 'text' });
+      input.value = type === 'lines' ? (lconf[key] || []).join('\n') : (lconf[key] || '');
+      lInputs[key] = input;
+      return el('label.field' + (type === 'area' || type === 'lines' ? '.wide' : ''), null, [
+        el('span.field-label', { text: label, title: hint || '' }), input
+      ]);
+    }
+    var ccInput = el('textarea.input.area', { rows: '5' });
+    ccInput.value = (lconf.cc || []).join('\n');
+    lInputs.cc = ccInput;
+
+    var membersBox = el('div.members-editor');
+    var memberInputs = [];
+    (lconf.members || []).forEach(function (mb, i) {
+      var name = el('input.input.small', { type: 'text', value: mb.name || '' });
+      var role = el('input.input.small', { type: 'text', value: mb.role || '' });
+      memberInputs.push({ name: name, role: role });
+      membersBox.appendChild(el('div.member-row', null, [
+        el('span.member-num', { text: w.U.toFaDigits(i + 1) }), name, role
+      ]));
+    });
+
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'سربرگ و فرم‌های اداری' }),
+      el('p.muted.tiny', {
+        text: 'فرم رأی و ابلاغ روی سربرگ چاپ می‌شوند؛ بالای صفحه به‌اندازهٔ ' +
+          'زیر خالی می‌ماند. بقیهٔ این‌ها هر بار یکسان‌اند و در فرم‌ها می‌نشینند.'
+      }),
+      el('div.letters-settings', null, [
+        lField('letterheadTop', 'فضای خالی بالای سربرگ (میلی‌متر)',
+          'ارتفاع سربرگ چاپیِ کاغذ شما', 'number'),
+        lField('orgTitle', 'عنوان کمیته در سربرگ فرم‌ها'),
+        lField('signerName', 'نام امضاکنندهٔ نامهٔ ابلاغ'),
+        lField('signerRole', 'سمت امضاکننده'),
+        lField('preparedBy', 'تهیه‌کننده (پای نامهٔ ابلاغ)')
+      ]),
+      el('div.field.wide', null, [
+        el('span.field-label', { text: 'اعضای کمیته (نام و سمت) — پای فرم رأی' }),
+        membersBox
+      ]),
+      el('div.field.wide', null, [
+        el('span.field-label', { text: 'رونوشت‌های نامهٔ ابلاغ — هر سطر یک مورد' }),
+        ccInput
+      ])
+    ]));
+
     var editor = listsEditor();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'لیست‌های کشویی' }), editor
@@ -12713,6 +13806,20 @@ else if (typeof exports === 'object'){
           Object.keys(slaInputs).forEach(function (k) {
             var v = parseInt(w.U.toLatinDigits(slaInputs[k].value), 10);
             sla[k] = (isFinite(v) && v > 0) ? Math.min(v, 365) : w.Worklist.SLA[k];
+          });
+          var top = parseInt(w.U.toLatinDigits(lInputs.letterheadTop.value), 10);
+          w.UILetters.saveConf({
+            letterheadTop: isFinite(top) && top >= 0 ? Math.min(top, 120)
+              : w.UILetters.DEFAULTS.letterheadTop,
+            orgTitle: lInputs.orgTitle.value.trim(),
+            signerName: lInputs.signerName.value.trim(),
+            signerRole: lInputs.signerRole.value.trim(),
+            preparedBy: lInputs.preparedBy.value.trim(),
+            members: memberInputs.map(function (mi) {
+              return { name: mi.name.value.trim(), role: mi.role.value.trim() };
+            }),
+            cc: ccInput.value.split('\n').map(function (t) { return t.trim(); })
+              .filter(Boolean)
           });
           M.saveSettings({
             user: userInput.value.trim(), orgName: orgInput.value.trim(), sla: sla
@@ -14098,6 +15205,9 @@ else if (typeof exports === 'object'){
     } else {
       headline = fa(sum.open) + ' پروندهٔ در جریان، همه در مهلت.';
     }
+    if (sum.transferred) {
+      headline += ' (' + fa(sum.transferred) + ' پرونده به کارشناس دیگری ارجاع شده.)';
+    }
 
     /* هر پنج کارت آمار یک شکل‌اند، پس هر پنج‌تا هم باید کار کنند: کارتی که
        مثل دکمه دیده می‌شود ولی کاری نمی‌کند، به کاربر دروغ می‌گوید. */
@@ -14149,6 +15259,10 @@ else if (typeof exports === 'object'){
           var seen = {};
           w.Notes.dueFollowUps(false).forEach(function (f) { seen[f.rec.id] = 1; });
           return Object.keys(seen);
+        }),
+      statCard(sum.transferred, 'ارجاع‌شده',
+        'پرونده‌هایی که به کارشناس دیگری ارجاع شده‌اند', function () {
+          return idsWhere(function (c) { return WL.isTransferred(c); });
         }),
       statCard(sum.closed, 'مختومه', 'پرونده‌های مختومه‌شده', function () {
         return idsWhere(function (c) { return WL.isClosed(c); });
@@ -14799,7 +15913,7 @@ else if (typeof exports === 'object'){
 
   // ------------------------------------------------------------ سنجه‌های سرآمد
   function heroRow(app, k) {
-    var tiles = [
+    var tiles = ([
       {
         label: 'پروندهٔ در جریان', value: fa(k.open),
         note: k.total ? fa(100 - k.closedPct) + '٪ از کل' : ''
@@ -14808,6 +15922,11 @@ else if (typeof exports === 'object'){
         label: 'مختومه‌شده', value: fa(k.closed),
         note: k.total ? fa(k.closedPct) + '٪ از کل' : ''
       },
+      // ارجاع‌شده جدا شمرده می‌شود: نه در جریان است نه مختومه
+      k.transferred ? {
+        label: 'ارجاع به کارشناس دیگر', value: fa(k.transferred),
+        note: 'از دست دبیرخانه خارج شده'
+      } : null,
       {
         label: 'میانهٔ روز تا طرح در کمیته',
         value: k.medianToCommittee == null ? '—' : fa(k.medianToCommittee),
@@ -14821,7 +15940,7 @@ else if (typeof exports === 'object'){
         value: k.oldestOpen ? fa(k.oldestOpen) : '—',
         note: k.oldestOpen ? 'روز از تاریخ ورود' : ''
       }
-    ];
+    ]).filter(Boolean);
 
     var delta = null;
     if (k.delta != null) {

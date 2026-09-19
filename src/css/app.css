@@ -849,6 +849,8 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
   white-space: nowrap;
 }
 .st-done { background: var(--moss-soft); border-color: var(--moss-line); color: #1F5B41; }
+/* ارجاع‌شده: خاکستریِ «دیگر دست ما نیست»، نه سبزِ مختومه */
+.st-moved { background: var(--paper-2); border-color: var(--line); color: var(--ink-500); }
 .st-wait { background: var(--brass-soft); border-color: var(--brass-line); color: var(--brass-ink); }
 .st-open { background: #EEEFF7; border-color: #D2D5E8; color: var(--ink-700); }
 .st-queued { background: #F1EDF8; border-color: #DCD2EC; color: #4A3574; }
@@ -856,6 +858,7 @@ label.mini { font-size: 12px; color: var(--muted); display: block; margin-top: 6
 .st-none { color: var(--muted); }
 .stat-fill.st-none { background: #A8A294; }
 .stat-fill.st-done { background: var(--moss); }
+.stat-fill.st-moved { background: var(--ink-400); }
 .stat-fill.st-wait { background: var(--brass); }
 .stat-fill.st-open { background: var(--ink-700); }
 .stat-fill.st-queued { background: #6A4FA3; }
@@ -1924,6 +1927,58 @@ select.input { cursor: pointer; }
 .note-done-box { margin-top: 10px; }
 .note-done-box > summary { cursor: pointer; font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
 
+/* پروندهٔ ارجاع‌شده: نه سبزِ مختومه، نه برنجیِ در جریان — خاکستریِ «دیگر
+   دست ما نیست»، با راه برگشت اگر اشتباه ثبت شده باشد. */
+.case-next.transferred {
+  background: var(--paper-2);
+  border-color: var(--line);
+  align-items: center;
+}
+.case-next.transferred .case-next-label {
+  background: var(--ink-500);
+  color: #fff;
+  border-color: var(--ink-500);
+}
+
+/* پنجرهٔ ارجاع */
+.transfer { font-size: 13px; }
+.transfer-lead { margin-bottom: 14px; }
+.transfer-head {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.transfer-head .field.wide { grid-column: 1 / -1; }
+.transfer-head .date-hint { display: none; }
+.transfer-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  max-height: 210px;
+  overflow-y: auto;
+}
+.transfer-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 2px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.transfer-name { font-weight: 600; }
+.transfer-stage { margin-inline-start: auto; font-size: 11.5px; color: var(--muted); }
+.transfer-summary {
+  margin-top: 14px;
+  padding: 10px 13px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.transfer-warn { color: var(--brass-ink); font-weight: 600; }
+.transfer-modal { width: min(720px, 100%); }
+
 .case-next.follow {
   margin-top: 9px;
   padding-top: 9px;
@@ -2194,13 +2249,37 @@ select.input { cursor: pointer; }
 }
 .fn-icon { color: var(--brand); }
 
+/* تنظیمات سربرگ و اعضای کمیته */
+.letters-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px 14px;
+  margin: 10px 0 14px;
+}
+.members-editor { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.member-row { display: grid; grid-template-columns: 22px 1fr 1fr; gap: 8px; align-items: center; }
+.member-num { font-size: 11.5px; color: var(--muted); text-align: center; }
+
+/* پنجرهٔ فرم‌های اداری */
+.letters-form { font-size: 13px; }
+.letters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.letters-grid .field.wide { grid-column: 1 / -1; }
+.letters-modal { width: min(680px, 100%); }
+
 /* ---------------------------------------------------------------- چاپ */
 #print-area { display: none; }
 
 @media print {
   @page { size: A4; margin: 14mm 12mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
-  .topbar, #main, .toast, .overlay, .dp-pop { display: none !important; }
+  /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
+  .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
+  .case-actions { display: none !important; }
   #print-area { display: block; font-size: 11pt; color: #000; }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
@@ -2215,6 +2294,82 @@ select.input { cursor: pointer; }
     border-right: 3px solid #000;
     margin: 0 0 5px;
   }
+  /* ------------------------------------------------ فرم‌های اداری
+     چیدمان این‌ها از روی نمونه‌های خود دبیرخانه است: کادر تمام‌دور،
+     برچسب و مقدار در یک خانه، و جای خالی برای دست‌نویس. */
+  .lf { font-size: 11pt; line-height: 1.9; }
+  .lf-title { font-size: 13pt; font-weight: 700; text-align: center; margin: 0 0 8px; }
+  .lf-subtitle { font-size: 12pt; font-weight: 700; text-align: center; margin: 0 0 14px; }
+  .lf-verdict-mark { font-size: 12pt; font-weight: 700; text-align: center; margin: 0 0 12px; }
+  .lf-h3 { font-size: 11pt; font-weight: 700; margin: 10px 0 4px; }
+  .lf-para { margin: 0 0 8px; }
+  .lf-justify { text-align: justify; }
+  .lf-bold { font-weight: 700; }
+
+  .lf-summary { width: 100%; border-collapse: collapse; font-size: 11pt; }
+  .lf-summary th, .lf-summary td {
+    border: 1px solid #000;
+    padding: 5px 8px;
+    text-align: right;
+    vertical-align: top;
+  }
+  .lf-summary th { width: 160px; font-weight: 700; }
+  .lf-summary tr.lf-tall td, .lf-summary tr.lf-tall th { height: 42mm; }
+  .lf-summary tr:nth-last-child(2) td { height: 18mm; }
+
+  .lf-grid { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 10px; }
+  .lf-grid td {
+    border: 1px solid #000;
+    padding: 5px 7px;
+    text-align: right;
+    vertical-align: top;
+  }
+  .lf-k { font-weight: 700; }
+  .lf-k::after { content: ': '; }
+  .lf-v { font-weight: 400; }
+  .lf-line { display: inline-block; min-width: 60%; }
+
+  .lf-box { border: 1px solid #000; padding: 8px; margin-top: 8px; }
+  .lf-box-head { margin: 0 0 6px; font-weight: 700; }
+  .lf-blank { height: 88mm; }
+  .lf-sign-row { display: flex; justify-content: space-between; font-weight: 700; }
+
+  .lf-verdict-box { border: 1px solid #000; padding: 8px; margin: 8px 0 14px; }
+  .lf-verdict-text { min-height: 18mm; margin: 4px 0 6px; text-align: justify; }
+  .lf-final { font-weight: 700; margin: 0; }
+
+  .lf-members {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px 8px;
+    margin: 8px 0 10px;
+    text-align: center;
+    break-inside: avoid;
+  }
+  .lf-member-name { font-weight: 700; font-size: 10pt; }
+  .lf-member-role { font-size: 9.5pt; }
+
+  .lf-notice { border-top: 1px solid #000; padding-top: 10px; break-inside: avoid; }
+  .lf-notice-row { margin-bottom: 8px; font-weight: 700; font-size: 10pt; }
+
+  .lf-letter-no { text-align: left; font-size: 10pt; margin-bottom: 10px; }
+  .lf-to { font-weight: 700; margin-bottom: 10px; line-height: 2; }
+  .lf-subject { margin-top: 2px; }
+  .lf-quote {
+    margin: 8px 0;
+    padding: 6px 10px;
+    font-weight: 700;
+    text-align: justify;
+    border-inline-start: 2px solid #000;
+  }
+  .lf-signer { margin-top: 14mm; text-align: center; width: 45%; margin-inline-start: auto; }
+  .lf-signer-name { font-weight: 700; }
+  .lf-foot { margin-top: 10mm; break-inside: avoid; }
+  .lf-cc { font-size: 8.5pt; }
+  .lf-cc-head { font-weight: 700; }
+  .lf-cc-list { margin: 2px 0 0; padding-inline-start: 14px; line-height: 1.7; }
+  .lf-prepared { font-size: 8.5pt; margin-top: 4px; }
+
   .p-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
   .p-table th, .p-table td { border: 1px solid #999; padding: 3px 6px; text-align: right; vertical-align: top; }
   .p-table th { background: #f3f3f3; width: 190px; font-weight: 700; }
@@ -2548,7 +2703,7 @@ select.input { cursor: pointer; }
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
   }
-  .case-back, .case-print, .case-delete { display: none; }
+  .case-back, .case-print, .case-delete, .case-transfer, .case-forms { display: none; }
   .case-actions > .spacer { display: none; }   /* وگرنه «⋯» از نوار بیرون می‌افتد */
   .case-more { display: grid; place-items: center; }
   .case-actions .btn { flex: 1; min-height: 42px; }

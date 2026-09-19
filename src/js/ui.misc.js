@@ -849,6 +849,59 @@
       slaBox
     ]));
 
+    /* سربرگ و فرم‌های اداری: چیزهایی که هر بار یکی‌اند و نباید هر بار
+       پرسیده شوند — اندازهٔ سربرگ، امضاکننده، اعضای کمیته و رونوشت‌ها. */
+    var lconf = w.UILetters.conf();
+    var lInputs = {};
+    function lField(key, label, hint, type) {
+      var input = type === 'area'
+        ? el('textarea.input.area', { rows: '3' })
+        : el('input.input.small', { type: type || 'text' });
+      input.value = type === 'lines' ? (lconf[key] || []).join('\n') : (lconf[key] || '');
+      lInputs[key] = input;
+      return el('label.field' + (type === 'area' || type === 'lines' ? '.wide' : ''), null, [
+        el('span.field-label', { text: label, title: hint || '' }), input
+      ]);
+    }
+    var ccInput = el('textarea.input.area', { rows: '5' });
+    ccInput.value = (lconf.cc || []).join('\n');
+    lInputs.cc = ccInput;
+
+    var membersBox = el('div.members-editor');
+    var memberInputs = [];
+    (lconf.members || []).forEach(function (mb, i) {
+      var name = el('input.input.small', { type: 'text', value: mb.name || '' });
+      var role = el('input.input.small', { type: 'text', value: mb.role || '' });
+      memberInputs.push({ name: name, role: role });
+      membersBox.appendChild(el('div.member-row', null, [
+        el('span.member-num', { text: w.U.toFaDigits(i + 1) }), name, role
+      ]));
+    });
+
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'سربرگ و فرم‌های اداری' }),
+      el('p.muted.tiny', {
+        text: 'فرم رأی و ابلاغ روی سربرگ چاپ می‌شوند؛ بالای صفحه به‌اندازهٔ ' +
+          'زیر خالی می‌ماند. بقیهٔ این‌ها هر بار یکسان‌اند و در فرم‌ها می‌نشینند.'
+      }),
+      el('div.letters-settings', null, [
+        lField('letterheadTop', 'فضای خالی بالای سربرگ (میلی‌متر)',
+          'ارتفاع سربرگ چاپیِ کاغذ شما', 'number'),
+        lField('orgTitle', 'عنوان کمیته در سربرگ فرم‌ها'),
+        lField('signerName', 'نام امضاکنندهٔ نامهٔ ابلاغ'),
+        lField('signerRole', 'سمت امضاکننده'),
+        lField('preparedBy', 'تهیه‌کننده (پای نامهٔ ابلاغ)')
+      ]),
+      el('div.field.wide', null, [
+        el('span.field-label', { text: 'اعضای کمیته (نام و سمت) — پای فرم رأی' }),
+        membersBox
+      ]),
+      el('div.field.wide', null, [
+        el('span.field-label', { text: 'رونوشت‌های نامهٔ ابلاغ — هر سطر یک مورد' }),
+        ccInput
+      ])
+    ]));
+
     var editor = listsEditor();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'لیست‌های کشویی' }), editor
@@ -903,6 +956,20 @@
           Object.keys(slaInputs).forEach(function (k) {
             var v = parseInt(w.U.toLatinDigits(slaInputs[k].value), 10);
             sla[k] = (isFinite(v) && v > 0) ? Math.min(v, 365) : w.Worklist.SLA[k];
+          });
+          var top = parseInt(w.U.toLatinDigits(lInputs.letterheadTop.value), 10);
+          w.UILetters.saveConf({
+            letterheadTop: isFinite(top) && top >= 0 ? Math.min(top, 120)
+              : w.UILetters.DEFAULTS.letterheadTop,
+            orgTitle: lInputs.orgTitle.value.trim(),
+            signerName: lInputs.signerName.value.trim(),
+            signerRole: lInputs.signerRole.value.trim(),
+            preparedBy: lInputs.preparedBy.value.trim(),
+            members: memberInputs.map(function (mi) {
+              return { name: mi.name.value.trim(), role: mi.role.value.trim() };
+            }),
+            cc: ccInput.value.split('\n').map(function (t) { return t.trim(); })
+              .filter(Boolean)
           });
           M.saveSettings({
             user: userInput.value.trim(), orgName: orgInput.value.trim(), sla: sla
