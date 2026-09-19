@@ -881,12 +881,16 @@
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'سربرگ و فرم‌های اداری' }),
       el('p.muted.tiny', {
-        text: 'فرم رأی و ابلاغ روی سربرگ چاپ می‌شوند؛ بالای صفحه به‌اندازهٔ ' +
-          'زیر خالی می‌ماند. بقیهٔ این‌ها هر بار یکسان‌اند و در فرم‌ها می‌نشینند.'
+        text: 'فرم تفهیم اتهام، رأی و ابلاغ روی سربرگ ساخته می‌شوند؛ دو ' +
+          'اندازهٔ زیر خالی می‌ماند تا متن روی چاپِ سازمان نیفتد. هر دو را ' +
+          'با خط‌کش از لبهٔ خودِ کاغذ اندازه بگیرید. بقیهٔ این‌ها هر بار ' +
+          'یکسان‌اند و در فرم‌ها می‌نشینند.'
       }),
       el('div.letters-settings', null, [
-        lField('letterheadTop', 'فضای خالی بالای سربرگ (میلی‌متر)',
-          'ارتفاع سربرگ چاپیِ کاغذ شما', 'number'),
+        lField('letterheadTop', 'فاصله از بالای سربرگ (میلی‌متر)',
+          'از لبهٔ بالای کاغذ تا جایی که چاپ سربرگ تمام می‌شود', 'number'),
+        lField('letterheadRight', 'فاصله از سمت راست سربرگ (میلی‌متر)',
+          'از لبهٔ راست کاغذ تا جایی که متن می‌تواند شروع شود', 'number'),
         lField('orgTitle', 'عنوان کمیته در سربرگ فرم‌ها'),
         lField('signerName', 'نام امضاکنندهٔ نامهٔ ابلاغ'),
         lField('signerRole', 'سمت امضاکننده'),
@@ -957,10 +961,14 @@
             var v = parseInt(w.U.toLatinDigits(slaInputs[k].value), 10);
             sla[k] = (isFinite(v) && v > 0) ? Math.min(v, 365) : w.Worklist.SLA[k];
           });
-          var top = parseInt(w.U.toLatinDigits(lInputs.letterheadTop.value), 10);
+          var mmOf = function (key, max) {
+            var v = parseInt(w.U.toLatinDigits(lInputs[key].value), 10);
+            return (isFinite(v) && v >= 0) ? Math.min(v, max)
+              : w.UILetters.DEFAULTS[key];
+          };
           w.UILetters.saveConf({
-            letterheadTop: isFinite(top) && top >= 0 ? Math.min(top, 120)
-              : w.UILetters.DEFAULTS.letterheadTop,
+            letterheadTop: mmOf('letterheadTop', 120),
+            letterheadRight: mmOf('letterheadRight', 80),
             orgTitle: lInputs.orgTitle.value.trim(),
             signerName: lInputs.signerName.value.trim(),
             signerRole: lInputs.signerRole.value.trim(),

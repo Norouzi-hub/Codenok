@@ -126,9 +126,35 @@
     });
   }
 
+  /* روی  file://  کروم نام غیرلاتین را از  a[download]  نمی‌پذیرد: مبدأ
+     opaque است و فایل «download» ذخیره می‌شود — بی‌پسوند، یعنی ورد و اکسل
+     هم بازش نمی‌کنند. راه‌حلی برای نگه‌داشتن نام فارسی نیست، پس دست‌کم
+     پسوند را نجات می‌دهیم تا فایل با برنامهٔ درست باز شود. نام‌هایی که خودِ
+     برنامه می‌سازد (فرم‌ها، اکسل، پشتیبان) از اول لاتین‌اند. */
+  function safeName(filename) {
+    var name = String(filename || '').replace(/[\\/:*?"<>|]/g, '-');
+    if (!/[^\x20-\x7E]/.test(name)) return name;
+    var dot = name.lastIndexOf('.');
+    var ext = dot > 0 ? name.slice(dot) : '';
+    var base = (dot > 0 ? name.slice(0, dot) : name)
+      .replace(/[^\x20-\x7E]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (/[^\x20-\x7E]/.test(ext)) ext = '';   // پسوند فارسی به کار نمی‌آید
+    return (base || 'file-' + Date.now().toString(36)) + ext;
+  }
+
   function download(filename, blob) {
-    var url = URL.createObjectURL(blob);
-    var a = el('a', { href: url, download: filename });
+    var name = safeName(filename);
+    /* اگر خودِ Blob یک File با نام باشد، کروم همان نام را می‌گذارد؛
+       این‌طور روی  file://  هم نام از دست نمی‌رود. */
+    var named = blob;
+    try {
+      if (typeof File === 'function' && !(blob instanceof File)) {
+        named = new File([blob], name,
+          { type: blob.type || 'application/octet-stream' });
+      }
+    } catch (e) { named = blob; }
+    var url = URL.createObjectURL(named);
+    var a = el('a', { href: url, download: name });
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -142,6 +168,7 @@
   w.U = {
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,
-    modal: modal, confirmBox: confirmBox, download: download, uid: uid
+    modal: modal, confirmBox: confirmBox, download: download,
+    safeName: safeName, uid: uid
   };
 })(window);

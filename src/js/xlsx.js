@@ -35,8 +35,12 @@
     return (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
   }
 
-  /** files: [{name, data: Uint8Array}] -> Blob */
-  function zip(files) {
+  /**
+   * files: [{name, data: Uint8Array}] -> Blob
+   * mime: نوع خروجی؛ پیش‌فرض xlsx، ولی همین نویسندهٔ ZIP برای docx هم به کار
+   * می‌رود (هر دو بستهٔ OOXML‌اند).
+   */
+  function zip(files, mime) {
     var now = new Date(), time = dosTime(now), date = dosDate(now);
     var chunks = [], central = [], offset = 0;
 
@@ -88,8 +92,10 @@
     edv.setUint32(12, centralSize, true);
     edv.setUint32(16, offset, true);
 
-    return new Blob(chunks.concat(central, [end]),
-      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    return new Blob(chunks.concat(central, [end]), {
+      type: mime ||
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
   }
 
   // ------------------------------------------------------------- XLSX writer
