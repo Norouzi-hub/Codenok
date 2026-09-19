@@ -1,0 +1,129 @@
+/* موبایل: تشخیص صفحهٔ کوچک، شیت پایین، و قابلیت‌هایی که روی موبایل نیستند */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el;
+  var PHONE = '(max-width: 720px)';
+  var mq = w.matchMedia ? w.matchMedia(PHONE) : { matches: false, addListener: function () {} };
+  var listeners = [];
+
+  function isPhone() { return !!mq.matches; }
+
+  /** لمسی بودن دستگاه — برای دکمه‌هایی که با hover ظاهر می‌شوند */
+  function isTouch() {
+    return ('ontouchstart' in w) || (navigator.maxTouchPoints > 0);
+  }
+
+  function onChange(fn) { listeners.push(fn); }
+
+  var fire = w.U.debounce(function () {
+    listeners.forEach(function (f) {
+      try { f(isPhone()); } catch (e) { /* یک شنونده نباید بقیه را بخواباند */ }
+    });
+  }, 120);
+  if (mq.addEventListener) mq.addEventListener('change', fire);
+  else if (mq.addListener) mq.addListener(fire);
+
+  /* --------------------------------------------------------- قابلیت‌های فایل
+     مرورگرهای موبایل File System Access API ندارند: نه می‌شود به فایل دیتابیس
+     روی دیسک وصل شد، نه پوشهٔ مستندات را باز کرد. به‌جای خطا، صریح می‌گوییم. */
+  function canLinkFile() { return typeof w.showSaveFilePicker === 'function'; }
+  function canPickFolder() { return typeof w.showDirectoryPicker === 'function'; }
+
+  var NO_FILE_MSG = 'مرورگرهای موبایل اجازهٔ نوشتن روی فایل دیسک را نمی‌دهند. ' +
+    'داده‌ها در خود مرورگر ذخیره می‌شود؛ برای انتقال یا نگه‌داری، از «پشتیبان» ' +
+    'خروجی بگیرید.';
+  var NO_FOLDER_MSG = 'روی موبایل، پوشهٔ مستندات روی دیسک در دسترس نیست. ' +
+    'مستندات هر پرونده را روی رایانه اضافه کنید.';
+
+
+  /* ------------------------------------------------------------- آیکن‌ها
+     یک خانواده خط‌نازک، نه شکلک رنگی؛ همان زبان بصری بقیهٔ برنامه. */
+  function svg(d) {
+    return '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  }
+  var ICONS = {
+    plus: svg('<path d="M12 5.5v13M5.5 12h13"/>'),
+    imp: svg('<path d="M12 15.5V4.5"/><path d="M8.5 8L12 4.5 15.5 8"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>'),
+    exp: svg('<path d="M12 4.5v11"/><path d="M8.5 12l3.5 3.5L15.5 12"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>'),
+    db: svg('<ellipse cx="12" cy="6.5" rx="6.5" ry="2.5"/><path d="M5.5 6.5v11c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-11"/><path d="M5.5 12c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5"/>'),
+    backup: svg('<path d="M12 3.5l6.5 2.6v5.2c0 3.8-2.7 7-6.5 8.2-3.8-1.2-6.5-4.4-6.5-8.2V6.1z"/><path d="M9.3 11.8l2 2 3.4-3.6"/>'),
+    lock: svg('<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'),
+    gear: svg('<circle cx="12" cy="12" r="2.8"/><path d="M12 3.5l1.1 2.2 2.4-.5 1 2.2 2.2 1.1-.5 2.4.5 2.4-2.2 1.1-1 2.2-2.4-.5L12 20.5l-1.1-2.2-2.4.5-1-2.2-2.2-1.1.5-2.4-.5-2.4 2.2-1.1 1-2.2 2.4.5z"/>'),
+    print: svg('<path d="M7 9.5V4.5h10v5"/><rect x="4.5" y="9.5" width="15" height="6.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>'),
+    columns: svg('<rect x="4.5" y="5" width="15" height="14" rx="1.5"/><path d="M9.5 5v14M14.5 5v14"/>'),
+    check: svg('<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><path d="M8.3 12.2l2.6 2.6 4.8-5.2"/>'),
+    filter: svg('<path d="M4.5 6h15l-5.8 6.6v5.2l-3.4 1.7v-6.9z"/>'),
+    // شدت یافته‌ها در گزارش — همان خانوادهٔ خطی، نه شکلک
+    alert: svg('<path d="M12 4.8L20.5 19.5h-17z"/><path d="M12 10.3v4"/><path d="M12 16.8v.1"/>'),
+    clock: svg('<circle cx="12" cy="12" r="7.5"/><path d="M12 7.8V12l2.8 1.8"/>'),
+    info: svg('<circle cx="12" cy="12" r="7.5"/><path d="M12 11.3v4.5"/><path d="M12 8.4v.1"/>'),
+    ok: svg('<circle cx="12" cy="12" r="7.5"/><path d="M8.6 12.2l2.5 2.5 4.4-5"/>'),
+    file: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/>'),
+    fileText: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M9 12.5h6M9 15.5h4"/>'),
+    fileSheet: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M8.8 12.3h6.4M8.8 15.6h6.4M12 12.3v4.9"/>'),
+    filePdf: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M8.6 16.4c2.2-.6 3.6-2.2 4.3-4 .5-1.3-.9-1.9-1.4-.7-.6 1.5.4 3.7 2.4 4.4"/>'),
+    fileImage: svg('<rect x="5" y="5.5" width="14" height="13" rx="1.8"/><circle cx="9.3" cy="9.8" r="1.2"/><path d="M5.6 16.3l3.6-3.3 2.6 2.3 2.6-2.6 4 3.8"/>'),
+    fileZip: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M10.6 5v2.2M12.4 7.2v2.2M10.6 9.4v2.2"/><rect x="10" y="13" width="3" height="3.4" rx="1"/>'),
+    handoff: svg('<path d="M4.5 9.5h10"/><path d="M11.5 6.2L14.8 9.5l-3.3 3.3"/><path d="M19.5 14.5h-10"/><path d="M12.5 11.2L9.2 14.5l3.3 3.3"/>'),
+    paperclip: svg('<path d="M17.5 11.2l-6 6a3.4 3.4 0 0 1-4.8-4.8l7-7a2.3 2.3 0 0 1 3.2 3.2l-6.9 7a1.1 1.1 0 0 1-1.6-1.6l6.2-6.2"/>'),
+    trash: svg('<path d="M5 7h14"/><path d="M10 7V5.2h4V7"/><path d="M6.5 7l.8 11.3A1.5 1.5 0 0 0 8.8 19.7h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.5 10.5v6M13.5 10.5v6"/>'),
+    chevronRight: svg('<path d="M9.5 5.5L16 12l-6.5 6.5"/>'),
+    chevronLeft: svg('<path d="M14.5 5.5L8 12l6.5 6.5"/>'),
+    download: svg('<path d="M12 4.5v10"/><path d="M8.2 10.8L12 14.5l3.8-3.7"/><path d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"/>'),
+    upload: svg('<path d="M12 19.5v-10"/><path d="M8.2 13.2L12 9.5l3.8 3.7"/><path d="M5 8V5.5A1.5 1.5 0 0 1 6.5 4h11A1.5 1.5 0 0 1 19 5.5V8"/>'),
+    pencil: svg('<path d="M16.2 4.6l3.2 3.2"/><path d="M5 19h3.2L19.4 7.8a1.6 1.6 0 0 0 0-2.3l-.9-.9a1.6 1.6 0 0 0-2.3 0L5 15.8z"/>'),
+    eye: svg('<path d="M2.8 12S6.4 6 12 6s9.2 6 9.2 6-3.6 6-9.2 6-9.2-6-9.2-6z"/><circle cx="12" cy="12" r="2.6"/>')
+  };
+  function icon(name) { return ICONS[name] || ''; }
+
+  /** شیت پایین صفحه: فهرستی از اقدام‌ها، مخصوص لمس */
+  function sheet(title, items) {
+    var overlay = el('div.overlay.sheet-overlay');
+    var close = function () {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    };
+    var onKey = function (e) { if (e.key === 'Escape') close(); };
+
+    var list = el('div.sheet-list');
+    (items || []).forEach(function (it) {
+      if (!it) return;
+      if (it.node) { list.appendChild(it.node); return; }
+      if (it.sep) { list.appendChild(el('div.sheet-sep')); return; }
+      list.appendChild(el('button.sheet-item' + (it.kind ? '.' + it.kind : ''), {
+        type: 'button',
+        onclick: function () { close(); if (it.onclick) it.onclick(); }
+      }, [
+        it.icon ? el('span.sheet-icon', { html: icon(it.icon), 'aria-hidden': 'true' })
+          : el('span.sheet-icon'),
+        el('span.sheet-text', null, [
+          el('b', { text: it.label }),
+          it.hint ? el('small', { text: it.hint }) : null
+        ])
+      ]));
+    });
+
+    var box = el('div.sheet', null, [
+      el('div.sheet-head', null, [
+        el('span.sheet-grip', { 'aria-hidden': 'true' }),
+        el('h3', { text: title || '' })
+      ]),
+      list,
+      el('button.btn.block.sheet-close', { type: 'button', text: 'بستن', onclick: close })
+    ]);
+    overlay.appendChild(box);
+    overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(overlay);
+    return { root: box, close: close };
+  }
+
+  w.Mobile = {
+    isPhone: isPhone, isTouch: isTouch, onChange: onChange, sheet: sheet,
+    canLinkFile: canLinkFile, canPickFolder: canPickFolder, icon: icon,
+    NO_FILE_MSG: NO_FILE_MSG, NO_FOLDER_MSG: NO_FOLDER_MSG
+  };
+})(window);
