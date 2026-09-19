@@ -37,7 +37,8 @@ window.FIELDS = [
     "label": "سال رسیدگی",
     "type": "text",
     "group": "case",
-    "col": 8
+    "col": 8,
+    "hidden": true
   },
   {
     "key": "intakeDate",

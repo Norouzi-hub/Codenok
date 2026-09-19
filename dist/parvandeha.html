@@ -634,6 +634,38 @@ button.week-day:hover { border-color: var(--brass-line); transform: translateY(-
   position: relative;
   transition: background .12s;
 }
+/* سطری که یادداشت دارد، یک ردیف دوم می‌گیرد — تمام عرض، زیر همه */
+.wl-row.has-note { grid-template-rows: auto auto; row-gap: 4px; }
+.wl-note {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-inline-start: 2px solid var(--brass-line);
+  border-radius: 0 6px 6px 0;
+  padding: 3px 8px;
+}
+.wl-note.late { border-inline-start-color: var(--cinnabar); }
+.wl-note-icon { line-height: 0; color: var(--ink-400); flex: 0 0 auto; }
+.wl-note-icon svg { width: 13px; height: 13px; }
+.wl-note-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-note-due {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.wl-note.late .wl-note-due { color: var(--cinnabar); font-weight: 600; }
+
 .wl-rows > .wl-row:last-child { border-bottom: 0; }
 .wl-row:hover { background: var(--paper); }
 .wl-row.overdue::before {
@@ -1107,9 +1139,37 @@ select.input { cursor: pointer; }
 }
 .date-btn:hover { background: var(--paper-2); color: var(--ink-800); }
 .date-hint { font-size: 11px; color: var(--muted); min-height: 15px; }
-.date-hint.bad { color: var(--cinnabar); }
+/* پیام خطا باید همه‌جا دیده شود، حتی جایی که راهنمای تاریخ پنهان است */
+.date-hint.bad { color: var(--cinnabar); display: block !important; }
+.input.invalid {
+  border-color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+}
+.input.invalid:focus { box-shadow: 0 0 0 3px var(--cinnabar-line); }
+/* فیلدی که جلوی ذخیره را گرفته، باید پیدا باشد */
+.field.has-error .field-label { color: var(--cinnabar); }
+.field-error {
+  font-size: 11px;
+  color: var(--cinnabar);
+  margin-top: 3px;
+}
 
 .warn-box { margin-bottom: 12px; }
+/* خطاهایی که جلوی ذخیره را گرفته‌اند — هر کدام کلیک‌شدنی، تا کاربر دنبال
+   فیلد نگردد. جدا از warn-box است تا هشدار «شمارهٔ تکراری» را پاک نکند. */
+.err-box {
+  margin-bottom: 12px;
+  padding: 10px 13px;
+  border: 1px solid var(--cinnabar-line);
+  background: var(--cinnabar-soft);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--cinnabar);
+  animation: access-in .18s ease-out;
+}
+.err-box ul { margin: 6px 0 0; padding-inline-start: 18px; }
+.err-box li { margin-bottom: 3px; }
+.err-box .linkish { color: var(--cinnabar); text-align: start; }
 .warn {
   background: var(--brass-soft);
   border: 1px solid var(--brass-line);
@@ -3481,7 +3541,8 @@ window.FIELDS = [
     "label": "سال رسیدگی",
     "type": "text",
     "group": "case",
-    "col": 8
+    "col": 8,
+    "hidden": true
   },
   {
     "key": "intakeDate",
@@ -7332,14 +7393,39 @@ window.SEED_CASES = [
     });
     var hint = el('span.date-hint');
 
+    /*
+     * تاریخِ نادرست پاک نمی‌شود.
+     *
+     * قبلاً هر چیزی که J.parse نمی‌فهمید، بی‌صدا از فیلد پاک می‌شد: کاربر
+     * یک رقم را اشتباه می‌زد و نوشته‌اش می‌پرید، بدون هیچ پیامی. حالا متن
+     * سر جایش می‌ماند، فیلد قرمز می‌شود و زیرش می‌نویسد چه شکلی درست است.
+     */
+    /* J.parse وقتی چیزی را نفهمد، همان متن خام را برمی‌گرداند نه رشتهٔ
+       خالی. پس «قابل تجزیه بودن» ملاک نیست؛ باید تاریخِ واقعی دربیاید —
+       وگرنه «۱۴۰۴/۹۹/۹۹» بی‌صدا به‌عنوان متن در فیلد تاریخ ذخیره می‌شد. */
+    function isBad() {
+      return !!input.value.trim() && !J.unpack(J.parse(input.value));
+    }
+
     function refreshHint() {
       var v = J.parse(input.value);
       var p = J.unpack(v);
-      hint.textContent = p ? (J.weekday(p.jy, p.jm, p.jd) + '، ' + J.format(v, { long: true })) : '';
-      hint.classList.toggle('bad', !!input.value.trim() && !p);
+      var bad = isBad();
+      hint.textContent = p
+        ? (J.weekday(p.jy, p.jm, p.jd) + '، ' + J.format(v, { long: true }))
+        : (bad ? 'تاریخ خوانده نشد — به شکل ۱۴۰۴/۰۷/۲۰ بنویسید' : '');
+      hint.classList.toggle('bad', bad);
+      input.classList.toggle('invalid', bad);
+      input.setAttribute('aria-invalid', bad ? 'true' : 'false');
     }
 
+    /** v از تقویم یا از متنِ درست می‌آید؛ متنِ نادرست دست نمی‌خورد */
     function commit(v) {
+      if (isBad()) {
+        refreshHint();          // نوشتهٔ کاربر می‌ماند تا خودش درستش کند
+        onChange('');
+        return;
+      }
       input.value = v ? J.format(v, { latin: true }) : '';
       refreshHint();
       onChange(v);
@@ -7359,6 +7445,8 @@ window.SEED_CASES = [
     refreshHint();
     var wrap = el('div.date-field', null, [el('div.date-row', null, [input, btn]), hint]);
     wrap.getValue = function () { return J.parse(input.value); };
+    wrap.isInvalid = isBad;
+    wrap.raw = function () { return input.value; };
     wrap.setValue = function (v) { input.value = v ? J.format(v, { latin: true }) : ''; refreshHint(); };
     wrap.input = input;
     return wrap;
@@ -8879,13 +8967,29 @@ else if (typeof exports === 'object'){
    * قابل قضاوت نیستند و کنار گذاشته می‌شوند — تعدادشان در نتیجه برمی‌گردد
    * تا در رابط کاربری صادقانه نشان داده شود.
    */
+  /** سال رسیدگی: اگر ثبت نشده باشد، از تاریخ ورود درمی‌آید */
+  function yearOf(c) {
+    return String(c.year || (c.intakeDate ? String(c.intakeDate).slice(0, 4) : ''));
+  }
+
+  /** همهٔ سال‌هایی که در داده هست — برای فیلتر گزارش */
+  function years() {
+    var seen = Object.create(null), out = [];
+    M.state.cases.forEach(function (c) {
+      var y = yearOf(c);
+      if (y && !seen[y]) { seen[y] = 1; out.push(y); }
+    });
+    return out.sort();
+  }
+
   function scope(opts) {
     var range = opts.range || { from: '', to: '' };
     var baseField = opts.baseField || 'intakeDate';
     var undated = 0;
     var cases = M.state.cases.filter(function (c) {
       if (opts.expert && (c.expert || '') !== opts.expert) return false;
-      if (opts.year && (c.year || '') !== opts.year) return false;
+      // «سال رسیدگی» در فرم نیست؛ اگر خالی بود، سالِ تاریخ ورود مبناست
+      if (opts.year && yearOf(c) !== opts.year) return false;
       if (opts.placeType && (c.servicePlaceType || '') !== opts.placeType) return false;
       if (!range.from && !range.to) return true;
       var d = c[baseField];
@@ -9392,6 +9496,7 @@ else if (typeof exports === 'object'){
   }
 
   w.Report = {
+    years: years, yearOf: yearOf,
     DATE_BASES: DATE_BASES, GRANULARITY: GRANULARITY, presets: presets,
     build: build, rangeOf: rangeOf, previousRange: previousRange,
     scope: scope, kpis: kpis, trend: trend, funnel: funnel,
@@ -9444,6 +9549,31 @@ else if (typeof exports === 'object'){
   }
 
   function forCase(caseId) { return byCase[caseId] || []; }
+
+  /**
+   * تازه‌ترین یادداشتِ باز یک پرونده.
+   *
+   * برای جایی که فقط یک سطر جا هست — بالای پرونده و کنار سطر کارتابل —
+   * و باید در یک نگاه بگوید «اینجا چه خبر است». قرارِ پیگیری مقدم است،
+   * چون سررسید دارد؛ وگرنه آخرین یادداشت.
+   */
+  function headline(caseId) {
+    var open = forCase(caseId).filter(function (n) { return !n.done; });
+    if (!open.length) return null;
+    var withDue = open.filter(function (n) { return n.followUp; });
+    if (withDue.length) {
+      withDue.sort(function (a, b) { return a.followUp < b.followUp ? -1 : 1; });
+      return withDue[0];
+    }
+    return open.slice().sort(function (a, b) {
+      return (a.at || '') < (b.at || '') ? 1 : -1;
+    })[0];
+  }
+
+  /** چند یادداشت باز دارد */
+  function openCount(caseId) {
+    return forCase(caseId).filter(function (n) { return !n.done; }).length;
+  }
 
   /** پیگیری باز: یادداشتی با تاریخ پیگیری که هنوز انجام‌نشده علامت خورده */
   function openFollowUp(caseId) {
@@ -9559,6 +9689,7 @@ else if (typeof exports === 'object'){
     load: load, all: all, forCase: forCase, add: add, update: update,
     complete: complete, reopen: reopen, remove: remove,
     openFollowUp: openFollowUp, dueFollowUps: dueFollowUps, stats: stats,
+    headline: headline, openCount: openCount,
     clearMemory: clearMemory, preview: preview
   };
 })(window);
@@ -10474,6 +10605,81 @@ else if (typeof exports === 'object'){
     'استعلام حراست': 'out', 'نامهٔ ابلاغ رأی': 'out'
   };
 
+  /*
+   * نوع سند → فیلدهای پروندهٔ متناظرش.
+   *
+   * تا امروز فقط مسیر «دکمهٔ آلارم» تاریخ مرحله را پر می‌کرد؛ اگر همان سند
+   * را از تب مستندات یا از گیرهٔ کنار فیلد بارگذاری می‌کردید، هیچ فیلدی پر
+   * نمی‌شد. یعنی یک کار، سه رفتار. حالا این نقشه یک جاست و هر مسیری که
+   * سند ثبت کند، همین فیلدها را پر می‌کند.
+   *
+   * قاعده: فقط فیلدِ **خالی** پر می‌شود. چیزی که کاربر خودش نوشته، هیچ‌وقت
+   * با فرادادهٔ یک سند بازنویسی نمی‌شود.
+   */
+  var KIND_FIELDS = {
+    'نامهٔ وارده': { date: 'letterDate', no: 'letterNo' },
+    'گزارش بازرسی': { date: 'letterDate', no: 'letterNo' },
+    'حکم کارگزینی': { date: 'decreeDate' },
+    'نامهٔ رفع نواقص': { date: 'defectLetterDate', no: 'defectLetterNo' },
+    'دعوت‌نامهٔ جلسه': { date: 'invitationLetterDate', no: 'invitationLetterNo' },
+    'استعلام حراست': { date: 'securityOutLetterDate', no: 'securityOutLetterNo' },
+    'پاسخ حراست': {
+      date: 'securityInLetterDate', no: 'securityInLetterNo',
+      body: 'securityAnswerSubject'
+    },
+    'دفاعیهٔ کتبی': { date: 'defenseReceivedDate', body: 'defenseSummary' },
+    'نامهٔ پیگیری دفاعیات': { date: 'defenseChaseLetterDate' },
+    'مدارک تکمیلی': { date: 'docsCompleteDate' },
+    'نامهٔ حضور در جلسهٔ دفاع': {
+      date: 'hearingLetterDate', no: 'hearingLetterNo'
+    },
+    'صورت‌جلسهٔ کمیته': { date: 'committeeDate' },
+    'رأی کمیته': { date: 'verdictDate', no: 'committeeRegNo', body: 'verdictFull' },
+    'نامهٔ ابلاغ رأی': { date: 'noticeLetterDate', no: 'noticeLetterNo' },
+    'نتیجهٔ ابلاغ': { date: 'noticeResultDate' }
+  };
+
+  function fieldsForKind(kind) { return KIND_FIELDS[kind] || null; }
+
+  function labelOfField(key) {
+    var f = M.FIELD_BY_KEY[key];
+    return f ? String(f.label).replace(/\s*\(\d+\)\s*$/, '').trim() : key;
+  }
+
+  /**
+   * آنچه یک سند دربارهٔ پرونده می‌گوید، در خود پرونده هم ثبت می‌شود.
+   * برمی‌گرداند: فهرست فیلدهایی که پر شدند (برای پیام به کاربر).
+   */
+  function applyToCase(rec, doc) {
+    var map = fieldsForKind(doc && doc.kind);
+    if (!rec || !map || doc.scope === 'person') return Promise.resolve([]);
+    var fresh = M.get(rec.id) || rec;
+    var patch = {}, filled = [];
+
+    function take(key, value) {
+      if (!key || !value) return;
+      if (String(fresh[key] || '').trim()) return;     // دست‌نوشتهٔ کاربر مقدم است
+      patch[key] = value;
+      filled.push({ key: key, label: labelOfField(key), value: value });
+    }
+
+    take(map.date, doc.docDate);
+    take(map.no, doc.letterNo);
+    take(map.body, doc.body);
+
+    if (!filled.length) return Promise.resolve([]);
+    return M.applyPatches([{ id: fresh.id, patch: patch }], {
+      kind: 'doc-sync',
+      note: 'از روی سند «' + doc.kind + '»: ' +
+        filled.map(function (f) { return f.label; }).join('، ') + ' پر شد'
+    }).then(function () { return filled; });
+  }
+
+  /** سندهای جاریِ همین نوع در این پرونده — برای تشخیص تکراری */
+  function sameKind(caseId, kind) {
+    return current(caseId).filter(function (d) { return d.kind === kind; });
+  }
+
   function categoryOf(kind) { return KIND_CATEGORY[kind] || 'other'; }
   function directionOf(kind) { return KIND_DIRECTION[kind] || ''; }
 
@@ -10895,10 +11101,18 @@ else if (typeof exports === 'object'){
   }
 
   /** نسخهٔ تازه از یک سند؛ نسخهٔ قبلی روی دیسک دست‌نخورده می‌ماند */
-  function addVersion(rec, oldDoc, file) {
+  /**
+   * نسخهٔ تازه از یک سند.
+   * over: فرادادهٔ تازه، اگر کاربر داده باشد؛ وگرنه همان قبلی می‌ماند.
+   */
+  function addVersion(rec, oldDoc, file, over) {
+    over = over || {};
     var meta = {
-      kind: oldDoc.kind, title: oldDoc.title,
-      letterNo: oldDoc.letterNo, docDate: oldDoc.docDate
+      kind: over.kind || oldDoc.kind,
+      title: over.title || oldDoc.title,
+      letterNo: over.letterNo || oldDoc.letterNo,
+      body: over.body || oldDoc.body,
+      docDate: over.docDate || oldDoc.docDate
     };
     var nextVersion = Math.max.apply(null, forCase(rec.id)
       .filter(function (d) { return d.chain === oldDoc.chain; })
@@ -11347,6 +11561,8 @@ else if (typeof exports === 'object'){
     indexDocs: indexDocs, clearMemory: clearMemory,
     CATEGORIES: CATEGORIES, DIRECTIONS: DIRECTIONS,
     FIELD_KIND: FIELD_KIND, kindForField: kindForField, ofKind: ofKind,
+    KIND_FIELDS: KIND_FIELDS, fieldsForKind: fieldsForKind,
+    applyToCase: applyToCase, sameKind: sameKind,
     categoryOf: categoryOf, categoryLabel: categoryLabel,
     directionOf: directionOf, directionLabel: directionLabel,
     updateMeta: updateMeta, bundle: bundle,
@@ -13509,7 +13725,7 @@ else if (typeof exports === 'object'){
     var dirty = false;
     var activeTab = app.state.formTab || w.GROUPS[0].key;
 
-    var saveBtn, warnBox, headTitle, dirtyChip;
+    var saveBtn, warnBox, errBox, headTitle, dirtyChip;
 
     function markDirty() {
       if (dirty) return;
@@ -13585,14 +13801,80 @@ else if (typeof exports === 'object'){
 
     function collect() { return draft; }
 
+    /**
+     * بررسی پیش از ذخیره.
+     *
+     * نکتهٔ مهم: هیچ‌کدام از این مسیرها نباید app.render() صدا بزند. آن
+     * تابع کل فرم را از نو می‌سازد و پیش‌نویسِ تایپ‌شده را دور می‌ریزد —
+     * یعنی کاربر یک فیلد را اشتباه می‌زد و همهٔ کارش پاک می‌شد. به‌جایش
+     * فقط تبِ درست باز و همان فیلد روشن می‌شود؛ draft دست‌نخورده می‌ماند.
+     */
+    function problems() {
+      var out = [];
+      if (!draft.caseNo) {
+        out.push({ field: 'caseNo', text: 'شمارهٔ پرونده الزامی است.' });
+      }
+      // تاریخی که خوانده نشده، نباید بی‌صدا نادیده گرفته شود
+      w.U.$$('.date-field', panel).forEach(function (node) {
+        if (!node.isInvalid || !node.isInvalid()) return;
+        var wrap = node.closest('[data-field]');
+        out.push({
+          field: wrap ? wrap.dataset.field : '',
+          text: 'تاریخ «' + (wrap ? labelOf(wrap.dataset.field) : '') +
+            '» خوانده نشد: ' + node.raw()
+        });
+      });
+      return out;
+    }
+
+    function labelOf(key) {
+      var found = '';
+      M.FIELDS.forEach(function (f) { if (f.key === key) found = cleanLabel(f.label); });
+      return found || key;
+    }
+
+    function showProblems(list) {
+      w.U.$$('.field.has-error', panel).forEach(function (n) {
+        n.classList.remove('has-error');
+        var e = n.querySelector('.field-error');
+        if (e) e.remove();
+      });
+      w.U.clear(errBox);
+      if (!list.length) { errBox.style.display = 'none'; return; }
+      errBox.style.display = '';
+      errBox.appendChild(el('b', {
+        text: list.length === 1 ? 'یک مورد باید درست شود:'
+          : w.U.toFaDigits(list.length) + ' مورد باید درست شود:'
+      }));
+      errBox.appendChild(el('ul', null, list.map(function (p) {
+        return el('li', null, [
+          el('button.linkish', {
+            type: 'button', text: p.text,
+            onclick: function () { if (p.field) jumpToField(p.field); }
+          })
+        ]);
+      })));
+      // نشانه‌گذاری روی خود فیلدها، برای وقتی کاربر همان تب است
+      list.forEach(function (p) {
+        var node = panel.querySelector('[data-field="' + p.field + '"]');
+        if (!node) return;
+        node.classList.add('has-error');
+        if (!node.querySelector('.field-error')) {
+          node.appendChild(el('div.field-error', { text: p.text }));
+        }
+      });
+      jumpToField(list[0].field);
+    }
+
     function doSave() {
       var data = collect();
-      if (!data.caseNo) {
-        w.U.toast('شمارهٔ پرونده الزامی است.', 'bad');
-        app.state.formTab = tabOf('case').key;
-        app.render();
+      var bad = problems();
+      if (bad.length) {
+        showProblems(bad);
+        w.U.toast(bad[0].text, 'bad');
         return;
       }
+      showProblems([]);
       // جلوی ساخته شدن نسخهٔ تکراری از یک پرونده گرفته می‌شود
       var dup = M.duplicateCaseNo(data.caseNo, existing ? existing.id : null);
       if (dup) {
@@ -13822,33 +14104,6 @@ else if (typeof exports === 'object'){
       }, 60);
     }
 
-    /**
-     * بعد از بارگذاری سند، تاریخ مرحله را پر می‌کند.
-     *
-     * فقط وقتی فیلد خالی است — اگر کاربر خودش تاریخی گذاشته، دست نمی‌خورد.
-     * تاریخ از خود سند می‌آید، نه از امروز: نامه‌ای که دیروز رسیده، تاریخش
-     * دیروز است.
-     */
-    function advanceStage(c, res) {
-      var done = function () { app.render(); };
-      if (!c || !c.field || !existing) return done();
-      var date = (res && res.docDate) || J.today();
-      var fresh = M.get(existing.id);
-      if (!fresh || fresh[c.field]) return done();
-      var patch = {};
-      patch[c.field] = date;
-      var label = '';
-      M.FIELDS.forEach(function (f) { if (f.key === c.field) label = f.label; });
-      M.applyPatches([{ id: existing.id, patch: patch }], {
-        kind: 'stage',
-        note: 'با ثبت سند، «' + cleanLabel(label) + '» روی ' + J.format(date) + ' تنظیم شد'
-      }).then(function () {
-        w.U.toast('«' + cleanLabel(label) + '» روی ' + J.format(date) +
-          ' ثبت شد و مرحله جلو رفت.', 'good');
-        done();
-      }).catch(done);
-    }
-
     /** دکمهٔ آلارم: همان کاری که اقدام بعدی می‌خواهد، با یک کلیک */
     function ctaButton(action) {
       var c = w.Worklist.cta(action);
@@ -13858,11 +14113,11 @@ else if (typeof exports === 'object'){
         title: 'همین‌جا انجامش بدهید',
         onclick: function () {
           if (c.type === 'upload') {
-            w.UIDocs.addFrom(existing, function (res) {
+            /* پر شدن فیلدهای پرونده کار خودِ لایهٔ مستندات است (applyToCase)
+               تا از هر سه مسیر یکسان باشد؛ اینجا فقط دوباره رندر می‌کنیم. */
+            w.UIDocs.addFrom(existing, function () {
               app.state.formTab = activeTab;
-              // سند که ثبت شد، تاریخ همان مرحله هم پر می‌شود — وگرنه آلارم
-              // سرِ جایش می‌ماند و کاربر فکر می‌کند کارش انجام نشده.
-              advanceStage(c, res);
+              app.render();
             }, { kind: c.kind });
           } else if (c.type === 'form') {
             var form = null;
@@ -13877,6 +14132,8 @@ else if (typeof exports === 'object'){
 
     warnBox = el('div.warn-box');
     warnBox.style.display = 'none';
+    errBox = el('div.err-box');
+    errBox.style.display = 'none';
 
     saveBtn = el('button.btn.case-save', {
       type: 'button', text: 'ذخیرهٔ تغییرات', onclick: doSave, disabled: true
@@ -14039,29 +14296,52 @@ else if (typeof exports === 'object'){
         ]);
       }
 
-      // پیگیری دستی، اگر گذاشته شده، کنار اقدام خودکار می‌آید
-      var followUp = w.Notes.openFollowUp(existing.id);
+      /*
+       * یادداشت‌ها بالای پرونده.
+       *
+       * «اقدام بعدی» را برنامه حساب می‌کند؛ یادداشت را خودِ کاربر نوشته و
+       * چیزی می‌گوید که هیچ فیلدی نمی‌گوید («با حراست تماس گرفته شود»).
+       * تا امروز فقط قرارِ پیگیری‌دار دیده می‌شد و یادداشت بدون تاریخ
+       * پنهان می‌ماند. حالا تازه‌ترین یادداشتِ باز — با تاریخ یا بی‌تاریخ —
+       * همین‌جا می‌آید، با شمارش بقیه.
+       */
+      var note = w.Notes.headline(existing.id);
+      var openNotes = w.Notes.openCount(existing.id);
       var followNode = null;
-      if (followUp) {
-        var late = J.diffDays(J.today(), followUp.followUp) > 0;
+      if (note) {
+        var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
         followNode = el('div.case-next.follow' + (late ? '.late' : ''), null, [
           el('span.case-next-label', {
-            text: 'پیگیری ' + J.format(followUp.followUp)
+            text: note.followUp ? 'پیگیری ' + J.format(note.followUp) : 'یادداشت'
           }),
-          el('span.case-next-meta', {
-            text: w.Notes.preview(followUp.text) + ' • ' +
-              w.UINotes.relativeDay(followUp.followUp)
-          }),
+          el('div.case-next-text', null, [
+            el('span.case-next-meta', { text: w.Notes.preview(note.text, 120) }),
+            note.followUp ? el('span.case-next-auto', {
+              text: w.UINotes.relativeDay(note.followUp)
+            }) : null
+          ]),
           el('div.spacer'),
-          el('button.btn.small', {
+          openNotes > 1 ? el('button.linkish.tiny', {
+            type: 'button',
+            text: '+' + w.U.toFaDigits(openNotes - 1) + ' یادداشت دیگر',
+            onclick: function () {
+              activeTab = '__notes';
+              app.state.formTab = activeTab;
+              w.U.$$('.tab', tabs).forEach(function (t) {
+                t.classList.toggle('active', t.dataset.tab === '__notes');
+              });
+              renderPanel();
+            }
+          }) : null,
+          note.followUp ? el('button.btn.small', {
             type: 'button', text: 'انجام شد',
             onclick: function () {
-              w.Notes.complete(followUp).then(function () {
+              w.Notes.complete(note).then(function () {
                 app.state.formTab = activeTab;
                 app.render();
               });
             }
-          })
+          }) : null
         ]);
       }
       return el('div.case-rail', null, [
@@ -14075,7 +14355,7 @@ else if (typeof exports === 'object'){
     mount.appendChild(el('div.case-view', null, [
       el('div.case-head', null, [headTitle, actions]),
       railCard(),
-      warnBox, tabs, panel
+      warnBox, errBox, tabs, panel
     ]));
 
     updateTitle();
@@ -16607,11 +16887,22 @@ else if (typeof exports === 'object'){
 
     var rows = files.map(function (file) {
       var guess = guessFromName(file.name);
+      /* آنچه پرونده از قبل دربارهٔ این نوع سند می‌داند — شمارهٔ نامه و
+         تاریخش — همین‌جا از قبل پر می‌شود. کاربر دوباره تایپشان نمی‌کند. */
+      function fromCase(kind) {
+        var map = D.fieldsForKind(kind);
+        if (!map) return {};
+        return {
+          docDate: map.date ? (rec[map.date] || '') : '',
+          letterNo: map.no ? (rec[map.no] || '') : ''
+        };
+      }
+      var known = fromCase(opts.kind || 'سایر');
       var state = {
         file: file,
         kind: opts.kind || 'سایر',
-        docDate: guess.docDate || rec.intakeDate || J.today(),
-        letterNo: guess.letterNo || '',
+        docDate: known.docDate || guess.docDate || rec.intakeDate || J.today(),
+        letterNo: known.letterNo || guess.letterNo || '',
         title: '',
         body: '',
         category: D.categoryOf(opts.kind || 'سایر'),
@@ -16642,13 +16933,48 @@ else if (typeof exports === 'object'){
         dirSel.appendChild(el('option', { value: d.key, text: d.label }));
       });
       var catNode = el('span.doc-cat-chip');
+      var dupNode = el('div.doc-dup');
+      var dupSel = el('select.input.small');
+      dupSel.appendChild(el('option', { value: 'version', text: 'نسخهٔ تازه از همان سند' }));
+      dupSel.appendChild(el('option', { value: 'separate', text: 'سند جداگانه' }));
+      dupSel.addEventListener('change', function () { state.dup = dupSel.value; });
+
       function syncKind(fromUser) {
         state.category = D.categoryOf(state.kind);
         catNode.textContent = 'دسته: ' + D.categoryLabel(state.category);
         if (fromUser) {
           state.direction = D.directionOf(state.kind);
           dirSel.value = state.direction;
+          // نوع که عوض شد، آنچه پرونده دربارهٔ نوع تازه می‌داند پر شود
+          var k = fromCase(state.kind);
+          if (k.docDate) { state.docDate = k.docDate; dateField.setValue(k.docDate); }
+          if (k.letterNo) { state.letterNo = k.letterNo; letterInput.value = k.letterNo; }
         }
+        syncDup();
+      }
+
+      /*
+       * سند تکراری.
+       *
+       * اگر از قبل سندی از همین نوع در پرونده هست، به احتمال زیاد این
+       * همان است — اسکن دوباره، یا نسخهٔ اصلاح‌شده. پیش‌فرض «نسخهٔ تازه»
+       * است تا فهرست مستندات با ده‌تا «دعوت‌نامهٔ جلسه» پر نشود؛ نسخهٔ
+       * قبلی هم پاک نمی‌شود، زیر همان سند بایگانی می‌ماند.
+       */
+      function syncDup() {
+        var existing = state.scope === 'person' ? []
+          : D.sameKind(rec.id, state.kind);
+        state.existing = existing[existing.length - 1] || null;
+        w.U.clear(dupNode);
+        if (!state.existing) { state.dup = 'separate'; return; }
+        state.dup = state.dup || 'version';
+        dupSel.value = state.dup;
+        dupNode.appendChild(el('span', {
+          text: 'یک سند «' + state.kind + '» از قبل هست' +
+            (state.existing.docDate ? ' (' + J.format(state.existing.docDate) + ')' : '') +
+            ' — این فایل چیست؟'
+        }));
+        dupNode.appendChild(dupSel);
       }
       dirSel.addEventListener('change', function () { state.direction = dirSel.value; });
 
@@ -16701,6 +17027,7 @@ else if (typeof exports === 'object'){
           el('label.mini', { text: 'شمارهٔ نامه' }), letterInput,
           el('label.mini', { text: 'توضیح' }), titleInput
         ]),
+        dupNode,
         bodyBox
       ]);
       return state;
@@ -16720,6 +17047,7 @@ else if (typeof exports === 'object'){
         if (busy) return;
         busy = true;
         save.textContent = 'در حال ذخیره…';
+        var filled = [], versions = 0;
         rows.reduce(function (chain, r) {
           return chain.then(function () {
             var meta = {
@@ -16730,13 +17058,31 @@ else if (typeof exports === 'object'){
             if (r.scope === 'person' && person) {
               return D.addPersonFile(person, r.file, meta, rec);
             }
+            /* سند تکراری: به‌جای سند دوم، نسخهٔ تازه از همان. نسخهٔ قبلی
+               پاک نمی‌شود؛ زیر همان سند بایگانی می‌ماند. */
+            if (r.dup === 'version' && r.existing) {
+              versions += 1;
+              return D.addVersion(rec, r.existing, r.file, meta);
+            }
             return D.addFile(rec, r.file, meta);
+          }).then(function (doc) {
+            // هر مسیری که سند ثبت کند، فیلدهای پرونده را هم پر می‌کند
+            return D.applyToCase(rec, doc).then(function (list) {
+              filled = filled.concat(list);
+            });
           });
         }, Promise.resolve()).then(function () {
           m.close();
-          w.U.toast(w.U.toFaDigits(rows.length) + ' سند در پوشهٔ پرونده ذخیره شد.', 'good');
-          // تاریخ سند برمی‌گردد تا فراخوان بتواند مرحله را جلو ببرد
-          onDone({ rows: rows.length, docDate: rows[0] && rows[0].docDate });
+          w.U.toast(w.U.toFaDigits(rows.length) + ' سند ذخیره شد' +
+            (versions ? ' (' + w.U.toFaDigits(versions) + ' نسخهٔ تازه)' : '') +
+            (filled.length
+              ? ' و «' + filled.map(function (f) { return f.label; }).join('»، «') +
+                '» پر شد.'
+              : '.'), 'good');
+          onDone({
+            rows: rows.length, docDate: rows[0] && rows[0].docDate,
+            filled: filled, versions: versions
+          });
         }).catch(function (err) {
           busy = false;
           save.textContent = 'ثبت دوباره';
@@ -17969,7 +18315,12 @@ else if (typeof exports === 'object'){
     var rec = item.rec, action = item.action;
     var person = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
     var wait = action.days == null ? '' : fa(action.days) + ' روز';
-    return el('button.wl-row' + (action.overdue ? '.overdue' : ''), {
+    /* یادداشتِ خودِ کاربر، زیر همان سطر. برنامه «اقدام بعدی» را حساب
+       می‌کند، ولی چیزی که آدم نوشته («منتظر پاسخ حراستیم») را هیچ فیلدی
+       نمی‌گوید. بدون آن، کارتابل نصف ماجرا را نشان می‌دهد. */
+    var note = w.Notes.headline(rec.id);
+    var row = el('button.wl-row' + (action.overdue ? '.overdue' : '') +
+      (note ? '.has-note' : ''), {
       type: 'button',
       onclick: function () { app.openCase(rec.id); }
     }, [
@@ -17984,6 +18335,17 @@ else if (typeof exports === 'object'){
       }),
       el('span.wl-go', { text: '↵', 'aria-hidden': 'true' })
     ]);
+    if (note) {
+      var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
+      row.appendChild(el('span.wl-note' + (late ? '.late' : ''), null, [
+        el('span.wl-note-icon', { html: w.Mobile.icon('paperclip') }),
+        el('span.wl-note-text', { text: w.Notes.preview(note.text, 110) }),
+        note.followUp ? el('span.wl-note-due', {
+          text: w.UINotes.relativeDay(note.followUp)
+        }) : null
+      ]));
+    }
+    return row;
   }
 
   function bucketBlock(app, bucket) {
@@ -18716,7 +19078,8 @@ else if (typeof exports === 'object'){
       function (v) { s.expert = v; app.render(); }));
 
     row.appendChild(sel('همهٔ سال‌های رسیدگی', s.year,
-      M.distinct('year').map(function (v) { return { value: v, label: fa(v) }; }),
+      // سال از خود داده درمی‌آید: هم «سال رسیدگی»ِ ثبت‌شده، هم سالِ ورود
+      w.Report.years().map(function (v) { return { value: v, label: fa(v) }; }),
       function (v) { s.year = v; app.render(); }));
 
     row.appendChild(sel('همهٔ محل‌های خدمت', s.placeType,

@@ -196,11 +196,22 @@
 
     var rows = files.map(function (file) {
       var guess = guessFromName(file.name);
+      /* آنچه پرونده از قبل دربارهٔ این نوع سند می‌داند — شمارهٔ نامه و
+         تاریخش — همین‌جا از قبل پر می‌شود. کاربر دوباره تایپشان نمی‌کند. */
+      function fromCase(kind) {
+        var map = D.fieldsForKind(kind);
+        if (!map) return {};
+        return {
+          docDate: map.date ? (rec[map.date] || '') : '',
+          letterNo: map.no ? (rec[map.no] || '') : ''
+        };
+      }
+      var known = fromCase(opts.kind || 'سایر');
       var state = {
         file: file,
         kind: opts.kind || 'سایر',
-        docDate: guess.docDate || rec.intakeDate || J.today(),
-        letterNo: guess.letterNo || '',
+        docDate: known.docDate || guess.docDate || rec.intakeDate || J.today(),
+        letterNo: known.letterNo || guess.letterNo || '',
         title: '',
         body: '',
         category: D.categoryOf(opts.kind || 'سایر'),
@@ -231,13 +242,48 @@
         dirSel.appendChild(el('option', { value: d.key, text: d.label }));
       });
       var catNode = el('span.doc-cat-chip');
+      var dupNode = el('div.doc-dup');
+      var dupSel = el('select.input.small');
+      dupSel.appendChild(el('option', { value: 'version', text: 'نسخهٔ تازه از همان سند' }));
+      dupSel.appendChild(el('option', { value: 'separate', text: 'سند جداگانه' }));
+      dupSel.addEventListener('change', function () { state.dup = dupSel.value; });
+
       function syncKind(fromUser) {
         state.category = D.categoryOf(state.kind);
         catNode.textContent = 'دسته: ' + D.categoryLabel(state.category);
         if (fromUser) {
           state.direction = D.directionOf(state.kind);
           dirSel.value = state.direction;
+          // نوع که عوض شد، آنچه پرونده دربارهٔ نوع تازه می‌داند پر شود
+          var k = fromCase(state.kind);
+          if (k.docDate) { state.docDate = k.docDate; dateField.setValue(k.docDate); }
+          if (k.letterNo) { state.letterNo = k.letterNo; letterInput.value = k.letterNo; }
         }
+        syncDup();
+      }
+
+      /*
+       * سند تکراری.
+       *
+       * اگر از قبل سندی از همین نوع در پرونده هست، به احتمال زیاد این
+       * همان است — اسکن دوباره، یا نسخهٔ اصلاح‌شده. پیش‌فرض «نسخهٔ تازه»
+       * است تا فهرست مستندات با ده‌تا «دعوت‌نامهٔ جلسه» پر نشود؛ نسخهٔ
+       * قبلی هم پاک نمی‌شود، زیر همان سند بایگانی می‌ماند.
+       */
+      function syncDup() {
+        var existing = state.scope === 'person' ? []
+          : D.sameKind(rec.id, state.kind);
+        state.existing = existing[existing.length - 1] || null;
+        w.U.clear(dupNode);
+        if (!state.existing) { state.dup = 'separate'; return; }
+        state.dup = state.dup || 'version';
+        dupSel.value = state.dup;
+        dupNode.appendChild(el('span', {
+          text: 'یک سند «' + state.kind + '» از قبل هست' +
+            (state.existing.docDate ? ' (' + J.format(state.existing.docDate) + ')' : '') +
+            ' — این فایل چیست؟'
+        }));
+        dupNode.appendChild(dupSel);
       }
       dirSel.addEventListener('change', function () { state.direction = dirSel.value; });
 
@@ -290,6 +336,7 @@
           el('label.mini', { text: 'شمارهٔ نامه' }), letterInput,
           el('label.mini', { text: 'توضیح' }), titleInput
         ]),
+        dupNode,
         bodyBox
       ]);
       return state;
@@ -309,6 +356,7 @@
         if (busy) return;
         busy = true;
         save.textContent = 'در حال ذخیره…';
+        var filled = [], versions = 0;
         rows.reduce(function (chain, r) {
           return chain.then(function () {
             var meta = {
@@ -319,13 +367,31 @@
             if (r.scope === 'person' && person) {
               return D.addPersonFile(person, r.file, meta, rec);
             }
+            /* سند تکراری: به‌جای سند دوم، نسخهٔ تازه از همان. نسخهٔ قبلی
+               پاک نمی‌شود؛ زیر همان سند بایگانی می‌ماند. */
+            if (r.dup === 'version' && r.existing) {
+              versions += 1;
+              return D.addVersion(rec, r.existing, r.file, meta);
+            }
             return D.addFile(rec, r.file, meta);
+          }).then(function (doc) {
+            // هر مسیری که سند ثبت کند، فیلدهای پرونده را هم پر می‌کند
+            return D.applyToCase(rec, doc).then(function (list) {
+              filled = filled.concat(list);
+            });
           });
         }, Promise.resolve()).then(function () {
           m.close();
-          w.U.toast(w.U.toFaDigits(rows.length) + ' سند در پوشهٔ پرونده ذخیره شد.', 'good');
-          // تاریخ سند برمی‌گردد تا فراخوان بتواند مرحله را جلو ببرد
-          onDone({ rows: rows.length, docDate: rows[0] && rows[0].docDate });
+          w.U.toast(w.U.toFaDigits(rows.length) + ' سند ذخیره شد' +
+            (versions ? ' (' + w.U.toFaDigits(versions) + ' نسخهٔ تازه)' : '') +
+            (filled.length
+              ? ' و «' + filled.map(function (f) { return f.label; }).join('»، «') +
+                '» پر شد.'
+              : '.'), 'good');
+          onDone({
+            rows: rows.length, docDate: rows[0] && rows[0].docDate,
+            filled: filled, versions: versions
+          });
         }).catch(function (err) {
           busy = false;
           save.textContent = 'ثبت دوباره';

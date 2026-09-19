@@ -123,7 +123,12 @@
     var rec = item.rec, action = item.action;
     var person = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
     var wait = action.days == null ? '' : fa(action.days) + ' روز';
-    return el('button.wl-row' + (action.overdue ? '.overdue' : ''), {
+    /* یادداشتِ خودِ کاربر، زیر همان سطر. برنامه «اقدام بعدی» را حساب
+       می‌کند، ولی چیزی که آدم نوشته («منتظر پاسخ حراستیم») را هیچ فیلدی
+       نمی‌گوید. بدون آن، کارتابل نصف ماجرا را نشان می‌دهد. */
+    var note = w.Notes.headline(rec.id);
+    var row = el('button.wl-row' + (action.overdue ? '.overdue' : '') +
+      (note ? '.has-note' : ''), {
       type: 'button',
       onclick: function () { app.openCase(rec.id); }
     }, [
@@ -138,6 +143,17 @@
       }),
       el('span.wl-go', { text: '↵', 'aria-hidden': 'true' })
     ]);
+    if (note) {
+      var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
+      row.appendChild(el('span.wl-note' + (late ? '.late' : ''), null, [
+        el('span.wl-note-icon', { html: w.Mobile.icon('paperclip') }),
+        el('span.wl-note-text', { text: w.Notes.preview(note.text, 110) }),
+        note.followUp ? el('span.wl-note-due', {
+          text: w.UINotes.relativeDay(note.followUp)
+        }) : null
+      ]));
+    }
+    return row;
   }
 
   function bucketBlock(app, bucket) {

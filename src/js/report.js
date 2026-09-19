@@ -171,13 +171,29 @@
    * قابل قضاوت نیستند و کنار گذاشته می‌شوند — تعدادشان در نتیجه برمی‌گردد
    * تا در رابط کاربری صادقانه نشان داده شود.
    */
+  /** سال رسیدگی: اگر ثبت نشده باشد، از تاریخ ورود درمی‌آید */
+  function yearOf(c) {
+    return String(c.year || (c.intakeDate ? String(c.intakeDate).slice(0, 4) : ''));
+  }
+
+  /** همهٔ سال‌هایی که در داده هست — برای فیلتر گزارش */
+  function years() {
+    var seen = Object.create(null), out = [];
+    M.state.cases.forEach(function (c) {
+      var y = yearOf(c);
+      if (y && !seen[y]) { seen[y] = 1; out.push(y); }
+    });
+    return out.sort();
+  }
+
   function scope(opts) {
     var range = opts.range || { from: '', to: '' };
     var baseField = opts.baseField || 'intakeDate';
     var undated = 0;
     var cases = M.state.cases.filter(function (c) {
       if (opts.expert && (c.expert || '') !== opts.expert) return false;
-      if (opts.year && (c.year || '') !== opts.year) return false;
+      // «سال رسیدگی» در فرم نیست؛ اگر خالی بود، سالِ تاریخ ورود مبناست
+      if (opts.year && yearOf(c) !== opts.year) return false;
       if (opts.placeType && (c.servicePlaceType || '') !== opts.placeType) return false;
       if (!range.from && !range.to) return true;
       var d = c[baseField];
@@ -684,6 +700,7 @@
   }
 
   w.Report = {
+    years: years, yearOf: yearOf,
     DATE_BASES: DATE_BASES, GRANULARITY: GRANULARITY, presets: presets,
     build: build, rangeOf: rangeOf, previousRange: previousRange,
     scope: scope, kpis: kpis, trend: trend, funnel: funnel,

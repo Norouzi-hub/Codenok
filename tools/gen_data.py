@@ -145,6 +145,12 @@ GROUPS = [
     ('enforce',   'ابلاغ و اجرای رأی'),
 ]
 
+# فیلدهایی که در فرم پرونده دیده نمی‌شوند ولی در داده می‌مانند.
+# «سال رسیدگی» به درخواست کاربر از تب پرونده برداشته شد: از تاریخ ورود
+# خودش درمی‌آید و جای تکراری می‌گرفت. گزارش‌ها همچنان با آن فیلتر می‌کنند
+# و اگر خالی باشد، سالِ تاریخ ورود مبنا می‌شود.
+HIDE_FROM_FORM = {'year'}
+
 # فیلدهایی که به‌صورت پیش‌فرض در جدول فهرست دیده می‌شوند
 DEFAULT_COLUMNS = [
     'caseNo', 'status', 'firstName', 'lastName', 'nationalId',
@@ -258,6 +264,8 @@ def main(xlsx_path):
         f = {'key': key, 'label': headers[col], 'type': kind, 'group': group, 'col': col}
         if kind == 'select':
             f['list'] = SELECT_LISTS[key]
+        if key in HIDE_FROM_FORM:
+            f['hidden'] = True
         fields.append(f)
     # فیلدهای گردش‌کار، بعد از فیلدهای اکسل و در گروه خودشان
     for key, label, kind, group in EXTRA_FIELDS:

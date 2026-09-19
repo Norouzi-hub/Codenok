@@ -619,6 +619,38 @@ button.week-day:hover { border-color: var(--brass-line); transform: translateY(-
   position: relative;
   transition: background .12s;
 }
+/* سطری که یادداشت دارد، یک ردیف دوم می‌گیرد — تمام عرض، زیر همه */
+.wl-row.has-note { grid-template-rows: auto auto; row-gap: 4px; }
+.wl-note {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-inline-start: 2px solid var(--brass-line);
+  border-radius: 0 6px 6px 0;
+  padding: 3px 8px;
+}
+.wl-note.late { border-inline-start-color: var(--cinnabar); }
+.wl-note-icon { line-height: 0; color: var(--ink-400); flex: 0 0 auto; }
+.wl-note-icon svg { width: 13px; height: 13px; }
+.wl-note-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-note-due {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.wl-note.late .wl-note-due { color: var(--cinnabar); font-weight: 600; }
+
 .wl-rows > .wl-row:last-child { border-bottom: 0; }
 .wl-row:hover { background: var(--paper); }
 .wl-row.overdue::before {
@@ -1092,9 +1124,37 @@ select.input { cursor: pointer; }
 }
 .date-btn:hover { background: var(--paper-2); color: var(--ink-800); }
 .date-hint { font-size: 11px; color: var(--muted); min-height: 15px; }
-.date-hint.bad { color: var(--cinnabar); }
+/* پیام خطا باید همه‌جا دیده شود، حتی جایی که راهنمای تاریخ پنهان است */
+.date-hint.bad { color: var(--cinnabar); display: block !important; }
+.input.invalid {
+  border-color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+}
+.input.invalid:focus { box-shadow: 0 0 0 3px var(--cinnabar-line); }
+/* فیلدی که جلوی ذخیره را گرفته، باید پیدا باشد */
+.field.has-error .field-label { color: var(--cinnabar); }
+.field-error {
+  font-size: 11px;
+  color: var(--cinnabar);
+  margin-top: 3px;
+}
 
 .warn-box { margin-bottom: 12px; }
+/* خطاهایی که جلوی ذخیره را گرفته‌اند — هر کدام کلیک‌شدنی، تا کاربر دنبال
+   فیلد نگردد. جدا از warn-box است تا هشدار «شمارهٔ تکراری» را پاک نکند. */
+.err-box {
+  margin-bottom: 12px;
+  padding: 10px 13px;
+  border: 1px solid var(--cinnabar-line);
+  background: var(--cinnabar-soft);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--cinnabar);
+  animation: access-in .18s ease-out;
+}
+.err-box ul { margin: 6px 0 0; padding-inline-start: 18px; }
+.err-box li { margin-bottom: 3px; }
+.err-box .linkish { color: var(--cinnabar); text-align: start; }
 .warn {
   background: var(--brass-soft);
   border: 1px solid var(--brass-line);

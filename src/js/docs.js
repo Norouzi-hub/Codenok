@@ -75,6 +75,81 @@
     'استعلام حراست': 'out', 'نامهٔ ابلاغ رأی': 'out'
   };
 
+  /*
+   * نوع سند → فیلدهای پروندهٔ متناظرش.
+   *
+   * تا امروز فقط مسیر «دکمهٔ آلارم» تاریخ مرحله را پر می‌کرد؛ اگر همان سند
+   * را از تب مستندات یا از گیرهٔ کنار فیلد بارگذاری می‌کردید، هیچ فیلدی پر
+   * نمی‌شد. یعنی یک کار، سه رفتار. حالا این نقشه یک جاست و هر مسیری که
+   * سند ثبت کند، همین فیلدها را پر می‌کند.
+   *
+   * قاعده: فقط فیلدِ **خالی** پر می‌شود. چیزی که کاربر خودش نوشته، هیچ‌وقت
+   * با فرادادهٔ یک سند بازنویسی نمی‌شود.
+   */
+  var KIND_FIELDS = {
+    'نامهٔ وارده': { date: 'letterDate', no: 'letterNo' },
+    'گزارش بازرسی': { date: 'letterDate', no: 'letterNo' },
+    'حکم کارگزینی': { date: 'decreeDate' },
+    'نامهٔ رفع نواقص': { date: 'defectLetterDate', no: 'defectLetterNo' },
+    'دعوت‌نامهٔ جلسه': { date: 'invitationLetterDate', no: 'invitationLetterNo' },
+    'استعلام حراست': { date: 'securityOutLetterDate', no: 'securityOutLetterNo' },
+    'پاسخ حراست': {
+      date: 'securityInLetterDate', no: 'securityInLetterNo',
+      body: 'securityAnswerSubject'
+    },
+    'دفاعیهٔ کتبی': { date: 'defenseReceivedDate', body: 'defenseSummary' },
+    'نامهٔ پیگیری دفاعیات': { date: 'defenseChaseLetterDate' },
+    'مدارک تکمیلی': { date: 'docsCompleteDate' },
+    'نامهٔ حضور در جلسهٔ دفاع': {
+      date: 'hearingLetterDate', no: 'hearingLetterNo'
+    },
+    'صورت‌جلسهٔ کمیته': { date: 'committeeDate' },
+    'رأی کمیته': { date: 'verdictDate', no: 'committeeRegNo', body: 'verdictFull' },
+    'نامهٔ ابلاغ رأی': { date: 'noticeLetterDate', no: 'noticeLetterNo' },
+    'نتیجهٔ ابلاغ': { date: 'noticeResultDate' }
+  };
+
+  function fieldsForKind(kind) { return KIND_FIELDS[kind] || null; }
+
+  function labelOfField(key) {
+    var f = M.FIELD_BY_KEY[key];
+    return f ? String(f.label).replace(/\s*\(\d+\)\s*$/, '').trim() : key;
+  }
+
+  /**
+   * آنچه یک سند دربارهٔ پرونده می‌گوید، در خود پرونده هم ثبت می‌شود.
+   * برمی‌گرداند: فهرست فیلدهایی که پر شدند (برای پیام به کاربر).
+   */
+  function applyToCase(rec, doc) {
+    var map = fieldsForKind(doc && doc.kind);
+    if (!rec || !map || doc.scope === 'person') return Promise.resolve([]);
+    var fresh = M.get(rec.id) || rec;
+    var patch = {}, filled = [];
+
+    function take(key, value) {
+      if (!key || !value) return;
+      if (String(fresh[key] || '').trim()) return;     // دست‌نوشتهٔ کاربر مقدم است
+      patch[key] = value;
+      filled.push({ key: key, label: labelOfField(key), value: value });
+    }
+
+    take(map.date, doc.docDate);
+    take(map.no, doc.letterNo);
+    take(map.body, doc.body);
+
+    if (!filled.length) return Promise.resolve([]);
+    return M.applyPatches([{ id: fresh.id, patch: patch }], {
+      kind: 'doc-sync',
+      note: 'از روی سند «' + doc.kind + '»: ' +
+        filled.map(function (f) { return f.label; }).join('، ') + ' پر شد'
+    }).then(function () { return filled; });
+  }
+
+  /** سندهای جاریِ همین نوع در این پرونده — برای تشخیص تکراری */
+  function sameKind(caseId, kind) {
+    return current(caseId).filter(function (d) { return d.kind === kind; });
+  }
+
   function categoryOf(kind) { return KIND_CATEGORY[kind] || 'other'; }
   function directionOf(kind) { return KIND_DIRECTION[kind] || ''; }
 
@@ -496,10 +571,18 @@
   }
 
   /** نسخهٔ تازه از یک سند؛ نسخهٔ قبلی روی دیسک دست‌نخورده می‌ماند */
-  function addVersion(rec, oldDoc, file) {
+  /**
+   * نسخهٔ تازه از یک سند.
+   * over: فرادادهٔ تازه، اگر کاربر داده باشد؛ وگرنه همان قبلی می‌ماند.
+   */
+  function addVersion(rec, oldDoc, file, over) {
+    over = over || {};
     var meta = {
-      kind: oldDoc.kind, title: oldDoc.title,
-      letterNo: oldDoc.letterNo, docDate: oldDoc.docDate
+      kind: over.kind || oldDoc.kind,
+      title: over.title || oldDoc.title,
+      letterNo: over.letterNo || oldDoc.letterNo,
+      body: over.body || oldDoc.body,
+      docDate: over.docDate || oldDoc.docDate
     };
     var nextVersion = Math.max.apply(null, forCase(rec.id)
       .filter(function (d) { return d.chain === oldDoc.chain; })
@@ -948,6 +1031,8 @@
     indexDocs: indexDocs, clearMemory: clearMemory,
     CATEGORIES: CATEGORIES, DIRECTIONS: DIRECTIONS,
     FIELD_KIND: FIELD_KIND, kindForField: kindForField, ofKind: ofKind,
+    KIND_FIELDS: KIND_FIELDS, fieldsForKind: fieldsForKind,
+    applyToCase: applyToCase, sameKind: sameKind,
     categoryOf: categoryOf, categoryLabel: categoryLabel,
     directionOf: directionOf, directionLabel: directionLabel,
     updateMeta: updateMeta, bundle: bundle,

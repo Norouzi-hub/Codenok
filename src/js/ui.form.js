@@ -255,7 +255,7 @@
     var dirty = false;
     var activeTab = app.state.formTab || w.GROUPS[0].key;
 
-    var saveBtn, warnBox, headTitle, dirtyChip;
+    var saveBtn, warnBox, errBox, headTitle, dirtyChip;
 
     function markDirty() {
       if (dirty) return;
@@ -331,14 +331,80 @@
 
     function collect() { return draft; }
 
+    /**
+     * بررسی پیش از ذخیره.
+     *
+     * نکتهٔ مهم: هیچ‌کدام از این مسیرها نباید app.render() صدا بزند. آن
+     * تابع کل فرم را از نو می‌سازد و پیش‌نویسِ تایپ‌شده را دور می‌ریزد —
+     * یعنی کاربر یک فیلد را اشتباه می‌زد و همهٔ کارش پاک می‌شد. به‌جایش
+     * فقط تبِ درست باز و همان فیلد روشن می‌شود؛ draft دست‌نخورده می‌ماند.
+     */
+    function problems() {
+      var out = [];
+      if (!draft.caseNo) {
+        out.push({ field: 'caseNo', text: 'شمارهٔ پرونده الزامی است.' });
+      }
+      // تاریخی که خوانده نشده، نباید بی‌صدا نادیده گرفته شود
+      w.U.$$('.date-field', panel).forEach(function (node) {
+        if (!node.isInvalid || !node.isInvalid()) return;
+        var wrap = node.closest('[data-field]');
+        out.push({
+          field: wrap ? wrap.dataset.field : '',
+          text: 'تاریخ «' + (wrap ? labelOf(wrap.dataset.field) : '') +
+            '» خوانده نشد: ' + node.raw()
+        });
+      });
+      return out;
+    }
+
+    function labelOf(key) {
+      var found = '';
+      M.FIELDS.forEach(function (f) { if (f.key === key) found = cleanLabel(f.label); });
+      return found || key;
+    }
+
+    function showProblems(list) {
+      w.U.$$('.field.has-error', panel).forEach(function (n) {
+        n.classList.remove('has-error');
+        var e = n.querySelector('.field-error');
+        if (e) e.remove();
+      });
+      w.U.clear(errBox);
+      if (!list.length) { errBox.style.display = 'none'; return; }
+      errBox.style.display = '';
+      errBox.appendChild(el('b', {
+        text: list.length === 1 ? 'یک مورد باید درست شود:'
+          : w.U.toFaDigits(list.length) + ' مورد باید درست شود:'
+      }));
+      errBox.appendChild(el('ul', null, list.map(function (p) {
+        return el('li', null, [
+          el('button.linkish', {
+            type: 'button', text: p.text,
+            onclick: function () { if (p.field) jumpToField(p.field); }
+          })
+        ]);
+      })));
+      // نشانه‌گذاری روی خود فیلدها، برای وقتی کاربر همان تب است
+      list.forEach(function (p) {
+        var node = panel.querySelector('[data-field="' + p.field + '"]');
+        if (!node) return;
+        node.classList.add('has-error');
+        if (!node.querySelector('.field-error')) {
+          node.appendChild(el('div.field-error', { text: p.text }));
+        }
+      });
+      jumpToField(list[0].field);
+    }
+
     function doSave() {
       var data = collect();
-      if (!data.caseNo) {
-        w.U.toast('شمارهٔ پرونده الزامی است.', 'bad');
-        app.state.formTab = tabOf('case').key;
-        app.render();
+      var bad = problems();
+      if (bad.length) {
+        showProblems(bad);
+        w.U.toast(bad[0].text, 'bad');
         return;
       }
+      showProblems([]);
       // جلوی ساخته شدن نسخهٔ تکراری از یک پرونده گرفته می‌شود
       var dup = M.duplicateCaseNo(data.caseNo, existing ? existing.id : null);
       if (dup) {
@@ -568,33 +634,6 @@
       }, 60);
     }
 
-    /**
-     * بعد از بارگذاری سند، تاریخ مرحله را پر می‌کند.
-     *
-     * فقط وقتی فیلد خالی است — اگر کاربر خودش تاریخی گذاشته، دست نمی‌خورد.
-     * تاریخ از خود سند می‌آید، نه از امروز: نامه‌ای که دیروز رسیده، تاریخش
-     * دیروز است.
-     */
-    function advanceStage(c, res) {
-      var done = function () { app.render(); };
-      if (!c || !c.field || !existing) return done();
-      var date = (res && res.docDate) || J.today();
-      var fresh = M.get(existing.id);
-      if (!fresh || fresh[c.field]) return done();
-      var patch = {};
-      patch[c.field] = date;
-      var label = '';
-      M.FIELDS.forEach(function (f) { if (f.key === c.field) label = f.label; });
-      M.applyPatches([{ id: existing.id, patch: patch }], {
-        kind: 'stage',
-        note: 'با ثبت سند، «' + cleanLabel(label) + '» روی ' + J.format(date) + ' تنظیم شد'
-      }).then(function () {
-        w.U.toast('«' + cleanLabel(label) + '» روی ' + J.format(date) +
-          ' ثبت شد و مرحله جلو رفت.', 'good');
-        done();
-      }).catch(done);
-    }
-
     /** دکمهٔ آلارم: همان کاری که اقدام بعدی می‌خواهد، با یک کلیک */
     function ctaButton(action) {
       var c = w.Worklist.cta(action);
@@ -604,11 +643,11 @@
         title: 'همین‌جا انجامش بدهید',
         onclick: function () {
           if (c.type === 'upload') {
-            w.UIDocs.addFrom(existing, function (res) {
+            /* پر شدن فیلدهای پرونده کار خودِ لایهٔ مستندات است (applyToCase)
+               تا از هر سه مسیر یکسان باشد؛ اینجا فقط دوباره رندر می‌کنیم. */
+            w.UIDocs.addFrom(existing, function () {
               app.state.formTab = activeTab;
-              // سند که ثبت شد، تاریخ همان مرحله هم پر می‌شود — وگرنه آلارم
-              // سرِ جایش می‌ماند و کاربر فکر می‌کند کارش انجام نشده.
-              advanceStage(c, res);
+              app.render();
             }, { kind: c.kind });
           } else if (c.type === 'form') {
             var form = null;
@@ -623,6 +662,8 @@
 
     warnBox = el('div.warn-box');
     warnBox.style.display = 'none';
+    errBox = el('div.err-box');
+    errBox.style.display = 'none';
 
     saveBtn = el('button.btn.case-save', {
       type: 'button', text: 'ذخیرهٔ تغییرات', onclick: doSave, disabled: true
@@ -785,29 +826,52 @@
         ]);
       }
 
-      // پیگیری دستی، اگر گذاشته شده، کنار اقدام خودکار می‌آید
-      var followUp = w.Notes.openFollowUp(existing.id);
+      /*
+       * یادداشت‌ها بالای پرونده.
+       *
+       * «اقدام بعدی» را برنامه حساب می‌کند؛ یادداشت را خودِ کاربر نوشته و
+       * چیزی می‌گوید که هیچ فیلدی نمی‌گوید («با حراست تماس گرفته شود»).
+       * تا امروز فقط قرارِ پیگیری‌دار دیده می‌شد و یادداشت بدون تاریخ
+       * پنهان می‌ماند. حالا تازه‌ترین یادداشتِ باز — با تاریخ یا بی‌تاریخ —
+       * همین‌جا می‌آید، با شمارش بقیه.
+       */
+      var note = w.Notes.headline(existing.id);
+      var openNotes = w.Notes.openCount(existing.id);
       var followNode = null;
-      if (followUp) {
-        var late = J.diffDays(J.today(), followUp.followUp) > 0;
+      if (note) {
+        var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
         followNode = el('div.case-next.follow' + (late ? '.late' : ''), null, [
           el('span.case-next-label', {
-            text: 'پیگیری ' + J.format(followUp.followUp)
+            text: note.followUp ? 'پیگیری ' + J.format(note.followUp) : 'یادداشت'
           }),
-          el('span.case-next-meta', {
-            text: w.Notes.preview(followUp.text) + ' • ' +
-              w.UINotes.relativeDay(followUp.followUp)
-          }),
+          el('div.case-next-text', null, [
+            el('span.case-next-meta', { text: w.Notes.preview(note.text, 120) }),
+            note.followUp ? el('span.case-next-auto', {
+              text: w.UINotes.relativeDay(note.followUp)
+            }) : null
+          ]),
           el('div.spacer'),
-          el('button.btn.small', {
+          openNotes > 1 ? el('button.linkish.tiny', {
+            type: 'button',
+            text: '+' + w.U.toFaDigits(openNotes - 1) + ' یادداشت دیگر',
+            onclick: function () {
+              activeTab = '__notes';
+              app.state.formTab = activeTab;
+              w.U.$$('.tab', tabs).forEach(function (t) {
+                t.classList.toggle('active', t.dataset.tab === '__notes');
+              });
+              renderPanel();
+            }
+          }) : null,
+          note.followUp ? el('button.btn.small', {
             type: 'button', text: 'انجام شد',
             onclick: function () {
-              w.Notes.complete(followUp).then(function () {
+              w.Notes.complete(note).then(function () {
                 app.state.formTab = activeTab;
                 app.render();
               });
             }
-          })
+          }) : null
         ]);
       }
       return el('div.case-rail', null, [
@@ -821,7 +885,7 @@
     mount.appendChild(el('div.case-view', null, [
       el('div.case-head', null, [headTitle, actions]),
       railCard(),
-      warnBox, tabs, panel
+      warnBox, errBox, tabs, panel
     ]));
 
     updateTitle();

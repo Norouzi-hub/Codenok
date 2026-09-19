@@ -575,9 +575,20 @@ function fakeFile(name, text, type) {
   check('«توضیحات» حفظ شده و به تب پرونده رفته', kept.notes === 'case', kept.notes);
   check('چهار ستون دسته‌بندی تخلف حذف شده‌اند', kept.gone.length === 0,
     kept.gone.join(','));
-  check('فیلدهای مرحلهٔ دستی پنهان‌اند و در فرم نمی‌آیند',
-    kept.hidden.length === 3 &&
+  // «سال رسیدگی» هم به درخواست کاربر از فرم برداشته شد
+  check('فیلدهای پنهان در فرم نمی‌آیند',
+    kept.hidden.length === 4 && kept.hidden.indexOf('year') >= 0 &&
     !clips.some(c => /stageOverride/.test(c.field)), kept.hidden.join(','));
+  const noYear = await page.evaluate(() =>
+    !document.querySelector('[data-field="year"]'));
+  check('«سال رسیدگی» در تب پرونده نیست', noYear);
+  const yearFilter = await page.evaluate(() => ({
+    years: window.Report.years().length,
+    derived: window.Report.yearOf({ intakeDate: '14040720' })
+  }));
+  check('گزارش‌ها همچنان سال دارند — از تاریخ ورود',
+    yearFilter.years > 0 && yearFilter.derived === '1404',
+    yearFilter.years + ' سال، نمونه: ' + yearFilter.derived);
 
   // ---------------------------------------------------------------------
   console.log('\n— پشتیبان خودکار در پوشه —');
@@ -641,6 +652,83 @@ function fakeFile(name, text, type) {
   });
   check('وقتی رمز فعال است، پشتیبان هم رمز می‌شود',
     sealedBackup.encrypted && !sealedBackup.leaks);
+
+  // ---------------------------------------------------------------------
+  console.log('\n— یک سند، یک رفتار، از هر سه مسیر —');
+
+  const sync = await page.evaluate(async () => {
+    const M = window.Model, D = window.Docs, J = window.J;
+    const rec = await M.create({
+      caseNo: '1404996', firstName: 'زهرا', lastName: 'نیکو',
+      intakeDate: J.today(), deliveryDate: J.today(), decreeDate: J.today()
+    });
+    const day = J.addDays(J.today(), -6);
+    const doc = await D.addFile(M.get(rec.id),
+      new File(['x'], 'davat.pdf', { type: 'application/pdf' }),
+      { kind: 'دعوت‌نامهٔ جلسه', docDate: day, letterNo: '۱۴۰۴/۵۵' });
+    const filled = await D.applyToCase(M.get(rec.id), doc);
+    const after = M.get(rec.id);
+    return {
+      id: rec.id, day: day,
+      date: after.invitationLetterDate, no: after.invitationLetterNo,
+      filled: filled.map(f => f.key)
+    };
+  });
+  check('ثبت سند، هم تاریخ و هم شمارهٔ نامهٔ همان مرحله را پر می‌کند',
+    sync.date === sync.day && sync.no === '۱۴۰۴/۵۵',
+    sync.filled.join(', '));
+
+  const noOverwrite = await page.evaluate(async (id) => {
+    const M = window.Model, D = window.Docs, J = window.J;
+    await M.applyPatches([{ id: id, patch: { noticeLetterNo: 'دست‌نویس' } }],
+      { kind: 'test', note: 'آزمون' });
+    const doc = await D.addFile(M.get(id),
+      new File(['x'], 'eblagh.pdf', { type: 'application/pdf' }),
+      { kind: 'نامهٔ ابلاغ رأی', docDate: J.today(), letterNo: '۹۹۹' });
+    await D.applyToCase(M.get(id), doc);
+    return M.get(id).noticeLetterNo;
+  }, sync.id);
+  check('آنچه کاربر خودش نوشته، با سند بازنویسی نمی‌شود',
+    noOverwrite === 'دست‌نویس', noOverwrite);
+
+  // پنجرهٔ افزودن باید از خودِ پرونده پر شود و تکراری را بشناسد
+  await page.evaluate((id) => window.App.openCase(id), sync.id);
+  await page.waitForSelector('.case-view');
+  await page.waitForTimeout(300);
+  const chooser2 = page.waitForEvent('filechooser', { timeout: 8000 });
+  await page.evaluate(() => {
+    window.UIDocs.addFrom(window.Model.get(window.App.state.caseId),
+      function () {}, { kind: 'دعوت‌نامهٔ جلسه' });
+  });
+  const fc2 = await chooser2;
+  const tmp2 = path.join(OUT, 'davat2.pdf');
+  fs.writeFileSync(tmp2, '%PDF-1.4 again');
+  await fc2.setFiles(tmp2);
+  await page.waitForSelector('.doc-add', { timeout: 8000 });
+  await page.waitForTimeout(300);
+  const prefill = await page.evaluate(() => ({
+    letterNo: document.querySelector('.doc-add-fields input[placeholder="شمارهٔ نامه"]').value,
+    date: document.querySelector('.doc-add-fields .date-input').value,
+    dup: (document.querySelector('.doc-dup') || {}).textContent || '',
+    dupChoice: (document.querySelector('.doc-dup select') || {}).value
+  }));
+  check('پنجرهٔ افزودن، شمارهٔ نامه را از خودِ پرونده پر می‌کند',
+    prefill.letterNo === '۱۴۰۴/۵۵', prefill.letterNo);
+  check('سند تکراری تشخیص داده می‌شود و پیش‌فرض «نسخهٔ تازه» است',
+    /از قبل هست/.test(prefill.dup) && prefill.dupChoice === 'version',
+    prefill.dup.slice(0, 50));
+
+  await page.evaluate(() => {
+    [...document.querySelectorAll('.modal-foot .btn')].pop().click();
+  });
+  await page.waitForTimeout(1200);
+  const afterDup = await page.evaluate((id) => {
+    const cur = window.Docs.current(id).filter(d => d.kind === 'دعوت‌نامهٔ جلسه');
+    return { count: cur.length, version: cur[0] && cur[0].version };
+  }, sync.id);
+  check('به‌جای سند دوم، نسخهٔ تازه ثبت می‌شود',
+    afterDup.count === 1 && afterDup.version === 2,
+    afterDup.count + ' سند، نسخهٔ ' + afterDup.version);
 
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));

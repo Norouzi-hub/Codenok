@@ -36,6 +36,31 @@
 
   function forCase(caseId) { return byCase[caseId] || []; }
 
+  /**
+   * تازه‌ترین یادداشتِ باز یک پرونده.
+   *
+   * برای جایی که فقط یک سطر جا هست — بالای پرونده و کنار سطر کارتابل —
+   * و باید در یک نگاه بگوید «اینجا چه خبر است». قرارِ پیگیری مقدم است،
+   * چون سررسید دارد؛ وگرنه آخرین یادداشت.
+   */
+  function headline(caseId) {
+    var open = forCase(caseId).filter(function (n) { return !n.done; });
+    if (!open.length) return null;
+    var withDue = open.filter(function (n) { return n.followUp; });
+    if (withDue.length) {
+      withDue.sort(function (a, b) { return a.followUp < b.followUp ? -1 : 1; });
+      return withDue[0];
+    }
+    return open.slice().sort(function (a, b) {
+      return (a.at || '') < (b.at || '') ? 1 : -1;
+    })[0];
+  }
+
+  /** چند یادداشت باز دارد */
+  function openCount(caseId) {
+    return forCase(caseId).filter(function (n) { return !n.done; }).length;
+  }
+
   /** پیگیری باز: یادداشتی با تاریخ پیگیری که هنوز انجام‌نشده علامت خورده */
   function openFollowUp(caseId) {
     var list = forCase(caseId).filter(function (n) {
@@ -150,6 +175,7 @@
     load: load, all: all, forCase: forCase, add: add, update: update,
     complete: complete, reopen: reopen, remove: remove,
     openFollowUp: openFollowUp, dueFollowUps: dueFollowUps, stats: stats,
+    headline: headline, openCount: openCount,
     clearMemory: clearMemory, preview: preview
   };
 })(window);

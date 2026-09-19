@@ -131,14 +131,39 @@
     });
     var hint = el('span.date-hint');
 
+    /*
+     * تاریخِ نادرست پاک نمی‌شود.
+     *
+     * قبلاً هر چیزی که J.parse نمی‌فهمید، بی‌صدا از فیلد پاک می‌شد: کاربر
+     * یک رقم را اشتباه می‌زد و نوشته‌اش می‌پرید، بدون هیچ پیامی. حالا متن
+     * سر جایش می‌ماند، فیلد قرمز می‌شود و زیرش می‌نویسد چه شکلی درست است.
+     */
+    /* J.parse وقتی چیزی را نفهمد، همان متن خام را برمی‌گرداند نه رشتهٔ
+       خالی. پس «قابل تجزیه بودن» ملاک نیست؛ باید تاریخِ واقعی دربیاید —
+       وگرنه «۱۴۰۴/۹۹/۹۹» بی‌صدا به‌عنوان متن در فیلد تاریخ ذخیره می‌شد. */
+    function isBad() {
+      return !!input.value.trim() && !J.unpack(J.parse(input.value));
+    }
+
     function refreshHint() {
       var v = J.parse(input.value);
       var p = J.unpack(v);
-      hint.textContent = p ? (J.weekday(p.jy, p.jm, p.jd) + '، ' + J.format(v, { long: true })) : '';
-      hint.classList.toggle('bad', !!input.value.trim() && !p);
+      var bad = isBad();
+      hint.textContent = p
+        ? (J.weekday(p.jy, p.jm, p.jd) + '، ' + J.format(v, { long: true }))
+        : (bad ? 'تاریخ خوانده نشد — به شکل ۱۴۰۴/۰۷/۲۰ بنویسید' : '');
+      hint.classList.toggle('bad', bad);
+      input.classList.toggle('invalid', bad);
+      input.setAttribute('aria-invalid', bad ? 'true' : 'false');
     }
 
+    /** v از تقویم یا از متنِ درست می‌آید؛ متنِ نادرست دست نمی‌خورد */
     function commit(v) {
+      if (isBad()) {
+        refreshHint();          // نوشتهٔ کاربر می‌ماند تا خودش درستش کند
+        onChange('');
+        return;
+      }
       input.value = v ? J.format(v, { latin: true }) : '';
       refreshHint();
       onChange(v);
@@ -158,6 +183,8 @@
     refreshHint();
     var wrap = el('div.date-field', null, [el('div.date-row', null, [input, btn]), hint]);
     wrap.getValue = function () { return J.parse(input.value); };
+    wrap.isInvalid = isBad;
+    wrap.raw = function () { return input.value; };
     wrap.setValue = function (v) { input.value = v ? J.format(v, { latin: true }) : ''; refreshHint(); };
     wrap.input = input;
     return wrap;

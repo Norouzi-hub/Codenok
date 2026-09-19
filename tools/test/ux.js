@@ -288,6 +288,106 @@ function check(name, ok, extra) {
   check('گروه فیلترها نشانهٔ باز/بسته دارد', caret && caret !== 'none', caret);
 
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  console.log('\n— اشتباه در ورود داده، کار را پاک نمی‌کند —');
+  await page.evaluate(() => window.App.newCase());
+  await page.waitForSelector('.case-view');
+  await page.waitForTimeout(300);
+
+  await page.evaluate(() => {
+    const set = (k, v) => {
+      const n = document.querySelector('[data-field="' + k + '"] input');
+      if (!n) return;
+      n.value = v;
+      n.dispatchEvent(new Event('input', { bubbles: true }));
+      n.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    set('firstName', 'مریم');
+    set('lastName', 'کاظمی');
+    set('intakeDate', '۱۴۰۴/۹۹/۹۹');       // تاریخ نادرست
+  });
+  await page.waitForTimeout(300);
+  const badDate = await page.evaluate(() => {
+    const inp = document.querySelector('[data-field="intakeDate"] input');
+    return {
+      kept: inp.value,
+      invalid: inp.classList.contains('invalid'),
+      hint: document.querySelector('[data-field="intakeDate"] .date-hint').textContent
+    };
+  });
+  check('تاریخ نادرست پاک نمی‌شود و خطایش گفته می‌شود',
+    /۹۹/.test(badDate.kept) && badDate.invalid && /خوانده نشد/.test(badDate.hint),
+    badDate.hint);
+
+  await page.evaluate(() => document.querySelector('.case-save').click());
+  await page.waitForTimeout(600);
+  const afterBadSave = await page.evaluate(() => ({
+    first: (document.querySelector('[data-field="firstName"] input') || {}).value,
+    last: (document.querySelector('[data-field="lastName"] input') || {}).value,
+    errors: document.querySelectorAll('.field.has-error').length,
+    box: (document.querySelector('.err-box') || {}).textContent || ''
+  }));
+  check('ذخیرهٔ ناموفق، آنچه تایپ شده را پاک نمی‌کند',
+    afterBadSave.first === 'مریم' && afterBadSave.last === 'کاظمی',
+    afterBadSave.first + ' ' + afterBadSave.last);
+  check('هر دو ایراد نام برده می‌شوند و روی فیلد نشان داده می‌شوند',
+    afterBadSave.errors === 2 && /شمارهٔ پرونده/.test(afterBadSave.box) &&
+    /خوانده نشد/.test(afterBadSave.box), afterBadSave.errors + ' فیلد');
+
+  const fixed = await page.evaluate(async () => {
+    const set = (k, v) => {
+      const n = document.querySelector('[data-field="' + k + '"] input');
+      n.value = v;
+      n.dispatchEvent(new Event('input', { bubbles: true }));
+      n.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    set('intakeDate', '1404/07/20');
+    set('caseNo', '1404995');
+    document.querySelector('.case-save').click();
+    return new Promise(r => setTimeout(() => {
+      const rec = window.Model.state.cases.filter(c => c.caseNo === '1404995')[0];
+      r(rec ? { no: rec.caseNo, name: rec.firstName, date: rec.intakeDate } : null);
+    }, 900));
+  });
+  check('بعد از اصلاح، همان فرم ذخیره می‌شود',
+    fixed && fixed.no === '1404995' && fixed.name === 'مریم' &&
+    fixed.date === '14040720', JSON.stringify(fixed));
+
+  // ---------------------------------------------------------------------
+  console.log('\n— یادداشت‌ها در کارتابل و بالای پرونده —');
+  const noteView = await page.evaluate(async () => {
+    const M = window.Model, N = window.Notes, J = window.J;
+    const rec = M.state.cases.filter(c => c.caseNo === '1404995')[0];
+    await N.add(rec, 'منتظر پاسخ حراست هستیم؛ دو بار پیگیری شده.', '');
+    await N.add(rec, 'با آقای رضایی هماهنگ شود.', J.addDays(J.today(), -1));
+    window.App.openCase(rec.id);
+    return new Promise(r => setTimeout(() => r({
+      label: (document.querySelector('.case-next.follow .case-next-label') || {}).textContent,
+      text: (document.querySelector('.case-next.follow .case-next-meta') || {}).textContent,
+      more: (document.querySelector('.case-next.follow .linkish') || {}).textContent,
+      open: N.openCount(rec.id)
+    }), 700));
+  });
+  check('بالای پرونده، یادداشت دیده می‌شود — قرارِ سررسیددار مقدم است',
+    /پیگیری/.test(noteView.label) && /رضایی/.test(noteView.text),
+    noteView.label + ' — ' + noteView.text);
+  check('بقیهٔ یادداشت‌ها شمرده می‌شوند',
+    /\+۱/.test(noteView.more || '') && noteView.open === 2, noteView.more);
+
+  await page.evaluate(() => window.App.goWork());
+  await page.waitForSelector('.worklist');
+  await page.waitForTimeout(500);
+  const inWork = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('.wl-row.has-note')];
+    return {
+      rows: rows.length,
+      text: rows.length ? rows[0].querySelector('.wl-note-text').textContent : '',
+      due: rows.length ? !!rows[0].querySelector('.wl-note-due') : false
+    };
+  });
+  check('در کارتابل هم، یادداشت زیر سطر پرونده می‌آید',
+    inWork.rows >= 1 && inWork.text.length > 5, inWork.text);
+
   console.log('\n— نشانی صفحه و دکمهٔ «قبلی» —');
   await page.evaluate(() => window.App.goWork());
   await page.waitForTimeout(250);

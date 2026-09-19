@@ -116,7 +116,8 @@
       function (v) { s.expert = v; app.render(); }));
 
     row.appendChild(sel('همهٔ سال‌های رسیدگی', s.year,
-      M.distinct('year').map(function (v) { return { value: v, label: fa(v) }; }),
+      // سال از خود داده درمی‌آید: هم «سال رسیدگی»ِ ثبت‌شده، هم سالِ ورود
+      w.Report.years().map(function (v) { return { value: v, label: fa(v) }; }),
       function (v) { s.year = v; app.render(); }));
 
     row.appendChild(sel('همهٔ محل‌های خدمت', s.placeType,
