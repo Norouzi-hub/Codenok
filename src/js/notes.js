@@ -51,6 +51,43 @@
     if (!L.TaskCategories) L.TaskCategories = CATEGORIES_DEFAULT.slice();
   }
 
+  /**
+   * افزودن یک دسته یا میان‌بر تازه به همان فهرستی که تنظیمات هم ویرایشش
+   * می‌کند. جای جدایی برایش نساختیم: دو منبعِ حقیقت برای یک فهرست، یعنی
+   * کاربر یک‌جا چیزی اضافه می‌کند و جای دیگر نمی‌بیندش.
+   */
+  function addToList(name, value) {
+    var v = String(value || '').trim();
+    if (!v) return Promise.reject(new Error('نام خالی است'));
+    var lists = M.state.lists || {};
+    var cur = (lists[name] || (name === 'TaskCategories'
+      ? CATEGORIES_DEFAULT : PRESETS_DEFAULT)).slice();
+    if (cur.indexOf(v) >= 0) return Promise.resolve(v);
+    cur.push(v);
+    var next = {};
+    Object.keys(lists).forEach(function (k) { next[k] = lists[k]; });
+    next[name] = cur;
+    return M.saveLists(next).then(function () { return v; });
+  }
+
+  /**
+   * مقدارهایی که قبلاً در همین فیلد نوشته شده‌اند، پرتکرارترین اول.
+   *
+   * دبیرخانه چند ارجاع‌دهنده و چند مسئول بیشتر ندارد و هر بار تایپ کردنشان
+   * یعنی «رئیس کمیته» و «رییس کمیته» و «ریاست کمیته» سه چیز جدا شوند و
+   * گزارشِ به‌تفکیکِ ارجاع‌دهنده بی‌معنا بشود. پس همان‌ها پیشنهاد می‌شوند.
+   */
+  function usedValues(field) {
+    var count = {};
+    notes.forEach(function (n) {
+      var v = String(n[field] || '').trim();
+      if (v) count[v] = (count[v] || 0) + 1;
+    });
+    return Object.keys(count).sort(function (a, b) {
+      return count[b] - count[a] || (a < b ? -1 : 1);
+    });
+  }
+
   function presets() { return (M.state.lists || {}).TaskPresets || PRESETS_DEFAULT; }
   function categories() {
     return (M.state.lists || {}).TaskCategories || CATEGORIES_DEFAULT;
@@ -452,6 +489,7 @@
     tasks: tasks, standalone: standalone, taskBuckets: taskBuckets,
     todayTasks: todayTasks, bucketOf: bucketOf, BUCKETS: BUCKETS,
     report: report, presets: presets, categories: categories,
+    addToList: addToList, usedValues: usedValues,
     PRIORITIES: PRIORITIES,
     clearMemory: clearMemory, preview: preview
   };

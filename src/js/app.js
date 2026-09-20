@@ -41,6 +41,7 @@
        #/case/new            پروندهٔ تازه
        #/person/<کلید>       پروندهٔ شخص
        #/tasks               کارها
+       #/calendar            تقویم
        #/report              گزارش‌ها
 
      شمارهٔ پرونده در نشانی می‌آید نه شناسهٔ داخلی، چون نشانی را آدم
@@ -61,6 +62,7 @@
     }
     if (st.view === 'people') return '#/people';
     if (st.view === 'tasks') return '#/tasks';
+    if (st.view === 'calendar') return '#/calendar';
     if (st.view === 'report') return '#/report';
     if (st.view === 'list') return '#/list';
     return '#/';
@@ -102,6 +104,7 @@
     else if (parts[0] === 'list') { st.view = 'list'; st.caseId = null; }
     else if (parts[0] === 'report') { st.view = 'report'; st.caseId = null; }
     else if (parts[0] === 'tasks') { st.view = 'tasks'; st.caseId = null; }
+    else if (parts[0] === 'calendar') { st.view = 'calendar'; st.caseId = null; }
     else if (parts[0] === 'people') { st.view = 'people'; st.personKey = null; }
     else if (parts[0] === 'person' && parts[1]) {
       st.view = 'person';
@@ -188,6 +191,16 @@
     }
     app.state.dirty = false;
     app.state.view = 'tasks';
+    app.state.caseId = null;
+    app.render();
+  };
+
+  app.goCalendar = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'calendar';
     app.state.caseId = null;
     app.render();
   };
@@ -305,6 +318,8 @@
       w.UIWorklist.render(app, mount);
     } else if (app.state.view === 'tasks') {
       w.UITasks.render(app, mount);
+    } else if (app.state.view === 'calendar') {
+      w.UICalendar.render(app, mount);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
     } else if (app.state.view === 'people') {
@@ -321,7 +336,7 @@
 
   var NAV_FOR_VIEW = {
     work: 'work', list: 'list', case: 'list', report: 'report',
-    tasks: 'tasks', people: 'people', person: 'people'
+    tasks: 'tasks', calendar: 'calendar', people: 'people', person: 'people'
   };
 
   function updateNav() {
@@ -416,6 +431,11 @@
         title: 'کارهای روزمره — روی پرونده‌ها و بیرون از آنها',
         onclick: function () { app.goTasks(); }
       }),
+      calendar: el('button.nav-btn', {
+        type: 'button', text: 'تقویم', 'data-nav': 'calendar',
+        title: 'هر روز چه افتاده و چه در راه است',
+        onclick: function () { app.goCalendar(); }
+      }),
       people: el('button.nav-btn', {
         type: 'button', text: 'اشخاص', 'data-nav': 'people',
         title: 'یک کارمند ممکن است چند پرونده داشته باشد',
@@ -438,7 +458,8 @@
         ])
       ]),
       el('nav.main-nav', null, [navButtons.work, navButtons.list,
-        navButtons.tasks, navButtons.people, navButtons.report]),
+        navButtons.tasks, navButtons.calendar, navButtons.people,
+        navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -493,6 +514,10 @@
       {
         /* گزارش‌ها روی گوشی در نوار پایین جا نشد — «کارها» جایش را گرفت،
            چون هر روز لازم است و گزارش گاه‌به‌گاه. پس اینجا می‌ماند. */
+        icon: 'cal', label: 'تقویم',
+        onclick: function () { app.goCalendar(); }
+      },
+      {
         icon: 'chart', label: 'گزارش‌ها',
         onclick: function () { app.goReport(); }
       },
@@ -615,6 +640,9 @@
       } else if (ctrl && e.key.toLowerCase() === 'j') {
         e.preventDefault();
         app.goTasks();
+      } else if (ctrl && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        app.goCalendar();
       } else if (ctrl && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         app.goPeople();

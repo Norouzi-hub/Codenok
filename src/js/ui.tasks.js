@@ -32,19 +32,40 @@
     return [rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بدون نام';
   }
 
-  /** پرونده را با شمارهٔ خودش پیدا می‌کند (همان چیزی که کاربر تایپ می‌کند) */
-  function caseByNo(no) {
-    var want = w.U.toLatinDigits(String(no || '')).trim();
-    if (!want) return null;
-    var found = null;
+  /**
+   * پیدا کردن پرونده از روی چیزی که کاربر تایپ کرده.
+   *
+   * کسی که کار را ثبت می‌کند معمولاً شمارهٔ پرونده را حفظ نیست؛ نام طرف یا
+   * کد ملی‌اش را می‌داند. پس هر سه می‌گیرد: شماره، نام (و نام خانوادگی)، و
+   * کد ملی. اول تطبیق دقیق، بعد «شروع می‌شود با»، بعد «شامل».
+   */
+  function findCase(text) {
+    var raw = String(text || '').trim();
+    if (!raw) return null;
+    // برچسب فهرست خودمان: «شماره — نام — کد ملی»
+    var head = w.U.toLatinDigits(raw.split('—')[0]).trim();
+    var norm = w.U.normalize(raw);
+    var exact = null, starts = null, has = null;
     M.state.cases.forEach(function (c) {
-      if (w.U.toLatinDigits(c.caseNo || '').trim() === want) found = c;
+      var no = w.U.toLatinDigits(c.caseNo || '').trim();
+      var nid = w.U.toLatinDigits(c.nationalId || '').trim();
+      if (no && no === head) { exact = exact || c; return; }
+      if (nid && (nid === head || nid === w.U.toLatinDigits(raw).trim())) {
+        exact = exact || c;
+        return;
+      }
+      var name = w.U.normalize([c.firstName, c.lastName].filter(Boolean).join(' '));
+      if (!name || !norm) return;
+      if (name === norm) exact = exact || c;
+      else if (name.indexOf(norm) === 0) starts = starts || c;
+      else if (name.indexOf(norm) >= 0) has = has || c;
     });
-    return found;
+    return exact || starts || has;
   }
 
   function caseLabel(rec) {
-    return w.U.toLatinDigits(rec.caseNo || '') + ' — ' + personOf(rec);
+    return w.U.toLatinDigits(rec.caseNo || '') + ' — ' + personOf(rec) +
+      (rec.nationalId ? ' — ' + w.U.toLatinDigits(rec.nationalId) : '');
   }
 
   /* ================================================================
@@ -53,7 +74,8 @@
 
   /**
    * dialog(app, o, onDone)
-   * o: { task } برای ویرایش، یا { caseId } برای کارِ تازهٔ یک پرونده.
+   * o: { task } برای ویرایش، { caseId } برای کارِ تازهٔ یک پرونده،
+   * { due } برای سررسیدِ از پیش تعیین‌شده (از تقویم).
    */
   function dialog(app, o, onDone) {
     o = o || {};
@@ -64,7 +86,7 @@
     var state = {
       title: task ? (task.title || '') : '',
       text: task ? (task.text || '') : '',
-      followUp: task ? (task.followUp || '') : '',
+      followUp: task ? (task.followUp || '') : (o.due || ''),
       priority: task ? (task.priority || 'normal') : 'normal',
       from: task ? (task.from || '') : '',
       owner: task ? (task.owner || '') : (M.state.settings.user || ''),
@@ -83,16 +105,36 @@
       state.title = titleInput.value;
     });
 
-    var chips = el('div.task-presets', null, N.presets().map(function (p) {
-      return el('button.chip-btn', {
-        type: 'button', text: p,
-        onclick: function () {
-          state.title = p;
-          titleInput.value = p;
-          titleInput.focus();
-        }
+    var chips = el('div.task-presets');
+    function fillChips() {
+      w.U.clear(chips);
+      N.presets().forEach(function (p) {
+        chips.appendChild(el('button.chip-btn', {
+          type: 'button', text: p,
+          onclick: function () {
+            state.title = p;
+            titleInput.value = p;
+            titleInput.focus();
+          }
+        }));
       });
-    }));
+      /* میان‌بر تازه از همین‌جا اضافه می‌شود: کاری که دو بار تکرار شود،
+         بار سوم باید دکمه داشته باشد. */
+      chips.appendChild(el('button.chip-btn.chip-add', {
+        type: 'button', text: '＋ میان‌بر تازه',
+        title: 'عنوان فعلی را به‌عنوان یک کارِ پرتکرار ذخیره کن',
+        onclick: function () {
+          var seed = state.title.trim();
+          askNewItem('میان‌بر تازه', 'TaskPresets', seed,
+            'به دکمه‌های ثبت سریع اضافه می‌شود.', function (name) {
+              state.title = name;
+              titleInput.value = name;
+              fillChips();
+            });
+        }
+      }));
+    }
+    fillChips();
 
     body.appendChild(el('label.field.wide', null, [
       el('span.field-label', { text: 'عنوان کار' }), titleInput
@@ -114,7 +156,7 @@
       var caseInput = el('input.input', {
         type: 'text', list: listId,
         value: state.caseId && M.get(state.caseId) ? caseLabel(M.get(state.caseId)) : '',
-        placeholder: 'خالی بگذارید اگر کار به پرونده‌ای مربوط نیست'
+        placeholder: 'شمارهٔ پرونده، نام، یا کد ملی — خالی یعنی بی‌پرونده'
       });
       var caseHint = el('span.muted.tiny');
       function syncCase() {
@@ -122,19 +164,21 @@
         if (!raw) {
           state.caseId = '';
           caseHint.textContent = 'کارِ بیرون از پرونده‌ها.';
+          caseHint.className = 'muted tiny';
           return;
         }
-        var rec = caseByNo(raw.split('—')[0]);
+        var rec = findCase(raw);
         state.caseId = rec ? rec.id : '';
         caseHint.textContent = rec
           ? 'پرونده: ' + caseLabel(rec)
-          : 'پرونده‌ای با این شماره پیدا نشد؛ کار بدون پرونده ثبت می‌شود.';
+          : 'با این شماره، نام یا کد ملی پرونده‌ای پیدا نشد؛ کار بدون پرونده ثبت می‌شود.';
+        caseHint.className = rec ? 'muted tiny' : 'tiny warn-text';
       }
       caseInput.addEventListener('input', syncCase);
       syncCase();
       body.appendChild(el('label.field.wide', null, [
         el('span.field-label', { text: 'پروندهٔ مربوط (اختیاری)' }),
-        caseInput, caseHint
+        caseInput, dl, caseHint
       ]));
     }
 
@@ -183,34 +227,74 @@
     ]));
 
     // --- ارجاع‌دهنده / مسئول / دسته ---
-    var fromInput = el('input.input.small', {
-      type: 'text', value: state.from,
-      placeholder: 'چه کسی گفته؟ مثلاً: رئیس کمیته'
-    });
+    /* این دو فیلد از دادهٔ قبلی خودشان یاد می‌گیرند: هر چه تا امروز نوشته
+       شده پیشنهاد می‌شود، پرتکرارترین اول. وگرنه «رئیس کمیته» و «رییس
+       کمیته» دو چیز جدا می‌شوند و گزارشِ به‌تفکیکِ ارجاع‌دهنده بی‌معنا. */
+    function remembering(field, extra, ph, value) {
+      var id = 'task-' + field + '-' + w.U.uid();
+      var seen = {}, opts = [];
+      N.usedValues(field).concat(extra || []).forEach(function (v) {
+        if (!v || seen[v]) return;
+        seen[v] = 1;
+        opts.push(v);
+      });
+      var dl = el('datalist', { id: id });
+      opts.forEach(function (v) { dl.appendChild(el('option', { value: v })); });
+      var input = el('input.input.small', {
+        type: 'text', list: id, value: value, placeholder: ph
+      });
+      /* datalist باید در سند باشد تا input با list=id پیدایش کند؛ کنار
+         خودِ input می‌نشیند نه داخلش — input فرزند نمی‌پذیرد. */
+      return { input: input, datalist: dl };
+    }
+
+    function fieldWith(label, pair) {
+      return el('label.field', null, [
+        el('span.field-label', { text: label }), pair.input, pair.datalist
+      ]);
+    }
+
+    var fromPair = remembering('from', [], 'چه کسی گفته؟ مثلاً: رئیس کمیته',
+      state.from);
+    var fromInput = fromPair.input;
     fromInput.addEventListener('input', function () { state.from = fromInput.value; });
 
-    var ownerInput = el('input.input.small', {
-      type: 'text', value: state.owner, placeholder: 'با چه کسی است؟'
-    });
+    /* کارشناسان پرونده‌ها هم پیشنهاد می‌شوند: کارِ دبیرخانه معمولاً دست
+       همان‌هاست، و فهرستشان از قبل در برنامه هست. */
+    var ownerPair = remembering('owner',
+      (M.state.lists || {}).Karshenas || [], 'با چه کسی است؟', state.owner);
+    var ownerInput = ownerPair.input;
     ownerInput.addEventListener('input', function () { state.owner = ownerInput.value; });
 
     var catSelect = el('select.input.small');
-    catSelect.appendChild(el('option', { value: '', text: '— بدون دسته —' }));
-    N.categories().forEach(function (c) {
-      catSelect.appendChild(el('option', {
-        value: c, text: c, selected: c === state.category ? 'selected' : null
-      }));
+    var NEW_CAT = '\u0000new';
+    function fillCats() {
+      w.U.clear(catSelect);
+      catSelect.appendChild(el('option', { value: '', text: '— بدون دسته —' }));
+      N.categories().forEach(function (c) {
+        catSelect.appendChild(el('option', { value: c, text: c }));
+      });
+      catSelect.appendChild(el('option', { value: NEW_CAT, text: '＋ دستهٔ تازه…' }));
+      catSelect.value = state.category;
+    }
+    fillCats();
+    catSelect.addEventListener('change', function () {
+      if (catSelect.value !== NEW_CAT) {
+        state.category = catSelect.value;
+        return;
+      }
+      catSelect.value = state.category;
+      askNewItem('دستهٔ تازه', 'TaskCategories', '',
+        'به فهرست دسته‌ها اضافه می‌شود و از این پس همه‌جا هست.',
+        function (name) {
+          state.category = name;
+          fillCats();
+        });
     });
-    catSelect.value = state.category;
-    catSelect.addEventListener('change', function () { state.category = catSelect.value; });
 
     body.appendChild(el('div.task-grid', null, [
-      el('label.field', null, [
-        el('span.field-label', { text: 'ارجاع‌دهنده' }), fromInput
-      ]),
-      el('label.field', null, [
-        el('span.field-label', { text: 'مسئول انجام' }), ownerInput
-      ]),
+      fieldWith('ارجاع‌دهنده', fromPair),
+      fieldWith('مسئول انجام', ownerPair),
       el('label.field', null, [
         el('span.field-label', { text: 'دسته' }), catSelect
       ])
@@ -270,6 +354,38 @@
     m.root.classList.add('task-modal');
     setTimeout(function () { titleInput.focus(); }, 50);
     return m;
+  }
+
+  /**
+   * پنجرهٔ کوچک افزودن به یک فهرست (دسته یا میان‌بر).
+   *
+   * عمداً همین‌جاست و نه در تنظیمات: رفتن به تنظیمات وسط ثبت یک کار یعنی
+   * رها کردن فرم نیمه‌کاره، و همین باعث می‌شود همه‌چیز «سایر» بماند.
+   */
+  function askNewItem(title, list, seed, hint, onAdd) {
+    var input = el('input.input', { type: 'text', value: seed || '', placeholder: title });
+    var msg = el('p.muted.tiny', {
+      text: hint + ' از تنظیمات ← فهرست‌ها هم می‌شود ویرایشش کرد.'
+    });
+    var m;
+    function save() {
+      N.addToList(list, input.value).then(function (name) {
+        m.close();
+        w.U.toast('«' + name + '» اضافه شد.', 'good');
+        onAdd(name);
+      }).catch(function (e) { w.U.toast(e.message, 'bad'); });
+    }
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); save(); }
+    });
+    m = w.U.modal(title, el('div', null, [input, msg]), [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      el('button.btn.primary', { type: 'button', text: 'افزودن', onclick: save })
+    ]);
+    m.root.classList.add('small-modal');
+    setTimeout(function () { input.focus(); input.select(); }, 50);
   }
 
   /** ثبت سریع با یک کلیک — بدون پنجره، با سررسیدِ امروز */
@@ -448,6 +564,13 @@
           });
         })
       ).concat([
+        el('button.chip-btn.chip-add', {
+          type: 'button', text: '＋', title: 'افزودن میان‌بر تازه',
+          onclick: function () {
+            askNewItem('میان‌بر تازه', 'TaskPresets', '',
+              'به دکمه‌های ثبت سریع اضافه می‌شود.', refresh);
+          }
+        }),
         el('div.spacer'),
         el('button.btn.small.primary', {
           type: 'button', text: 'کار تازه…',
@@ -604,7 +727,16 @@
             onclick: function () { quickAdd(app, p, '', refresh); }
           });
         })
-      ));
+      ).concat([
+        el('button.chip-btn.chip-add', {
+          type: 'button', text: '＋ میان‌بر تازه',
+          title: 'کاری که هر روز تکرار می‌شود، بهتر است دکمه داشته باشد',
+          onclick: function () {
+            askNewItem('میان‌بر تازه', 'TaskPresets', '',
+              'به دکمه‌های ثبت سریع اضافه می‌شود.', refresh);
+          }
+        })
+      ]));
 
     var body = el('div.task-buckets');
     buckets.forEach(function (b) {

@@ -267,6 +267,122 @@ function check(name, ok, extra) {
     legacy && legacy.kind === 'note' && legacy.status === 'open' &&
     legacy.priority === 'normal', JSON.stringify(legacy));
 
+  // -------------------------------------------- فیلدهای پنجرهٔ ثبت کار
+  console.log('\n— پنجرهٔ ثبت کار —');
+
+  const dlg = await page.evaluate(async () => {
+    const M = window.Model, N = window.Notes;
+    await N.create({ kind: 'task', title: 'الف', from: 'رئیس کمیته', owner: 'احمدی' });
+    await N.create({ kind: 'task', title: 'ب', from: 'رئیس کمیته' });
+    await N.create({ kind: 'task', title: 'پ', from: 'دبیر' });
+    window.App.goTasks();
+    await new Promise(r => setTimeout(r, 300));
+    document.querySelector('.task-hero .btn.primary').click();
+    await new Promise(r => setTimeout(r, 300));
+    const m = document.querySelector('.task-modal');
+    const rec = M.state.cases[0];
+    const caseInput = m.querySelector('.field.wide input.input[list]');
+    const hint = () => m.querySelector('.field.wide .tiny').textContent;
+    function type(v) {
+      caseInput.value = v;
+      caseInput.dispatchEvent(new Event('input', { bubbles: true }));
+      return hint();
+    }
+    const out = {
+      byNo: type(rec.caseNo),
+      byName: type(rec.firstName + ' ' + rec.lastName),
+      byNid: type(rec.nationalId),
+      byPartialName: type(rec.lastName),
+      none: type('ققققق'),
+      idAfterNone: window.App.state ? null : null,
+      lists: [...m.querySelectorAll('.task-grid datalist')]
+        .map(d => [...d.querySelectorAll('option')].map(o => o.value)),
+      cats: [...m.querySelectorAll('.task-grid select option')].map(o => o.textContent),
+      caseOptions: m.querySelectorAll('.field.wide datalist option').length,
+      expect: rec.caseNo + ' — ' + rec.firstName + ' ' + rec.lastName +
+        ' — ' + rec.nationalId
+    };
+    document.querySelector('.overlay').remove();
+    return out;
+  });
+  check('پروندهٔ کار با شمارهٔ پرونده پیدا می‌شود',
+    dlg.byNo.indexOf(dlg.expect) >= 0, dlg.byNo);
+  check('…و با نام و نام خانوادگی',
+    dlg.byName.indexOf(dlg.expect) >= 0, dlg.byName);
+  check('…و با کد ملی', dlg.byNid.indexOf(dlg.expect) >= 0, dlg.byNid);
+  check('…و با بخشی از نام', dlg.byPartialName.indexOf(dlg.expect) >= 0,
+    dlg.byPartialName);
+  check('چیزی که پرونده نیست، خطا نمی‌دهد ولی صریح می‌گوید پیدا نشد',
+    /پیدا نشد/.test(dlg.none), dlg.none);
+  check('فهرست پیشنهاد پرونده‌ها کد ملی را هم دارد',
+    dlg.caseOptions > 1);
+
+  /* ارجاع‌دهنده و مسئول باید از دادهٔ قبلی یاد بگیرند، وگرنه «رئیس کمیته»
+     و «رییس کمیته» دو چیز جدا می‌شوند و گزارش بی‌معنا. */
+  check('ارجاع‌دهنده مقدارهای قبلی را پیشنهاد می‌دهد، پرتکرار اول',
+    dlg.lists[0] && dlg.lists[0][0] === 'رئیس کمیته' &&
+    dlg.lists[0].indexOf('دبیر') > 0, JSON.stringify(dlg.lists[0]));
+  check('مسئول انجام، هم مقدارهای قبلی را دارد هم کارشناسان پرونده‌ها',
+    dlg.lists[1] && dlg.lists[1].indexOf('احمدی') >= 0 && dlg.lists[1].length > 1,
+    JSON.stringify(dlg.lists[1]));
+  check('دسته، گزینهٔ «دستهٔ تازه» دارد',
+    dlg.cats.some(c => c.indexOf('دستهٔ تازه') >= 0), dlg.cats.join(' | '));
+
+  const newCat = await page.evaluate(async () => {
+    document.querySelector('.task-hero .btn.primary').click();
+    await new Promise(r => setTimeout(r, 300));
+    const m = document.querySelector('.task-modal');
+    const sel = m.querySelector('.task-grid select');
+    sel.value = sel.options[sel.options.length - 1].value;   // «＋ دستهٔ تازه…»
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 300));
+    const small = document.querySelector('.small-modal');
+    small.querySelector('input.input').value = 'شکایت مردمی';
+    [...small.querySelectorAll('.btn.primary')][0].click();
+    await new Promise(r => setTimeout(r, 400));
+    const after = {
+      inList: window.Notes.categories().indexOf('شکایت مردمی') >= 0,
+      picked: m.querySelector('.task-grid select').value,
+      inOptions: [...m.querySelectorAll('.task-grid select option')]
+        .some(o => o.value === 'شکایت مردمی'),
+      inSettings: (window.Model.state.lists.TaskCategories || [])
+        .indexOf('شکایت مردمی') >= 0
+    };
+    document.querySelectorAll('.overlay').forEach(o => o.remove());
+    return after;
+  });
+  check('دستهٔ تازه همان‌جا اضافه و انتخاب می‌شود',
+    newCat.inList && newCat.inOptions && newCat.picked === 'شکایت مردمی',
+    JSON.stringify(newCat));
+  check('و در همان فهرستی می‌نشیند که تنظیمات ویرایشش می‌کند',
+    newCat.inSettings);
+
+  // ------------------------------------------------------------ اسکرول
+  console.log('\n— اسکرول صفحهٔ کارها —');
+  const scrolled = await page.evaluate(async () => {
+    const J = window.J, N = window.Notes;
+    for (let i = 0; i < 14; i++) {
+      await N.create({ kind: 'task', title: 'کار پرکننده ' + (i + 1),
+        followUp: J.addDays(J.today(), i - 3) });
+    }
+    window.App.render();
+    await new Promise(r => setTimeout(r, 400));
+    const v = document.querySelector('.tasks-view');
+    v.scrollTop = 99999;
+    await new Promise(r => setTimeout(r, 120));
+    const r = document.querySelector('.task-report').getBoundingClientRect();
+    return {
+      overflow: getComputedStyle(v).overflowY,
+      scrollable: v.scrollHeight > v.clientHeight,
+      moved: v.scrollTop > 0,
+      reportVisible: r.top < window.innerHeight && r.bottom > 0
+    };
+  });
+  check('صفحهٔ کارها اسکرول می‌خورد',
+    scrolled.overflow === 'auto' && scrolled.scrollable && scrolled.moved,
+    JSON.stringify(scrolled));
+  check('گزارشِ پایین صفحه با اسکرول دیده می‌شود', scrolled.reportVisible);
+
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));
 

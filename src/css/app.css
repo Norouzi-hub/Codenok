@@ -275,7 +275,7 @@ a { color: var(--ink-700); }
 .brand-text b { font-size: 13.5px; font-weight: 600; }
 .brand-text small { font-size: 10.5px; color: rgba(255, 255, 255, .55); }
 
-.search-wrap { flex: 1; max-width: 520px; }
+.search-wrap { flex: 1 1 180px; max-width: 520px; min-width: 96px; }
 .search {
   width: 100%;
   font: inherit;
@@ -297,7 +297,18 @@ a { color: var(--ink-700); }
 .top-actions { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; }
 
 /* ---------------------------------------------------------------- ناوبری */
-.main-nav { display: flex; gap: 2px; }
+/* نوار مقصدها شش‌تایی شد و روی صفحهٔ باریک جا نمی‌شود. به‌جای اینکه
+   بقیهٔ نوار بالا را بیرون بزند، خودش جمع می‌شود و افقی می‌لغزد — و
+   جعبهٔ جستجو کف خودش را دارد تا هیچ‌وقت تا صفر له نشود. */
+.main-nav {
+  display: flex;
+  gap: 2px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.main-nav::-webkit-scrollbar { display: none; }
 .nav-btn {
   font: inherit;
   font-size: 13px;
@@ -3241,11 +3252,26 @@ select.input { cursor: pointer; }
     width: auto; flex: 0 0 auto; max-height: 230px;
     border-inline-start: 0; border-bottom: 1px solid var(--line);
   }
+}
+
+/* زیر این پهنا شش مقصد و جعبهٔ جستجو در یک سطر جا نمی‌شوند. به‌جای اینکه
+   نوار مقصدها بلغزد و «گزارش‌ها» بی‌هیچ نشانه‌ای پنهان بماند، جستجو
+   می‌رود سطر دوم و نوار کامل دیده می‌شود. */
+@media (max-width: 1200px) {
   .topbar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
-  .main-nav { order: 2; }
+  .main-nav { order: 2; overflow-x: visible; }
   .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
-  /* روی تبلت، خروجی‌ها زیر ⋯ می‌روند تا نوار بالا شلوغ نشود */
+}
+
+/* روی لپ‌تاپ باریک و تبلت، خروجی‌ها زیر ⋯ می‌روند تا نوار بالا شلوغ نشود.
+   با شش مقصد در نوار، این نقطه از ۱۰۰۰ به ۱۲۰۰ آمد: وگرنه روی صفحهٔ
+   ۱۱۰۰ پیکسلی جعبهٔ جستجو تا ۳۰ پیکسل له می‌شد و دکمه‌ها از نوار بیرون
+   می‌زدند. جستجو هم کف پیدا کرد تا دیگر تا صفر جمع نشود. */
+@media (max-width: 1400px) {
   .top-actions .btn.ghost { display: none; }
+  /* شش مقصد در یک سطر: کمی تنگ‌تر، ولی هر شش‌تا دیده می‌شوند */
+  .nav-btn { padding: 7px 10px; font-size: 12.5px; }
+  .search-wrap { min-width: 96px; }
   .more-btn { display: grid; place-items: center; width: 36px; height: 36px; font-size: 19px; }
   .chip { max-width: 44%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
@@ -3480,7 +3506,17 @@ select.input { cursor: pointer; }
    همان دو رنگِ همیشگی کار می‌کند — برنج یعنی «مانده»، شنگرف یعنی
    «از سررسید گذشته» — تا زبان رنگی برنامه یکی بماند.
    ================================================================ */
-.tasks-view { padding: 22px 26px 56px; max-width: 1180px; margin: 0 auto; }
+/* #main از نوع flex با overflow:hidden است، پس هر نما باید خودش اسکرول
+   داشته باشد. بدون این چهار خط، هرچه پایین‌تر از یک صفحه باشد — از جمله
+   گزارش کارها — اصلاً قابل رسیدن نیست. */
+.tasks-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  padding: 22px 26px 56px;
+}
+.tasks-view > * { max-width: 1180px; margin-inline: auto; }
 .task-hero .task-filters {
   display: flex;
   align-items: center;
@@ -3657,6 +3693,11 @@ select.input { cursor: pointer; }
 /* --- پنجرهٔ ثبت کار --- */
 .task-modal { width: min(660px, 94vw); }
 .task-presets { display: flex; gap: 5px; flex-wrap: wrap; margin: -4px 0 12px; }
+/* دکمهٔ «تازه» هم‌شکل بقیه است ولی خط‌چین، تا با میان‌برهای واقعی اشتباه نشود */
+.chip-btn.chip-add { border-style: dashed; color: var(--muted); }
+.chip-btn.chip-add:hover { color: var(--brass-ink); }
+.warn-text { color: var(--warn); }
+.small-modal { width: min(420px, 94vw); }
 .task-row {
   display: flex;
   align-items: center;
@@ -3728,4 +3769,216 @@ select.input { cursor: pointer; }
   .task-check { width: 24px; height: 24px; }
   .task-grid { grid-template-columns: 1fr; }
   .task-report-table { overflow-x: auto; }
+}
+
+/* ================================================================
+   تقویم
+   ----------------------------------------------------------------
+   تقویم دیواری، نه جدول داده: هفت ستون از شنبه، جمعه کم‌رنگ، امروز
+   نشان‌دار. هر لایه یک رنگ ثابت دارد و همان رنگ در چیپِ صافی، نقطهٔ
+   داخل خانه و سربرگ گروهِ پانل تکرار می‌شود — تا آدم رنگ را یک بار
+   یاد بگیرد و بعد نخواند.
+   ================================================================ */
+.cal-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  padding: 18px 22px 48px;
+}
+.cal-head { max-width: 1320px; margin: 0 auto 14px; }
+.cal-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cal-title { margin: 0; font-size: 21px; letter-spacing: -.02em; min-width: 150px; }
+.cal-arrow {
+  color: var(--ink-500);
+  border: 1px solid var(--line);
+  background: var(--card);
+  line-height: 0;
+}
+.cal-arrow:hover { background: var(--paper-2); color: var(--ink-900); }
+.cal-arrow svg { width: 17px; height: 17px; }
+.cal-layers { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 11px; }
+
+/* رنگ لایه‌ها — یک نقطه، همه‌جا یکسان */
+.cal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+  opacity: .9;
+}
+.t-due, .l-due { color: var(--cinnabar); }
+.t-task, .l-task { color: var(--brass); }
+.t-follow, .l-follow { color: #6C5CB5; }
+.t-action, .l-action { color: var(--moss); }
+.t-event, .l-event { color: var(--ink-400); }
+.cal-chip { display: inline-flex; align-items: center; gap: 6px; }
+.cal-chip:not(.on) { opacity: .55; }
+.cal-chip:not(.on) .cal-dot { background: var(--ink-400); }
+.cal-chip.on {
+  background: var(--card);
+  border-color: var(--line);
+  color: var(--ink-700);
+  font-weight: 600;
+}
+
+.cal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  gap: 16px;
+  max-width: 1320px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.cal-grid {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.cal-weekdays, .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-weekdays {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.cal-wd {
+  padding: 7px 4px;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cal-wd.off { color: var(--cinnabar); }
+.cal-wd-short { display: none; }
+
+.cal-day {
+  font: inherit;
+  text-align: start;
+  min-height: 104px;
+  padding: 5px 6px 6px;
+  border: 0;
+  border-inline-start: 1px solid var(--line-soft);
+  border-top: 1px solid var(--line-soft);
+  background: var(--card);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+  transition: background .12s;
+}
+.cal-week:first-child .cal-day { border-top: 0; }
+.cal-day:nth-child(7n) { border-inline-start: 0; }
+.cal-day:hover { background: var(--paper); }
+.cal-day.off { background: var(--paper-2); }
+.cal-day.out { opacity: .42; }
+.cal-day.picked { background: var(--brass-soft); box-shadow: inset 0 0 0 2px var(--brass); }
+.cal-daynum { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cal-day.off .cal-daynum { color: var(--cinnabar); }
+.cal-day.today .cal-daynum {
+  background: var(--ink-800);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 7px;
+  align-self: flex-start;
+}
+.cal-todaytag { display: none; }
+.cal-day-items { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-more { font-size: 10.5px; color: var(--muted); padding-inline-start: 3px; }
+
+/* یک مورد — هم داخل خانه (فشرده) هم در پانل (کامل) */
+.cal-item {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  padding: 1px 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.cal-item:hover { background: rgba(23, 26, 46, .07); }
+.cal-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-800);
+}
+.cal-item.is-done .cal-item-text { text-decoration: line-through; color: var(--muted); }
+.cal-item.is-urgent .cal-item-text { font-weight: 700; }
+.cal-item-sub {
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* پانل روز */
+.cal-panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 13px 15px 15px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  max-height: calc(100vh - var(--head-h) - 40px);
+  overflow-y: auto;
+}
+.cal-panel-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cal-panel-head h2 { margin: 0 0 8px; font-size: 14.5px; }
+.cal-group { margin-bottom: 14px; }
+.cal-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cal-group-n {
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 10.5px;
+  color: var(--ink-500);
+}
+.cal-panel .cal-item {
+  width: 100%;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  padding: 5px 7px;
+  border: 1px solid var(--line-soft);
+  margin-bottom: 4px;
+}
+.cal-panel .cal-item .cal-item-text { white-space: normal; }
+.cal-panel .cal-item-sub { width: 100%; padding-inline-start: 12px; }
+.cal-add { width: 100%; margin-top: 6px; }
+
+@media (max-width: 1000px) {
+  .cal-body { grid-template-columns: 1fr; }
+  .cal-panel { position: static; max-height: none; }
+}
+@media (max-width: 720px) {
+  .cal-view { padding: 14px 10px 40px; }
+  .cal-title { font-size: 18px; min-width: 0; }
+  /* روی گوشی خانه‌ها کوچک‌اند: نامِ روز کوتاه، و داخل خانه فقط نقطه‌ها */
+  .cal-wd-long { display: none; }
+  .cal-wd-short { display: inline; }
+  .cal-day { min-height: 58px; padding: 3px; }
+  .cal-day-items { flex-direction: row; flex-wrap: wrap; gap: 2px; }
+  .cal-item-text, .cal-more { display: none; }
+  .cal-item { padding: 2px; }
+  .cal-panel .cal-item-text { display: block; }
+  .cal-panel .cal-more { display: inline; }
 }

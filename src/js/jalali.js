@@ -141,8 +141,13 @@
       ' ساعت ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()));
   }
 
+  /* شنبه = ۰. تقویم فارسی از شنبه شروع می‌شود، پس همین ترتیب مبناست. */
+  function weekdayIndex(jy, jm, jd) {
+    return (toGregorian(jy, jm, jd).getDay() + 1) % 7;
+  }
+
   function weekday(jy, jm, jd) {
-    return WEEKDAYS[(toGregorian(jy, jm, jd).getDay() + 1) % 7];
+    return WEEKDAYS[weekdayIndex(jy, jm, jd)];
   }
 
   /** تفاضل روز بین دو تاریخ ۸ رقمی (a - b) */
@@ -166,6 +171,7 @@
     MONTHS: MONTHS, WEEKDAYS: WEEKDAYS, monthLength: monthLength, isLeap: isLeap,
     toJalali: toJalali, toGregorian: toGregorian, pack: pack, unpack: unpack,
     parse: parse, format: format, today: today, stamp: stamp, weekday: weekday,
+    weekdayIndex: weekdayIndex,
     diffDays: diffDays, addDays: addDays, pad2: pad2
   };
 })(window);
