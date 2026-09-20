@@ -297,6 +297,62 @@
 
   function get(id) { return byId[id]; }
 
+  /* ================================================================
+     دامنهٔ کار
+     ----------------------------------------------------------------
+     شکایت کاربر ساده بود: «ارجاع به کارشناس دیگر، پروندهٔ من نیست ولی
+     توی همهٔ آمارها می‌آید». درست هم بود — آن پرونده‌ها نه مختومه‌اند نه
+     در جریانِ ما، ولی در هر شمارشی می‌نشستند.
+     
+     جوابش یک فیلتر دیگر در کنار بقیه نیست؛ فیلتر را باید هر بار در هر
+     صفحه دوباره گذاشت. این یک تصمیمِ ماندگار است: «دامنهٔ کار من این
+     است» — یک بار تعیین می‌شود، در تنظیمات می‌ماند، و کارتابل، فهرست،
+     گزارش‌ها و تقویم همگی از همان می‌خوانند.
+     
+     سه چیز از آن بیرون می‌ماند و هر سه صریح‌اند، نه پیش‌فرضِ پنهان:
+     ارجاع‌شده‌ها، مختومه‌ها، و پرونده‌های کارشناسان دیگر.
+     ================================================================ */
+  function scope() {
+    var sc = state.settings.scope || {};
+    return {
+      hideTransferred: !!sc.hideTransferred,
+      hideClosed: !!sc.hideClosed,
+      expert: sc.expert || ''
+    };
+  }
+
+  /** آیا این پرونده داخل دامنهٔ کار است */
+  function inScope(rec, sc) {
+    sc = sc || scope();
+    if (sc.hideTransferred && rec.transferDate) return false;
+    if (sc.hideClosed && /مختومه/.test(rec.status || '')) return false;
+    if (sc.expert && (rec.expert || '') !== sc.expert) return false;
+    return true;
+  }
+
+  /** پرونده‌های داخل دامنه — مبنای هر شمارشی که کاربر می‌بیند */
+  function scoped() {
+    var sc = scope();
+    if (!sc.hideTransferred && !sc.hideClosed && !sc.expert) return state.cases;
+    return state.cases.filter(function (rec) { return inScope(rec, sc); });
+  }
+
+  /** چند پرونده بیرون از دامنه مانده — برای اینکه پنهان‌کاری نشود */
+  function outOfScopeCount() {
+    return state.cases.length - scoped().length;
+  }
+
+  function setScope(patch) {
+    var sc = scope();
+    Object.keys(patch).forEach(function (k) { sc[k] = patch[k]; });
+    return saveSettings({ scope: sc });
+  }
+
+  function scopeIsOn() {
+    var sc = scope();
+    return !!(sc.hideTransferred || sc.hideClosed || sc.expert);
+  }
+
   // ------------------------------------------------------------ جستجو و فیلتر
   function tokenize(q) {
     return w.U.normalize(q).split(' ').filter(Boolean);
@@ -315,6 +371,16 @@
       if (k.charAt(0) === '_') continue;
       if (!filters[k] || !filters[k].length) continue;
       if (filters[k].indexOf(rec[k] || '') < 0) return false;
+    }
+    /* فیلتر «به‌جز»: به‌جای اینکه کاربر همهٔ گزینه‌ها را جز یکی تیک بزند،
+       همان یکی را کنار می‌گذارد. جدا از فیلتر عادی نگه داشته شده تا هر
+       دو با هم قابل استفاده باشند. */
+    var not = filters._not;
+    if (not) {
+      for (var nk in not) {
+        if (!not[nk] || !not[nk].length) continue;
+        if (not[nk].indexOf(rec[nk] || '') >= 0) return false;
+      }
     }
     if (filters._from || filters._to) {
       var dv = rec[filters._dateField || 'intakeDate'];
@@ -353,7 +419,10 @@
   function query(opts) {
     var tokens = tokenize(opts.q || '');
     var filters = opts.filters || {};
-    var out = state.cases.filter(function (rec) { return matches(rec, tokens, filters); });
+    // دامنهٔ کار پیش از هر فیلتری اعمال می‌شود؛ opts.all آن را دور می‌زند
+    // (خروجی اکسل و پشتیبان باید همه‌چیز را ببینند).
+    var base = opts.all ? state.cases : scoped();
+    var out = base.filter(function (rec) { return matches(rec, tokens, filters); });
     var key = opts.sortKey || 'caseNo';
     var dir = opts.sortDir || 'asc';
     out.sort(function (a, b) {
@@ -609,6 +678,8 @@
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
     stats: stats, stale: stale, strip: strip, diff: diff,
+    scope: scope, scoped: scoped, inScope: inScope, setScope: setScope,
+    scopeIsOn: scopeIsOn, outOfScopeCount: outOfScopeCount,
     saveLists: saveLists, saveColumns: saveColumns, saveSettings: saveSettings
   };
 })(window);

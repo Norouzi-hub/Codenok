@@ -185,10 +185,39 @@
     return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
+  /*
+   * شمارشِ بالا رونده برای عددهای بزرگِ کارتابل و گزارش.
+   *
+   * کارش این نیست که «حرکت داشته باشد»؛ کارش این است که چشم را روی عدد
+   * نگه دارد تا خوانده شود. پس کوتاه است (نیم‌ثانیه)، فقط برای عددهای
+   * بزرگ، و اگر کاربر حرکت کمتر خواسته باشد اصلاً اجرا نمی‌شود.
+   */
+  function countUp(node, value, ms) {
+    var target = Number(value) || 0;
+    var reduce = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || target < 2 || !window.requestAnimationFrame) {
+      node.textContent = toFaDigits(target);
+      return;
+    }
+    var dur = ms || 520;
+    var start = 0;
+    function step(now) {
+      if (!start) start = now;
+      var t = Math.min(1, (now - start) / dur);
+      // آرام شدن در انتها: عدد به مقصد می‌رسد، نه اینکه ناگهان بایستد
+      var eased = 1 - Math.pow(1 - t, 3);
+      node.textContent = toFaDigits(Math.round(target * eased));
+      if (t < 1) window.requestAnimationFrame(step);
+    }
+    node.textContent = toFaDigits(0);
+    window.requestAnimationFrame(step);
+  }
+
   w.U = {
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,
     modal: modal, confirmBox: confirmBox, download: download,
-    safeName: safeName, uid: uid
+    safeName: safeName, uid: uid, countUp: countUp
   };
 })(window);

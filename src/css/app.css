@@ -53,6 +53,15 @@
   --shadow: 0 1px 2px rgba(23, 26, 46, .05), 0 8px 24px -12px rgba(23, 26, 46, .18);
   --shadow-lg: 0 24px 64px -24px rgba(23, 26, 46, .35);
 
+  /* حرکت — یک منحنی، یک زمان‌بندی، همه‌جا یکی. سه نوع easing در یک
+     صفحه یعنی سه صدا؛ برنامه باید یک صدا داشته باشد. */
+  --ease: cubic-bezier(.22, .61, .36, 1);
+  --t-fast: .14s;
+  --t-mid: .28s;
+  --t-slow: .52s;
+  /* خط‌کشیِ دفتر: مویی‌تر از --line، برای بافتِ برگه */
+  --rule: rgba(23, 26, 46, .055);
+
   --radius: 10px;
   --radius-lg: 14px;
   --head-h: 58px;
@@ -4036,3 +4045,432 @@ select.input { cursor: pointer; }
 }
 .form-block-off-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 180px; }
 .form-block-off-text b { font-size: 12.5px; font-weight: 600; color: var(--ink-700); }
+
+/* ================================================================
+   کارتابل — «برگهٔ امروز»
+   ----------------------------------------------------------------
+   سرصفحه یک برگهٔ کاغذ است، نه یک کارت: خط‌کشیِ کمرنگِ دفتر، لبهٔ
+   برنجیِ بالا مثل نوار مُهر، و ترتیبِ کلی به جزئی — روز، جمله، نسبت‌ها،
+   عددها. تنها چیز پررنگ صفحه «نوار امروز» است؛ بقیه آرام می‌مانند.
+   ================================================================ */
+.wl-plate {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 15px 24px 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  animation: plate-in var(--t-slow) var(--ease) both;
+}
+/* نوار مُهر: خط برنجی بالای برگه */
+.wl-plate::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: linear-gradient(to left, var(--brass), var(--brass-line) 60%, transparent);
+  transform-origin: right center;
+  animation: rule-draw var(--t-slow) var(--ease) both;
+}
+@keyframes plate-in { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes rule-draw { from { transform: scaleX(0); } }
+
+.wl-eyebrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 2px; }
+.wl-eyebrow .wl-hero-actions { margin: 0; }
+.wl-eyebrow-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.wl-eyebrow-date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.wl-hero-line { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 13px; }
+.wl-weekday {
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  line-height: 1.1;
+  color: var(--ink-900);
+}
+.wl-hero-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-500);
+  line-height: 1.75;
+  max-width: 54ch;
+}
+
+/* ---------------------------------------------------- نوار امروز (امضا) */
+.ribbon-wrap { margin-bottom: 16px; }
+.ribbon {
+  display: flex;
+  gap: 3px;
+  height: 46px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--paper-2);
+}
+.rib-seg {
+  font: inherit;
+  flex: 0 0 var(--w);
+  min-width: 46px;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 6px;
+  overflow: hidden;
+  color: #fff;
+  transform-origin: right center;
+  animation: rib-grow var(--t-slow) var(--ease) both;
+  animation-delay: calc(var(--i) * .07s + .1s);
+  transition: filter var(--t-fast) var(--ease);
+}
+@keyframes rib-grow { from { transform: scaleX(0); opacity: 0; } }
+.rib-seg:hover { filter: brightness(1.08); }
+.rib-seg:focus-visible { outline: 2px solid var(--ink-900); outline-offset: -3px; }
+.rib-n { font-size: 16px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.rib-label {
+  font-size: 10px;
+  opacity: .88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rib-seg.r-late  { background: var(--cinnabar); }
+.rib-seg.r-today { background: var(--brass); }
+.rib-seg.r-week  { background: #8A7B52; }
+.rib-seg.r-calm  { background: var(--moss); }
+/* قطعهٔ باریک جا برای برچسب ندارد؛ فقط عدد می‌ماند */
+.rib-seg[style*="--w:1%"] .rib-label,
+.rib-seg[style*="--w:2%"] .rib-label,
+.rib-seg[style*="--w:3%"] .rib-label,
+.rib-seg[style*="--w:4%"] .rib-label { display: none; }
+
+.rib-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; }
+.rib-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.rib-key b { color: var(--ink-800); font-variant-numeric: tabular-nums; }
+.rib-swatch { width: 9px; height: 9px; border-radius: 3px; background: currentColor; }
+.rib-key.r-late  .rib-swatch { color: var(--cinnabar); }
+.rib-key.r-today .rib-swatch { color: var(--brass); }
+.rib-key.r-week  .rib-swatch { color: #8A7B52; }
+.rib-key.r-calm  .rib-swatch { color: var(--moss); }
+
+/* -------------------------------------------------- خط شمارشِ ته دفتر */
+.wl-tally {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+.tally {
+  font: inherit;
+  text-align: start;
+  flex: 1 1 0;
+  min-width: 108px;
+  border: 0;
+  border-inline-start: 1px solid var(--line-soft);
+  background: transparent;
+  padding: 13px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: rise var(--t-mid) var(--ease) both;
+  animation-delay: calc(var(--i) * .05s + .22s);
+  transition: background var(--t-fast) var(--ease);
+}
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.wl-tally > :first-child { border-inline-start: 0; }
+button.tally { cursor: pointer; }
+button.tally:hover { background: var(--paper); }
+button.tally:hover .tally-label { color: var(--brass-ink); }
+.tally-n {
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+.tally-label { font-size: 11.5px; color: var(--muted); }
+.tally.t-late .tally-n { color: var(--cinnabar); }
+.tally.t-done .tally-n { color: var(--moss); }
+.tally.is-zero .tally-n { color: var(--ink-400); font-weight: 600; }
+
+/* بخش‌های زیر سرصفحه، پلکانی بالا می‌آیند */
+.worklist > .wl-section,
+.worklist > .wl-pipe-card,
+.worklist > .empty-state {
+  animation: rise var(--t-mid) var(--ease) both;
+  animation-delay: calc(var(--i) * .06s + .3s);
+}
+
+@media (max-width: 720px) {
+  .wl-plate { padding: 15px 15px 2px; margin-inline: -2px; }
+  .wl-weekday { font-size: 26px; }
+  .wl-hero-text { font-size: 13.5px; }
+  .ribbon { height: 40px; }
+  .rib-label { display: none; }
+  .wl-tally { margin: 0 -15px; padding: 0 15px; }
+  /* دو ستون: خطِ افقی بین سطرها لازم است وگرنه عددها شناور می‌شوند */
+  .tally {
+    flex: 1 1 42%;
+    min-width: 0;
+    padding: 10px 10px 11px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .wl-tally > :nth-child(1), .wl-tally > :nth-child(2) { border-top: 0; }
+  .wl-tally > :nth-child(odd) { border-inline-start: 0; }
+  .tally-n { font-size: 21px; }
+}
+
+/* ================================================================
+   دامنهٔ کار
+   ================================================================ */
+.scope-chip {
+  font: inherit;
+  font-size: 11.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .08);
+  color: rgba(255, 255, 255, .88);
+  border-radius: 999px;
+  padding: 4px 11px;
+  margin-inline-start: 8px;
+  cursor: pointer;
+  max-width: 300px;
+  white-space: nowrap;
+  transition: background var(--t-fast) var(--ease);
+}
+.scope-chip:hover { background: rgba(255, 255, 255, .16); }
+.scope-chip-text { overflow: hidden; text-overflow: ellipsis; }
+.scope-chip-n { opacity: .62; font-variant-numeric: tabular-nums; }
+.scope-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--brass);
+  flex: none;
+  box-shadow: 0 0 0 3px rgba(166, 116, 27, .22);
+}
+
+.scope-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  padding: 9px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--brass-line);
+  border-radius: var(--radius);
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  animation: rise var(--t-mid) var(--ease) both;
+}
+.scope-banner .scope-dot { box-shadow: 0 0 0 3px rgba(166, 116, 27, .16); }
+.scope-why { font-weight: 600; }
+
+.scope-modal { width: min(560px, 94vw); }
+.scope-opts { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.scope-opt {
+  font: inherit;
+  text-align: start;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.scope-opt:hover { border-color: var(--brass-line); }
+.scope-opt.on { border-color: var(--brass); background: var(--brass-soft); }
+.scope-box {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.6px solid var(--line);
+  background: var(--card);
+  display: grid;
+  place-items: center;
+}
+.scope-opt.on .scope-box { background: var(--brass); border-color: var(--brass); }
+.scope-tick { color: transparent; font-size: 12px; line-height: 1; }
+.scope-opt.on .scope-tick { color: #fff; }
+.scope-opt-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.scope-opt-text b { font-size: 13px; }
+.scope-opt-n {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.scope-expert { margin-bottom: 12px; }
+.scope-count {
+  font-size: 12.5px;
+  color: var(--muted);
+  border-top: 1px dashed var(--line);
+  padding-top: 11px;
+}
+.scope-count b { font-size: 17px; color: var(--ink-900); font-variant-numeric: tabular-nums; }
+.scope-count.narrow b { color: var(--brass-ink); }
+
+/* ================================================================
+   فیلترها — چیپ‌های فعال و کلید «شامل / به‌جز»
+   ================================================================ */
+.filters-head { display: flex; align-items: baseline; gap: 8px; }
+.filters-head h3 { margin: 0; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 12px; }
+.fchip {
+  font: inherit;
+  font-size: 11.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  border-radius: 999px;
+  padding: 3px 9px;
+  cursor: pointer;
+  max-width: 100%;
+  animation: chip-in var(--t-fast) var(--ease) both;
+  transition: background var(--t-fast) var(--ease);
+}
+@keyframes chip-in { from { opacity: 0; transform: scale(.94); } }
+.fchip:hover { background: #F6E7C8; }
+.fchip.neg { border-color: var(--cinnabar-line); background: var(--cinnabar-soft); color: var(--cinnabar); }
+.fchip.neg:hover { background: #F9E2DC; }
+.fchip-op { font-weight: 700; font-size: 10.5px; opacity: .8; }
+.fchip-v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fchip-x { opacity: .55; font-size: 13px; line-height: 1; }
+.fchip:hover .fchip-x { opacity: 1; }
+
+.filter-mode {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 2px 0 6px;
+  background: var(--card);
+}
+.fm-btn {
+  font: inherit;
+  font-size: 11px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 3px 13px;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.fm-btn:hover { color: var(--ink-800); }
+.fm-btn.on { background: var(--ink-800); color: #fff; }
+.filter-group.is-not .fm-btn.on { background: var(--cinnabar); }
+.filter-group.is-not .fo-label { text-decoration: line-through; text-decoration-color: var(--cinnabar-line); }
+.badge.neg { background: var(--cinnabar-soft); color: var(--cinnabar); }
+
+/* چیپ دامنه در نوار بالا کنار بقیهٔ چیپ‌های وضعیت می‌نشیند */
+.top-actions .scope-chip { margin-inline-start: 0; max-width: 230px; }
+
+/* ---------------------------------------------- سطرهای فهرست، مثل دفتر
+   سطر باید در حرکتِ موس «بلند شود» نه اینکه فقط رنگ عوض کند: لبهٔ برنجی
+   سمت راست می‌گوید مکان‌نما اینجاست، و همان لبه در حالت انتخاب می‌ماند. */
+.trow:not(.thead) { transition: background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+.trow:not(.thead):hover { box-shadow: inset -3px 0 0 var(--brass-line); }
+.case-card { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+.case-card:active { transform: scale(.995); }
+
+/* ================================================================
+   گزارش‌ها — «برگهٔ آمار»
+   ----------------------------------------------------------------
+   همان زبان کارتابل: یک برگه با لبهٔ برنجی، یک رقم اصلی، و خط شمارش.
+   دو صفحهٔ آماری نباید دو زبان داشته باشند.
+   ================================================================ */
+.rep-plate {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+  animation: plate-in var(--t-slow) var(--ease) both;
+}
+.rep-plate::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: linear-gradient(to left, var(--brass), var(--brass-line) 60%, transparent);
+  transform-origin: right center;
+  animation: rule-draw var(--t-slow) var(--ease) both;
+}
+.rep-plate-top {
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 16px 22px 14px;
+}
+.rep-figure { display: flex; flex-direction: column; }
+.rep-big-label { font-size: 12px; color: var(--muted); }
+.rep-big-n {
+  font-size: 54px;
+  font-weight: 800;
+  letter-spacing: -.04em;
+  line-height: 1.05;
+  color: var(--ink-900);
+}
+.rep-caption { flex: 1; min-width: 240px; padding-bottom: 6px; }
+.rep-caption p { margin: 0; font-size: 12.5px; color: var(--ink-500); line-height: 1.85; max-width: 62ch; }
+
+.rep-tally {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+}
+.rep-tally .tally { border-inline-start: 1px solid var(--line-soft); min-width: 140px; }
+.rep-tally > :first-child { border-inline-start: 0; }
+.tally-note { font-size: 10.5px; color: var(--ink-400); }
+
+/* کارت نمودار: بالا آمدنِ پلکانی، و لبهٔ برنجی وقتی موس رویش است */
+.chart-grid > .chart-card {
+  animation: rise var(--t-mid) var(--ease) both;
+  transition: box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.chart-grid > .chart-card:nth-child(1) { animation-delay: .06s; }
+.chart-grid > .chart-card:nth-child(2) { animation-delay: .12s; }
+.chart-grid > .chart-card:nth-child(3) { animation-delay: .18s; }
+.chart-grid > .chart-card:nth-child(4) { animation-delay: .24s; }
+.chart-grid > .chart-card:nth-child(n+5) { animation-delay: .3s; }
+.chart-card:hover {
+  box-shadow: var(--shadow), inset 0 2px 0 var(--brass-line);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+  .rep-plate-top { padding: 13px 15px 11px; gap: 12px; }
+  .rep-big-n { font-size: 42px; }
+  .rep-tally .tally { flex: 1 1 42%; min-width: 0; }
+}

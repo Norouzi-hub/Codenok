@@ -216,7 +216,7 @@ function check(name, ok, extra) {
   await page.evaluate(() => window.App.goWork());
   await page.waitForSelector('.worklist');
   const wl = await page.evaluate(() => {
-    const labels = [...document.querySelectorAll('.wl-stat-label')].map(x => x.textContent);
+    const labels = [...document.querySelectorAll('.tally-label')].map(x => x.textContent);
     return {
       hasStat: labels.indexOf('کار امروز') >= 0,
       hasSection: !!document.querySelector('.task-section'),
@@ -229,7 +229,7 @@ function check(name, ok, extra) {
     wl.hasSection && wl.sectionRows > 0, wl.sectionRows + ' سطر');
 
   const jumped = await page.evaluate(async () => {
-    const b = [...document.querySelectorAll('.wl-stat')]
+    const b = [...document.querySelectorAll('.tally')]
       .find(x => (x.textContent || '').indexOf('کار امروز') >= 0);
     if (!b || b.tagName !== 'BUTTON') return 'کارت دکمه نیست';
     b.click();

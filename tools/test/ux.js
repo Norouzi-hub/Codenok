@@ -121,37 +121,63 @@ function check(name, ok, extra) {
     edges.last[0] === false && edges.last[1] === true,
     JSON.stringify(edges));
 
-  console.log('\n— کارت‌های آمار کارتابل —');
+  console.log('\n— خط شمارش کارتابل —');
   await page.evaluate(() => { window.App.setDirty(false); window.App.goWork(); });
-  await page.waitForSelector('.wl-stats');
-  await page.waitForTimeout(400);
+  await page.waitForSelector('.wl-tally');
+  await page.waitForTimeout(700);          // شمارش بالا رونده تمام شود
   const stats = await page.evaluate(() => {
-    const cards = [...document.querySelectorAll('.wl-stat')];
-    return cards.map(c => ({
-      label: c.querySelector('.wl-stat-label').textContent,
-      num: window.U.toLatinDigits(c.querySelector('.wl-stat-num').textContent),
+    return [...document.querySelectorAll('.tally')].map(c => ({
+      label: c.querySelector('.tally-label').textContent,
+      num: window.U.toLatinDigits(c.querySelector('.tally-n').textContent),
       isButton: c.tagName === 'BUTTON',
-      off: c.classList.contains('wl-stat-off')
+      off: c.classList.contains('is-zero')
     }));
   });
-  // هر کارتی که عددش صفر نیست باید کلیک‌شدنی باشد، و هر کارت صفر، بی‌صدا
-  check('هر کارت آمارِ ناصفر کلیک‌شدنی است',
+  // هر شمارندهٔ ناصفر باید کلیک‌شدنی باشد، و هر صفر، بی‌صدا
+  check('هر شمارندهٔ ناصفر کلیک‌شدنی است',
     stats.every(s => (Number(s.num) > 0) === s.isButton),
     stats.map(s => s.label + ':' + s.num + (s.isButton ? '✔' : '✖')).join(' | '));
-  check('کارت صفر، شکل دکمه ندارد',
+  check('شمارندهٔ صفر، شکل دکمه ندارد',
     stats.filter(s => Number(s.num) === 0).every(s => s.off && !s.isButton));
 
   const statClick = await page.evaluate(() => {
-    const card = [...document.querySelectorAll('button.wl-stat')]
-      .find(c => c.querySelector('.wl-stat-label').textContent === 'منتظر اقدام ما');
-    const expected = window.U.toLatinDigits(card.querySelector('.wl-stat-num').textContent);
+    const card = [...document.querySelectorAll('button.tally')]
+      .find(c => c.querySelector('.tally-label').textContent === 'منتظر اقدام ما');
+    const expected = window.U.toLatinDigits(card.querySelector('.tally-n').textContent);
     card.click();
     return { expected: Number(expected), got: window.App.state.lastResult.length,
       view: window.App.state.view, note: window.App.state.filterNote };
   });
-  check('کلیک روی کارت، همان پرونده‌ها را در فهرست می‌آورد',
+  check('کلیک روی شمارنده، همان پرونده‌ها را در فهرست می‌آورد',
     statClick.view === 'list' && statClick.got === statClick.expected,
     statClick.got + ' از ' + statClick.expected + ' — ' + statClick.note);
+
+  // نوار امروز: مجموع قطعه‌ها باید با پرونده‌های باز بخواند، وگرنه نوار دروغ می‌گوید
+  await page.evaluate(() => { window.App.setDirty(false); window.App.goWork(); });
+  await page.waitForSelector('.ribbon');
+  const ribbon = await page.evaluate(() => {
+    const segs = [...document.querySelectorAll('.rib-seg')];
+    const sum = segs.reduce((n, s) =>
+      n + Number(window.U.toLatinDigits(s.querySelector('.rib-n').textContent)), 0);
+    const open = window.Model.scoped().filter(c => {
+      const a = window.Worklist.nextAction(c);
+      return a.key !== 'closed' && a.key !== 'transferred';
+    }).length;
+    return { sum: sum, open: open, segs: segs.length };
+  });
+  check('نوار امروز همهٔ پرونده‌های باز را می‌پوشاند، نه کمتر نه بیشتر',
+    ribbon.sum === ribbon.open, ribbon.sum + ' از ' + ribbon.open +
+    ' در ' + ribbon.segs + ' قطعه');
+
+  const ribClick = await page.evaluate(() => {
+    const seg = document.querySelector('.rib-seg');
+    const n = Number(window.U.toLatinDigits(seg.querySelector('.rib-n').textContent));
+    seg.click();
+    return { n: n, got: window.App.state.lastResult.length, view: window.App.state.view };
+  });
+  check('کلیک روی یک قطعهٔ نوار، همان پرونده‌ها را می‌آورد',
+    ribClick.view === 'list' && ribClick.got === ribClick.n,
+    ribClick.got + ' از ' + ribClick.n);
 
   // ریل ریزِ پانزده‌مرحله‌ای باید به‌شکل نوار قطعه‌قطعه خوانده شود، نه نقطه‌های چسبیده
   await page.evaluate(() => { window.App.setDirty(false); window.App.goList(); });

@@ -82,6 +82,95 @@
     return box;
   }
 
+  /* ================================================================
+     نوار امروز
+     ----------------------------------------------------------------
+     یک نوار، چهار قطعه، هر قطعه به اندازهٔ سهمش. کلِ بارِ باز را در یک
+     خط می‌گوید: چقدرش از مهلت گذشته، چقدرش امروز است، چقدر تا آخر هفته،
+     و چقدر آرام.
+     
+     چرا نوار و نه چهار کارت دیگر: کارت‌ها عدد می‌دهند، نوار «نسبت» می‌دهد.
+     تفاوتِ «۴ از ۳۰» با «۲۴ از ۳۰» را باید دید، نه خواند و حساب کرد. و
+     چون تنها چیزِ پررنگ صفحه است، بقیه می‌توانند آرام بمانند.
+     ================================================================ */
+  var RIB = [
+    { key: 'late', label: 'از مهلت گذشته', hint: 'کارِ امروز، با تأخیر' },
+    { key: 'today', label: 'سررسید امروز', hint: 'همین امروز باید انجام شود' },
+    { key: 'week', label: 'تا هفت روز آینده', hint: 'در راه است' },
+    { key: 'calm', label: 'آرام', hint: 'مهلتش دور است یا مهلتی ندارد' }
+  ];
+
+  function ribbonData(cases) {
+    var today = J.today();
+    var out = { late: [], today: [], week: [], calm: [] };
+    cases.forEach(function (rec) {
+      var a = WL.nextAction(rec);
+      if (!a || a.key === 'closed' || a.key === 'transferred') return;
+      if (a.overdue) { out.late.push(rec.id); return; }
+      var d = a.due ? J.diffDays(today, a.due) : null;   // منفی = آینده
+      if (d === 0) out.today.push(rec.id);
+      else if (d != null && -d <= 7) out.week.push(rec.id);
+      else out.calm.push(rec.id);
+    });
+    return out;
+  }
+
+  function dayRibbon(app, cases) {
+    var data = ribbonData(cases);
+    var total = RIB.reduce(function (n, r) { return n + data[r.key].length; }, 0);
+    if (!total) return null;
+
+    var bar = el('div.ribbon', { role: 'group', 'aria-label': 'بار کاری امروز' });
+    RIB.forEach(function (r, i) {
+      var ids = data[r.key];
+      if (!ids.length) return;
+      var pct = Math.round((ids.length / total) * 100);
+      var seg = el('button.rib-seg.r-' + r.key, {
+        type: 'button',
+        style: '--w:' + pct + '%;--i:' + i,
+        title: r.label + ' — ' + fa(ids.length) + ' پرونده (' + fa(pct) + '٪). ' +
+          r.hint + '. برای دیدن فهرستشان کلیک کنید.',
+        onclick: function () { app.showCases(ids, r.label); }
+      }, [
+        el('span.rib-n', { text: fa(ids.length) }),
+        el('span.rib-label', { text: r.label })
+      ]);
+      bar.appendChild(seg);
+    });
+
+    var legend = el('div.rib-legend', null, RIB.filter(function (r) {
+      return data[r.key].length;
+    }).map(function (r) {
+      return el('span.rib-key.r-' + r.key, null, [
+        el('i.rib-swatch'), el('span', { text: r.label }),
+        el('b', { text: fa(data[r.key].length) })
+      ]);
+    }));
+
+    return el('div.ribbon-wrap', null, [bar, legend]);
+  }
+
+  /* خط شمارشِ دفتر — به‌جای هفت جعبهٔ هم‌اندازه.
+     هفت کارتِ مساوی یعنی هفت چیزِ هم‌ارزش، که نیستند. اینجا عددها در یک
+     خط می‌نشینند، با خط‌های مویی بینشان، مثل سطر جمعِ ته دفتر. */
+  function tally(items) {
+    var row = el('div.wl-tally');
+    items.filter(Boolean).forEach(function (t, i) {
+      var num = el('span.tally-n');
+      var node = el((t.ids && t.ids.length ? 'button' : 'div') +
+        '.tally' + (t.tone ? '.t-' + t.tone : '') +
+        (t.ids && t.ids.length ? '' : '.is-zero'), {
+        type: t.ids && t.ids.length ? 'button' : null,
+        style: '--i:' + i,
+        title: t.hint + (t.ids && t.ids.length ? ' — برای دیدن فهرستشان کلیک کنید' : ''),
+        onclick: t.onclick || null
+      }, [num, el('span.tally-label', { text: t.label })]);
+      w.U.countUp(num, t.value);
+      row.appendChild(node);
+    });
+    return row;
+  }
+
   // ------------------------------------------------------------ هفتهٔ پیشِ رو
   /**
    * نوار هفته: هفت روز آینده، و اینکه هر روز چند چیز سررسید می‌شود.
@@ -216,7 +305,7 @@
 
   // ------------------------------------------------------------------ صفحه
   function render(app, mount) {
-    var cases = M.state.cases;
+    var cases = M.scoped();
     var sum = WL.summary(cases);
     var all = WL.buckets(cases);
     var ours = all.filter(function (b) { return b.ours; });
@@ -224,7 +313,8 @@
     var ready = WL.readyForCommittee(cases);
 
     var t = J.unpack(J.today());
-    var todayText = J.weekday(t.jy, t.jm, t.jd) + '، ' + J.format(J.today(), { long: true });
+    var weekdayName = J.weekday(t.jy, t.jm, t.jd);
+    var todayText = J.format(J.today(), { long: true });
 
     var headline;
     if (!sum.open) {
@@ -241,90 +331,100 @@
       headline += ' (' + fa(sum.transferred) + ' پرونده به کارشناس دیگری ارجاع شده.)';
     }
 
-    /* هر پنج کارت آمار یک شکل‌اند، پس هر پنج‌تا هم باید کار کنند: کارتی که
-       مثل دکمه دیده می‌شود ولی کاری نمی‌کند، به کاربر دروغ می‌گوید. */
-    function statCard(num, label, hint, pick, cls) {
-      var ids = num ? pick() : [];
-      if (!ids.length) {
-        return el('div.wl-stat.wl-stat-off' + (cls || ''), { title: hint }, [
-          el('span.wl-stat-num', { text: fa(num) }),
-          el('span.wl-stat-label', { text: label })
-        ]);
-      }
-      return el('button.wl-stat' + (cls || ''), {
-        type: 'button', title: hint + ' — برای دیدن فهرستشان کلیک کنید',
-        onclick: function () { app.showCases(ids, label); }
-      }, [
-        el('span.wl-stat-num', { text: fa(num) }),
-        el('span.wl-stat-label', { text: label })
-      ]);
-    }
-
-    /* کارها پرونده نیستند، پس showCases به دردشان نمی‌خورد؛ این کارت به
-       نمای «کارها» می‌رود. شکلش با بقیه یکی است تا از ریتم کارت‌ها نیفتد. */
-    function taskStat() {
-      var ts = w.Notes.stats();
-      var n = ts.dueTasks;
-      if (!n) {
-        return el('div.wl-stat.wl-stat-off', { title: 'کاری برای امروز نمانده' }, [
-          el('span.wl-stat-num', { text: fa(0) }),
-          el('span.wl-stat-label', { text: 'کار امروز' })
-        ]);
-      }
-      return el('button.wl-stat' + (ts.overdueTasks ? '.late' : ''), {
-        type: 'button',
-        title: 'کارهایی که سررسیدشان رسیده یا گذشته — برای دیدنشان کلیک کنید',
-        onclick: function () { app.goTasks(); }
-      }, [
-        el('span.wl-stat-num', { text: fa(n) }),
-        el('span.wl-stat-label', { text: 'کار امروز' })
-      ]);
-    }
-
     function idsWhere(fn) {
       return cases.filter(fn).map(function (c) { return c.id; });
     }
 
-    var stats = el('div.wl-stats', null, [
-      statCard(sum.overdue, 'از مهلت گذشته',
-        'پرونده‌هایی که از مهلت اقدامشان گذشته', function () {
-          return idsWhere(function (c) {
+    var ts = w.Notes.stats();
+    var stats = tally([
+      {
+        value: sum.overdue, label: 'از مهلت گذشته', tone: 'late',
+        hint: 'پرونده‌هایی که از مهلت اقدامشان گذشته',
+        ids: idsWhere(function (c) {
+          var a = WL.nextAction(c);
+          return a.key !== 'closed' && a.overdue;
+        }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) {
             var a = WL.nextAction(c);
             return a.key !== 'closed' && a.overdue;
-          });
-        }, sum.overdue ? '.late' : ''),
-      statCard(sum.ours, 'منتظر اقدام ما',
-        'کاری که انجامش با دبیرخانه یا کارشناس است', function () {
-          return idsWhere(function (c) {
+          }), 'از مهلت گذشته');
+        }
+      },
+      {
+        value: sum.ours, label: 'منتظر اقدام ما',
+        hint: 'کاری که انجامش با دبیرخانه یا کارشناس است',
+        ids: idsWhere(function (c) {
+          var a = WL.nextAction(c);
+          return a.key !== 'closed' && WL.isOurs(a);
+        }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) {
             var a = WL.nextAction(c);
             return a.key !== 'closed' && WL.isOurs(a);
-          });
+          }), 'منتظر اقدام ما');
+        }
+      },
+      {
+        value: sum.theirs, label: 'منتظر دیگران',
+        hint: 'پرونده‌هایی که توپ در زمین ما نیست',
+        ids: idsWhere(function (c) {
+          var a = WL.nextAction(c);
+          return a.key !== 'closed' && !WL.isOurs(a);
         }),
-      statCard(sum.theirs, 'منتظر پاسخ دیگران',
-        'پرونده‌هایی که توپ در زمین ما نیست', function () {
-          return idsWhere(function (c) {
+        onclick: function () {
+          app.showCases(idsWhere(function (c) {
             var a = WL.nextAction(c);
             return a.key !== 'closed' && !WL.isOurs(a);
-          });
-        }),
-      taskStat(),
-      statCard(w.Notes.stats().openFollowUps, 'پیگیری باز',
-        'قرارهای پیگیری که هنوز بسته نشده‌اند', function () {
-          /* کارِ بی‌پرونده هم در سررسیدها می‌آید و rec ندارد؛ این کارت
+          }), 'منتظر دیگران');
+        }
+      },
+      {
+        value: ts.dueTasks, label: 'کار امروز',
+        tone: ts.overdueTasks ? 'late' : '',
+        hint: 'کارهایی که سررسیدشان رسیده یا گذشته',
+        ids: ts.dueTasks ? [1] : [],
+        onclick: function () { app.goTasks(); }
+      },
+      {
+        value: ts.openFollowUps, label: 'پیگیری باز',
+        hint: 'قرارهای پیگیری که هنوز بسته نشده‌اند',
+        ids: (function () {
+          /* کارِ بی‌پرونده هم در سررسیدها می‌آید و rec ندارد؛ این شمارنده
              فهرستِ پرونده باز می‌کند، پس فقط پرونده‌دارها به کارش می‌آیند. */
           var seen = {};
           w.Notes.dueFollowUps(false).forEach(function (f) {
             if (f.rec) seen[f.rec.id] = 1;
           });
           return Object.keys(seen);
-        }),
-      statCard(sum.transferred, 'ارجاع‌شده',
-        'پرونده‌هایی که به کارشناس دیگری ارجاع شده‌اند', function () {
-          return idsWhere(function (c) { return WL.isTransferred(c); });
-        }),
-      statCard(sum.closed, 'مختومه', 'پرونده‌های مختومه‌شده', function () {
-        return idsWhere(function (c) { return WL.isClosed(c); });
-      })
+        })(),
+        onclick: function () {
+          var seen = {};
+          w.Notes.dueFollowUps(false).forEach(function (f) {
+            if (f.rec) seen[f.rec.id] = 1;
+          });
+          app.showCases(Object.keys(seen), 'پیگیری باز');
+        }
+      },
+      {
+        value: sum.closed, label: 'مختومه', tone: 'done',
+        hint: 'پرونده‌های مختومه‌شده',
+        ids: idsWhere(function (c) { return WL.isClosed(c); }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) { return WL.isClosed(c); }), 'مختومه');
+        }
+      },
+      /* ارجاع‌شده فقط وقتی شمرده می‌شود که در دامنه باشد؛ اگر کاربر گفته
+         «اینها کار من نیستند»، شمارنده‌اش هم نباید ادعای خلافش را بکند. */
+      sum.transferred ? {
+        value: sum.transferred, label: 'ارجاع‌شده',
+        hint: 'پرونده‌هایی که به کارشناس دیگری ارجاع شده‌اند',
+        ids: idsWhere(function (c) { return WL.isTransferred(c); }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) { return WL.isTransferred(c); }),
+            'ارجاع‌شده');
+        }
+      } : null
     ]);
 
     // جلسه هر وقت تشکیل می‌شود، نه فقط وقتی برنامه پرونده‌ای را «آماده» بداند؛
@@ -485,15 +585,42 @@
       ]));
     }
 
-    w.U.clear(mount);
-    mount.appendChild(el('div.worklist', null, [
-      el('header.wl-hero', null, [
-        el('div.wl-hero-date', { text: todayText }),
-        el('h1.wl-hero-line', { text: headline }),
-        stats,
-        heroActions
+    /*
+     * سرصفحه، یک «برگه» است نه یک کارت.
+     *
+     * روز، بزرگ و اول — چون اولین چیزی که آدم صبح می‌خواهد بداند همین
+     * است. بعد یک جملهٔ کامل به فارسی، بعد نوار امروز که نسبت‌ها را
+     * می‌گوید، و ته برگه خط شمارش. ترتیب از کلی به جزئی است، مثل هر
+     * گزارشی که آدم برای آدم می‌نویسد.
+     */
+    var hero = el('header.wl-hero', null, [
+      el('div.wl-plate', null, [
+        el('div.wl-eyebrow', null, [
+          el('span.wl-eyebrow-tag', { text: 'کارتابل دبیرخانه' }),
+          el('span.wl-eyebrow-date', { text: todayText }),
+          el('div.spacer'),
+          // اقدام‌ها بالای برگه می‌نشینند، نه زیرش: آنجا آویزان بودند
+          heroActions
+        ]),
+        el('h1.wl-hero-line', null, [
+          el('span.wl-weekday', { text: weekdayName }),
+          el('span.wl-hero-text', { text: headline })
+        ]),
+        dayRibbon(app, cases),
+        stats
       ])
-    ].concat(sections)));
+    ]);
+
+    /* ورودِ پلکانی: هر بخش چند صدم ثانیه بعد از قبلی بالا می‌آید. کار
+       تزئین نیست — چشم را از بالا به پایین می‌برد، به همان ترتیبی که
+       باید خوانده شود. با prefers-reduced-motion کلاً خاموش است. */
+    sections.forEach(function (node, i) {
+      if (node && node.style) node.style.setProperty('--i', i);
+    });
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.worklist', null,
+      [w.UIScope.banner(app), hero].concat(sections)));
   }
 
   w.UIWorklist = { render: render, rail: rail, pipelineRail: pipelineRail,

@@ -527,7 +527,7 @@ async function openList(page) {
     return {
       cards: document.querySelectorAll('.chart-card').length,
       svgs: document.querySelectorAll('svg.chart').length,
-      heroes: document.querySelectorAll('.hero-value').length,
+      heroes: document.querySelectorAll('.rep-big-n').length,
       total: d.kpis.total,
       cases: d.cases.length,
       funnel: d.funnel.map(f => f.value),

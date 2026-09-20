@@ -190,7 +190,9 @@
     var range = opts.range || { from: '', to: '' };
     var baseField = opts.baseField || 'intakeDate';
     var undated = 0;
-    var cases = M.state.cases.filter(function (c) {
+    /* دامنهٔ کار پیش از فیلترهای خود گزارش می‌نشیند: اگر گفته‌اید
+       ارجاع‌شده‌ها کار شما نیستند، در هیچ آماری هم نباید بیایند. */
+    var cases = M.scoped().filter(function (c) {
       if (opts.expert && (c.expert || '') !== opts.expert) return false;
       // «سال رسیدگی» در فرم نیست؛ اگر خالی بود، سالِ تاریخ ورود مبناست
       if (opts.year && yearOf(c) !== opts.year) return false;

@@ -68,6 +68,15 @@
   --shadow: 0 1px 2px rgba(23, 26, 46, .05), 0 8px 24px -12px rgba(23, 26, 46, .18);
   --shadow-lg: 0 24px 64px -24px rgba(23, 26, 46, .35);
 
+  /* حرکت — یک منحنی، یک زمان‌بندی، همه‌جا یکی. سه نوع easing در یک
+     صفحه یعنی سه صدا؛ برنامه باید یک صدا داشته باشد. */
+  --ease: cubic-bezier(.22, .61, .36, 1);
+  --t-fast: .14s;
+  --t-mid: .28s;
+  --t-slow: .52s;
+  /* خط‌کشیِ دفتر: مویی‌تر از --line، برای بافتِ برگه */
+  --rule: rgba(23, 26, 46, .055);
+
   --radius: 10px;
   --radius-lg: 14px;
   --head-h: 58px;
@@ -4052,6 +4061,435 @@ select.input { cursor: pointer; }
 .form-block-off-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 180px; }
 .form-block-off-text b { font-size: 12.5px; font-weight: 600; color: var(--ink-700); }
 
+/* ================================================================
+   کارتابل — «برگهٔ امروز»
+   ----------------------------------------------------------------
+   سرصفحه یک برگهٔ کاغذ است، نه یک کارت: خط‌کشیِ کمرنگِ دفتر، لبهٔ
+   برنجیِ بالا مثل نوار مُهر، و ترتیبِ کلی به جزئی — روز، جمله، نسبت‌ها،
+   عددها. تنها چیز پررنگ صفحه «نوار امروز» است؛ بقیه آرام می‌مانند.
+   ================================================================ */
+.wl-plate {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 15px 24px 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  animation: plate-in var(--t-slow) var(--ease) both;
+}
+/* نوار مُهر: خط برنجی بالای برگه */
+.wl-plate::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: linear-gradient(to left, var(--brass), var(--brass-line) 60%, transparent);
+  transform-origin: right center;
+  animation: rule-draw var(--t-slow) var(--ease) both;
+}
+@keyframes plate-in { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes rule-draw { from { transform: scaleX(0); } }
+
+.wl-eyebrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 2px; }
+.wl-eyebrow .wl-hero-actions { margin: 0; }
+.wl-eyebrow-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.wl-eyebrow-date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.wl-hero-line { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 13px; }
+.wl-weekday {
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  line-height: 1.1;
+  color: var(--ink-900);
+}
+.wl-hero-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-500);
+  line-height: 1.75;
+  max-width: 54ch;
+}
+
+/* ---------------------------------------------------- نوار امروز (امضا) */
+.ribbon-wrap { margin-bottom: 16px; }
+.ribbon {
+  display: flex;
+  gap: 3px;
+  height: 46px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--paper-2);
+}
+.rib-seg {
+  font: inherit;
+  flex: 0 0 var(--w);
+  min-width: 46px;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 6px;
+  overflow: hidden;
+  color: #fff;
+  transform-origin: right center;
+  animation: rib-grow var(--t-slow) var(--ease) both;
+  animation-delay: calc(var(--i) * .07s + .1s);
+  transition: filter var(--t-fast) var(--ease);
+}
+@keyframes rib-grow { from { transform: scaleX(0); opacity: 0; } }
+.rib-seg:hover { filter: brightness(1.08); }
+.rib-seg:focus-visible { outline: 2px solid var(--ink-900); outline-offset: -3px; }
+.rib-n { font-size: 16px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.rib-label {
+  font-size: 10px;
+  opacity: .88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rib-seg.r-late  { background: var(--cinnabar); }
+.rib-seg.r-today { background: var(--brass); }
+.rib-seg.r-week  { background: #8A7B52; }
+.rib-seg.r-calm  { background: var(--moss); }
+/* قطعهٔ باریک جا برای برچسب ندارد؛ فقط عدد می‌ماند */
+.rib-seg[style*="--w:1%"] .rib-label,
+.rib-seg[style*="--w:2%"] .rib-label,
+.rib-seg[style*="--w:3%"] .rib-label,
+.rib-seg[style*="--w:4%"] .rib-label { display: none; }
+
+.rib-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; }
+.rib-key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.rib-key b { color: var(--ink-800); font-variant-numeric: tabular-nums; }
+.rib-swatch { width: 9px; height: 9px; border-radius: 3px; background: currentColor; }
+.rib-key.r-late  .rib-swatch { color: var(--cinnabar); }
+.rib-key.r-today .rib-swatch { color: var(--brass); }
+.rib-key.r-week  .rib-swatch { color: #8A7B52; }
+.rib-key.r-calm  .rib-swatch { color: var(--moss); }
+
+/* -------------------------------------------------- خط شمارشِ ته دفتر */
+.wl-tally {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+.tally {
+  font: inherit;
+  text-align: start;
+  flex: 1 1 0;
+  min-width: 108px;
+  border: 0;
+  border-inline-start: 1px solid var(--line-soft);
+  background: transparent;
+  padding: 13px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: rise var(--t-mid) var(--ease) both;
+  animation-delay: calc(var(--i) * .05s + .22s);
+  transition: background var(--t-fast) var(--ease);
+}
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.wl-tally > :first-child { border-inline-start: 0; }
+button.tally { cursor: pointer; }
+button.tally:hover { background: var(--paper); }
+button.tally:hover .tally-label { color: var(--brass-ink); }
+.tally-n {
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+.tally-label { font-size: 11.5px; color: var(--muted); }
+.tally.t-late .tally-n { color: var(--cinnabar); }
+.tally.t-done .tally-n { color: var(--moss); }
+.tally.is-zero .tally-n { color: var(--ink-400); font-weight: 600; }
+
+/* بخش‌های زیر سرصفحه، پلکانی بالا می‌آیند */
+.worklist > .wl-section,
+.worklist > .wl-pipe-card,
+.worklist > .empty-state {
+  animation: rise var(--t-mid) var(--ease) both;
+  animation-delay: calc(var(--i) * .06s + .3s);
+}
+
+@media (max-width: 720px) {
+  .wl-plate { padding: 15px 15px 2px; margin-inline: -2px; }
+  .wl-weekday { font-size: 26px; }
+  .wl-hero-text { font-size: 13.5px; }
+  .ribbon { height: 40px; }
+  .rib-label { display: none; }
+  .wl-tally { margin: 0 -15px; padding: 0 15px; }
+  /* دو ستون: خطِ افقی بین سطرها لازم است وگرنه عددها شناور می‌شوند */
+  .tally {
+    flex: 1 1 42%;
+    min-width: 0;
+    padding: 10px 10px 11px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .wl-tally > :nth-child(1), .wl-tally > :nth-child(2) { border-top: 0; }
+  .wl-tally > :nth-child(odd) { border-inline-start: 0; }
+  .tally-n { font-size: 21px; }
+}
+
+/* ================================================================
+   دامنهٔ کار
+   ================================================================ */
+.scope-chip {
+  font: inherit;
+  font-size: 11.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .08);
+  color: rgba(255, 255, 255, .88);
+  border-radius: 999px;
+  padding: 4px 11px;
+  margin-inline-start: 8px;
+  cursor: pointer;
+  max-width: 300px;
+  white-space: nowrap;
+  transition: background var(--t-fast) var(--ease);
+}
+.scope-chip:hover { background: rgba(255, 255, 255, .16); }
+.scope-chip-text { overflow: hidden; text-overflow: ellipsis; }
+.scope-chip-n { opacity: .62; font-variant-numeric: tabular-nums; }
+.scope-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--brass);
+  flex: none;
+  box-shadow: 0 0 0 3px rgba(166, 116, 27, .22);
+}
+
+.scope-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  padding: 9px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--brass-line);
+  border-radius: var(--radius);
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  animation: rise var(--t-mid) var(--ease) both;
+}
+.scope-banner .scope-dot { box-shadow: 0 0 0 3px rgba(166, 116, 27, .16); }
+.scope-why { font-weight: 600; }
+
+.scope-modal { width: min(560px, 94vw); }
+.scope-opts { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.scope-opt {
+  font: inherit;
+  text-align: start;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.scope-opt:hover { border-color: var(--brass-line); }
+.scope-opt.on { border-color: var(--brass); background: var(--brass-soft); }
+.scope-box {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.6px solid var(--line);
+  background: var(--card);
+  display: grid;
+  place-items: center;
+}
+.scope-opt.on .scope-box { background: var(--brass); border-color: var(--brass); }
+.scope-tick { color: transparent; font-size: 12px; line-height: 1; }
+.scope-opt.on .scope-tick { color: #fff; }
+.scope-opt-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.scope-opt-text b { font-size: 13px; }
+.scope-opt-n {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.scope-expert { margin-bottom: 12px; }
+.scope-count {
+  font-size: 12.5px;
+  color: var(--muted);
+  border-top: 1px dashed var(--line);
+  padding-top: 11px;
+}
+.scope-count b { font-size: 17px; color: var(--ink-900); font-variant-numeric: tabular-nums; }
+.scope-count.narrow b { color: var(--brass-ink); }
+
+/* ================================================================
+   فیلترها — چیپ‌های فعال و کلید «شامل / به‌جز»
+   ================================================================ */
+.filters-head { display: flex; align-items: baseline; gap: 8px; }
+.filters-head h3 { margin: 0; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 12px; }
+.fchip {
+  font: inherit;
+  font-size: 11.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  border-radius: 999px;
+  padding: 3px 9px;
+  cursor: pointer;
+  max-width: 100%;
+  animation: chip-in var(--t-fast) var(--ease) both;
+  transition: background var(--t-fast) var(--ease);
+}
+@keyframes chip-in { from { opacity: 0; transform: scale(.94); } }
+.fchip:hover { background: #F6E7C8; }
+.fchip.neg { border-color: var(--cinnabar-line); background: var(--cinnabar-soft); color: var(--cinnabar); }
+.fchip.neg:hover { background: #F9E2DC; }
+.fchip-op { font-weight: 700; font-size: 10.5px; opacity: .8; }
+.fchip-v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fchip-x { opacity: .55; font-size: 13px; line-height: 1; }
+.fchip:hover .fchip-x { opacity: 1; }
+
+.filter-mode {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 2px 0 6px;
+  background: var(--card);
+}
+.fm-btn {
+  font: inherit;
+  font-size: 11px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 3px 13px;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.fm-btn:hover { color: var(--ink-800); }
+.fm-btn.on { background: var(--ink-800); color: #fff; }
+.filter-group.is-not .fm-btn.on { background: var(--cinnabar); }
+.filter-group.is-not .fo-label { text-decoration: line-through; text-decoration-color: var(--cinnabar-line); }
+.badge.neg { background: var(--cinnabar-soft); color: var(--cinnabar); }
+
+/* چیپ دامنه در نوار بالا کنار بقیهٔ چیپ‌های وضعیت می‌نشیند */
+.top-actions .scope-chip { margin-inline-start: 0; max-width: 230px; }
+
+/* ---------------------------------------------- سطرهای فهرست، مثل دفتر
+   سطر باید در حرکتِ موس «بلند شود» نه اینکه فقط رنگ عوض کند: لبهٔ برنجی
+   سمت راست می‌گوید مکان‌نما اینجاست، و همان لبه در حالت انتخاب می‌ماند. */
+.trow:not(.thead) { transition: background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+.trow:not(.thead):hover { box-shadow: inset -3px 0 0 var(--brass-line); }
+.case-card { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+.case-card:active { transform: scale(.995); }
+
+/* ================================================================
+   گزارش‌ها — «برگهٔ آمار»
+   ----------------------------------------------------------------
+   همان زبان کارتابل: یک برگه با لبهٔ برنجی، یک رقم اصلی، و خط شمارش.
+   دو صفحهٔ آماری نباید دو زبان داشته باشند.
+   ================================================================ */
+.rep-plate {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+  animation: plate-in var(--t-slow) var(--ease) both;
+}
+.rep-plate::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: linear-gradient(to left, var(--brass), var(--brass-line) 60%, transparent);
+  transform-origin: right center;
+  animation: rule-draw var(--t-slow) var(--ease) both;
+}
+.rep-plate-top {
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 16px 22px 14px;
+}
+.rep-figure { display: flex; flex-direction: column; }
+.rep-big-label { font-size: 12px; color: var(--muted); }
+.rep-big-n {
+  font-size: 54px;
+  font-weight: 800;
+  letter-spacing: -.04em;
+  line-height: 1.05;
+  color: var(--ink-900);
+}
+.rep-caption { flex: 1; min-width: 240px; padding-bottom: 6px; }
+.rep-caption p { margin: 0; font-size: 12.5px; color: var(--ink-500); line-height: 1.85; max-width: 62ch; }
+
+.rep-tally {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+}
+.rep-tally .tally { border-inline-start: 1px solid var(--line-soft); min-width: 140px; }
+.rep-tally > :first-child { border-inline-start: 0; }
+.tally-note { font-size: 10.5px; color: var(--ink-400); }
+
+/* کارت نمودار: بالا آمدنِ پلکانی، و لبهٔ برنجی وقتی موس رویش است */
+.chart-grid > .chart-card {
+  animation: rise var(--t-mid) var(--ease) both;
+  transition: box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.chart-grid > .chart-card:nth-child(1) { animation-delay: .06s; }
+.chart-grid > .chart-card:nth-child(2) { animation-delay: .12s; }
+.chart-grid > .chart-card:nth-child(3) { animation-delay: .18s; }
+.chart-grid > .chart-card:nth-child(4) { animation-delay: .24s; }
+.chart-grid > .chart-card:nth-child(n+5) { animation-delay: .3s; }
+.chart-card:hover {
+  box-shadow: var(--shadow), inset 0 2px 0 var(--brass-line);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+  .rep-plate-top { padding: 13px 15px 11px; gap: 12px; }
+  .rep-big-n { font-size: 42px; }
+  .rep-tally .tally { flex: 1 1 42%; min-width: 0; }
+}
+
 </style>
 
 </head>
@@ -5945,11 +6383,40 @@ window.SEED_CASES = [
     return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
+  /*
+   * شمارشِ بالا رونده برای عددهای بزرگِ کارتابل و گزارش.
+   *
+   * کارش این نیست که «حرکت داشته باشد»؛ کارش این است که چشم را روی عدد
+   * نگه دارد تا خوانده شود. پس کوتاه است (نیم‌ثانیه)، فقط برای عددهای
+   * بزرگ، و اگر کاربر حرکت کمتر خواسته باشد اصلاً اجرا نمی‌شود.
+   */
+  function countUp(node, value, ms) {
+    var target = Number(value) || 0;
+    var reduce = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || target < 2 || !window.requestAnimationFrame) {
+      node.textContent = toFaDigits(target);
+      return;
+    }
+    var dur = ms || 520;
+    var start = 0;
+    function step(now) {
+      if (!start) start = now;
+      var t = Math.min(1, (now - start) / dur);
+      // آرام شدن در انتها: عدد به مقصد می‌رسد، نه اینکه ناگهان بایستد
+      var eased = 1 - Math.pow(1 - t, 3);
+      node.textContent = toFaDigits(Math.round(target * eased));
+      if (t < 1) window.requestAnimationFrame(step);
+    }
+    node.textContent = toFaDigits(0);
+    window.requestAnimationFrame(step);
+  }
+
   w.U = {
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,
     modal: modal, confirmBox: confirmBox, download: download,
-    safeName: safeName, uid: uid
+    safeName: safeName, uid: uid, countUp: countUp
   };
 })(window);
 
@@ -7515,6 +7982,62 @@ window.SEED_CASES = [
 
   function get(id) { return byId[id]; }
 
+  /* ================================================================
+     دامنهٔ کار
+     ----------------------------------------------------------------
+     شکایت کاربر ساده بود: «ارجاع به کارشناس دیگر، پروندهٔ من نیست ولی
+     توی همهٔ آمارها می‌آید». درست هم بود — آن پرونده‌ها نه مختومه‌اند نه
+     در جریانِ ما، ولی در هر شمارشی می‌نشستند.
+     
+     جوابش یک فیلتر دیگر در کنار بقیه نیست؛ فیلتر را باید هر بار در هر
+     صفحه دوباره گذاشت. این یک تصمیمِ ماندگار است: «دامنهٔ کار من این
+     است» — یک بار تعیین می‌شود، در تنظیمات می‌ماند، و کارتابل، فهرست،
+     گزارش‌ها و تقویم همگی از همان می‌خوانند.
+     
+     سه چیز از آن بیرون می‌ماند و هر سه صریح‌اند، نه پیش‌فرضِ پنهان:
+     ارجاع‌شده‌ها، مختومه‌ها، و پرونده‌های کارشناسان دیگر.
+     ================================================================ */
+  function scope() {
+    var sc = state.settings.scope || {};
+    return {
+      hideTransferred: !!sc.hideTransferred,
+      hideClosed: !!sc.hideClosed,
+      expert: sc.expert || ''
+    };
+  }
+
+  /** آیا این پرونده داخل دامنهٔ کار است */
+  function inScope(rec, sc) {
+    sc = sc || scope();
+    if (sc.hideTransferred && rec.transferDate) return false;
+    if (sc.hideClosed && /مختومه/.test(rec.status || '')) return false;
+    if (sc.expert && (rec.expert || '') !== sc.expert) return false;
+    return true;
+  }
+
+  /** پرونده‌های داخل دامنه — مبنای هر شمارشی که کاربر می‌بیند */
+  function scoped() {
+    var sc = scope();
+    if (!sc.hideTransferred && !sc.hideClosed && !sc.expert) return state.cases;
+    return state.cases.filter(function (rec) { return inScope(rec, sc); });
+  }
+
+  /** چند پرونده بیرون از دامنه مانده — برای اینکه پنهان‌کاری نشود */
+  function outOfScopeCount() {
+    return state.cases.length - scoped().length;
+  }
+
+  function setScope(patch) {
+    var sc = scope();
+    Object.keys(patch).forEach(function (k) { sc[k] = patch[k]; });
+    return saveSettings({ scope: sc });
+  }
+
+  function scopeIsOn() {
+    var sc = scope();
+    return !!(sc.hideTransferred || sc.hideClosed || sc.expert);
+  }
+
   // ------------------------------------------------------------ جستجو و فیلتر
   function tokenize(q) {
     return w.U.normalize(q).split(' ').filter(Boolean);
@@ -7533,6 +8056,16 @@ window.SEED_CASES = [
       if (k.charAt(0) === '_') continue;
       if (!filters[k] || !filters[k].length) continue;
       if (filters[k].indexOf(rec[k] || '') < 0) return false;
+    }
+    /* فیلتر «به‌جز»: به‌جای اینکه کاربر همهٔ گزینه‌ها را جز یکی تیک بزند،
+       همان یکی را کنار می‌گذارد. جدا از فیلتر عادی نگه داشته شده تا هر
+       دو با هم قابل استفاده باشند. */
+    var not = filters._not;
+    if (not) {
+      for (var nk in not) {
+        if (!not[nk] || !not[nk].length) continue;
+        if (not[nk].indexOf(rec[nk] || '') >= 0) return false;
+      }
     }
     if (filters._from || filters._to) {
       var dv = rec[filters._dateField || 'intakeDate'];
@@ -7571,7 +8104,10 @@ window.SEED_CASES = [
   function query(opts) {
     var tokens = tokenize(opts.q || '');
     var filters = opts.filters || {};
-    var out = state.cases.filter(function (rec) { return matches(rec, tokens, filters); });
+    // دامنهٔ کار پیش از هر فیلتری اعمال می‌شود؛ opts.all آن را دور می‌زند
+    // (خروجی اکسل و پشتیبان باید همه‌چیز را ببینند).
+    var base = opts.all ? state.cases : scoped();
+    var out = base.filter(function (rec) { return matches(rec, tokens, filters); });
     var key = opts.sortKey || 'caseNo';
     var dir = opts.sortDir || 'asc';
     out.sort(function (a, b) {
@@ -7827,6 +8363,8 @@ window.SEED_CASES = [
     distinct: distinct, optionsFor: optionsFor, relatedCases: relatedCases,
     duplicateCaseNo: duplicateCaseNo, historyFor: historyFor, timelineFor: timelineFor,
     stats: stats, stale: stale, strip: strip, diff: diff,
+    scope: scope, scoped: scoped, inScope: inScope, setScope: setScope,
+    scopeIsOn: scopeIsOn, outOfScopeCount: outOfScopeCount,
     saveLists: saveLists, saveColumns: saveColumns, saveSettings: saveSettings
   };
 })(window);
@@ -9560,7 +10098,9 @@ else if (typeof exports === 'object'){
     var range = opts.range || { from: '', to: '' };
     var baseField = opts.baseField || 'intakeDate';
     var undated = 0;
-    var cases = M.state.cases.filter(function (c) {
+    /* دامنهٔ کار پیش از فیلترهای خود گزارش می‌نشیند: اگر گفته‌اید
+       ارجاع‌شده‌ها کار شما نیستند، در هیچ آماری هم نباید بیایند. */
+    var cases = M.scoped().filter(function (c) {
       if (opts.expert && (c.expert || '') !== opts.expert) return false;
       // «سال رسیدگی» در فرم نیست؛ اگر خالی بود، سالِ تاریخ ورود مبناست
       if (opts.year && yearOf(c) !== opts.year) return false;
@@ -10655,7 +11195,7 @@ else if (typeof exports === 'object'){
 
     if (on.action) {
       var stones = w.MILESTONES || [];
-      M.state.cases.forEach(function (rec) {
+      M.scoped().forEach(function (rec) {
         stones.forEach(function (ms) {
           var v = rec[ms.key];
           if (!v || !J.unpack(v)) return;
@@ -10669,7 +11209,7 @@ else if (typeof exports === 'object'){
 
     if (on.due) {
       var WL = w.Worklist;
-      M.state.cases.forEach(function (rec) {
+      M.scoped().forEach(function (rec) {
         var a = WL.nextAction(rec);
         if (!a || !a.due || a.key === 'closed' || a.key === 'transferred') return;
         push({
@@ -10705,7 +11245,7 @@ else if (typeof exports === 'object'){
     if (on.event) {
       (M.state.history || []).forEach(function (h) {
         var rec = M.get(h.caseId);
-        if (!rec) return;
+        if (!rec || !M.inScope(rec)) return;
         push({
           layer: 'event', date: jalaliOf(h.at),
           label: (w.UIForm ? w.UIForm.kindLabel(h.kind) : h.kind) +
@@ -14049,19 +14589,87 @@ else if (typeof exports === 'object'){
   }
 
   // ------------------------------------------------------------------ فیلترها
+  /*
+   * هر گروه فیلتر دو حالت دارد: «شامل» و «به‌جز».
+   *
+   * تا امروز فقط «شامل» بود، و برای کنار گذاشتن یک مقدار باید همهٔ
+   * مقدارهای دیگر تیک می‌خورد — با هشت واحد سازمانی یعنی هفت کلیک برای
+   * حذف یکی. «به‌جز» همان کار را با یک کلیک می‌کند.
+   *
+   * دو حالت در یک گروه با هم قاطی نمی‌شوند: کلید یکی است و حالت، جای
+   * نشستنش را تعیین می‌کند (filters[key] یا filters._not[key]). فهرست
+   * دوگانه یعنی کاربر باید بفهمد «هم شاملِ الف و هم به‌جزِ ب» چه معنایی
+   * دارد، و جوابش معمولاً هیچ.
+   */
+  function filterMode(app, key) {
+    return ((app.state.filters._not || {})[key] || []).length ? 'not' : 'in';
+  }
+
+  function filterValues(app, key) {
+    var mode = filterMode(app, key);
+    return (mode === 'not'
+      ? (app.state.filters._not || {})[key]
+      : app.state.filters[key]) || [];
+  }
+
+  function setFilter(app, key, values, mode) {
+    var f = app.state.filters;
+    f._not = f._not || {};
+    delete f[key];
+    delete f._not[key];
+    if (values.length) {
+      if (mode === 'not') f._not[key] = values;
+      else f[key] = values;
+    }
+    if (!Object.keys(f._not).length) delete f._not;
+    app.refresh();
+  }
+
   function renderFilters(app) {
     var box = el('div.filters');
-    box.appendChild(el('h3', { text: 'فیلترها' }));
+    box.appendChild(el('div.filters-head', null, [
+      el('h3', { text: 'فیلترها' }),
+      el('div.spacer'),
+      /* دامنه بالای فیلترهاست چون از آنها بالاتر است: فیلتر برای همین
+         جستجوست، دامنه برای همهٔ برنامه. */
+      el('button.linkish.tiny', {
+        type: 'button',
+        text: M.scopeIsOn() ? 'دامنه: ' + w.UIScope.summary() : 'دامنهٔ کار',
+        title: 'کدام پرونده‌ها در همهٔ صفحه‌ها شمرده شوند',
+        onclick: function () { w.UIScope.dialog(app); }
+      })
+    ]));
+    box.appendChild(activeChips(app));
 
     FILTER_FIELDS.forEach(function (ff) {
       var values = M.distinct(ff.key);
       if (!values.length) return;
-      var selected = app.state.filters[ff.key] || [];
-      var details = el('details.filter-group', { open: selected.length > 0 });
+      var mode = filterMode(app, ff.key);
+      var selected = filterValues(app, ff.key);
+      var details = el('details.filter-group' + (mode === 'not' ? '.is-not' : ''),
+        { open: selected.length > 0 });
       details.appendChild(el('summary', null, [
         el('span', { text: ff.label }),
-        selected.length ? el('span.badge', { text: w.U.toFaDigits(selected.length) }) : null
+        selected.length ? el('span.badge' + (mode === 'not' ? '.neg' : ''), {
+          text: (mode === 'not' ? '−' : '') + w.U.toFaDigits(selected.length)
+        }) : null
       ]));
+
+      var modeRow = el('div.filter-mode', { role: 'group', 'aria-label': 'حالت فیلتر' });
+      [{ k: 'in', t: 'شامل' }, { k: 'not', t: 'به‌جز' }].forEach(function (o) {
+        modeRow.appendChild(el('button.fm-btn' + (mode === o.k ? '.on' : ''), {
+          type: 'button', text: o.t,
+          title: o.k === 'in'
+            ? 'فقط این مقدارها نشان داده شوند'
+            : 'همه‌چیز نشان داده شود به‌جز این مقدارها',
+          onclick: function (e) {
+            e.preventDefault();
+            setFilter(app, ff.key, filterValues(app, ff.key), o.k);
+          }
+        }));
+      });
+      details.appendChild(modeRow);
+
       var list = el('div.filter-options');
       values.forEach(function (v) {
         var count = M.state.cases.filter(function (c) { return (c[ff.key] || '') === v; }).length;
@@ -14069,12 +14677,10 @@ else if (typeof exports === 'object'){
         var cb = el('input', {
           type: 'checkbox', id: id, checked: selected.indexOf(v) >= 0,
           onchange: function () {
-            var cur = (app.state.filters[ff.key] || []).slice();
+            var cur = filterValues(app, ff.key).slice();
             if (this.checked) cur.push(v);
             else cur = cur.filter(function (x) { return x !== v; });
-            if (cur.length) app.state.filters[ff.key] = cur;
-            else delete app.state.filters[ff.key];
-            app.refresh();
+            setFilter(app, ff.key, cur, filterMode(app, ff.key));
           }
         });
         list.appendChild(el('label.filter-option', null, [
@@ -14341,9 +14947,59 @@ else if (typeof exports === 'object'){
 
   // -------------------------------------------------- فیلتر و ابزار روی موبایل
   function activeFilterCount(app) {
-    return Object.keys(app.state.filters).filter(function (k) {
-      return k.charAt(0) !== '_' && (app.state.filters[k] || []).length;
+    var f = app.state.filters;
+    var n = Object.keys(f).filter(function (k) {
+      return k.charAt(0) !== '_' && (f[k] || []).length;
     }).length;
+    return n + Object.keys(f._not || {}).filter(function (k) {
+      return (f._not[k] || []).length;
+    }).length;
+  }
+
+  /**
+   * چیپ‌های فیلترِ فعال.
+   * صافی‌ای که فقط در یک لیست تیک‌خورده پیدا می‌شود، فراموش می‌شود و
+   * بعد کاربر می‌پرسد «چرا این پرونده نیست؟». هر چیپ می‌گوید چه چیزی
+   * اعمال شده و با یک کلیک برمی‌دارَدش.
+   */
+  function activeChips(app) {
+    var wrap = el('div.filter-chips');
+    var f = app.state.filters;
+    FILTER_FIELDS.forEach(function (ff) {
+      var mode = filterMode(app, ff.key);
+      var vals = filterValues(app, ff.key);
+      if (!vals.length) return;
+      vals.forEach(function (v) {
+        wrap.appendChild(el('button.fchip' + (mode === 'not' ? '.neg' : ''), {
+          type: 'button',
+          title: 'برداشتن این صافی',
+          onclick: function () {
+            setFilter(app, ff.key, vals.filter(function (x) { return x !== v; }), mode);
+          }
+        }, [
+          el('span.fchip-op', { text: mode === 'not' ? 'به‌جز' : '' }),
+          el('span.fchip-v', { text: v }),
+          el('span.fchip-x', { text: '×' })
+        ]));
+      });
+    });
+    if (f._from || f._to) {
+      wrap.appendChild(el('button.fchip', {
+        type: 'button', title: 'برداشتن بازهٔ زمانی',
+        onclick: function () {
+          delete f._from; delete f._to;
+          app.refresh();
+        }
+      }, [
+        el('span.fchip-v', {
+          text: (f._from ? J.format(f._from) : '…') + ' تا ' +
+            (f._to ? J.format(f._to) : '…')
+        }),
+        el('span.fchip-x', { text: '×' })
+      ]));
+    }
+    if (!wrap.children.length) wrap.style.display = 'none';
+    return wrap;
   }
 
   function openFilterSheet(app) {
@@ -14399,7 +15055,7 @@ else if (typeof exports === 'object'){
     });
     app.state.lastResult = rows;
 
-    var total = M.state.cases.length;
+    var total = M.scoped().length;
     var phone = w.Mobile.isPhone();
     var countNode = el('span.result-count', {
       html: '<b>' + w.U.toFaDigits(rows.length) + '</b> پرونده' +
@@ -14549,7 +15205,8 @@ else if (typeof exports === 'object'){
     mount.appendChild(el('div.list-layout' + (phone ? '.phone' : ''), null, [
       phone ? null
         : el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
-      el('section.list-main', null, [note, summary, body, selBar])
+      el('section.list-main', null,
+        [w.UIScope.banner(app), note, summary, body, selBar])
     ]));
     app.refreshSelectionBar();
   }
@@ -17563,6 +18220,213 @@ else if (typeof exports === 'object'){
 
 </script>
 <script>
+/* ==== js/ui.scope.js ==== */
+/*
+ * دامنهٔ کار — «کدام پرونده‌ها مالِ من‌اند؟»
+ *
+ * این یک فیلتر نیست. فیلتر را هر بار، در هر صفحه، باید دوباره گذاشت؛
+ * و همین بود که کاربر را اذیت می‌کرد: پرونده‌ای که به کارشناس دیگری
+ * ارجاع شده دیگر کارِ او نیست، ولی در کارتابل و گزارش و تقویم می‌آمد و
+ * هر بار باید دستی کنار گذاشته می‌شد.
+ *
+ * دامنه یک بار تعیین می‌شود و می‌مانَد. و چون ماندگار است، هیچ‌وقت پنهان
+ * نمی‌شود: تا وقتی چیزی کنار گذاشته شده، چیپِ نوار بالا می‌گوید چند
+ * پرونده و چرا، و با یک کلیک همه‌چیز برمی‌گردد. آماری که نمی‌دانی روی
+ * چه چیزی حساب شده، بدتر از آمار اشتباه است.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, M = w.Model;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  /** خلاصهٔ یک‌خطی دامنه، برای چیپ نوار بالا */
+  function summary() {
+    var sc = M.scope();
+    var bits = [];
+    if (sc.hideTransferred) bits.push('بدون ارجاع‌شده‌ها');
+    if (sc.hideClosed) bits.push('بدون مختومه‌ها');
+    if (sc.expert) bits.push('کارشناس: ' + sc.expert);
+    return bits.join(' • ');
+  }
+
+  /** چیپ نوار بالا — فقط وقتی دامنه‌ای فعال است دیده می‌شود */
+  function chip(app) {
+    var node = el('button.scope-chip', {
+      type: 'button',
+      onclick: function () { dialog(app); }
+    });
+    refreshChip(node);
+    node.refresh = function () { refreshChip(node); };
+    return node;
+  }
+
+  function refreshChip(node) {
+    var on = M.scopeIsOn();
+    node.style.display = on ? '' : 'none';
+    if (!on) return;
+    var out = M.outOfScopeCount();
+    w.U.clear(node);
+    node.appendChild(el('span.scope-dot'));
+    node.appendChild(el('span.scope-chip-text', { text: summary() }));
+    node.appendChild(el('span.scope-chip-n', {
+      text: out ? fa(out) + ' کنار' : 'چیزی کنار نرفته'
+    }));
+    node.title = 'دامنهٔ کار: ' + summary() + ' — ' +
+      (out ? fa(out) + ' پرونده در هیچ شمارشی نمی‌آید.'
+        : 'الان پرونده‌ای مشمولش نیست.') + ' برای تغییر کلیک کنید.';
+  }
+
+  /**
+   * پنجرهٔ تنظیم دامنه.
+   * هر گزینه می‌گوید چند پرونده را کنار می‌گذارد — پیش از اینکه بزنید.
+   */
+  function dialog(app) {
+    var sc = M.scope();
+    var next = {
+      hideTransferred: sc.hideTransferred,
+      hideClosed: sc.hideClosed,
+      expert: sc.expert
+    };
+    var all = M.state.cases;
+    var nTransferred = all.filter(function (c) { return !!c.transferDate; }).length;
+    var nClosed = all.filter(function (c) { return /مختومه/.test(c.status || ''); }).length;
+
+    var body = el('div.scope-dialog');
+    body.appendChild(el('p.muted.tiny', {
+      text: 'اینها از کارتابل، فهرست پرونده‌ها، گزارش‌ها و تقویم کنار گذاشته ' +
+        'می‌شوند — نه پاک. خروجی اکسل و نسخهٔ پشتیبان همیشه همه‌چیز را دارند.'
+    }));
+
+    var countNode = el('div.scope-count');
+
+    function toggle(key, label, hint, n) {
+      var row = el('button.scope-opt' + (next[key] ? '.on' : ''), {
+        type: 'button',
+        onclick: function () {
+          next[key] = !next[key];
+          row.classList.toggle('on', next[key]);
+          sync();
+        }
+      }, [
+        el('span.scope-box', { html: '<span class="scope-tick">✓</span>' }),
+        el('span.scope-opt-text', null, [
+          el('b', { text: label }),
+          el('span.muted.tiny', { text: hint })
+        ]),
+        el('span.scope-opt-n', { text: fa(n) + ' پرونده' })
+      ]);
+      return row;
+    }
+
+    body.appendChild(el('div.scope-opts', null, [
+      toggle('hideTransferred', 'پرونده‌های ارجاع‌شده به کارشناس دیگر',
+        'از دست دبیرخانهٔ شما خارج شده‌اند؛ نه مختومه‌اند نه در جریانِ شما.',
+        nTransferred),
+      toggle('hideClosed', 'پرونده‌های مختومه',
+        'کارشان تمام شده. برای دیدن آمار تاریخی، روشنشان بگذارید.', nClosed)
+    ]));
+
+    var experts = M.distinct('expert');
+    if (experts.length > 1) {
+      var sel = el('select.input.small');
+      sel.appendChild(el('option', { value: '', text: 'همهٔ کارشناسان' }));
+      experts.forEach(function (x) {
+        sel.appendChild(el('option', { value: x, text: x }));
+      });
+      sel.value = next.expert;
+      sel.addEventListener('change', function () {
+        next.expert = sel.value;
+        sync();
+      });
+      body.appendChild(el('label.field.wide.scope-expert', null, [
+        el('span.field-label', { text: 'فقط پرونده‌های این کارشناس' }), sel
+      ]));
+    }
+
+    body.appendChild(countNode);
+
+    function sync() {
+      var kept = all.filter(function (c) {
+        if (next.hideTransferred && c.transferDate) return false;
+        if (next.hideClosed && /مختومه/.test(c.status || '')) return false;
+        if (next.expert && (c.expert || '') !== next.expert) return false;
+        return true;
+      }).length;
+      w.U.clear(countNode);
+      countNode.appendChild(el('b', { text: fa(kept) }));
+      countNode.appendChild(el('span', {
+        text: ' پرونده در دامنه می‌ماند، ' + fa(all.length - kept) + ' کنار می‌رود.'
+      }));
+      countNode.classList.toggle('narrow', kept < all.length);
+    }
+    sync();
+
+    var m;
+    m = w.U.modal('دامنهٔ کار', body, [
+      el('button.btn.ghost', {
+        type: 'button', text: 'برداشتن دامنه',
+        title: 'همهٔ پرونده‌ها دوباره شمرده شوند',
+        onclick: function () {
+          apply(app, { hideTransferred: false, hideClosed: false, expert: '' }, m);
+        }
+      }),
+      el('div.spacer'),
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'اعمال',
+        onclick: function () { apply(app, next, m); }
+      })
+    ]);
+    m.root.classList.add('scope-modal');
+    return m;
+  }
+
+  function apply(app, patch, m) {
+    M.setScope(patch).then(function () {
+      if (m) m.close();
+      app.render();
+      w.U.toast(M.scopeIsOn()
+        ? 'دامنه اعمال شد — ' + fa(M.outOfScopeCount()) + ' پرونده کنار گذاشته شد.'
+        : 'دامنه برداشته شد؛ همهٔ پرونده‌ها دوباره شمرده می‌شوند.', 'good');
+    });
+  }
+
+  /** نوار «اینها را نمی‌بینید» — بالای فهرست و گزارش */
+  function banner(app) {
+    if (!M.scopeIsOn()) return null;
+    return el('div.scope-banner', null, [
+      el('span.scope-dot'),
+      el('span', null, [
+        el('b', { text: fa(M.outOfScopeCount()) + ' پرونده' }),
+        el('span', { text: ' بیرون از دامنهٔ کار است و در این صفحه شمرده نمی‌شود — ' }),
+        el('span.scope-why', { text: summary() })
+      ]),
+      el('div.spacer'),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'تغییر دامنه',
+        onclick: function () { dialog(app); }
+      }),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'نشان بده',
+        title: 'دامنه را بردار تا همه‌چیز شمرده شود',
+        onclick: function () {
+          apply(app, { hideTransferred: false, hideClosed: false, expert: '' });
+        }
+      })
+    ]);
+  }
+
+  w.UIScope = {
+    chip: chip, dialog: dialog, banner: banner, summary: summary, apply: apply
+  };
+})(window);
+
+</script>
+<script>
 /* ==== js/ui.stage.js ==== */
 /*
  * تنظیم دستی مرحلهٔ پرونده.
@@ -20565,6 +21429,95 @@ else if (typeof exports === 'object'){
     return box;
   }
 
+  /* ================================================================
+     نوار امروز
+     ----------------------------------------------------------------
+     یک نوار، چهار قطعه، هر قطعه به اندازهٔ سهمش. کلِ بارِ باز را در یک
+     خط می‌گوید: چقدرش از مهلت گذشته، چقدرش امروز است، چقدر تا آخر هفته،
+     و چقدر آرام.
+     
+     چرا نوار و نه چهار کارت دیگر: کارت‌ها عدد می‌دهند، نوار «نسبت» می‌دهد.
+     تفاوتِ «۴ از ۳۰» با «۲۴ از ۳۰» را باید دید، نه خواند و حساب کرد. و
+     چون تنها چیزِ پررنگ صفحه است، بقیه می‌توانند آرام بمانند.
+     ================================================================ */
+  var RIB = [
+    { key: 'late', label: 'از مهلت گذشته', hint: 'کارِ امروز، با تأخیر' },
+    { key: 'today', label: 'سررسید امروز', hint: 'همین امروز باید انجام شود' },
+    { key: 'week', label: 'تا هفت روز آینده', hint: 'در راه است' },
+    { key: 'calm', label: 'آرام', hint: 'مهلتش دور است یا مهلتی ندارد' }
+  ];
+
+  function ribbonData(cases) {
+    var today = J.today();
+    var out = { late: [], today: [], week: [], calm: [] };
+    cases.forEach(function (rec) {
+      var a = WL.nextAction(rec);
+      if (!a || a.key === 'closed' || a.key === 'transferred') return;
+      if (a.overdue) { out.late.push(rec.id); return; }
+      var d = a.due ? J.diffDays(today, a.due) : null;   // منفی = آینده
+      if (d === 0) out.today.push(rec.id);
+      else if (d != null && -d <= 7) out.week.push(rec.id);
+      else out.calm.push(rec.id);
+    });
+    return out;
+  }
+
+  function dayRibbon(app, cases) {
+    var data = ribbonData(cases);
+    var total = RIB.reduce(function (n, r) { return n + data[r.key].length; }, 0);
+    if (!total) return null;
+
+    var bar = el('div.ribbon', { role: 'group', 'aria-label': 'بار کاری امروز' });
+    RIB.forEach(function (r, i) {
+      var ids = data[r.key];
+      if (!ids.length) return;
+      var pct = Math.round((ids.length / total) * 100);
+      var seg = el('button.rib-seg.r-' + r.key, {
+        type: 'button',
+        style: '--w:' + pct + '%;--i:' + i,
+        title: r.label + ' — ' + fa(ids.length) + ' پرونده (' + fa(pct) + '٪). ' +
+          r.hint + '. برای دیدن فهرستشان کلیک کنید.',
+        onclick: function () { app.showCases(ids, r.label); }
+      }, [
+        el('span.rib-n', { text: fa(ids.length) }),
+        el('span.rib-label', { text: r.label })
+      ]);
+      bar.appendChild(seg);
+    });
+
+    var legend = el('div.rib-legend', null, RIB.filter(function (r) {
+      return data[r.key].length;
+    }).map(function (r) {
+      return el('span.rib-key.r-' + r.key, null, [
+        el('i.rib-swatch'), el('span', { text: r.label }),
+        el('b', { text: fa(data[r.key].length) })
+      ]);
+    }));
+
+    return el('div.ribbon-wrap', null, [bar, legend]);
+  }
+
+  /* خط شمارشِ دفتر — به‌جای هفت جعبهٔ هم‌اندازه.
+     هفت کارتِ مساوی یعنی هفت چیزِ هم‌ارزش، که نیستند. اینجا عددها در یک
+     خط می‌نشینند، با خط‌های مویی بینشان، مثل سطر جمعِ ته دفتر. */
+  function tally(items) {
+    var row = el('div.wl-tally');
+    items.filter(Boolean).forEach(function (t, i) {
+      var num = el('span.tally-n');
+      var node = el((t.ids && t.ids.length ? 'button' : 'div') +
+        '.tally' + (t.tone ? '.t-' + t.tone : '') +
+        (t.ids && t.ids.length ? '' : '.is-zero'), {
+        type: t.ids && t.ids.length ? 'button' : null,
+        style: '--i:' + i,
+        title: t.hint + (t.ids && t.ids.length ? ' — برای دیدن فهرستشان کلیک کنید' : ''),
+        onclick: t.onclick || null
+      }, [num, el('span.tally-label', { text: t.label })]);
+      w.U.countUp(num, t.value);
+      row.appendChild(node);
+    });
+    return row;
+  }
+
   // ------------------------------------------------------------ هفتهٔ پیشِ رو
   /**
    * نوار هفته: هفت روز آینده، و اینکه هر روز چند چیز سررسید می‌شود.
@@ -20699,7 +21652,7 @@ else if (typeof exports === 'object'){
 
   // ------------------------------------------------------------------ صفحه
   function render(app, mount) {
-    var cases = M.state.cases;
+    var cases = M.scoped();
     var sum = WL.summary(cases);
     var all = WL.buckets(cases);
     var ours = all.filter(function (b) { return b.ours; });
@@ -20707,7 +21660,8 @@ else if (typeof exports === 'object'){
     var ready = WL.readyForCommittee(cases);
 
     var t = J.unpack(J.today());
-    var todayText = J.weekday(t.jy, t.jm, t.jd) + '، ' + J.format(J.today(), { long: true });
+    var weekdayName = J.weekday(t.jy, t.jm, t.jd);
+    var todayText = J.format(J.today(), { long: true });
 
     var headline;
     if (!sum.open) {
@@ -20724,90 +21678,100 @@ else if (typeof exports === 'object'){
       headline += ' (' + fa(sum.transferred) + ' پرونده به کارشناس دیگری ارجاع شده.)';
     }
 
-    /* هر پنج کارت آمار یک شکل‌اند، پس هر پنج‌تا هم باید کار کنند: کارتی که
-       مثل دکمه دیده می‌شود ولی کاری نمی‌کند، به کاربر دروغ می‌گوید. */
-    function statCard(num, label, hint, pick, cls) {
-      var ids = num ? pick() : [];
-      if (!ids.length) {
-        return el('div.wl-stat.wl-stat-off' + (cls || ''), { title: hint }, [
-          el('span.wl-stat-num', { text: fa(num) }),
-          el('span.wl-stat-label', { text: label })
-        ]);
-      }
-      return el('button.wl-stat' + (cls || ''), {
-        type: 'button', title: hint + ' — برای دیدن فهرستشان کلیک کنید',
-        onclick: function () { app.showCases(ids, label); }
-      }, [
-        el('span.wl-stat-num', { text: fa(num) }),
-        el('span.wl-stat-label', { text: label })
-      ]);
-    }
-
-    /* کارها پرونده نیستند، پس showCases به دردشان نمی‌خورد؛ این کارت به
-       نمای «کارها» می‌رود. شکلش با بقیه یکی است تا از ریتم کارت‌ها نیفتد. */
-    function taskStat() {
-      var ts = w.Notes.stats();
-      var n = ts.dueTasks;
-      if (!n) {
-        return el('div.wl-stat.wl-stat-off', { title: 'کاری برای امروز نمانده' }, [
-          el('span.wl-stat-num', { text: fa(0) }),
-          el('span.wl-stat-label', { text: 'کار امروز' })
-        ]);
-      }
-      return el('button.wl-stat' + (ts.overdueTasks ? '.late' : ''), {
-        type: 'button',
-        title: 'کارهایی که سررسیدشان رسیده یا گذشته — برای دیدنشان کلیک کنید',
-        onclick: function () { app.goTasks(); }
-      }, [
-        el('span.wl-stat-num', { text: fa(n) }),
-        el('span.wl-stat-label', { text: 'کار امروز' })
-      ]);
-    }
-
     function idsWhere(fn) {
       return cases.filter(fn).map(function (c) { return c.id; });
     }
 
-    var stats = el('div.wl-stats', null, [
-      statCard(sum.overdue, 'از مهلت گذشته',
-        'پرونده‌هایی که از مهلت اقدامشان گذشته', function () {
-          return idsWhere(function (c) {
+    var ts = w.Notes.stats();
+    var stats = tally([
+      {
+        value: sum.overdue, label: 'از مهلت گذشته', tone: 'late',
+        hint: 'پرونده‌هایی که از مهلت اقدامشان گذشته',
+        ids: idsWhere(function (c) {
+          var a = WL.nextAction(c);
+          return a.key !== 'closed' && a.overdue;
+        }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) {
             var a = WL.nextAction(c);
             return a.key !== 'closed' && a.overdue;
-          });
-        }, sum.overdue ? '.late' : ''),
-      statCard(sum.ours, 'منتظر اقدام ما',
-        'کاری که انجامش با دبیرخانه یا کارشناس است', function () {
-          return idsWhere(function (c) {
+          }), 'از مهلت گذشته');
+        }
+      },
+      {
+        value: sum.ours, label: 'منتظر اقدام ما',
+        hint: 'کاری که انجامش با دبیرخانه یا کارشناس است',
+        ids: idsWhere(function (c) {
+          var a = WL.nextAction(c);
+          return a.key !== 'closed' && WL.isOurs(a);
+        }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) {
             var a = WL.nextAction(c);
             return a.key !== 'closed' && WL.isOurs(a);
-          });
+          }), 'منتظر اقدام ما');
+        }
+      },
+      {
+        value: sum.theirs, label: 'منتظر دیگران',
+        hint: 'پرونده‌هایی که توپ در زمین ما نیست',
+        ids: idsWhere(function (c) {
+          var a = WL.nextAction(c);
+          return a.key !== 'closed' && !WL.isOurs(a);
         }),
-      statCard(sum.theirs, 'منتظر پاسخ دیگران',
-        'پرونده‌هایی که توپ در زمین ما نیست', function () {
-          return idsWhere(function (c) {
+        onclick: function () {
+          app.showCases(idsWhere(function (c) {
             var a = WL.nextAction(c);
             return a.key !== 'closed' && !WL.isOurs(a);
-          });
-        }),
-      taskStat(),
-      statCard(w.Notes.stats().openFollowUps, 'پیگیری باز',
-        'قرارهای پیگیری که هنوز بسته نشده‌اند', function () {
-          /* کارِ بی‌پرونده هم در سررسیدها می‌آید و rec ندارد؛ این کارت
+          }), 'منتظر دیگران');
+        }
+      },
+      {
+        value: ts.dueTasks, label: 'کار امروز',
+        tone: ts.overdueTasks ? 'late' : '',
+        hint: 'کارهایی که سررسیدشان رسیده یا گذشته',
+        ids: ts.dueTasks ? [1] : [],
+        onclick: function () { app.goTasks(); }
+      },
+      {
+        value: ts.openFollowUps, label: 'پیگیری باز',
+        hint: 'قرارهای پیگیری که هنوز بسته نشده‌اند',
+        ids: (function () {
+          /* کارِ بی‌پرونده هم در سررسیدها می‌آید و rec ندارد؛ این شمارنده
              فهرستِ پرونده باز می‌کند، پس فقط پرونده‌دارها به کارش می‌آیند. */
           var seen = {};
           w.Notes.dueFollowUps(false).forEach(function (f) {
             if (f.rec) seen[f.rec.id] = 1;
           });
           return Object.keys(seen);
-        }),
-      statCard(sum.transferred, 'ارجاع‌شده',
-        'پرونده‌هایی که به کارشناس دیگری ارجاع شده‌اند', function () {
-          return idsWhere(function (c) { return WL.isTransferred(c); });
-        }),
-      statCard(sum.closed, 'مختومه', 'پرونده‌های مختومه‌شده', function () {
-        return idsWhere(function (c) { return WL.isClosed(c); });
-      })
+        })(),
+        onclick: function () {
+          var seen = {};
+          w.Notes.dueFollowUps(false).forEach(function (f) {
+            if (f.rec) seen[f.rec.id] = 1;
+          });
+          app.showCases(Object.keys(seen), 'پیگیری باز');
+        }
+      },
+      {
+        value: sum.closed, label: 'مختومه', tone: 'done',
+        hint: 'پرونده‌های مختومه‌شده',
+        ids: idsWhere(function (c) { return WL.isClosed(c); }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) { return WL.isClosed(c); }), 'مختومه');
+        }
+      },
+      /* ارجاع‌شده فقط وقتی شمرده می‌شود که در دامنه باشد؛ اگر کاربر گفته
+         «اینها کار من نیستند»، شمارنده‌اش هم نباید ادعای خلافش را بکند. */
+      sum.transferred ? {
+        value: sum.transferred, label: 'ارجاع‌شده',
+        hint: 'پرونده‌هایی که به کارشناس دیگری ارجاع شده‌اند',
+        ids: idsWhere(function (c) { return WL.isTransferred(c); }),
+        onclick: function () {
+          app.showCases(idsWhere(function (c) { return WL.isTransferred(c); }),
+            'ارجاع‌شده');
+        }
+      } : null
     ]);
 
     // جلسه هر وقت تشکیل می‌شود، نه فقط وقتی برنامه پرونده‌ای را «آماده» بداند؛
@@ -20968,15 +21932,42 @@ else if (typeof exports === 'object'){
       ]));
     }
 
-    w.U.clear(mount);
-    mount.appendChild(el('div.worklist', null, [
-      el('header.wl-hero', null, [
-        el('div.wl-hero-date', { text: todayText }),
-        el('h1.wl-hero-line', { text: headline }),
-        stats,
-        heroActions
+    /*
+     * سرصفحه، یک «برگه» است نه یک کارت.
+     *
+     * روز، بزرگ و اول — چون اولین چیزی که آدم صبح می‌خواهد بداند همین
+     * است. بعد یک جملهٔ کامل به فارسی، بعد نوار امروز که نسبت‌ها را
+     * می‌گوید، و ته برگه خط شمارش. ترتیب از کلی به جزئی است، مثل هر
+     * گزارشی که آدم برای آدم می‌نویسد.
+     */
+    var hero = el('header.wl-hero', null, [
+      el('div.wl-plate', null, [
+        el('div.wl-eyebrow', null, [
+          el('span.wl-eyebrow-tag', { text: 'کارتابل دبیرخانه' }),
+          el('span.wl-eyebrow-date', { text: todayText }),
+          el('div.spacer'),
+          // اقدام‌ها بالای برگه می‌نشینند، نه زیرش: آنجا آویزان بودند
+          heroActions
+        ]),
+        el('h1.wl-hero-line', null, [
+          el('span.wl-weekday', { text: weekdayName }),
+          el('span.wl-hero-text', { text: headline })
+        ]),
+        dayRibbon(app, cases),
+        stats
       ])
-    ].concat(sections)));
+    ]);
+
+    /* ورودِ پلکانی: هر بخش چند صدم ثانیه بعد از قبلی بالا می‌آید. کار
+       تزئین نیست — چشم را از بالا به پایین می‌برد، به همان ترتیبی که
+       باید خوانده شود. با prefers-reduced-motion کلاً خاموش است. */
+    sections.forEach(function (node, i) {
+      if (node && node.style) node.style.setProperty('--i', i);
+    });
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.worklist', null,
+      [w.UIScope.banner(app), hero].concat(sections)));
   }
 
   w.UIWorklist = { render: render, rail: rail, pipelineRail: pipelineRail,
@@ -21487,32 +22478,40 @@ else if (typeof exports === 'object'){
   }
 
   // ------------------------------------------------------------ سنجه‌های سرآمد
+  /*
+   * سرصفحهٔ گزارش — «برگهٔ آمار».
+   *
+   * تا امروز یک عدد بزرگ بود و پنج کاشیِ هم‌اندازه کنارش؛ یعنی شش چیزِ
+   * هم‌ارزش، که نیستند. حالا یک رقمِ اصلی (کلِ برش) روی برگه‌ای با لبهٔ
+   * برنجی می‌نشیند، و بقیه در خط شمارش زیرش — همان زبانی که کارتابل هم
+   * دارد، تا دو صفحه دو زبان نداشته باشند.
+   */
   function heroRow(app, k) {
     var tiles = ([
       {
-        label: 'پروندهٔ در جریان', value: fa(k.open),
+        label: 'در جریان', value: k.open, tone: '',
         note: k.total ? fa(100 - k.closedPct) + '٪ از کل' : ''
       },
       {
-        label: 'مختومه‌شده', value: fa(k.closed),
+        label: 'مختومه', value: k.closed, tone: 'done',
         note: k.total ? fa(k.closedPct) + '٪ از کل' : ''
       },
       // ارجاع‌شده جدا شمرده می‌شود: نه در جریان است نه مختومه
       k.transferred ? {
-        label: 'ارجاع به کارشناس دیگر', value: fa(k.transferred),
+        label: 'ارجاع‌شده', value: k.transferred, tone: '',
         note: 'از دست دبیرخانه خارج شده'
       } : null,
       {
-        label: 'میانهٔ روز تا طرح در کمیته',
-        value: k.medianToCommittee == null ? '—' : fa(k.medianToCommittee),
+        label: 'میانهٔ روز تا کمیته',
+        value: k.medianToCommittee, tone: '',
         note: k.committeeSample
-          ? 'میانگین ' + fa(k.meanToCommittee) + ' روز، بر پایهٔ ' +
+          ? 'میانگین ' + fa(k.meanToCommittee) + ' روز، از ' +
             fa(k.committeeSample) + ' پرونده'
           : 'دادهٔ کافی نیست'
       },
       {
-        label: 'قدیمی‌ترین پروندهٔ باز',
-        value: k.oldestOpen ? fa(k.oldestOpen) : '—',
+        label: 'قدیمی‌ترین بازِ پرونده',
+        value: k.oldestOpen, tone: k.oldestOpen > 365 ? 'late' : '',
         note: k.oldestOpen ? 'روز از تاریخ ورود' : ''
       }
     ]).filter(Boolean);
@@ -21526,20 +22525,48 @@ else if (typeof exports === 'object'){
       });
     }
 
-    return el('div.hero-row', null, [
-      el('div.hero-figure', null, [
-        el('div.hero-label', { text: 'پروندهٔ این برش' }),
-        el('div.hero-value', { text: fa(k.total) }),
-        delta
+    var big = el('div.rep-big-n');
+    w.U.countUp(big, k.total);
+
+    var strip = el('div.rep-tally');
+    tiles.forEach(function (t, i) {
+      var n = el('span.tally-n');
+      if (t.value == null) n.textContent = '—';
+      else w.U.countUp(n, t.value);
+      strip.appendChild(el('div.tally' + (t.tone ? '.t-' + t.tone : ''), {
+        style: '--i:' + i, title: t.note
+      }, [
+        n,
+        el('span.tally-label', { text: t.label }),
+        t.note ? el('span.tally-note', { text: t.note }) : null
+      ]));
+    });
+
+    return el('div.rep-plate', null, [
+      el('div.rep-plate-top', null, [
+        el('div.rep-figure', null, [
+          el('div.rep-big-label', { text: 'پروندهٔ این برش' }),
+          big,
+          delta
+        ]),
+        el('div.rep-caption', null, [
+          el('p', { text: describeScope(app) })
+        ])
       ]),
-      el('div.stat-tiles', null, tiles.map(function (t) {
-        return el('div.stat-tile', null, [
-          el('div.tile-label', { text: t.label }),
-          el('div.tile-value', { text: t.value }),
-          t.note ? el('div.tile-note', { text: t.note }) : null
-        ]);
-      }))
+      strip
     ]);
+  }
+
+  /** یک جملهٔ فارسی که می‌گوید این عددها روی چه چیزی حساب شده‌اند */
+  function describeScope(app) {
+    var s = app.state.report || {};
+    var bits = [];
+    if (s.year) bits.push('سال ' + fa(s.year));
+    if (s.expert) bits.push('کارشناس ' + s.expert);
+    if (s.placeType) bits.push(s.placeType);
+    var base = bits.length ? bits.join('، ') : 'همهٔ پرونده‌های داخل دامنهٔ کار';
+    return 'بر پایهٔ ' + base + '. هر عددی که اینجا می‌بینید با یک کلیک به ' +
+      'فهرست همان پرونده‌ها می‌رود.';
   }
 
   // ------------------------------------------------------------- کارت یافته‌ها
@@ -21877,6 +22904,7 @@ else if (typeof exports === 'object'){
 
     w.U.clear(mount);
     mount.appendChild(el('div.report-view', null, [
+      w.UIScope.banner(app),
       filterRow(app, data),
       data.cases.length
         ? el('div', null, [
@@ -21928,7 +22956,7 @@ else if (typeof exports === 'object'){
     }
   };
 
-  var mount, searchInput, statusChip, navButtons;
+  var mount, searchInput, statusChip, navButtons, scopeChip;
 
   /* ================================================================
      نشانی صفحه
@@ -22288,6 +23316,7 @@ else if (typeof exports === 'object'){
     }
     updateNav();
     updateStatusChip();
+    if (scopeChip) scopeChip.refresh();
     syncRoute(applyingRoute);
   };
 
@@ -22372,6 +23401,7 @@ else if (typeof exports === 'object'){
     });
 
     statusChip = el('button.chip', { type: 'button', onclick: onChipClick });
+    scopeChip = w.UIScope.chip(app);
 
     navButtons = {
       work: el('button.nav-btn.active', {
@@ -22438,6 +23468,7 @@ else if (typeof exports === 'object'){
           title: 'ذخیرهٔ نسخهٔ پشتیبان',
           onclick: function () { w.UIMisc.exportJson(); }
         }),
+        scopeChip,
         el('button.icon-btn.refresh-btn', {
           type: 'button', title: 'به‌روزرسانی از روی فایل — بدون بستن برنامه (F5)',
           'aria-label': 'به‌روزرسانی',
@@ -22473,6 +23504,11 @@ else if (typeof exports === 'object'){
       {
         icon: 'plus', label: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
+      },
+      {
+        icon: 'filter', label: 'دامنهٔ کار',
+        hint: 'کدام پرونده‌ها شمرده شوند',
+        onclick: function () { w.UIScope.dialog(app); }
       },
       {
         icon: 'refresh', label: 'به‌روزرسانی',

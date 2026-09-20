@@ -44,19 +44,87 @@
   }
 
   // ------------------------------------------------------------------ فیلترها
+  /*
+   * هر گروه فیلتر دو حالت دارد: «شامل» و «به‌جز».
+   *
+   * تا امروز فقط «شامل» بود، و برای کنار گذاشتن یک مقدار باید همهٔ
+   * مقدارهای دیگر تیک می‌خورد — با هشت واحد سازمانی یعنی هفت کلیک برای
+   * حذف یکی. «به‌جز» همان کار را با یک کلیک می‌کند.
+   *
+   * دو حالت در یک گروه با هم قاطی نمی‌شوند: کلید یکی است و حالت، جای
+   * نشستنش را تعیین می‌کند (filters[key] یا filters._not[key]). فهرست
+   * دوگانه یعنی کاربر باید بفهمد «هم شاملِ الف و هم به‌جزِ ب» چه معنایی
+   * دارد، و جوابش معمولاً هیچ.
+   */
+  function filterMode(app, key) {
+    return ((app.state.filters._not || {})[key] || []).length ? 'not' : 'in';
+  }
+
+  function filterValues(app, key) {
+    var mode = filterMode(app, key);
+    return (mode === 'not'
+      ? (app.state.filters._not || {})[key]
+      : app.state.filters[key]) || [];
+  }
+
+  function setFilter(app, key, values, mode) {
+    var f = app.state.filters;
+    f._not = f._not || {};
+    delete f[key];
+    delete f._not[key];
+    if (values.length) {
+      if (mode === 'not') f._not[key] = values;
+      else f[key] = values;
+    }
+    if (!Object.keys(f._not).length) delete f._not;
+    app.refresh();
+  }
+
   function renderFilters(app) {
     var box = el('div.filters');
-    box.appendChild(el('h3', { text: 'فیلترها' }));
+    box.appendChild(el('div.filters-head', null, [
+      el('h3', { text: 'فیلترها' }),
+      el('div.spacer'),
+      /* دامنه بالای فیلترهاست چون از آنها بالاتر است: فیلتر برای همین
+         جستجوست، دامنه برای همهٔ برنامه. */
+      el('button.linkish.tiny', {
+        type: 'button',
+        text: M.scopeIsOn() ? 'دامنه: ' + w.UIScope.summary() : 'دامنهٔ کار',
+        title: 'کدام پرونده‌ها در همهٔ صفحه‌ها شمرده شوند',
+        onclick: function () { w.UIScope.dialog(app); }
+      })
+    ]));
+    box.appendChild(activeChips(app));
 
     FILTER_FIELDS.forEach(function (ff) {
       var values = M.distinct(ff.key);
       if (!values.length) return;
-      var selected = app.state.filters[ff.key] || [];
-      var details = el('details.filter-group', { open: selected.length > 0 });
+      var mode = filterMode(app, ff.key);
+      var selected = filterValues(app, ff.key);
+      var details = el('details.filter-group' + (mode === 'not' ? '.is-not' : ''),
+        { open: selected.length > 0 });
       details.appendChild(el('summary', null, [
         el('span', { text: ff.label }),
-        selected.length ? el('span.badge', { text: w.U.toFaDigits(selected.length) }) : null
+        selected.length ? el('span.badge' + (mode === 'not' ? '.neg' : ''), {
+          text: (mode === 'not' ? '−' : '') + w.U.toFaDigits(selected.length)
+        }) : null
       ]));
+
+      var modeRow = el('div.filter-mode', { role: 'group', 'aria-label': 'حالت فیلتر' });
+      [{ k: 'in', t: 'شامل' }, { k: 'not', t: 'به‌جز' }].forEach(function (o) {
+        modeRow.appendChild(el('button.fm-btn' + (mode === o.k ? '.on' : ''), {
+          type: 'button', text: o.t,
+          title: o.k === 'in'
+            ? 'فقط این مقدارها نشان داده شوند'
+            : 'همه‌چیز نشان داده شود به‌جز این مقدارها',
+          onclick: function (e) {
+            e.preventDefault();
+            setFilter(app, ff.key, filterValues(app, ff.key), o.k);
+          }
+        }));
+      });
+      details.appendChild(modeRow);
+
       var list = el('div.filter-options');
       values.forEach(function (v) {
         var count = M.state.cases.filter(function (c) { return (c[ff.key] || '') === v; }).length;
@@ -64,12 +132,10 @@
         var cb = el('input', {
           type: 'checkbox', id: id, checked: selected.indexOf(v) >= 0,
           onchange: function () {
-            var cur = (app.state.filters[ff.key] || []).slice();
+            var cur = filterValues(app, ff.key).slice();
             if (this.checked) cur.push(v);
             else cur = cur.filter(function (x) { return x !== v; });
-            if (cur.length) app.state.filters[ff.key] = cur;
-            else delete app.state.filters[ff.key];
-            app.refresh();
+            setFilter(app, ff.key, cur, filterMode(app, ff.key));
           }
         });
         list.appendChild(el('label.filter-option', null, [
@@ -336,9 +402,59 @@
 
   // -------------------------------------------------- فیلتر و ابزار روی موبایل
   function activeFilterCount(app) {
-    return Object.keys(app.state.filters).filter(function (k) {
-      return k.charAt(0) !== '_' && (app.state.filters[k] || []).length;
+    var f = app.state.filters;
+    var n = Object.keys(f).filter(function (k) {
+      return k.charAt(0) !== '_' && (f[k] || []).length;
     }).length;
+    return n + Object.keys(f._not || {}).filter(function (k) {
+      return (f._not[k] || []).length;
+    }).length;
+  }
+
+  /**
+   * چیپ‌های فیلترِ فعال.
+   * صافی‌ای که فقط در یک لیست تیک‌خورده پیدا می‌شود، فراموش می‌شود و
+   * بعد کاربر می‌پرسد «چرا این پرونده نیست؟». هر چیپ می‌گوید چه چیزی
+   * اعمال شده و با یک کلیک برمی‌دارَدش.
+   */
+  function activeChips(app) {
+    var wrap = el('div.filter-chips');
+    var f = app.state.filters;
+    FILTER_FIELDS.forEach(function (ff) {
+      var mode = filterMode(app, ff.key);
+      var vals = filterValues(app, ff.key);
+      if (!vals.length) return;
+      vals.forEach(function (v) {
+        wrap.appendChild(el('button.fchip' + (mode === 'not' ? '.neg' : ''), {
+          type: 'button',
+          title: 'برداشتن این صافی',
+          onclick: function () {
+            setFilter(app, ff.key, vals.filter(function (x) { return x !== v; }), mode);
+          }
+        }, [
+          el('span.fchip-op', { text: mode === 'not' ? 'به‌جز' : '' }),
+          el('span.fchip-v', { text: v }),
+          el('span.fchip-x', { text: '×' })
+        ]));
+      });
+    });
+    if (f._from || f._to) {
+      wrap.appendChild(el('button.fchip', {
+        type: 'button', title: 'برداشتن بازهٔ زمانی',
+        onclick: function () {
+          delete f._from; delete f._to;
+          app.refresh();
+        }
+      }, [
+        el('span.fchip-v', {
+          text: (f._from ? J.format(f._from) : '…') + ' تا ' +
+            (f._to ? J.format(f._to) : '…')
+        }),
+        el('span.fchip-x', { text: '×' })
+      ]));
+    }
+    if (!wrap.children.length) wrap.style.display = 'none';
+    return wrap;
   }
 
   function openFilterSheet(app) {
@@ -394,7 +510,7 @@
     });
     app.state.lastResult = rows;
 
-    var total = M.state.cases.length;
+    var total = M.scoped().length;
     var phone = w.Mobile.isPhone();
     var countNode = el('span.result-count', {
       html: '<b>' + w.U.toFaDigits(rows.length) + '</b> پرونده' +
@@ -544,7 +660,8 @@
     mount.appendChild(el('div.list-layout' + (phone ? '.phone' : ''), null, [
       phone ? null
         : el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
-      el('section.list-main', null, [note, summary, body, selBar])
+      el('section.list-main', null,
+        [w.UIScope.banner(app), note, summary, body, selBar])
     ]));
     app.refreshSelectionBar();
   }

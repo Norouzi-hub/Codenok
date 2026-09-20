@@ -180,32 +180,40 @@
   }
 
   // ------------------------------------------------------------ سنجه‌های سرآمد
+  /*
+   * سرصفحهٔ گزارش — «برگهٔ آمار».
+   *
+   * تا امروز یک عدد بزرگ بود و پنج کاشیِ هم‌اندازه کنارش؛ یعنی شش چیزِ
+   * هم‌ارزش، که نیستند. حالا یک رقمِ اصلی (کلِ برش) روی برگه‌ای با لبهٔ
+   * برنجی می‌نشیند، و بقیه در خط شمارش زیرش — همان زبانی که کارتابل هم
+   * دارد، تا دو صفحه دو زبان نداشته باشند.
+   */
   function heroRow(app, k) {
     var tiles = ([
       {
-        label: 'پروندهٔ در جریان', value: fa(k.open),
+        label: 'در جریان', value: k.open, tone: '',
         note: k.total ? fa(100 - k.closedPct) + '٪ از کل' : ''
       },
       {
-        label: 'مختومه‌شده', value: fa(k.closed),
+        label: 'مختومه', value: k.closed, tone: 'done',
         note: k.total ? fa(k.closedPct) + '٪ از کل' : ''
       },
       // ارجاع‌شده جدا شمرده می‌شود: نه در جریان است نه مختومه
       k.transferred ? {
-        label: 'ارجاع به کارشناس دیگر', value: fa(k.transferred),
+        label: 'ارجاع‌شده', value: k.transferred, tone: '',
         note: 'از دست دبیرخانه خارج شده'
       } : null,
       {
-        label: 'میانهٔ روز تا طرح در کمیته',
-        value: k.medianToCommittee == null ? '—' : fa(k.medianToCommittee),
+        label: 'میانهٔ روز تا کمیته',
+        value: k.medianToCommittee, tone: '',
         note: k.committeeSample
-          ? 'میانگین ' + fa(k.meanToCommittee) + ' روز، بر پایهٔ ' +
+          ? 'میانگین ' + fa(k.meanToCommittee) + ' روز، از ' +
             fa(k.committeeSample) + ' پرونده'
           : 'دادهٔ کافی نیست'
       },
       {
-        label: 'قدیمی‌ترین پروندهٔ باز',
-        value: k.oldestOpen ? fa(k.oldestOpen) : '—',
+        label: 'قدیمی‌ترین بازِ پرونده',
+        value: k.oldestOpen, tone: k.oldestOpen > 365 ? 'late' : '',
         note: k.oldestOpen ? 'روز از تاریخ ورود' : ''
       }
     ]).filter(Boolean);
@@ -219,20 +227,48 @@
       });
     }
 
-    return el('div.hero-row', null, [
-      el('div.hero-figure', null, [
-        el('div.hero-label', { text: 'پروندهٔ این برش' }),
-        el('div.hero-value', { text: fa(k.total) }),
-        delta
+    var big = el('div.rep-big-n');
+    w.U.countUp(big, k.total);
+
+    var strip = el('div.rep-tally');
+    tiles.forEach(function (t, i) {
+      var n = el('span.tally-n');
+      if (t.value == null) n.textContent = '—';
+      else w.U.countUp(n, t.value);
+      strip.appendChild(el('div.tally' + (t.tone ? '.t-' + t.tone : ''), {
+        style: '--i:' + i, title: t.note
+      }, [
+        n,
+        el('span.tally-label', { text: t.label }),
+        t.note ? el('span.tally-note', { text: t.note }) : null
+      ]));
+    });
+
+    return el('div.rep-plate', null, [
+      el('div.rep-plate-top', null, [
+        el('div.rep-figure', null, [
+          el('div.rep-big-label', { text: 'پروندهٔ این برش' }),
+          big,
+          delta
+        ]),
+        el('div.rep-caption', null, [
+          el('p', { text: describeScope(app) })
+        ])
       ]),
-      el('div.stat-tiles', null, tiles.map(function (t) {
-        return el('div.stat-tile', null, [
-          el('div.tile-label', { text: t.label }),
-          el('div.tile-value', { text: t.value }),
-          t.note ? el('div.tile-note', { text: t.note }) : null
-        ]);
-      }))
+      strip
     ]);
+  }
+
+  /** یک جملهٔ فارسی که می‌گوید این عددها روی چه چیزی حساب شده‌اند */
+  function describeScope(app) {
+    var s = app.state.report || {};
+    var bits = [];
+    if (s.year) bits.push('سال ' + fa(s.year));
+    if (s.expert) bits.push('کارشناس ' + s.expert);
+    if (s.placeType) bits.push(s.placeType);
+    var base = bits.length ? bits.join('، ') : 'همهٔ پرونده‌های داخل دامنهٔ کار';
+    return 'بر پایهٔ ' + base + '. هر عددی که اینجا می‌بینید با یک کلیک به ' +
+      'فهرست همان پرونده‌ها می‌رود.';
   }
 
   // ------------------------------------------------------------- کارت یافته‌ها
@@ -570,6 +606,7 @@
 
     w.U.clear(mount);
     mount.appendChild(el('div.report-view', null, [
+      w.UIScope.banner(app),
       filterRow(app, data),
       data.cases.length
         ? el('div', null, [

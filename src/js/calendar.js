@@ -67,7 +67,7 @@
 
     if (on.action) {
       var stones = w.MILESTONES || [];
-      M.state.cases.forEach(function (rec) {
+      M.scoped().forEach(function (rec) {
         stones.forEach(function (ms) {
           var v = rec[ms.key];
           if (!v || !J.unpack(v)) return;
@@ -81,7 +81,7 @@
 
     if (on.due) {
       var WL = w.Worklist;
-      M.state.cases.forEach(function (rec) {
+      M.scoped().forEach(function (rec) {
         var a = WL.nextAction(rec);
         if (!a || !a.due || a.key === 'closed' || a.key === 'transferred') return;
         push({
@@ -117,7 +117,7 @@
     if (on.event) {
       (M.state.history || []).forEach(function (h) {
         var rec = M.get(h.caseId);
-        if (!rec) return;
+        if (!rec || !M.inScope(rec)) return;
         push({
           layer: 'event', date: jalaliOf(h.at),
           label: (w.UIForm ? w.UIForm.kindLabel(h.kind) : h.kind) +

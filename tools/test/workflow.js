@@ -103,7 +103,7 @@ async function openList(page) {
   const inWork = await page.evaluate(() => ({
     rows: document.querySelectorAll('.follow-card').length,
     late: document.querySelectorAll('.follow-card.u-late').length,
-    stat: [...document.querySelectorAll('.wl-stat')].some(
+    stat: [...document.querySelectorAll('.tally')].some(
       s => s.textContent.indexOf('پیگیری باز') >= 0),
     hasText: [...document.querySelectorAll('.follow-note')]
       .some(n => n.textContent.trim().length > 0),

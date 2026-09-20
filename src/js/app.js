@@ -27,7 +27,7 @@
     }
   };
 
-  var mount, searchInput, statusChip, navButtons;
+  var mount, searchInput, statusChip, navButtons, scopeChip;
 
   /* ================================================================
      نشانی صفحه
@@ -387,6 +387,7 @@
     }
     updateNav();
     updateStatusChip();
+    if (scopeChip) scopeChip.refresh();
     syncRoute(applyingRoute);
   };
 
@@ -471,6 +472,7 @@
     });
 
     statusChip = el('button.chip', { type: 'button', onclick: onChipClick });
+    scopeChip = w.UIScope.chip(app);
 
     navButtons = {
       work: el('button.nav-btn.active', {
@@ -537,6 +539,7 @@
           title: 'ذخیرهٔ نسخهٔ پشتیبان',
           onclick: function () { w.UIMisc.exportJson(); }
         }),
+        scopeChip,
         el('button.icon-btn.refresh-btn', {
           type: 'button', title: 'به‌روزرسانی از روی فایل — بدون بستن برنامه (F5)',
           'aria-label': 'به‌روزرسانی',
@@ -572,6 +575,11 @@
       {
         icon: 'plus', label: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
+      },
+      {
+        icon: 'filter', label: 'دامنهٔ کار',
+        hint: 'کدام پرونده‌ها شمرده شوند',
+        onclick: function () { w.UIScope.dialog(app); }
       },
       {
         icon: 'refresh', label: 'به‌روزرسانی',
