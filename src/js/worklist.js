@@ -532,9 +532,14 @@
       if (slot) slot.deadlines.push({ rec: rec, action: a });
     });
 
-    // قرارهای پیگیری، از یادداشت‌های دستی
+    /* قرارهای پیگیری، از یادداشت‌های دستی.
+       کارِ بی‌پرونده اینجا نمی‌آید: کلیک روی هر خانهٔ این نوار فهرستی از
+       پرونده‌ها باز می‌کند، و چیزی که پرونده ندارد در آن فهرست جا ندارد —
+       شمردنش یعنی عددِ خانه با چیزی که باز می‌شود نخواند. جای کارها نمای
+       «کارها»ست. */
     if (w.Notes && w.Notes.dueFollowUps) {
       w.Notes.dueFollowUps(false).forEach(function (f) {
+        if (!f.rec) return;
         var slot = byDate[f.note.followUp];
         if (slot) slot.follows.push(f);
       });

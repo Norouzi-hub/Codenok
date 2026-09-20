@@ -40,6 +40,7 @@
        #/case/1404308        یک پرونده، با شمارهٔ خودش
        #/case/new            پروندهٔ تازه
        #/person/<کلید>       پروندهٔ شخص
+       #/tasks               کارها
        #/report              گزارش‌ها
 
      شمارهٔ پرونده در نشانی می‌آید نه شناسهٔ داخلی، چون نشانی را آدم
@@ -59,6 +60,7 @@
       return st.personKey ? '#/person/' + encodeURIComponent(st.personKey) : '#/people';
     }
     if (st.view === 'people') return '#/people';
+    if (st.view === 'tasks') return '#/tasks';
     if (st.view === 'report') return '#/report';
     if (st.view === 'list') return '#/list';
     return '#/';
@@ -99,6 +101,7 @@
     if (!parts.length) { st.view = 'work'; st.caseId = null; }
     else if (parts[0] === 'list') { st.view = 'list'; st.caseId = null; }
     else if (parts[0] === 'report') { st.view = 'report'; st.caseId = null; }
+    else if (parts[0] === 'tasks') { st.view = 'tasks'; st.caseId = null; }
     else if (parts[0] === 'people') { st.view = 'people'; st.personKey = null; }
     else if (parts[0] === 'person' && parts[1]) {
       st.view = 'person';
@@ -177,6 +180,16 @@
     app.state.caseId = null;
     app.render();
     window.scrollTo(0, 0);
+  };
+
+  app.goTasks = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'tasks';
+    app.state.caseId = null;
+    app.render();
   };
 
   app.goReport = function () {
@@ -290,6 +303,8 @@
       w.UIForm.render(app, mount, app.state.caseId);
     } else if (app.state.view === 'work') {
       w.UIWorklist.render(app, mount);
+    } else if (app.state.view === 'tasks') {
+      w.UITasks.render(app, mount);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
     } else if (app.state.view === 'people') {
@@ -306,7 +321,7 @@
 
   var NAV_FOR_VIEW = {
     work: 'work', list: 'list', case: 'list', report: 'report',
-    people: 'people', person: 'people'
+    tasks: 'tasks', people: 'people', person: 'people'
   };
 
   function updateNav() {
@@ -396,6 +411,11 @@
         type: 'button', text: 'پرونده‌ها', 'data-nav': 'list',
         onclick: function () { app.goList(); }
       }),
+      tasks: el('button.nav-btn', {
+        type: 'button', text: 'کارها', 'data-nav': 'tasks',
+        title: 'کارهای روزمره — روی پرونده‌ها و بیرون از آنها',
+        onclick: function () { app.goTasks(); }
+      }),
       people: el('button.nav-btn', {
         type: 'button', text: 'اشخاص', 'data-nav': 'people',
         title: 'یک کارمند ممکن است چند پرونده داشته باشد',
@@ -418,7 +438,7 @@
         ])
       ]),
       el('nav.main-nav', null, [navButtons.work, navButtons.list,
-        navButtons.people, navButtons.report]),
+        navButtons.tasks, navButtons.people, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -470,6 +490,13 @@
         icon: 'plus', label: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
       },
+      {
+        /* گزارش‌ها روی گوشی در نوار پایین جا نشد — «کارها» جایش را گرفت،
+           چون هر روز لازم است و گزارش گاه‌به‌گاه. پس اینجا می‌ماند. */
+        icon: 'chart', label: 'گزارش‌ها',
+        onclick: function () { app.goReport(); }
+      },
+      { sep: true },
       {
         icon: 'imp', label: 'ورود از اکسل',
         hint: 'خواندن فایل اکسل با همین قالب',
@@ -529,6 +556,7 @@
     work: svg('<path d="M9 4h6v3H9z"/><path d="M15 5.5h2.5A1.5 1.5 0 0 1 19 7v11.5A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5V7a1.5 1.5 0 0 1 1.5-1.5H9"/><path d="M8.6 13.2l2 2 3.8-4"/>'),
     list: svg('<path d="M4.5 6h15M4.5 10.5h15M4.5 15h15M4.5 19.5h9"/>'),
     people: svg('<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17.2 14.9c2 .6 3.3 2.3 3.3 4.6"/>'),
+    tasks: svg('<path d="M4.2 7.6l1.9 1.9 3.3-3.5"/><path d="M4.2 16.6l1.9 1.9 3.3-3.5"/><path d="M12.6 8h7.2"/><path d="M12.6 17h7.2"/>'),
     report: svg('<path d="M4.5 19.5h15"/><rect x="6" y="11" width="3" height="6" rx="1"/><rect x="11" y="7.5" width="3" height="9.5" rx="1"/><rect x="16" y="13.5" width="3" height="3.5" rx="1"/>')
   };
 
@@ -551,8 +579,8 @@
         title: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
       }),
-      tab('people', 'اشخاص', function () { app.goPeople(); }),
-      tab('report', 'گزارش‌ها', function () { app.goReport(); })
+      tab('tasks', 'کارها', function () { app.goTasks(); }),
+      tab('people', 'اشخاص', function () { app.goPeople(); })
     ]);
   }
 
@@ -584,6 +612,9 @@
         e.preventDefault();
         if (w.Store.status().encrypted) lockNow(false);
         else w.U.toast('اول از تنظیمات یک رمز عبور تعیین کنید.', 'warn');
+      } else if (ctrl && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        app.goTasks();
       } else if (ctrl && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         app.goPeople();

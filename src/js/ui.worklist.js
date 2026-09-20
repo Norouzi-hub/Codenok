@@ -147,7 +147,7 @@
       var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
       row.appendChild(el('span.wl-note' + (late ? '.late' : ''), null, [
         el('span.wl-note-icon', { html: w.Mobile.icon('paperclip') }),
-        el('span.wl-note-text', { text: w.Notes.preview(note.text, 110) }),
+        el('span.wl-note-text', { text: w.Notes.preview(w.Notes.textOf(note), 110) }),
         note.followUp ? el('span.wl-note-due', {
           text: w.UINotes.relativeDay(note.followUp)
         }) : null
@@ -241,6 +241,27 @@
       ]);
     }
 
+    /* کارها پرونده نیستند، پس showCases به دردشان نمی‌خورد؛ این کارت به
+       نمای «کارها» می‌رود. شکلش با بقیه یکی است تا از ریتم کارت‌ها نیفتد. */
+    function taskStat() {
+      var ts = w.Notes.stats();
+      var n = ts.dueTasks;
+      if (!n) {
+        return el('div.wl-stat.wl-stat-off', { title: 'کاری برای امروز نمانده' }, [
+          el('span.wl-stat-num', { text: fa(0) }),
+          el('span.wl-stat-label', { text: 'کار امروز' })
+        ]);
+      }
+      return el('button.wl-stat' + (ts.overdueTasks ? '.late' : ''), {
+        type: 'button',
+        title: 'کارهایی که سررسیدشان رسیده یا گذشته — برای دیدنشان کلیک کنید',
+        onclick: function () { app.goTasks(); }
+      }, [
+        el('span.wl-stat-num', { text: fa(n) }),
+        el('span.wl-stat-label', { text: 'کار امروز' })
+      ]);
+    }
+
     function idsWhere(fn) {
       return cases.filter(fn).map(function (c) { return c.id; });
     }
@@ -267,10 +288,15 @@
             return a.key !== 'closed' && !WL.isOurs(a);
           });
         }),
+      taskStat(),
       statCard(w.Notes.stats().openFollowUps, 'پیگیری باز',
         'قرارهای پیگیری که هنوز بسته نشده‌اند', function () {
+          /* کارِ بی‌پرونده هم در سررسیدها می‌آید و rec ندارد؛ این کارت
+             فهرستِ پرونده باز می‌کند، پس فقط پرونده‌دارها به کارش می‌آیند. */
           var seen = {};
-          w.Notes.dueFollowUps(false).forEach(function (f) { seen[f.rec.id] = 1; });
+          w.Notes.dueFollowUps(false).forEach(function (f) {
+            if (f.rec) seen[f.rec.id] = 1;
+          });
           return Object.keys(seen);
         }),
       statCard(sum.transferred, 'ارجاع‌شده',
@@ -309,7 +335,11 @@
      * متنش مهم است. پس کارت‌اند، نه سطرِ جدول — با نوار رنگی که فوریت را
      * می‌گوید و متن یادداشت در دو خط جا می‌شود.
      */
-    var follow = w.Notes.dueFollowUps(true);
+    /* فقط یادداشت‌ها: کارها بخش خودشان را دارند و نشان دادنشان در هر دو
+       جا یعنی کاربر یک چیز را دو بار می‌بیند و نمی‌داند کدام درست است. */
+    var follow = w.Notes.dueFollowUps(true).filter(function (f) {
+      return f.rec && f.note.kind !== 'task';
+    });
     if (follow.length) {
       var late = follow.filter(function (f) { return f.overdue; }).length;
       sections.push(el('section.wl-section.follow-section', null, [
@@ -342,7 +372,7 @@
                   text: w.UINotes.relativeDay(f.note.followUp)
                 })
               ]),
-              el('p.follow-note', { text: w.Notes.preview(f.note.text, 160) })
+              el('p.follow-note', { text: w.Notes.preview(w.Notes.textOf(f.note), 160) })
             ]),
             el('div.follow-foot', null, [
               el('span.follow-date', { text: J.format(f.note.followUp) }),
@@ -361,6 +391,11 @@
         }))
       ]));
     }
+
+    /* کارهای امروز، بلافاصله بعد از قرارهای پیگیری: هر دو «قرارِ خودِ
+       کاربر»اند، نه حدسِ برنامه، و با هم یک تصویر از امروز می‌دهند. */
+    var tasksToday = w.UITasks.todaySection(app);
+    if (tasksToday) sections.push(tasksToday);
 
     var week = weekStrip(app, cases);
     if (week) sections.push(week);

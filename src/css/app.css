@@ -3472,3 +3472,260 @@ select.input { cursor: pointer; }
   .wl-stats { grid-template-columns: 1fr; }
   .tab-btn .tab-label { font-size: 9.5px; }
 }
+
+/* ================================================================
+   کارها
+   ----------------------------------------------------------------
+   شکل پایه، چک‌لیست است نه جدول: مربعِ تیک سمت راست و عنوان کنارش.
+   همان دو رنگِ همیشگی کار می‌کند — برنج یعنی «مانده»، شنگرف یعنی
+   «از سررسید گذشته» — تا زبان رنگی برنامه یکی بماند.
+   ================================================================ */
+.tasks-view { padding: 22px 26px 56px; max-width: 1180px; margin: 0 auto; }
+.task-hero .task-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 14px 0 2px;
+}
+
+.chip-btn {
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-700);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.chip-btn:hover { border-color: var(--brass-line); background: var(--brass-soft); }
+.chip-btn.on {
+  background: var(--ink-800);
+  border-color: var(--ink-800);
+  color: #fff;
+}
+.chip-btn.prio-urgent.on { background: var(--cinnabar); border-color: var(--cinnabar); }
+
+/* نوار ثبت سریع — کارهای پرتکرار، یک کلیک */
+.task-quick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.task-buckets { display: flex; flex-direction: column; gap: 22px; }
+.task-bucket-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
+.task-bucket-head h2 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+.task-bucket.b-overdue .task-bucket-head h2 { color: var(--cinnabar); }
+
+.task-list { list-style: none; margin: 0; padding: 0; }
+.task {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 13px;
+  margin-bottom: 7px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--brass);
+  border-radius: var(--radius);
+  animation: task-in .16s ease-out;
+}
+@keyframes task-in { from { opacity: 0; transform: translateY(-3px); } }
+.task.is-late { border-inline-start-color: var(--cinnabar); background: var(--cinnabar-soft); }
+.task.is-urgent .task-title::before {
+  content: 'فوری';
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border: 1px solid var(--cinnabar-line);
+  border-radius: 999px;
+  padding: 0 7px;
+  margin-inline-end: 7px;
+  vertical-align: 1px;
+}
+.task.is-done, .task.is-cancelled {
+  background: var(--paper);
+  border-inline-start-color: var(--line);
+  opacity: .72;
+}
+.task.is-done .task-title { text-decoration: line-through; text-decoration-color: var(--line); }
+.task.is-cancelled .task-title { text-decoration: line-through; color: var(--muted); }
+
+/* مربع تیک — هدفِ اصلیِ لمس در این صفحه */
+.task-check {
+  flex: none;
+  width: 21px;
+  height: 21px;
+  margin-top: 2px;
+  border: 1.6px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color .12s, background .12s;
+}
+.task-check:hover { border-color: var(--brass); }
+.task-tick { font-size: 13px; line-height: 1; color: transparent; transition: color .12s; }
+.task-check:hover .task-tick { color: var(--brass-line); }
+.task.is-done .task-check, .task.is-cancelled .task-check {
+  background: var(--moss-soft);
+  border-color: var(--moss-line);
+}
+.task.is-done .task-tick, .task.is-cancelled .task-tick { color: var(--moss); }
+
+.task-body { flex: 1; min-width: 0; }
+.task-title { margin: 0; font-size: 13.5px; line-height: 1.65; }
+.task-text {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--ink-500);
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.task-due {
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 9px;
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  border: 1px solid var(--brass-line);
+}
+.task-due.late {
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+  border-color: var(--cinnabar-line);
+}
+.task-case {
+  font: inherit;
+  font-size: 11.5px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-500);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+.task-case:hover { color: var(--brass-ink); }
+.task-cancel-why { color: var(--cinnabar); }
+
+/* اقدام‌های فرعی: تا موس نیامده، سر و صدا نکنند */
+.task-actions { display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
+.task:hover .task-actions, .task:focus-within .task-actions { opacity: 1; }
+.task-actions .icon-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  color: var(--ink-400);
+  line-height: 0;
+}
+.task-actions .icon-btn:hover { background: var(--paper-2); color: var(--ink-800); }
+.task-actions .icon-btn.danger:hover { background: var(--cinnabar-soft); color: var(--cinnabar); }
+.task-actions .icon-btn svg { width: 16px; height: 16px; }
+
+.task-done-box { margin-top: 16px; }
+.task-done-box > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 2px;
+}
+
+/* --- پنجرهٔ ثبت کار --- */
+.task-modal { width: min(660px, 94vw); }
+.task-presets { display: flex; gap: 5px; flex-wrap: wrap; margin: -4px 0 12px; }
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.task-row .date-field { min-width: 158px; }
+.task-row .date-hint { display: none; }
+.task-prio { display: flex; gap: 5px; }
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.task-oncase {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: var(--radius);
+  padding: 7px 11px;
+}
+
+/* --- چک‌لیست داخل پرونده --- */
+.note-part-head {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.note-part { margin-bottom: 20px; }
+.task-case-panel .task-quick { margin-bottom: 12px; }
+
+/* --- گزارش کارها --- */
+.task-report {
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 4px 14px;
+}
+.task-report > summary { cursor: pointer; padding: 9px 2px; font-size: 13px; font-weight: 600; }
+.task-report-nums { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 16px; }
+.task-num {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 15px;
+  min-width: 118px;
+  background: var(--paper);
+}
+.task-num b { display: block; font-size: 22px; font-weight: 800; line-height: 1.25; }
+.task-num span { font-size: 11.5px; color: var(--muted); }
+.task-num.good b { color: var(--moss); }
+.task-num.bad { border-color: var(--cinnabar-line); background: var(--cinnabar-soft); }
+.task-num.bad b { color: var(--cinnabar); }
+.task-report-table { margin-bottom: 18px; }
+.task-report-table h4 { margin: 0 0 6px; font-size: 12.5px; }
+.task-tbl td.late { color: var(--cinnabar); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .tasks-view { padding: 16px 14px 40px; }
+  .task-quick { gap: 5px; }
+  /* روی لمس، «موس روی سطر» معنایی ندارد؛ اقدام‌ها همیشه دیده شوند */
+  .task-actions { opacity: 1; }
+  .task { padding: 10px 12px; }
+  .task-check { width: 24px; height: 24px; }
+  .task-grid { grid-template-columns: 1fr; }
+  .task-report-table { overflow-x: auto; }
+}

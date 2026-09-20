@@ -125,11 +125,11 @@ async function openList(page) {
       banner: !!document.querySelector('.case-next.follow'),
       notes: document.querySelectorAll('.note').length,
       tabBadge: [...document.querySelectorAll('.tab')].some(
-        t => t.textContent.indexOf('یادداشت') === 0 && t.querySelector('.badge'))
+        t => t.textContent.indexOf('کارها و یادداشت‌ها') === 0 && t.querySelector('.badge'))
     };
   }, added.ids);
   check('پیگیری باز بالای پرونده نشان داده می‌شود', onCase.banner);
-  check('تب یادداشت، یادداشت‌ها و شمارنده را دارد',
+  check('تب «کارها و یادداشت‌ها»، یادداشت‌ها و شمارنده را دارد',
     onCase.notes === 2 && onCase.tabBadge, onCase.notes + ' یادداشت');
 
   console.log('\n— اقدام دسته‌ای —');

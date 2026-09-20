@@ -1,4 +1,11 @@
-/* یادداشت و پیگیری — پنل داخل صفحهٔ پرونده */
+/*
+ * تب «کارها و یادداشت‌ها» — پنل داخل صفحهٔ پرونده.
+ *
+ * دو جنس چیز در یک تب می‌نشیند، چون در ذهن کاربر هم یکی است: «چه خبر
+ * است و چه باید بکنم». بالا چک‌لیستِ کارها (تیک می‌خورد)، پایین دفترِ
+ * یادداشت‌ها (ثبت واقعه). ترتیب عمدی است: اول کاری که مانده، بعد
+ * چیزی که گذشته.
+ */
 (function (w) {
   'use strict';
 
@@ -60,7 +67,7 @@
 
     return el('li.note' + (note.done ? '.is-done' : '') + (overdue ? '.is-late' : ''), null, [
       el('div.note-body', null, [
-        el('p.note-text', { text: note.text }),
+        el('p.note-text', { text: N.textOf(note) }),
         el('div.note-meta', null, [
           chip,
           el('span.note-stamp', { text: note.atJalali + ' • ' + (note.user || 'کاربر') })
@@ -80,6 +87,15 @@
       }));
       return panel;
     }
+
+    /* چک‌لیست کارهای همین پرونده — بالای همه، چون کارِ نکرده مهم‌تر از
+       یادداشتِ نوشته‌شده است. */
+    panel.appendChild(el('div.note-part', null, [
+      el('h3.note-part-head', { text: 'کارهای این پرونده' }),
+      w.UITasks.casePanel(app, rec, refresh)
+    ]));
+
+    panel.appendChild(el('h3.note-part-head', { text: 'یادداشت‌ها' }));
 
     // --- فرم افزودن ---
     var text = el('textarea.input.area.note-input', {
@@ -158,8 +174,8 @@
       })));
     }
 
-    // --- فهرست ---
-    var list = N.forCase(rec.id);
+    // --- فهرست یادداشت‌ها (کارها بالا، در چک‌لیست خودشان) ---
+    var list = N.forCase(rec.id).filter(function (n) { return n.kind !== 'task'; });
     if (!list.length) {
       panel.appendChild(el('p.muted.tiny', {
         text: 'یادداشتی ثبت نشده است. هرچه از تاریخ‌ها درنمی‌آید — تماس‌ها، ' +

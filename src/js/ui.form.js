@@ -88,7 +88,9 @@
     'doc-add': 'افزودن سند', 'doc-version': 'نسخهٔ تازهٔ سند',
     'doc-remove': 'حذف سند', 'doc-folder': 'تغییر پوشهٔ مستندات',
     'doc-person': 'مدرک شخص', 'note-add': 'یادداشت', 'note-done': 'پیگیری انجام شد',
-    'note-remove': 'حذف یادداشت', 'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه'
+    'note-remove': 'حذف یادداشت', 'task-add': 'کار', 'task-done': 'کار انجام شد',
+    'task-cancel': 'کار لغو شد', 'task-remove': 'حذف کار',
+    'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه'
   };
 
   function kindLabel(kind) {
@@ -470,7 +472,7 @@
         return t.groups.indexOf(f.group) >= 0 && !f.hidden && draft[f.key];
       }).length);
     });
-    makeTab('__notes', 'یادداشت و پیگیری',
+    makeTab('__notes', 'کارها و یادداشت‌ها',
       existing ? w.Notes.forCase(existing.id).filter(function (n) {
         return !n.done;
       }).length : 0);
@@ -842,10 +844,14 @@
         var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
         followNode = el('div.case-next.follow' + (late ? '.late' : ''), null, [
           el('span.case-next-label', {
-            text: note.followUp ? 'پیگیری ' + J.format(note.followUp) : 'یادداشت'
+            text: note.followUp
+              ? (note.kind === 'task' ? 'کار ' : 'پیگیری ') + J.format(note.followUp)
+              : (note.kind === 'task' ? 'کار' : 'یادداشت')
           }),
           el('div.case-next-text', null, [
-            el('span.case-next-meta', { text: w.Notes.preview(note.text, 120) }),
+            el('span.case-next-meta', {
+              text: w.Notes.preview(w.Notes.textOf(note), 120)
+            }),
             note.followUp ? el('span.case-next-auto', {
               text: w.UINotes.relativeDay(note.followUp)
             }) : null
@@ -853,7 +859,7 @@
           el('div.spacer'),
           openNotes > 1 ? el('button.linkish.tiny', {
             type: 'button',
-            text: '+' + w.U.toFaDigits(openNotes - 1) + ' یادداشت دیگر',
+            text: '+' + w.U.toFaDigits(openNotes - 1) + ' مورد دیگر',
             onclick: function () {
               activeTab = '__notes';
               app.state.formTab = activeTab;

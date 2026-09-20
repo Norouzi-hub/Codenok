@@ -3488,6 +3488,263 @@ select.input { cursor: pointer; }
   .tab-btn .tab-label { font-size: 9.5px; }
 }
 
+/* ================================================================
+   کارها
+   ----------------------------------------------------------------
+   شکل پایه، چک‌لیست است نه جدول: مربعِ تیک سمت راست و عنوان کنارش.
+   همان دو رنگِ همیشگی کار می‌کند — برنج یعنی «مانده»، شنگرف یعنی
+   «از سررسید گذشته» — تا زبان رنگی برنامه یکی بماند.
+   ================================================================ */
+.tasks-view { padding: 22px 26px 56px; max-width: 1180px; margin: 0 auto; }
+.task-hero .task-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 14px 0 2px;
+}
+
+.chip-btn {
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-700);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.chip-btn:hover { border-color: var(--brass-line); background: var(--brass-soft); }
+.chip-btn.on {
+  background: var(--ink-800);
+  border-color: var(--ink-800);
+  color: #fff;
+}
+.chip-btn.prio-urgent.on { background: var(--cinnabar); border-color: var(--cinnabar); }
+
+/* نوار ثبت سریع — کارهای پرتکرار، یک کلیک */
+.task-quick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.task-buckets { display: flex; flex-direction: column; gap: 22px; }
+.task-bucket-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
+.task-bucket-head h2 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+.task-bucket.b-overdue .task-bucket-head h2 { color: var(--cinnabar); }
+
+.task-list { list-style: none; margin: 0; padding: 0; }
+.task {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 13px;
+  margin-bottom: 7px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--brass);
+  border-radius: var(--radius);
+  animation: task-in .16s ease-out;
+}
+@keyframes task-in { from { opacity: 0; transform: translateY(-3px); } }
+.task.is-late { border-inline-start-color: var(--cinnabar); background: var(--cinnabar-soft); }
+.task.is-urgent .task-title::before {
+  content: 'فوری';
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border: 1px solid var(--cinnabar-line);
+  border-radius: 999px;
+  padding: 0 7px;
+  margin-inline-end: 7px;
+  vertical-align: 1px;
+}
+.task.is-done, .task.is-cancelled {
+  background: var(--paper);
+  border-inline-start-color: var(--line);
+  opacity: .72;
+}
+.task.is-done .task-title { text-decoration: line-through; text-decoration-color: var(--line); }
+.task.is-cancelled .task-title { text-decoration: line-through; color: var(--muted); }
+
+/* مربع تیک — هدفِ اصلیِ لمس در این صفحه */
+.task-check {
+  flex: none;
+  width: 21px;
+  height: 21px;
+  margin-top: 2px;
+  border: 1.6px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color .12s, background .12s;
+}
+.task-check:hover { border-color: var(--brass); }
+.task-tick { font-size: 13px; line-height: 1; color: transparent; transition: color .12s; }
+.task-check:hover .task-tick { color: var(--brass-line); }
+.task.is-done .task-check, .task.is-cancelled .task-check {
+  background: var(--moss-soft);
+  border-color: var(--moss-line);
+}
+.task.is-done .task-tick, .task.is-cancelled .task-tick { color: var(--moss); }
+
+.task-body { flex: 1; min-width: 0; }
+.task-title { margin: 0; font-size: 13.5px; line-height: 1.65; }
+.task-text {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--ink-500);
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.task-due {
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 9px;
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  border: 1px solid var(--brass-line);
+}
+.task-due.late {
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+  border-color: var(--cinnabar-line);
+}
+.task-case {
+  font: inherit;
+  font-size: 11.5px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-500);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+.task-case:hover { color: var(--brass-ink); }
+.task-cancel-why { color: var(--cinnabar); }
+
+/* اقدام‌های فرعی: تا موس نیامده، سر و صدا نکنند */
+.task-actions { display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
+.task:hover .task-actions, .task:focus-within .task-actions { opacity: 1; }
+.task-actions .icon-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  color: var(--ink-400);
+  line-height: 0;
+}
+.task-actions .icon-btn:hover { background: var(--paper-2); color: var(--ink-800); }
+.task-actions .icon-btn.danger:hover { background: var(--cinnabar-soft); color: var(--cinnabar); }
+.task-actions .icon-btn svg { width: 16px; height: 16px; }
+
+.task-done-box { margin-top: 16px; }
+.task-done-box > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 2px;
+}
+
+/* --- پنجرهٔ ثبت کار --- */
+.task-modal { width: min(660px, 94vw); }
+.task-presets { display: flex; gap: 5px; flex-wrap: wrap; margin: -4px 0 12px; }
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.task-row .date-field { min-width: 158px; }
+.task-row .date-hint { display: none; }
+.task-prio { display: flex; gap: 5px; }
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.task-oncase {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: var(--radius);
+  padding: 7px 11px;
+}
+
+/* --- چک‌لیست داخل پرونده --- */
+.note-part-head {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.note-part { margin-bottom: 20px; }
+.task-case-panel .task-quick { margin-bottom: 12px; }
+
+/* --- گزارش کارها --- */
+.task-report {
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 4px 14px;
+}
+.task-report > summary { cursor: pointer; padding: 9px 2px; font-size: 13px; font-weight: 600; }
+.task-report-nums { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 16px; }
+.task-num {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 15px;
+  min-width: 118px;
+  background: var(--paper);
+}
+.task-num b { display: block; font-size: 22px; font-weight: 800; line-height: 1.25; }
+.task-num span { font-size: 11.5px; color: var(--muted); }
+.task-num.good b { color: var(--moss); }
+.task-num.bad { border-color: var(--cinnabar-line); background: var(--cinnabar-soft); }
+.task-num.bad b { color: var(--cinnabar); }
+.task-report-table { margin-bottom: 18px; }
+.task-report-table h4 { margin: 0 0 6px; font-size: 12.5px; }
+.task-tbl td.late { color: var(--cinnabar); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .tasks-view { padding: 16px 14px 40px; }
+  .task-quick { gap: 5px; }
+  /* روی لمس، «موس روی سطر» معنایی ندارد؛ اقدام‌ها همیشه دیده شوند */
+  .task-actions { opacity: 1; }
+  .task { padding: 10px 12px; }
+  .task-check { width: 24px; height: 24px; }
+  .task-grid { grid-template-columns: 1fr; }
+  .task-report-table { overflow-x: auto; }
+}
+
 </style>
 
 </head>
@@ -5449,6 +5706,8 @@ window.SEED_CASES = [
     print: svg('<path d="M7 9.5V4.5h10v5"/><rect x="4.5" y="9.5" width="15" height="6.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>'),
     columns: svg('<rect x="4.5" y="5" width="15" height="14" rx="1.5"/><path d="M9.5 5v14M14.5 5v14"/>'),
     check: svg('<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><path d="M8.3 12.2l2.6 2.6 4.8-5.2"/>'),
+    chart: svg('<path d="M4.5 19.5h15"/><rect x="6" y="11" width="3" height="6" rx="1"/><rect x="11" y="7.5" width="3" height="9.5" rx="1"/><rect x="16" y="13.5" width="3" height="3.5" rx="1"/>'),
+    task: svg('<path d="M4.2 7.6l1.9 1.9 3.3-3.5"/><path d="M4.2 16.6l1.9 1.9 3.3-3.5"/><path d="M12.6 8h7.2"/><path d="M12.6 17h7.2"/>'),
     filter: svg('<path d="M4.5 6h15l-5.8 6.6v5.2l-3.4 1.7v-6.9z"/>'),
     // شدت یافته‌ها در گزارش — همان خانوادهٔ خطی، نه شکلک
     alert: svg('<path d="M12 4.8L20.5 19.5h-17z"/><path d="M12 10.3v4"/><path d="M12 16.8v.1"/>'),
@@ -9513,11 +9772,23 @@ else if (typeof exports === 'object'){
 <script>
 /* ==== js/notes.js ==== */
 /*
- * یادداشت و پیگیری دستی.
+ * کارها و یادداشت‌ها.
  *
  * موتور «اقدام بعدی» از روی تاریخ‌ها حدس می‌زند چه کاری مانده، ولی همه‌چیز
- * از تاریخ‌ها درنمی‌آید: «با آقای الف تلفنی صحبت شد، هفتهٔ بعد پیگیری شود».
- * این لایه همان چیزهاست: یادداشت آزاد، با تاریخ پیگیری اختیاری.
+ * از تاریخ‌ها درنمی‌آید. دو جنس چیز اینجا می‌نشیند:
+ *
+ *   یادداشت — ثبت واقعه. «نامبرده تلفنی گفت هفتهٔ آینده می‌آید.»
+ *   کار     — چیزی که باید انجام شود. «اسکن مدارک»، «تشکیل پرونده».
+ *
+ * عمداً یک موجودیت‌اند، نه دو تا: هشتاد درصدشان یکی است (متن، سررسید،
+ * انجام‌شده/نشده، تاریخچه) و دو فهرستِ شبیه هم یعنی کاربر هر بار باید
+ * بپرسد «این را کجا بنویسم؟». فرقشان یک فیلد است: kind.
+ *
+ * کار می‌تواند به هیچ پرونده‌ای وصل نباشد (caseId خالی) — کارهایی که از
+ * بیرون ارجاع می‌شوند و پرونده‌ای پشتشان نیست.
+ *
+ * نام انبار «notes» مانده و فیلد سررسید هم «followUp»، چون داده‌های قبلی
+ * با همین نام‌ها روی دیسک کاربر نشسته‌اند و تغییرشان یعنی مهاجرت بی‌دلیل.
  */
 (function (w) {
   'use strict';
@@ -9527,9 +9798,54 @@ else if (typeof exports === 'object'){
   var notes = [];
   var byCase = {};
 
+  /* کارهای پرتکرار دبیرخانه. اینها دکمه می‌شوند تا تایپ نشوند؛ فهرست در
+     تنظیمات قابل ویرایش است، مثل بقیهٔ لیست‌های برنامه. */
+  var PRESETS_DEFAULT = [
+    'تشکیل پرونده', 'اسکن مدارک', 'پرینت', 'تایپ نامه',
+    'تماس تلفنی', 'پیگیری نامه', 'تحویل به کارشناس', 'بایگانی'
+  ];
+
+  /* دستهٔ کارهای بیرون از پرونده */
+  var CATEGORIES_DEFAULT = [
+    'مکاتبات اداری', 'گزارش‌دهی', 'جلسات', 'بایگانی و اسکن', 'سایر'
+  ];
+
+  var PRIORITIES = [
+    { key: 'normal', label: 'عادی' },
+    { key: 'urgent', label: 'فوری' }
+  ];
+
+  /* هر دو فهرست وارد لیست‌های برنامه می‌شوند تا همان ویرایشگرِ تنظیمات —
+     که کاربر برای بقیهٔ فهرست‌ها می‌شناسد — اینها را هم نشان بدهد. */
+  function seedLists() {
+    var L = M.state.lists;
+    if (!L) return;
+    if (!L.TaskPresets) L.TaskPresets = PRESETS_DEFAULT.slice();
+    if (!L.TaskCategories) L.TaskCategories = CATEGORIES_DEFAULT.slice();
+  }
+
+  function presets() { return (M.state.lists || {}).TaskPresets || PRESETS_DEFAULT; }
+  function categories() {
+    return (M.state.lists || {}).TaskCategories || CATEGORIES_DEFAULT;
+  }
+
+  /*
+   * رکوردهای قدیمی نه kind دارند نه status. به‌جای مهاجرت روی دیسک، همان
+   * لحظهٔ خواندن پر می‌شوند: داده دست‌نخورده می‌ماند و کد یک شکل می‌بیند.
+   */
+  function normalize(n) {
+    if (!n.kind) n.kind = 'note';
+    if (!n.status) n.status = n.done ? 'done' : 'open';
+    if (n.caseId == null) n.caseId = '';
+    if (!n.priority) n.priority = 'normal';
+    return n;
+  }
+
   function index() {
     byCase = {};
     notes.forEach(function (n) {
+      normalize(n);
+      if (!n.caseId) return;                    // کار بی‌پرونده جای خودش را دارد
       (byCase[n.caseId] = byCase[n.caseId] || []).push(n);
     });
     Object.keys(byCase).forEach(function (k) {
@@ -9585,27 +9901,61 @@ else if (typeof exports === 'object'){
   }
 
   function add(rec, text, followUp) {
-    text = String(text || '').trim();
-    if (!text) return Promise.reject(new Error('متن یادداشت خالی است'));
-    var note = {
+    return create({
+      kind: 'note', caseId: rec ? rec.id : '', text: text, followUp: followUp
+    });
+  }
+
+  /**
+   * ساخت کار یا یادداشت.
+   * o: { kind, caseId, title, text, followUp, priority, from, owner, category }
+   */
+  function create(o) {
+    o = o || {};
+    var kind = o.kind === 'task' ? 'task' : 'note';
+    var title = String(o.title || '').trim();
+    var text = String(o.text || '').trim();
+    if (kind === 'task' && !title) {
+      return Promise.reject(new Error('عنوان کار خالی است'));
+    }
+    if (kind === 'note' && !text) {
+      return Promise.reject(new Error('متن یادداشت خالی است'));
+    }
+    var rec = o.caseId ? M.get(o.caseId) : null;
+    var item = normalize({
       id: w.U.uid(),
-      caseId: rec.id,
-      caseNo: rec.caseNo || '',
+      kind: kind,
+      caseId: rec ? rec.id : '',
+      caseNo: rec ? (rec.caseNo || '') : '',
+      title: title,
       text: text,
-      followUp: followUp || '',
+      followUp: o.followUp || '',
+      priority: o.priority === 'urgent' ? 'urgent' : 'normal',
+      from: String(o.from || '').trim(),
+      owner: String(o.owner || '').trim() || (M.state.settings.user || ''),
+      category: String(o.category || '').trim(),
+      status: 'open',
       done: false,
       at: new Date().toISOString(),
       atJalali: J.stamp(),
       user: M.state.settings.user || 'کاربر'
-    };
-    notes.push(note);
-    index();
-    return w.Store.put('notes', [note]).then(function () {
-      M.addHistory('note-add', rec, [], followUp
-        ? 'یادداشت با پیگیری ' + J.format(followUp) + ': ' + preview(text)
-        : 'یادداشت: ' + preview(text));
-      return note;
     });
+    notes.push(item);
+    index();
+    return w.Store.put('notes', [item]).then(function () {
+      if (rec) {
+        M.addHistory(kind === 'task' ? 'task-add' : 'note-add', rec, [],
+          (kind === 'task' ? 'کار: ' + title : 'یادداشت: ' + preview(text)) +
+          (item.followUp ? ' — سررسید ' + J.format(item.followUp) : ''));
+      }
+      return item;
+    });
+  }
+
+  /** متنی که باید نشان داده شود — کار عنوان دارد، یادداشت متن */
+  function textOf(n) {
+    if (!n) return '';
+    return (n.kind === 'task' ? (n.title || n.text) : n.text) || '';
   }
 
   function preview(text, max) {
@@ -9621,27 +9971,54 @@ else if (typeof exports === 'object'){
     return w.Store.put('notes', [note]);
   }
 
-  /** بستن یک پیگیری — کار انجام شد */
+  /** بستن یک کار یا پیگیری — انجام شد */
   function complete(note) {
-    var rec = M.get(note.caseId);
-    return update(note, { done: true, doneAt: J.today() }).then(function () {
+    var rec = note.caseId ? M.get(note.caseId) : null;
+    return update(note, { done: true, status: 'done', doneAt: J.today() })
+      .then(function () {
+        if (rec) {
+          M.addHistory(note.kind === 'task' ? 'task-done' : 'note-done', rec, [],
+            (note.kind === 'task' ? 'کار انجام شد: ' + (note.title || '')
+              : 'پیگیری انجام شد: ' + preview(note.text)));
+        }
+        return note;
+      });
+  }
+
+  /**
+   * لغو کار.
+   * «انجام نشد و دیگر لازم نیست» با «انجام شد» فرق دارد و در گزارش هم
+   * نباید یکی شمرده شوند.
+   */
+  function cancelTask(note, why) {
+    var rec = note.caseId ? M.get(note.caseId) : null;
+    return update(note, {
+      done: true, status: 'cancelled', doneAt: J.today(),
+      cancelReason: String(why || '').trim()
+    }).then(function () {
       if (rec) {
-        M.addHistory('note-done', rec, [], 'پیگیری انجام شد: ' + preview(note.text));
+        M.addHistory('task-cancel', rec, [], 'کار لغو شد: ' + (note.title || '') +
+          (why ? ' — ' + why : ''));
       }
       return note;
     });
   }
 
   function reopen(note) {
-    return update(note, { done: false, doneAt: '' });
+    return update(note, {
+      done: false, status: 'open', doneAt: '', cancelReason: ''
+    });
   }
 
   function remove(note) {
-    var rec = M.get(note.caseId);
+    var rec = note.caseId ? M.get(note.caseId) : null;
     notes = notes.filter(function (n) { return n.id !== note.id; });
     index();
     return w.Store.remove('notes', [note.id]).then(function () {
-      if (rec) M.addHistory('note-remove', rec, [], 'حذف یادداشت: ' + preview(note.text));
+      if (!rec) return;
+      M.addHistory(note.kind === 'task' ? 'task-remove' : 'note-remove', rec, [],
+        note.kind === 'task' ? 'حذف کار: ' + (note.title || '')
+          : 'حذف یادداشت: ' + preview(note.text));
     });
   }
 
@@ -9654,8 +10031,11 @@ else if (typeof exports === 'object'){
     var out = [];
     notes.forEach(function (n) {
       if (!n.followUp || n.done) return;
-      var rec = M.get(n.caseId);
-      if (!rec) return;
+      /* کار بی‌پرونده هم سررسید دارد؛ rec خالی می‌ماند ولی حذف نمی‌شود —
+         قبلاً همین‌جا از قلم می‌افتاد. ولی یادداشتی که پرونده‌اش پاک شده
+         بی‌صاحب است و نمایش دادنش فقط گیج می‌کند. */
+      var rec = n.caseId ? M.get(n.caseId) : null;
+      if (n.caseId && !rec) return;
       var days = J.diffDays(today, n.followUp);
       if (onlyDue && days != null && days < 0) return;
       out.push({ note: n, rec: rec, days: days, overdue: days != null && days > 0 });
@@ -9666,12 +10046,163 @@ else if (typeof exports === 'object'){
     return out;
   }
 
+  /* ================================================================
+     کارها
+     ----------------------------------------------------------------
+     پرس‌وجوها همه از همین یک آرایه درمی‌آیند. تعداد کارهای دبیرخانه در
+     مقیاس چندصدتاست، پس نمایهٔ جداگانه فقط کدِ بیشتر بود بی‌آنکه چیزی
+     سریع‌تر شود.
+     ================================================================ */
+
+  function isTask(n) { return n.kind === 'task'; }
+
+  /**
+   * tasks(f) — کارها با صافی اختیاری.
+   * f: { status:'open'|'done'|'cancelled', caseId, standalone:true, owner, category }
+   */
+  function tasks(f) {
+    f = f || {};
+    return notes.filter(function (n) {
+      if (!isTask(n)) return false;
+      if (f.status && n.status !== f.status) return false;
+      if (f.standalone && n.caseId) return false;
+      if (f.caseId != null && n.caseId !== f.caseId) return false;
+      if (f.owner && n.owner !== f.owner) return false;
+      if (f.category && n.category !== f.category) return false;
+      /* کارِ وصل به پروندهٔ پاک‌شده را نشان نمی‌دهیم */
+      if (n.caseId && !M.get(n.caseId)) return false;
+      return true;
+    }).sort(sortTasks);
+  }
+
+  /* فوری بالا، بعد سررسیدِ نزدیک‌تر، بی‌سررسید ته صف */
+  function sortTasks(a, b) {
+    if ((a.priority === 'urgent') !== (b.priority === 'urgent')) {
+      return a.priority === 'urgent' ? -1 : 1;
+    }
+    if (!!a.followUp !== !!b.followUp) return a.followUp ? -1 : 1;
+    if (a.followUp !== b.followUp) return a.followUp < b.followUp ? -1 : 1;
+    return (a.at || '') < (b.at || '') ? -1 : 1;
+  }
+
+  /** کارهای بی‌پرونده — ارجاع‌های بیرونی */
+  function standalone(status) {
+    return tasks({ standalone: true, status: status || 'open' });
+  }
+
+  var BUCKETS = [
+    { key: 'overdue', label: 'عقب‌افتاده' },
+    { key: 'today', label: 'امروز' },
+    { key: 'week', label: 'این هفته' },
+    { key: 'later', label: 'بعداً' },
+    { key: 'someday', label: 'بی‌سررسید' }
+  ];
+
+  function bucketOf(task) {
+    if (!task.followUp) return 'someday';
+    var d = J.diffDays(J.today(), task.followUp);   // مثبت یعنی گذشته
+    if (d == null) return 'someday';
+    if (d > 0) return 'overdue';
+    if (d === 0) return 'today';
+    return -d <= 7 ? 'week' : 'later';
+  }
+
+  /**
+   * taskBuckets(f) — کارهای باز، دسته‌بندی‌شده بر اساس سررسید.
+   * خروجی همیشه هر پنج سطل را دارد (حتی خالی) تا نما ترتیب ثابتی داشته باشد.
+   */
+  function taskBuckets(f) {
+    var q = { status: 'open' };
+    Object.keys(f || {}).forEach(function (k) { q[k] = f[k]; });
+    q.status = 'open';
+    var out = BUCKETS.map(function (b) {
+      return { key: b.key, label: b.label, items: [] };
+    });
+    var byKey = {};
+    out.forEach(function (b) { byKey[b.key] = b; });
+    tasks(q).forEach(function (t) { byKey[bucketOf(t)].items.push(t); });
+    return out;
+  }
+
+  /** کارهای امروز و عقب‌افتاده — همان چیزی که صبح باید دید */
+  function todayTasks() {
+    return tasks({ status: 'open' }).filter(function (t) {
+      var b = bucketOf(t);
+      return b === 'overdue' || b === 'today';
+    });
+  }
+
   function stats() {
-    var open = notes.filter(function (n) { return n.followUp && !n.done; });
-    return { total: notes.length, openFollowUps: open.length };
+    /* «پیگیری باز» فقط یادداشت‌هاست: کارها کارت آمار خودشان را دارند و
+       شمردنشان در هر دو، یک عدد را دو بار نشان می‌دهد. */
+    var open = notes.filter(function (n) {
+      return n.kind !== 'task' && n.followUp && !n.done;
+    });
+    var openTasks = tasks({ status: 'open' });
+    var due = todayTasks();
+    return {
+      total: notes.length,
+      openFollowUps: open.length,
+      openTasks: openTasks.length,
+      dueTasks: due.length,
+      overdueTasks: openTasks.filter(function (t) {
+        return bucketOf(t) === 'overdue';
+      }).length
+    };
+  }
+
+  /**
+   * گزارش کارها در یک بازه (تاریخ جلالی بسته‌بندی‌شده، هر دو سرِ بازه شامل).
+   * بدون بازه: از اول ماه جاری.
+   *
+   * «انجام‌شده» بر اساس تاریخِ بستن شمرده می‌شود و «عقب‌افتاده» بر اساس
+   * امروز — چون عقب‌افتادگی وضعیت است نه رویداد، و بازه به آن ربطی ندارد.
+   */
+  function report(from, to) {
+    if (!from) {
+      var t = J.unpack(J.today());
+      from = t ? J.pack(t.jy, t.jm, 1) : J.today();
+    }
+    to = to || J.today();
+    var byFrom = {};
+    var byCategory = {};
+    function bump(map, key, field) {
+      var k = key || '—';
+      var row = map[k] || (map[k] = { key: k, done: 0, cancelled: 0, open: 0, overdue: 0 });
+      row[field]++;
+    }
+    var done = 0, cancelled = 0, open = 0, overdue = 0;
+    notes.forEach(function (n) {
+      if (!isTask(n)) return;
+      if (n.caseId && !M.get(n.caseId)) return;
+      var field = null;
+      if (n.status === 'open') {
+        field = bucketOf(n) === 'overdue' ? 'overdue' : 'open';
+        if (field === 'overdue') overdue++; else open++;
+      } else {
+        var when = n.doneAt || '';
+        if (!when || when < from || when > to) return;
+        field = n.status === 'cancelled' ? 'cancelled' : 'done';
+        if (field === 'cancelled') cancelled++; else done++;
+      }
+      bump(byFrom, n.from, field);
+      bump(byCategory, n.category, field);
+    });
+    function rows(map) {
+      return Object.keys(map).map(function (k) { return map[k]; })
+        .sort(function (a, b) {
+          return (b.done + b.overdue + b.open) - (a.done + a.overdue + a.open);
+        });
+    }
+    return {
+      from: from, to: to,
+      done: done, cancelled: cancelled, open: open, overdue: overdue,
+      byFrom: rows(byFrom), byCategory: rows(byCategory)
+    };
   }
 
   function load() {
+    seedLists();
     return w.Store.getAll('notes').then(function (list) {
       notes = list || [];
       index();
@@ -9686,10 +10217,15 @@ else if (typeof exports === 'object'){
   function all() { return notes; }
 
   w.Notes = {
-    load: load, all: all, forCase: forCase, add: add, update: update,
-    complete: complete, reopen: reopen, remove: remove,
+    load: load, all: all, forCase: forCase, add: add, create: create,
+    update: update, complete: complete, cancelTask: cancelTask,
+    reopen: reopen, remove: remove,
     openFollowUp: openFollowUp, dueFollowUps: dueFollowUps, stats: stats,
-    headline: headline, openCount: openCount,
+    headline: headline, openCount: openCount, textOf: textOf,
+    tasks: tasks, standalone: standalone, taskBuckets: taskBuckets,
+    todayTasks: todayTasks, bucketOf: bucketOf, BUCKETS: BUCKETS,
+    report: report, presets: presets, categories: categories,
+    PRIORITIES: PRIORITIES,
     clearMemory: clearMemory, preview: preview
   };
 })(window);
@@ -10231,9 +10767,14 @@ else if (typeof exports === 'object'){
       if (slot) slot.deadlines.push({ rec: rec, action: a });
     });
 
-    // قرارهای پیگیری، از یادداشت‌های دستی
+    /* قرارهای پیگیری، از یادداشت‌های دستی.
+       کارِ بی‌پرونده اینجا نمی‌آید: کلیک روی هر خانهٔ این نوار فهرستی از
+       پرونده‌ها باز می‌کند، و چیزی که پرونده ندارد در آن فهرست جا ندارد —
+       شمردنش یعنی عددِ خانه با چیزی که باز می‌شود نخواند. جای کارها نمای
+       «کارها»ست. */
     if (w.Notes && w.Notes.dueFollowUps) {
       w.Notes.dueFollowUps(false).forEach(function (f) {
+        if (!f.rec) return;
         var slot = byDate[f.note.followUp];
         if (slot) slot.follows.push(f);
       });
@@ -13558,7 +14099,9 @@ else if (typeof exports === 'object'){
     'doc-add': 'افزودن سند', 'doc-version': 'نسخهٔ تازهٔ سند',
     'doc-remove': 'حذف سند', 'doc-folder': 'تغییر پوشهٔ مستندات',
     'doc-person': 'مدرک شخص', 'note-add': 'یادداشت', 'note-done': 'پیگیری انجام شد',
-    'note-remove': 'حذف یادداشت', 'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه'
+    'note-remove': 'حذف یادداشت', 'task-add': 'کار', 'task-done': 'کار انجام شد',
+    'task-cancel': 'کار لغو شد', 'task-remove': 'حذف کار',
+    'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه'
   };
 
   function kindLabel(kind) {
@@ -13940,7 +14483,7 @@ else if (typeof exports === 'object'){
         return t.groups.indexOf(f.group) >= 0 && !f.hidden && draft[f.key];
       }).length);
     });
-    makeTab('__notes', 'یادداشت و پیگیری',
+    makeTab('__notes', 'کارها و یادداشت‌ها',
       existing ? w.Notes.forCase(existing.id).filter(function (n) {
         return !n.done;
       }).length : 0);
@@ -14312,10 +14855,14 @@ else if (typeof exports === 'object'){
         var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
         followNode = el('div.case-next.follow' + (late ? '.late' : ''), null, [
           el('span.case-next-label', {
-            text: note.followUp ? 'پیگیری ' + J.format(note.followUp) : 'یادداشت'
+            text: note.followUp
+              ? (note.kind === 'task' ? 'کار ' : 'پیگیری ') + J.format(note.followUp)
+              : (note.kind === 'task' ? 'کار' : 'یادداشت')
           }),
           el('div.case-next-text', null, [
-            el('span.case-next-meta', { text: w.Notes.preview(note.text, 120) }),
+            el('span.case-next-meta', {
+              text: w.Notes.preview(w.Notes.textOf(note), 120)
+            }),
             note.followUp ? el('span.case-next-auto', {
               text: w.UINotes.relativeDay(note.followUp)
             }) : null
@@ -14323,7 +14870,7 @@ else if (typeof exports === 'object'){
           el('div.spacer'),
           openNotes > 1 ? el('button.linkish.tiny', {
             type: 'button',
-            text: '+' + w.U.toFaDigits(openNotes - 1) + ' یادداشت دیگر',
+            text: '+' + w.U.toFaDigits(openNotes - 1) + ' مورد دیگر',
             onclick: function () {
               activeTab = '__notes';
               app.state.formTab = activeTab;
@@ -15653,6 +16200,8 @@ else if (typeof exports === 'object'){
       if (f.list) titleByList[f.list] = w.UIForm.cleanLabel(f.label);
     });
     titleByList.DocKinds = 'نوع سند (مستندات)';
+    titleByList.TaskPresets = 'کارهای پرتکرار (دکمه‌های میان‌بر)';
+    titleByList.TaskCategories = 'دستهٔ کارهای بیرون از پرونده';
 
     names.forEach(function (name) {
       var ta = el('textarea.input.area', {
@@ -17730,7 +18279,14 @@ else if (typeof exports === 'object'){
 </script>
 <script>
 /* ==== js/ui.notes.js ==== */
-/* یادداشت و پیگیری — پنل داخل صفحهٔ پرونده */
+/*
+ * تب «کارها و یادداشت‌ها» — پنل داخل صفحهٔ پرونده.
+ *
+ * دو جنس چیز در یک تب می‌نشیند، چون در ذهن کاربر هم یکی است: «چه خبر
+ * است و چه باید بکنم». بالا چک‌لیستِ کارها (تیک می‌خورد)، پایین دفترِ
+ * یادداشت‌ها (ثبت واقعه). ترتیب عمدی است: اول کاری که مانده، بعد
+ * چیزی که گذشته.
+ */
 (function (w) {
   'use strict';
 
@@ -17792,7 +18348,7 @@ else if (typeof exports === 'object'){
 
     return el('li.note' + (note.done ? '.is-done' : '') + (overdue ? '.is-late' : ''), null, [
       el('div.note-body', null, [
-        el('p.note-text', { text: note.text }),
+        el('p.note-text', { text: N.textOf(note) }),
         el('div.note-meta', null, [
           chip,
           el('span.note-stamp', { text: note.atJalali + ' • ' + (note.user || 'کاربر') })
@@ -17812,6 +18368,15 @@ else if (typeof exports === 'object'){
       }));
       return panel;
     }
+
+    /* چک‌لیست کارهای همین پرونده — بالای همه، چون کارِ نکرده مهم‌تر از
+       یادداشتِ نوشته‌شده است. */
+    panel.appendChild(el('div.note-part', null, [
+      el('h3.note-part-head', { text: 'کارهای این پرونده' }),
+      w.UITasks.casePanel(app, rec, refresh)
+    ]));
+
+    panel.appendChild(el('h3.note-part-head', { text: 'یادداشت‌ها' }));
 
     // --- فرم افزودن ---
     var text = el('textarea.input.area.note-input', {
@@ -17890,8 +18455,8 @@ else if (typeof exports === 'object'){
       })));
     }
 
-    // --- فهرست ---
-    var list = N.forCase(rec.id);
+    // --- فهرست یادداشت‌ها (کارها بالا، در چک‌لیست خودشان) ---
+    var list = N.forCase(rec.id).filter(function (n) { return n.kind !== 'task'; });
     if (!list.length) {
       panel.appendChild(el('p.muted.tiny', {
         text: 'یادداشتی ثبت نشده است. هرچه از تاریخ‌ها درنمی‌آید — تماس‌ها، ' +
@@ -17920,6 +18485,672 @@ else if (typeof exports === 'object'){
   }
 
   w.UINotes = { render: render, relativeDay: relativeDay };
+})(window);
+
+</script>
+<script>
+/* ==== js/ui.tasks.js ==== */
+/*
+ * کارها — نمای «کارها» و پنجرهٔ ثبت کار.
+ *
+ * کارتابل می‌گوید هر پرونده در چه مرحله‌ای است. ولی کارِ روزِ دبیرخانه
+ * فقط مرحلهٔ پرونده‌ها نیست: «اسکن مدارک این پرونده»، «پرینت دستور کار
+ * جلسه»، «پیگیری نامهٔ حراست» — و کارهایی که اصلاً پرونده‌ای پشتشان
+ * نیست و شفاهی یا با اتوماسیون ارجاع می‌شوند.
+ *
+ * سه اصل در طراحی این نما:
+ *
+ *   ۱) سررسید، محور است. کار بدون تاریخ فراموش می‌شود، پس سطل‌بندی بر
+ *      اساس سررسید است نه بر اساس پرونده یا دسته: عقب‌افتاده، امروز،
+ *      این هفته، بعداً، بی‌سررسید. کسی که صبح این صفحه را باز می‌کند
+ *      باید در یک نگاه بداند امروز چه باید بکند.
+ *
+ *   ۲) ثبت باید از تایپ کردن ارزان‌تر باشد. کارهای پرتکرار دکمه‌اند؛
+ *      یک کلیک کار را می‌سازد. اگر ثبت کار وقت بگیرد، کسی ثبت نمی‌کند
+ *      و فهرست از واقعیت عقب می‌افتد.
+ *
+ *   ۳) «لغو» با «انجام شد» یکی نیست. کاری که منتفی شده باید از فهرست
+ *      برود ولی در گزارش به‌حساب انجام‌شده نیاید، وگرنه آمار دروغ
+ *      می‌گوید.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model, N = w.Notes;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  function personOf(rec) {
+    return [rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بدون نام';
+  }
+
+  /** پرونده را با شمارهٔ خودش پیدا می‌کند (همان چیزی که کاربر تایپ می‌کند) */
+  function caseByNo(no) {
+    var want = w.U.toLatinDigits(String(no || '')).trim();
+    if (!want) return null;
+    var found = null;
+    M.state.cases.forEach(function (c) {
+      if (w.U.toLatinDigits(c.caseNo || '').trim() === want) found = c;
+    });
+    return found;
+  }
+
+  function caseLabel(rec) {
+    return w.U.toLatinDigits(rec.caseNo || '') + ' — ' + personOf(rec);
+  }
+
+  /* ================================================================
+     پنجرهٔ ثبت / ویرایش کار
+     ================================================================ */
+
+  /**
+   * dialog(app, o, onDone)
+   * o: { task } برای ویرایش، یا { caseId } برای کارِ تازهٔ یک پرونده.
+   */
+  function dialog(app, o, onDone) {
+    o = o || {};
+    var task = o.task || null;
+    var fixedCase = o.caseId || (task ? task.caseId : '');
+    var lockCase = !!o.caseId && !task;      // از داخل پرونده باز شده
+
+    var state = {
+      title: task ? (task.title || '') : '',
+      text: task ? (task.text || '') : '',
+      followUp: task ? (task.followUp || '') : '',
+      priority: task ? (task.priority || 'normal') : 'normal',
+      from: task ? (task.from || '') : '',
+      owner: task ? (task.owner || '') : (M.state.settings.user || ''),
+      category: task ? (task.category || '') : '',
+      caseId: fixedCase || ''
+    };
+
+    var body = el('div.task-dialog');
+
+    // --- عنوان + میان‌برهای کارهای پرتکرار ---
+    var titleInput = el('input.input.task-title-input', {
+      type: 'text', value: state.title,
+      placeholder: 'کار چیست؟ مثلاً: اسکن مدارک و بارگذاری در پرونده'
+    });
+    titleInput.addEventListener('input', function () {
+      state.title = titleInput.value;
+    });
+
+    var chips = el('div.task-presets', null, N.presets().map(function (p) {
+      return el('button.chip-btn', {
+        type: 'button', text: p,
+        onclick: function () {
+          state.title = p;
+          titleInput.value = p;
+          titleInput.focus();
+        }
+      });
+    }));
+
+    body.appendChild(el('label.field.wide', null, [
+      el('span.field-label', { text: 'عنوان کار' }), titleInput
+    ]));
+    body.appendChild(chips);
+
+    // --- پرونده (اختیاری) ---
+    if (lockCase) {
+      var rec0 = M.get(state.caseId);
+      body.appendChild(el('p.task-oncase', {
+        text: 'این کار به پروندهٔ ' + (rec0 ? caseLabel(rec0) : '—') + ' وصل می‌شود.'
+      }));
+    } else {
+      var listId = 'task-cases-' + w.U.uid();
+      var dl = el('datalist', { id: listId });
+      M.state.cases.forEach(function (c) {
+        dl.appendChild(el('option', { value: caseLabel(c) }));
+      });
+      var caseInput = el('input.input', {
+        type: 'text', list: listId,
+        value: state.caseId && M.get(state.caseId) ? caseLabel(M.get(state.caseId)) : '',
+        placeholder: 'خالی بگذارید اگر کار به پرونده‌ای مربوط نیست'
+      });
+      var caseHint = el('span.muted.tiny');
+      function syncCase() {
+        var raw = caseInput.value.trim();
+        if (!raw) {
+          state.caseId = '';
+          caseHint.textContent = 'کارِ بیرون از پرونده‌ها.';
+          return;
+        }
+        var rec = caseByNo(raw.split('—')[0]);
+        state.caseId = rec ? rec.id : '';
+        caseHint.textContent = rec
+          ? 'پرونده: ' + caseLabel(rec)
+          : 'پرونده‌ای با این شماره پیدا نشد؛ کار بدون پرونده ثبت می‌شود.';
+      }
+      caseInput.addEventListener('input', syncCase);
+      syncCase();
+      body.appendChild(el('label.field.wide', null, [
+        el('span.field-label', { text: 'پروندهٔ مربوط (اختیاری)' }),
+        caseInput, caseHint
+      ]));
+    }
+
+    // --- سررسید ---
+    var dateField = w.DatePicker.field(state.followUp, function (v) {
+      state.followUp = v;
+    });
+    function quick(label, days) {
+      return el('button.btn.small.ghost', {
+        type: 'button', text: label,
+        onclick: function () {
+          var d = days === 0 ? J.today() : J.addDays(J.today(), days);
+          state.followUp = d;
+          dateField.setValue(d);
+        }
+      });
+    }
+    body.appendChild(el('div.task-row', null, [
+      el('span.field-label', { text: 'سررسید' }),
+      dateField,
+      quick('امروز', 0), quick('فردا', 1), quick('یک هفته', 7),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'بدون سررسید',
+        onclick: function () { state.followUp = ''; dateField.setValue(''); }
+      })
+    ]));
+
+    // --- فوریت ---
+    var prioButtons = {};
+    var prio = el('div.task-prio', null, N.PRIORITIES.map(function (p) {
+      var b = el('button.chip-btn.prio-' + p.key, {
+        type: 'button', text: p.label,
+        onclick: function () {
+          state.priority = p.key;
+          Object.keys(prioButtons).forEach(function (k) {
+            prioButtons[k].classList.toggle('on', k === state.priority);
+          });
+        }
+      });
+      prioButtons[p.key] = b;
+      if (p.key === state.priority) b.classList.add('on');
+      return b;
+    }));
+    body.appendChild(el('div.task-row', null, [
+      el('span.field-label', { text: 'فوریت' }), prio
+    ]));
+
+    // --- ارجاع‌دهنده / مسئول / دسته ---
+    var fromInput = el('input.input.small', {
+      type: 'text', value: state.from,
+      placeholder: 'چه کسی گفته؟ مثلاً: رئیس کمیته'
+    });
+    fromInput.addEventListener('input', function () { state.from = fromInput.value; });
+
+    var ownerInput = el('input.input.small', {
+      type: 'text', value: state.owner, placeholder: 'با چه کسی است؟'
+    });
+    ownerInput.addEventListener('input', function () { state.owner = ownerInput.value; });
+
+    var catSelect = el('select.input.small');
+    catSelect.appendChild(el('option', { value: '', text: '— بدون دسته —' }));
+    N.categories().forEach(function (c) {
+      catSelect.appendChild(el('option', {
+        value: c, text: c, selected: c === state.category ? 'selected' : null
+      }));
+    });
+    catSelect.value = state.category;
+    catSelect.addEventListener('change', function () { state.category = catSelect.value; });
+
+    body.appendChild(el('div.task-grid', null, [
+      el('label.field', null, [
+        el('span.field-label', { text: 'ارجاع‌دهنده' }), fromInput
+      ]),
+      el('label.field', null, [
+        el('span.field-label', { text: 'مسئول انجام' }), ownerInput
+      ]),
+      el('label.field', null, [
+        el('span.field-label', { text: 'دسته' }), catSelect
+      ])
+    ]));
+
+    // --- توضیح ---
+    var textArea = el('textarea.input.area', {
+      rows: 2, value: state.text,
+      placeholder: 'توضیح بیشتر، اگر لازم است.'
+    });
+    textArea.addEventListener('input', function () { state.text = textArea.value; });
+    body.appendChild(el('label.field.wide', null, [
+      el('span.field-label', { text: 'توضیح (اختیاری)' }), textArea
+    ]));
+
+    var m;
+    var save = el('button.btn.primary', {
+      type: 'button', text: task ? 'ذخیرهٔ تغییرات' : 'ثبت کار',
+      onclick: function () {
+        if (!state.title.trim()) {
+          w.U.toast('عنوان کار را بنویسید.', 'warn');
+          titleInput.focus();
+          return;
+        }
+        save.disabled = true;
+        var patch = {
+          title: state.title.trim(), text: state.text.trim(),
+          followUp: state.followUp, priority: state.priority,
+          from: state.from.trim(), owner: state.owner.trim(),
+          category: state.category, caseId: state.caseId,
+          caseNo: state.caseId && M.get(state.caseId)
+            ? (M.get(state.caseId).caseNo || '') : ''
+        };
+        var p = task ? N.update(task, patch)
+          : N.create({
+            kind: 'task', caseId: patch.caseId, title: patch.title,
+            text: patch.text, followUp: patch.followUp, priority: patch.priority,
+            from: patch.from, owner: patch.owner, category: patch.category
+          });
+        p.then(function () {
+          m.close();
+          w.U.toast(task ? 'کار به‌روز شد.' : 'کار ثبت شد.', 'good');
+          if (onDone) onDone();
+        }).catch(function (e) {
+          save.disabled = false;
+          w.U.toast(e.message, 'bad');
+        });
+      }
+    });
+
+    m = w.U.modal(task ? 'ویرایش کار' : 'کار تازه', body, [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      save
+    ]);
+    m.root.classList.add('task-modal');
+    setTimeout(function () { titleInput.focus(); }, 50);
+    return m;
+  }
+
+  /** ثبت سریع با یک کلیک — بدون پنجره، با سررسیدِ امروز */
+  function quickAdd(app, title, caseId, refresh) {
+    return N.create({
+      kind: 'task', title: title, caseId: caseId || '', followUp: J.today()
+    }).then(function () {
+      w.U.toast('«' + title + '» به کارهای امروز اضافه شد.', 'good');
+      if (refresh) refresh();
+    }).catch(function (e) { w.U.toast(e.message, 'bad'); });
+  }
+
+  /* ================================================================
+     سطر یک کار
+     ----------------------------------------------------------------
+     شکلش عمداً چک‌لیست است نه سطرِ جدول: مربعِ تیک سمت راست، عنوان در
+     وسط، و کارهای فرعی (ویرایش، لغو، حذف) فقط وقتی موس روی سطر است.
+     ================================================================ */
+  function row(app, task, refresh, opts) {
+    opts = opts || {};
+    var done = task.status === 'done';
+    var cancelled = task.status === 'cancelled';
+    var bucket = N.bucketOf(task);
+    var late = !done && !cancelled && bucket === 'overdue';
+
+    var cls = 'li.task' + (done ? '.is-done' : '') + (cancelled ? '.is-cancelled' : '') +
+      (late ? '.is-late' : '') + (task.priority === 'urgent' ? '.is-urgent' : '');
+
+    var box = el('button.task-check', {
+      type: 'button',
+      title: done || cancelled ? 'باز کردن دوباره' : 'انجام شد',
+      'aria-label': done || cancelled ? 'باز کردن دوباره' : 'انجام شد',
+      onclick: function () {
+        var p = (done || cancelled) ? N.reopen(task) : N.complete(task);
+        p.then(function () { if (refresh) refresh(); });
+      }
+    }, [el('span.task-tick', { text: '✓' })]);
+
+    var meta = [];
+    if (task.followUp) {
+      meta.push(el('span.task-due' + (late ? '.late' : ''), {
+        text: (done ? '' : w.UINotes.relativeDay(task.followUp) + ' • ') +
+          J.format(task.followUp)
+      }));
+    }
+    if (!opts.hideCase && task.caseId) {
+      var rec = M.get(task.caseId);
+      if (rec) {
+        meta.push(el('button.task-case', {
+          type: 'button', title: 'رفتن به پرونده',
+          text: w.U.toLatinDigits(rec.caseNo || '') + ' — ' + personOf(rec),
+          onclick: function (e) { e.stopPropagation(); app.openCase(rec.id); }
+        }));
+      }
+    }
+    if (task.from) meta.push(el('span.task-from', { text: 'از: ' + task.from }));
+    if (task.category) meta.push(el('span.task-cat', { text: task.category }));
+    if (cancelled) {
+      meta.push(el('span.task-cancel-why', {
+        text: 'لغو شد' + (task.cancelReason ? ' — ' + task.cancelReason : '')
+      }));
+    }
+
+    var actions = el('div.task-actions', null, [
+      el('button.icon-btn.tiny', {
+        type: 'button', title: 'ویرایش', 'aria-label': 'ویرایش',
+        html: w.Mobile.icon('pencil'),
+        onclick: function () { dialog(app, { task: task }, refresh); }
+      }),
+      (done || cancelled) ? null : el('button.icon-btn.tiny', {
+        type: 'button', title: 'لغو کار (انجام نشد و لازم نیست)',
+        'aria-label': 'لغو کار', text: '⦸',
+        onclick: function () { askCancel(task, refresh); }
+      }),
+      el('button.icon-btn.tiny.danger', {
+        type: 'button', title: 'حذف', 'aria-label': 'حذف',
+        html: w.Mobile.icon('trash'),
+        onclick: function () {
+          w.U.confirmBox('حذف کار', '«' + (task.title || '') + '» پاک شود؟',
+            'حذف کن').then(function (ok) {
+              if (ok) N.remove(task).then(function () { if (refresh) refresh(); });
+            });
+        }
+      })
+    ]);
+
+    return el(cls, null, [
+      box,
+      el('div.task-body', null, [
+        el('p.task-title', { text: task.title || N.preview(task.text, 80) }),
+        task.text && task.title ? el('p.task-text', { text: task.text }) : null,
+        meta.length ? el('div.task-meta', null, meta) : null
+      ]),
+      actions
+    ]);
+  }
+
+  function askCancel(task, refresh) {
+    var input = el('input.input', {
+      type: 'text', placeholder: 'چرا منتفی شد؟ (اختیاری)'
+    });
+    var m;
+    m = w.U.modal('لغو کار', el('div', null, [
+      el('p', { text: '«' + (task.title || '') + '» لغو می‌شود.' }),
+      el('p.muted.tiny', {
+        text: 'کار لغوشده در گزارش، جدا از کارهای انجام‌شده شمرده می‌شود.'
+      }),
+      input
+    ]), [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'لغو کن',
+        onclick: function () {
+          N.cancelTask(task, input.value).then(function () {
+            m.close();
+            if (refresh) refresh();
+          });
+        }
+      })
+    ]);
+    setTimeout(function () { input.focus(); }, 50);
+  }
+
+  /* ================================================================
+     بخش «کارهای امروز» در کارتابل
+     ================================================================ */
+  function todaySection(app) {
+    var items = N.todayTasks();
+    if (!items.length) return null;
+    var late = items.filter(function (t) { return N.bucketOf(t) === 'overdue'; }).length;
+    return el('section.wl-section.task-section', null, [
+      el('div.wl-section-head', null, [
+        el('h2', { text: 'کارهای امروز' }),
+        el('span.wl-count' + (late ? '.late' : ''), {
+          text: late ? fa(late) + ' عقب‌افتاده از ' + fa(items.length)
+            : fa(items.length) + ' کار'
+        }),
+        el('p.wl-sub', { text: 'کارهایی که سررسیدشان رسیده یا گذشته است.' }),
+        el('span.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'همهٔ کارها',
+          onclick: function () { app.goTasks(); }
+        }),
+        el('button.btn.small.primary', {
+          type: 'button', text: '＋ کار تازه',
+          onclick: function () {
+            dialog(app, {}, function () { app.render(); });
+          }
+        })
+      ]),
+      el('ul.task-list', null, items.slice(0, 12).map(function (t) {
+        return row(app, t, function () { app.render(); });
+      }))
+    ]);
+  }
+
+  /* ================================================================
+     چک‌لیست کارهای یک پرونده — داخل تب «کارها و یادداشت‌ها»
+     ================================================================ */
+  function casePanel(app, rec, refresh) {
+    var open = N.tasks({ caseId: rec.id, status: 'open' });
+    var done = N.tasks({ caseId: rec.id, status: 'done' })
+      .concat(N.tasks({ caseId: rec.id, status: 'cancelled' }));
+
+    var panel = el('div.task-case-panel');
+
+    var quickBar = el('div.task-quick', null,
+      [el('span.muted.tiny', { text: 'ثبت سریع:' })].concat(
+        N.presets().slice(0, 6).map(function (p) {
+          return el('button.chip-btn', {
+            type: 'button', text: '＋ ' + p,
+            title: 'با سررسید امروز ثبت می‌شود',
+            onclick: function () { quickAdd(app, p, rec.id, refresh); }
+          });
+        })
+      ).concat([
+        el('div.spacer'),
+        el('button.btn.small.primary', {
+          type: 'button', text: 'کار تازه…',
+          onclick: function () { dialog(app, { caseId: rec.id }, refresh); }
+        })
+      ]));
+    panel.appendChild(quickBar);
+
+    if (!open.length && !done.length) {
+      panel.appendChild(el('p.muted.tiny', {
+        text: 'کاری برای این پرونده ثبت نشده است. کارهای دفتری — اسکن، ' +
+          'پرینت، تماس — را همین‌جا بگذارید تا از قلم نیفتند.'
+      }));
+      return panel;
+    }
+
+    if (open.length) {
+      panel.appendChild(el('ul.task-list', null, open.map(function (t) {
+        return row(app, t, refresh, { hideCase: true });
+      })));
+    } else {
+      panel.appendChild(el('p.muted.tiny', { text: 'کار بازی نمانده است.' }));
+    }
+
+    if (done.length) {
+      var box = el('details.task-done-box', null, [
+        el('summary', { text: fa(done.length) + ' کار بسته‌شده' })
+      ]);
+      box.appendChild(el('ul.task-list', null, done.map(function (t) {
+        return row(app, t, refresh, { hideCase: true });
+      })));
+      panel.appendChild(box);
+    }
+    return panel;
+  }
+
+  /* ================================================================
+     گزارش کارها (فاز ۲)
+     ================================================================ */
+  function reportBlock(app) {
+    var r = N.report();
+    var box = el('details.task-report', null, [
+      el('summary', { text: 'گزارش کارها — از ' + J.format(r.from) + ' تا امروز' })
+    ]);
+
+    box.appendChild(el('div.task-report-nums', null, [
+      el('div.task-num.good', null, [
+        el('b', { text: fa(r.done) }), el('span', { text: 'انجام‌شده در این ماه' })
+      ]),
+      el('div.task-num' + (r.overdue ? '.bad' : ''), null, [
+        el('b', { text: fa(r.overdue) }), el('span', { text: 'عقب‌افتاده' })
+      ]),
+      el('div.task-num', null, [
+        el('b', { text: fa(r.open) }), el('span', { text: 'باز و در مهلت' })
+      ]),
+      el('div.task-num', null, [
+        el('b', { text: fa(r.cancelled) }), el('span', { text: 'لغوشده' })
+      ])
+    ]));
+
+    function table(title, rows, emptyText) {
+      if (!rows.length) {
+        return el('div.task-report-table', null, [
+          el('h4', { text: title }),
+          el('p.muted.tiny', { text: emptyText })
+        ]);
+      }
+      var t = el('table.c-table.task-tbl', null, [
+        el('thead', null, [el('tr', null, [
+          el('th', { text: title }),
+          el('th', { text: 'انجام‌شده' }),
+          el('th', { text: 'عقب‌افتاده' }),
+          el('th', { text: 'باز' }),
+          el('th', { text: 'لغو' })
+        ])]),
+        el('tbody', null, rows.map(function (x) {
+          return el('tr', null, [
+            el('td', { text: x.key }),
+            el('td', { text: fa(x.done) }),
+            el('td' + (x.overdue ? '.late' : ''), { text: fa(x.overdue) }),
+            el('td', { text: fa(x.open) }),
+            el('td', { text: fa(x.cancelled) })
+          ]);
+        }))
+      ]);
+      return el('div.task-report-table', null, [t]);
+    }
+
+    box.appendChild(table('ارجاع‌دهنده', r.byFrom, 'ارجاع‌دهنده‌ای ثبت نشده است.'));
+    box.appendChild(table('دسته', r.byCategory, 'دسته‌ای ثبت نشده است.'));
+    return box;
+  }
+
+  /* ================================================================
+     نمای «کارها»
+     ================================================================ */
+  var FILTERS = [
+    { key: 'all', label: 'همه' },
+    { key: 'standalone', label: 'بیرون از پرونده' },
+    { key: 'oncase', label: 'روی پرونده' },
+    { key: 'urgent', label: 'فوری' }
+  ];
+
+  function render(app, mount) {
+    var st = app.state;
+    if (!st.taskFilter) st.taskFilter = 'all';
+    var refresh = function () { app.render(); };
+
+    var f = {};
+    if (st.taskFilter === 'standalone') f.standalone = true;
+    var buckets = N.taskBuckets(f).map(function (b) {
+      return {
+        key: b.key, label: b.label,
+        items: b.items.filter(function (t) {
+          if (st.taskFilter === 'oncase') return !!t.caseId;
+          if (st.taskFilter === 'urgent') return t.priority === 'urgent';
+          return true;
+        })
+      };
+    });
+    var total = buckets.reduce(function (n, b) { return n + b.items.length; }, 0);
+    var s = N.stats();
+
+    var head = el('header.wl-hero.task-hero', null, [
+      el('div.wl-hero-date', { text: J.format(J.today(), { long: true }) }),
+      el('h1.wl-hero-line', {
+        text: !s.openTasks ? 'کارِ بازی نمانده است.'
+          : (s.overdueTasks
+            ? fa(s.openTasks) + ' کار باز، که ' + fa(s.overdueTasks) + ' تای آن عقب افتاده.'
+            : fa(s.openTasks) + ' کار باز، همه در مهلت.')
+      }),
+      el('div.task-filters', null, FILTERS.map(function (x) {
+        return el('button.chip-btn' + (st.taskFilter === x.key ? '.on' : ''), {
+          type: 'button', text: x.label,
+          onclick: function () { st.taskFilter = x.key; app.render(); }
+        });
+      }).concat([
+        el('div.spacer'),
+        el('button.btn.small.primary', {
+          type: 'button', text: '＋ کار تازه',
+          onclick: function () { dialog(app, {}, refresh); }
+        })
+      ]))
+    ]);
+
+    /* میان‌برهای ثبت سریع: همان کارهایی که هر روز تکرار می‌شوند، یک کلیک
+       فاصله دارند. بدون پرونده ثبت می‌شوند چون از این صفحه معلوم نیست
+       کدام پرونده مراد است. */
+    var quickBar = el('div.task-quick', null,
+      [el('span.muted.tiny', { text: 'ثبت سریع برای امروز:' })].concat(
+        N.presets().map(function (p) {
+          return el('button.chip-btn', {
+            type: 'button', text: '＋ ' + p,
+            onclick: function () { quickAdd(app, p, '', refresh); }
+          });
+        })
+      ));
+
+    var body = el('div.task-buckets');
+    buckets.forEach(function (b) {
+      if (!b.items.length) return;
+      body.appendChild(el('section.task-bucket.b-' + b.key, null, [
+        el('div.task-bucket-head', null, [
+          el('h2', { text: b.label }),
+          el('span.wl-count' + (b.key === 'overdue' ? '.late' : ''), {
+            text: fa(b.items.length) + ' کار'
+          })
+        ]),
+        el('ul.task-list', null, b.items.map(function (t) {
+          return row(app, t, refresh);
+        }))
+      ]));
+    });
+
+    if (!total) {
+      body.appendChild(el('div.empty-state', null, [
+        el('p', {
+          text: st.taskFilter === 'all'
+            ? 'کاری ثبت نشده است. کارهای شفاهی و ارجاع‌های بیرون از پرونده را ' +
+              'همین‌جا بنویسید تا فراموش نشوند.'
+            : 'با این صافی کاری پیدا نشد.'
+        }),
+        el('button.btn.primary', {
+          type: 'button', text: 'ثبت کار تازه',
+          onclick: function () { dialog(app, {}, refresh); }
+        })
+      ]));
+    }
+
+    var closed = N.tasks({ status: 'done' }).concat(N.tasks({ status: 'cancelled' }));
+    if (closed.length) {
+      closed.sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
+      var doneBox = el('details.task-done-box', null, [
+        el('summary', { text: fa(closed.length) + ' کار بسته‌شده' })
+      ]);
+      doneBox.appendChild(el('ul.task-list', null, closed.slice(0, 60).map(function (t) {
+        return row(app, t, refresh);
+      })));
+      body.appendChild(doneBox);
+    }
+
+    body.appendChild(reportBlock(app));
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.tasks-view', null, [head, quickBar, body]));
+  }
+
+  w.UITasks = {
+    render: render, dialog: dialog, row: row, casePanel: casePanel,
+    todaySection: todaySection, quickAdd: quickAdd, reportBlock: reportBlock
+  };
 })(window);
 
 </script>
@@ -18339,7 +19570,7 @@ else if (typeof exports === 'object'){
       var late = note.followUp && J.diffDays(J.today(), note.followUp) > 0;
       row.appendChild(el('span.wl-note' + (late ? '.late' : ''), null, [
         el('span.wl-note-icon', { html: w.Mobile.icon('paperclip') }),
-        el('span.wl-note-text', { text: w.Notes.preview(note.text, 110) }),
+        el('span.wl-note-text', { text: w.Notes.preview(w.Notes.textOf(note), 110) }),
         note.followUp ? el('span.wl-note-due', {
           text: w.UINotes.relativeDay(note.followUp)
         }) : null
@@ -18433,6 +19664,27 @@ else if (typeof exports === 'object'){
       ]);
     }
 
+    /* کارها پرونده نیستند، پس showCases به دردشان نمی‌خورد؛ این کارت به
+       نمای «کارها» می‌رود. شکلش با بقیه یکی است تا از ریتم کارت‌ها نیفتد. */
+    function taskStat() {
+      var ts = w.Notes.stats();
+      var n = ts.dueTasks;
+      if (!n) {
+        return el('div.wl-stat.wl-stat-off', { title: 'کاری برای امروز نمانده' }, [
+          el('span.wl-stat-num', { text: fa(0) }),
+          el('span.wl-stat-label', { text: 'کار امروز' })
+        ]);
+      }
+      return el('button.wl-stat' + (ts.overdueTasks ? '.late' : ''), {
+        type: 'button',
+        title: 'کارهایی که سررسیدشان رسیده یا گذشته — برای دیدنشان کلیک کنید',
+        onclick: function () { app.goTasks(); }
+      }, [
+        el('span.wl-stat-num', { text: fa(n) }),
+        el('span.wl-stat-label', { text: 'کار امروز' })
+      ]);
+    }
+
     function idsWhere(fn) {
       return cases.filter(fn).map(function (c) { return c.id; });
     }
@@ -18459,10 +19711,15 @@ else if (typeof exports === 'object'){
             return a.key !== 'closed' && !WL.isOurs(a);
           });
         }),
+      taskStat(),
       statCard(w.Notes.stats().openFollowUps, 'پیگیری باز',
         'قرارهای پیگیری که هنوز بسته نشده‌اند', function () {
+          /* کارِ بی‌پرونده هم در سررسیدها می‌آید و rec ندارد؛ این کارت
+             فهرستِ پرونده باز می‌کند، پس فقط پرونده‌دارها به کارش می‌آیند. */
           var seen = {};
-          w.Notes.dueFollowUps(false).forEach(function (f) { seen[f.rec.id] = 1; });
+          w.Notes.dueFollowUps(false).forEach(function (f) {
+            if (f.rec) seen[f.rec.id] = 1;
+          });
           return Object.keys(seen);
         }),
       statCard(sum.transferred, 'ارجاع‌شده',
@@ -18501,7 +19758,11 @@ else if (typeof exports === 'object'){
      * متنش مهم است. پس کارت‌اند، نه سطرِ جدول — با نوار رنگی که فوریت را
      * می‌گوید و متن یادداشت در دو خط جا می‌شود.
      */
-    var follow = w.Notes.dueFollowUps(true);
+    /* فقط یادداشت‌ها: کارها بخش خودشان را دارند و نشان دادنشان در هر دو
+       جا یعنی کاربر یک چیز را دو بار می‌بیند و نمی‌داند کدام درست است. */
+    var follow = w.Notes.dueFollowUps(true).filter(function (f) {
+      return f.rec && f.note.kind !== 'task';
+    });
     if (follow.length) {
       var late = follow.filter(function (f) { return f.overdue; }).length;
       sections.push(el('section.wl-section.follow-section', null, [
@@ -18534,7 +19795,7 @@ else if (typeof exports === 'object'){
                   text: w.UINotes.relativeDay(f.note.followUp)
                 })
               ]),
-              el('p.follow-note', { text: w.Notes.preview(f.note.text, 160) })
+              el('p.follow-note', { text: w.Notes.preview(w.Notes.textOf(f.note), 160) })
             ]),
             el('div.follow-foot', null, [
               el('span.follow-date', { text: J.format(f.note.followUp) }),
@@ -18553,6 +19814,11 @@ else if (typeof exports === 'object'){
         }))
       ]));
     }
+
+    /* کارهای امروز، بلافاصله بعد از قرارهای پیگیری: هر دو «قرارِ خودِ
+       کاربر»اند، نه حدسِ برنامه، و با هم یک تصویر از امروز می‌دهند. */
+    var tasksToday = w.UITasks.todaySection(app);
+    if (tasksToday) sections.push(tasksToday);
 
     var week = weekStrip(app, cases);
     if (week) sections.push(week);
@@ -19596,6 +20862,7 @@ else if (typeof exports === 'object'){
        #/case/1404308        یک پرونده، با شمارهٔ خودش
        #/case/new            پروندهٔ تازه
        #/person/<کلید>       پروندهٔ شخص
+       #/tasks               کارها
        #/report              گزارش‌ها
 
      شمارهٔ پرونده در نشانی می‌آید نه شناسهٔ داخلی، چون نشانی را آدم
@@ -19615,6 +20882,7 @@ else if (typeof exports === 'object'){
       return st.personKey ? '#/person/' + encodeURIComponent(st.personKey) : '#/people';
     }
     if (st.view === 'people') return '#/people';
+    if (st.view === 'tasks') return '#/tasks';
     if (st.view === 'report') return '#/report';
     if (st.view === 'list') return '#/list';
     return '#/';
@@ -19655,6 +20923,7 @@ else if (typeof exports === 'object'){
     if (!parts.length) { st.view = 'work'; st.caseId = null; }
     else if (parts[0] === 'list') { st.view = 'list'; st.caseId = null; }
     else if (parts[0] === 'report') { st.view = 'report'; st.caseId = null; }
+    else if (parts[0] === 'tasks') { st.view = 'tasks'; st.caseId = null; }
     else if (parts[0] === 'people') { st.view = 'people'; st.personKey = null; }
     else if (parts[0] === 'person' && parts[1]) {
       st.view = 'person';
@@ -19733,6 +21002,16 @@ else if (typeof exports === 'object'){
     app.state.caseId = null;
     app.render();
     window.scrollTo(0, 0);
+  };
+
+  app.goTasks = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'tasks';
+    app.state.caseId = null;
+    app.render();
   };
 
   app.goReport = function () {
@@ -19846,6 +21125,8 @@ else if (typeof exports === 'object'){
       w.UIForm.render(app, mount, app.state.caseId);
     } else if (app.state.view === 'work') {
       w.UIWorklist.render(app, mount);
+    } else if (app.state.view === 'tasks') {
+      w.UITasks.render(app, mount);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
     } else if (app.state.view === 'people') {
@@ -19862,7 +21143,7 @@ else if (typeof exports === 'object'){
 
   var NAV_FOR_VIEW = {
     work: 'work', list: 'list', case: 'list', report: 'report',
-    people: 'people', person: 'people'
+    tasks: 'tasks', people: 'people', person: 'people'
   };
 
   function updateNav() {
@@ -19952,6 +21233,11 @@ else if (typeof exports === 'object'){
         type: 'button', text: 'پرونده‌ها', 'data-nav': 'list',
         onclick: function () { app.goList(); }
       }),
+      tasks: el('button.nav-btn', {
+        type: 'button', text: 'کارها', 'data-nav': 'tasks',
+        title: 'کارهای روزمره — روی پرونده‌ها و بیرون از آنها',
+        onclick: function () { app.goTasks(); }
+      }),
       people: el('button.nav-btn', {
         type: 'button', text: 'اشخاص', 'data-nav': 'people',
         title: 'یک کارمند ممکن است چند پرونده داشته باشد',
@@ -19974,7 +21260,7 @@ else if (typeof exports === 'object'){
         ])
       ]),
       el('nav.main-nav', null, [navButtons.work, navButtons.list,
-        navButtons.people, navButtons.report]),
+        navButtons.tasks, navButtons.people, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -20026,6 +21312,13 @@ else if (typeof exports === 'object'){
         icon: 'plus', label: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
       },
+      {
+        /* گزارش‌ها روی گوشی در نوار پایین جا نشد — «کارها» جایش را گرفت،
+           چون هر روز لازم است و گزارش گاه‌به‌گاه. پس اینجا می‌ماند. */
+        icon: 'chart', label: 'گزارش‌ها',
+        onclick: function () { app.goReport(); }
+      },
+      { sep: true },
       {
         icon: 'imp', label: 'ورود از اکسل',
         hint: 'خواندن فایل اکسل با همین قالب',
@@ -20085,6 +21378,7 @@ else if (typeof exports === 'object'){
     work: svg('<path d="M9 4h6v3H9z"/><path d="M15 5.5h2.5A1.5 1.5 0 0 1 19 7v11.5A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5V7a1.5 1.5 0 0 1 1.5-1.5H9"/><path d="M8.6 13.2l2 2 3.8-4"/>'),
     list: svg('<path d="M4.5 6h15M4.5 10.5h15M4.5 15h15M4.5 19.5h9"/>'),
     people: svg('<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17.2 14.9c2 .6 3.3 2.3 3.3 4.6"/>'),
+    tasks: svg('<path d="M4.2 7.6l1.9 1.9 3.3-3.5"/><path d="M4.2 16.6l1.9 1.9 3.3-3.5"/><path d="M12.6 8h7.2"/><path d="M12.6 17h7.2"/>'),
     report: svg('<path d="M4.5 19.5h15"/><rect x="6" y="11" width="3" height="6" rx="1"/><rect x="11" y="7.5" width="3" height="9.5" rx="1"/><rect x="16" y="13.5" width="3" height="3.5" rx="1"/>')
   };
 
@@ -20107,8 +21401,8 @@ else if (typeof exports === 'object'){
         title: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
       }),
-      tab('people', 'اشخاص', function () { app.goPeople(); }),
-      tab('report', 'گزارش‌ها', function () { app.goReport(); })
+      tab('tasks', 'کارها', function () { app.goTasks(); }),
+      tab('people', 'اشخاص', function () { app.goPeople(); })
     ]);
   }
 
@@ -20140,6 +21434,9 @@ else if (typeof exports === 'object'){
         e.preventDefault();
         if (w.Store.status().encrypted) lockNow(false);
         else w.U.toast('اول از تنظیمات یک رمز عبور تعیین کنید.', 'warn');
+      } else if (ctrl && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        app.goTasks();
       } else if (ctrl && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         app.goPeople();

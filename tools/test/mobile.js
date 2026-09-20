@@ -239,7 +239,9 @@ function overflow(page) {
 
   console.log('\n— رفت‌وآمد با نوار پایین —');
   const nav = [];
-  for (const [i, view] of [['work'], ['list'], ['people'], ['report']].entries()) {
+  /* «گزارش‌ها» از نوار پایین درآمد و «کارها» جایش را گرفت — گزارش گاه‌به‌گاه
+     است و کارها هر روز. پس گزارش باید از شیت اقدام‌ها در دسترس بماند. */
+  for (const [i, view] of [['work'], ['list'], ['tasks'], ['people']].entries()) {
     await page.evaluate((k) => {
       [...document.querySelectorAll('.tab-btn')]
         .find(b => b.getAttribute('data-nav') === k).click();
@@ -253,6 +255,19 @@ function overflow(page) {
   }
   check('هر چهار مقصد با نوار پایین باز می‌شوند و نشان‌دار می‌مانند',
     nav.every(Boolean), nav.filter(Boolean).length + ' از ۴');
+
+  const viaSheet = await page.evaluate(async () => {
+    document.querySelector('.more-btn').click();
+    await new Promise(r => setTimeout(r, 250));
+    const item = [...document.querySelectorAll('.sheet-item')]
+      .find(b => (b.textContent || '').indexOf('گزارش‌ها') >= 0);
+    if (!item) return 'در شیت نبود';
+    item.click();
+    await new Promise(r => setTimeout(r, 400));
+    return location.hash;
+  });
+  check('گزارش‌ها که از نوار پایین درآمد، از شیت اقدام‌ها باز می‌شود',
+    viaSheet === '#/report', viaSheet);
 
   console.log('\n— کار با لمس واقعی —');
   // تا اینجا بیشتر با evaluate کار شد؛ اینجا همه‌چیز با tap انجام می‌شود

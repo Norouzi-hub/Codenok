@@ -589,6 +589,8 @@
       if (f.list) titleByList[f.list] = w.UIForm.cleanLabel(f.label);
     });
     titleByList.DocKinds = 'نوع سند (مستندات)';
+    titleByList.TaskPresets = 'کارهای پرتکرار (دکمه‌های میان‌بر)';
+    titleByList.TaskCategories = 'دستهٔ کارهای بیرون از پرونده';
 
     names.forEach(function (name) {
       var ta = el('textarea.input.area', {
