@@ -18,7 +18,12 @@
    * در سه اندازه ظاهر می‌شود: ریز در سطرهای فهرست، کامل در صفحهٔ پرونده،
    * و تجمیعی در کارتابل.
    */
-  function rail(rec, size) {
+  /**
+   * ریل گردش‌کار. با onPick، هر گره دکمه می‌شود و کلیک روی آن کلیدِ
+   * فیلدِ همان مرحله را پس می‌دهد — یعنی «روی آیکن بزن، برو سرِ همان
+   * فیلد». بدون آن، ریل همان چیز خواندنیِ قبلی است (فهرست و کارتابل).
+   */
+  function rail(rec, size, onPick) {
     var steps = WL.stages(rec);
     var box = el('ol.rail.rail-' + (size || 'mini'), {
       'aria-label': 'گردش‌کار پرونده'
@@ -28,10 +33,24 @@
       if (st.done) cls += '.done';
       if (st.current) cls += '.current';
       if (st.manual) cls += '.manual';
+      if (st.optional && !st.date) cls += '.opt';
       if (i === 0) cls += '.first';
+      var pickable = onPick && st.field;
+      if (pickable) cls += '.pick';
+      var hint = st.date ? ' — ' + J.format(st.date)
+        : (st.optional ? ' — اختیاری، هنوز ثبت نشده' : ' — هنوز ثبت نشده');
       var node = el(cls, {
-        title: st.label + (st.date ? ' — ' + J.format(st.date) : '') +
-          (st.manual ? ' — مرحلهٔ دستی' : '')
+        title: st.label + hint + (st.manual ? ' — مرحلهٔ دستی' : '') +
+          (pickable ? '\nبرای رفتن به همین فیلد کلیک کنید' : ''),
+        role: pickable ? 'button' : null,
+        tabindex: pickable ? '0' : null,
+        onclick: pickable ? function () { onPick(st.field, st); } : null,
+        onkeydown: pickable ? function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onPick(st.field, st);
+          }
+        } : null
       }, [
         el('span.rail-dot'),
         size === 'full' ? el('span.rail-name', { text: st.short }) : null,

@@ -304,6 +304,62 @@
     app.render();
   };
 
+  /*
+   * به‌روزرسانی کامل، بدون بستن و باز کردن برنامه.
+   *
+   * تا امروز تنها راهِ «تازه کن»، رفرش مرورگر بود — و رفرش یعنی صفحهٔ
+   * شروع، انتخاب دوبارهٔ فایل و رمز. این دکمه همان کار را بدون آن
+   * می‌کند: اول هرچه ننوشته مانده روی فایل می‌نویسد (وگرنه خواندنِ
+   * دوباره کارِ نوشته‌نشده را می‌بلعد)، بعد اگر فایلِ روی دیسک تازه‌تر
+   * است آن را می‌خوانَد، و در پایان همهٔ لایه‌ها را دوباره بار می‌کند.
+   *
+   * ترتیب عمدی است و «نوشتن قبل از خواندن» مهم‌ترین بندش.
+   */
+  app.refreshAll = function (silent) {
+    if (app.state.dirty &&
+      !window.confirm('در این پرونده تغییر ذخیره‌نشده دارید. با به‌روزرسانی از بین می‌رود. ادامه می‌دهید؟')) {
+      return Promise.resolve(false);
+    }
+    var chip = statusChip;
+    if (chip) chip.classList.add('busy');
+    return Promise.resolve()
+      .then(function () { return w.Store.flushNow(); })
+      .then(function () {
+        // اگر به فایلی وصل نیستیم، چیزی برای خواندن از دیسک نیست
+        return w.Store.status().linked ? w.Store.adoptFile() : false;
+      })
+      .then(function (took) {
+        return M.reload().then(function () { return took; });
+      })
+      .then(function (took) {
+        return w.Docs.load().then(function () { return took; });
+      })
+      .then(function (took) {
+        return w.Notes.load().then(function () { return took; });
+      })
+      .then(function (took) {
+        app.state.dirty = false;
+        app.render();
+        renderAccessBar();
+        if (!silent) {
+          w.U.toast(took
+            ? 'از فایل روی دیسک خوانده شد — ' +
+              w.U.toFaDigits(M.state.cases.length) + ' پرونده.'
+            : 'به‌روز شد — ' + w.U.toFaDigits(M.state.cases.length) + ' پرونده.',
+          'good');
+        }
+        return true;
+      })
+      .catch(function (e) {
+        w.U.toast('به‌روزرسانی ناموفق بود: ' + (e && e.message ? e.message : e), 'bad');
+        return false;
+      })
+      .then(function (ok) {
+        if (chip) chip.classList.remove('busy');
+        return ok;
+      });
+  };
+
   /** رندر دوباره؛ با resetSearch مقدار جعبهٔ جستجو هم به‌روز می‌شود. */
   app.refresh = function (resetSearch) {
     if (resetSearch && searchInput) searchInput.value = app.state.q;
@@ -481,6 +537,12 @@
           title: 'ذخیرهٔ نسخهٔ پشتیبان',
           onclick: function () { w.UIMisc.exportJson(); }
         }),
+        el('button.icon-btn.refresh-btn', {
+          type: 'button', title: 'به‌روزرسانی از روی فایل — بدون بستن برنامه (F5)',
+          'aria-label': 'به‌روزرسانی',
+          html: w.Mobile.icon('refresh'),
+          onclick: function () { app.refreshAll(); }
+        }),
         el('button.icon-btn', {
           type: 'button', text: '🔒', title: 'قفل کردن برنامه (Ctrl+L)',
           onclick: function () {
@@ -511,6 +573,12 @@
         icon: 'plus', label: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
       },
+      {
+        icon: 'refresh', label: 'به‌روزرسانی',
+        hint: 'خواندن دوبارهٔ داده‌ها از فایل، بدون بستن برنامه',
+        onclick: function () { app.refreshAll(); }
+      },
+      { sep: true },
       {
         /* گزارش‌ها روی گوشی در نوار پایین جا نشد — «کارها» جایش را گرفت،
            چون هر روز لازم است و گزارش گاه‌به‌گاه. پس اینجا می‌ماند. */
@@ -640,6 +708,11 @@
       } else if (ctrl && e.key.toLowerCase() === 'j') {
         e.preventDefault();
         app.goTasks();
+      } else if (e.key === 'F5' && !ctrl) {
+        /* رفرش مرورگر یعنی صفحهٔ شروع و رمز دوباره؛ همان کلید، اینجا
+           معنای درستش را می‌دهد: داده‌ها تازه شوند، نشست بماند. */
+        e.preventDefault();
+        app.refreshAll();
       } else if (ctrl && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         app.goCalendar();

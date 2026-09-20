@@ -146,6 +146,55 @@
     { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] }
   ];
 
+  /*
+   * بخش‌های اختیاری پرونده.
+   *
+   * هر پرونده استعلام حراست ندارد، هر پرونده به کارشناس دیگری ارجاع
+   * نمی‌شود، و برای هر پرونده نامهٔ رفع نواقص نمی‌رود. تا امروز فیلدهای
+   * هر سه، خالی و بی‌ربط، در فرمِ همهٔ پرونده‌ها می‌نشستند — هم شلوغ،
+   * هم گمراه‌کننده («یعنی باید پرش کنم؟»).
+   *
+   * حالا هر خوشه یک بخش است که وقتی داده دارد باز و پررنگ دیده می‌شود،
+   * و وقتی ندارد به یک سطرِ «دارد/ندارد» جمع می‌شود. تصمیم پنهان نیست:
+   * سطر همیشه هست، فقط جا نمی‌گیرد.
+   *
+   * همین چهار خوشه دقیقاً همان مرحله‌های optional ریل گردش‌کارند، پس
+   * کلیک روی گرهِ ریل هم همین بخش را باز می‌کند.
+   */
+  var OPTIONAL_BLOCKS = [
+    {
+      key: 'transfer', group: 'case', label: 'ارجاع به کارشناس دیگر',
+      ask: 'این پرونده به کارشناس دیگری ارجاع شده',
+      hint: 'نامهٔ ارجاع، کارشناس تازه و علتش.',
+      fields: ['transferDate', 'transferTo', 'transferFrom',
+        'transferLetterNo', 'transferReason']
+    },
+    {
+      key: 'defect', group: 'defense', label: 'نامهٔ رفع نواقص',
+      ask: 'برای این پرونده نامهٔ رفع نواقص رفته',
+      hint: 'شماره و تاریخ نامه‌ای که برای تکمیل مدارک صادر شده.',
+      fields: ['defectLetterNo', 'defectLetterDate']
+    },
+    {
+      key: 'inquiry', group: 'defense', label: 'استعلام حراست',
+      ask: 'برای این پرونده استعلام حراست رفته',
+      hint: 'نامهٔ صادره، پاسخ وارده و موضوع پاسخ.',
+      fields: ['securityOutLetterNo', 'securityOutLetterDate',
+        'securityInLetterNo', 'securityInLetterDate', 'securityAnswerSubject']
+    },
+    {
+      key: 'hearingLetter', group: 'verdict', label: 'نامهٔ حضور در جلسهٔ دفاع',
+      ask: 'برای این پرونده نامهٔ حضور در جلسه صادر شده',
+      hint: 'شماره و تاریخ نامهٔ دعوت به جلسهٔ دفاع.',
+      fields: ['hearingLetterNo', 'hearingLetterDate']
+    }
+  ];
+
+  var BLOCK_OF_FIELD = {};
+  OPTIONAL_BLOCKS.forEach(function (b) {
+    b.fields.forEach(function (k) { BLOCK_OF_FIELD[k] = b; });
+  });
+
   var GROUP_LABEL = {};
   (w.GROUPS || []).forEach(function (g) { GROUP_LABEL[g.key] = g.label; });
 
@@ -254,6 +303,14 @@
   function render(app, mount, id) {
     var existing = id ? M.get(id) : null;
     var draft = existing ? JSON.parse(JSON.stringify(M.strip(existing))) : {};
+    /* کلیدهایی که کاربر در همین نشست دست زده. لازم است چون پرونده ممکن
+       است «از بیرونِ فرم» هم عوض شود — هم‌خوان‌سازی سند، تنظیم دستی
+       مرحله، اقدام دسته‌ای — و آن‌وقت باید بدانیم کدام مقدار حرفِ کاربر
+       است و کدام را می‌شود از رکورد تازه گرفت. */
+    var edited = {};
+    /* بخش‌های اختیاری‌ای که کاربر در همین نشست باز کرده (بخشی که داده
+       دارد، خودبه‌خود باز است و اینجا نمی‌آید). */
+    var openBlocks = {};
     var dirty = false;
     var activeTab = app.state.formTab || w.GROUPS[0].key;
 
@@ -270,6 +327,7 @@
 
     function setField(key, value) {
       if (value === '') delete draft[key]; else draft[key] = value;
+      edited[key] = true;
       markDirty();
       if (key === 'firstName' || key === 'lastName' || key === 'caseNo') updateTitle();
     }
@@ -331,7 +389,39 @@
       ]));
     };
 
-    function collect() { return draft; }
+    /*
+     * خواندن دوبارهٔ پرونده در فرمِ باز.
+     *
+     * تا امروز draft یک بار — موقع باز شدن پرونده — ساخته می‌شد و دیگر
+     * عوض نمی‌شد. ولی وسط کار، خودِ برنامه هم روی پرونده می‌نویسد: سندی
+     * که بارگذاری می‌شود شمارهٔ نامه و تاریخش را در پرونده می‌نشاند
+     * (applyToCase). نتیجه این بود که آن فیلدها در فرم خالی می‌ماندند —
+     * و بدتر، ذخیرهٔ بعدی همان خالی را روی داده می‌نوشت.
+     *
+     * پس هر بار که پنل رندر می‌شود یا فرم ذخیره می‌شود، رکورد تازه خوانده
+     * می‌شود؛ ولی فقط برای فیلدهایی که کاربر دست نزده. دست‌نوشتهٔ کاربر
+     * هیچ‌وقت بازنویسی نمی‌شود، حتی اگر روی دیسک چیز دیگری نشسته باشد.
+     */
+    function adoptRecord() {
+      if (!existing) return;
+      var fresh = M.get(existing.id);
+      if (!fresh) return;
+      var now = M.strip(fresh);
+      Object.keys(now).forEach(function (k) {
+        if (edited[k] || k === 'id') return;
+        if (draft[k] === now[k]) return;
+        draft[k] = now[k];
+      });
+      Object.keys(draft).forEach(function (k) {
+        if (edited[k] || k === 'id') return;
+        if (now[k] === undefined) delete draft[k];
+      });
+    }
+
+    function collect() {
+      adoptRecord();
+      return draft;
+    }
 
     /**
      * بررسی پیش از ذخیره.
@@ -534,7 +624,80 @@
 
     var panel = el('div.form-panel');
 
+    /** شبکهٔ فیلدها — همان چیدمانی که همه‌جای فرم است */
+    function fieldGrid(fields) {
+      var grid = el('div.field-grid');
+      fields.forEach(function (f) {
+        var input = makeInput(f, draft[f.key] || '',
+          function (v) { setField(f.key, v); }, app);
+        var label = el('span.field-label', {
+          text: cleanLabel(f.label), title: f.label
+        });
+        var clip = letterClip(f);
+        grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
+          { 'data-field': f.key }, [
+            // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
+            clip ? el('span.field-head', null, [label, clip]) : label,
+            input
+          ]));
+      });
+      return grid;
+    }
+
+    /** یک بخش اختیاری: باز اگر داده دارد یا کاربر بازش کرده، وگرنه یک سطر */
+    function blockNode(b) {
+      var fields = M.FIELDS.filter(function (f) {
+        return b.fields.indexOf(f.key) >= 0 && !f.hidden;
+      });
+      var filled = fields.filter(function (f) { return draft[f.key]; });
+      var open = filled.length > 0 || openBlocks[b.key];
+
+      if (!open) {
+        return el('div.form-block.is-off', { 'data-block': b.key }, [
+          el('div.form-block-off-text', null, [
+            el('b', { text: b.label }),
+            el('span.muted.tiny', { text: 'برای این پرونده ثبت نشده. ' + b.hint })
+          ]),
+          el('button.btn.small.ghost', {
+            type: 'button', text: '＋ ' + b.ask,
+            onclick: function () {
+              openBlocks[b.key] = true;
+              renderPanel();
+              setTimeout(function () {
+                var first = panel.querySelector('[data-block="' + b.key + '"] input');
+                if (first) first.focus();
+              }, 40);
+            }
+          })
+        ]);
+      }
+
+      var head = el('div.form-block-head', null, [
+        el('h5', { text: b.label }),
+        el('span.form-block-n', {
+          text: w.U.toFaDigits(filled.length) + ' از ' +
+            w.U.toFaDigits(fields.length) + ' پرشده'
+        }),
+        el('div.spacer')
+      ]);
+      /* بستنِ بخشی که داده دارد، یعنی پنهان کردن داده — پس فقط بخشِ خالی
+         جمع می‌شود. */
+      if (!filled.length) {
+        head.appendChild(el('button.linkish.tiny', {
+          type: 'button', text: 'ندارد، جمعش کن',
+          onclick: function () {
+            openBlocks[b.key] = false;
+            renderPanel();
+          }
+        }));
+      }
+      return el('section.form-block', { 'data-block': b.key }, [
+        head, fieldGrid(fields)
+      ]);
+    }
+
     function renderPanel() {
+      adoptRecord();
       w.U.clear(panel);
       if (activeTab === '__notes') {
         panel.appendChild(w.UINotes.render(app, existing, function () {
@@ -574,36 +737,28 @@
 
       tab.groups.forEach(function (gk) {
         // فیلدهای پنهان (مثل مرحلهٔ دستی) جایشان بالای پرونده است، نه در فرم
-        var fields = M.FIELDS.filter(function (f) {
+        var all = M.FIELDS.filter(function (f) {
           return f.group === gk && !f.hidden;
         });
-        if (!fields.length) return;
+        var blocks = OPTIONAL_BLOCKS.filter(function (b) { return b.group === gk; });
+        var inBlock = {};
+        blocks.forEach(function (b) {
+          b.fields.forEach(function (k) { inBlock[k] = true; });
+        });
+        var fields = all.filter(function (f) { return !inBlock[f.key]; });
+        if (!fields.length && !blocks.length) return;
         // وقتی چند گروه در یک تب‌اند، هرکدام سربرگ خودش را دارد
         if (many) {
-          var filled = fields.filter(function (f) { return draft[f.key]; }).length;
+          var filled = all.filter(function (f) { return draft[f.key]; }).length;
           panel.appendChild(el('div.form-section-head', null, [
             el('h4', { text: GROUP_LABEL[gk] || gk }),
             el('span.form-section-count', {
-              text: w.U.toFaDigits(filled) + ' از ' + w.U.toFaDigits(fields.length) + ' پرشده'
+              text: w.U.toFaDigits(filled) + ' از ' + w.U.toFaDigits(all.length) + ' پرشده'
             })
           ]));
         }
-        var grid = el('div.field-grid');
-        fields.forEach(function (f) {
-          var input = makeInput(f, draft[f.key] || '',
-            function (v) { setField(f.key, v); }, app);
-          var label = el('span.field-label', {
-            text: cleanLabel(f.label), title: f.label
-          });
-          var clip = letterClip(f);
-          grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
-            { 'data-field': f.key }, [
-              // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
-              clip ? el('span.field-head', null, [label, clip]) : label,
-              input
-            ]));
-        });
-        panel.appendChild(grid);
+        if (fields.length) panel.appendChild(fieldGrid(fields));
+        blocks.forEach(function (b) { panel.appendChild(blockNode(b)); });
       });
     }
 
@@ -617,14 +772,23 @@
       M.FIELDS.forEach(function (f) { if (f.key === key) field = f; });
       if (!field) return;
       var target = tabOf(field.group);
+      var needRender = false;
       if (target.key !== activeTab) {
         activeTab = target.key;
         app.state.formTab = activeTab;
         w.U.$$('.tab', tabs).forEach(function (t) {
           t.classList.toggle('active', t.dataset.tab === activeTab);
         });
-        renderPanel();
+        needRender = true;
       }
+      /* اگر فیلد داخل یک بخش اختیاریِ جمع‌شده است، اول بازش کن — وگرنه
+         «رفتن به فیلد» به جایی می‌رسد که فیلدی آنجا نیست. */
+      var block = BLOCK_OF_FIELD[key];
+      if (block && !openBlocks[block.key]) {
+        openBlocks[block.key] = true;
+        needRender = true;
+      }
+      if (needRender) renderPanel();
       setTimeout(function () {
         var node = panel.querySelector('[data-field="' + key + '"]');
         if (!node) return;
@@ -881,7 +1045,9 @@
         ]);
       }
       return el('div.case-rail', null, [
-        w.UIWorklist.rail(existing, 'full'),
+        w.UIWorklist.rail(existing, 'full', function (fieldKey) {
+          jumpToField(fieldKey);
+        }),
         transferNode || next,
         followNode
       ]);

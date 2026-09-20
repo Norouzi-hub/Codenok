@@ -3998,6 +3998,60 @@ select.input { cursor: pointer; }
   .cal-panel .cal-more { display: inline; }
 }
 
+/* دکمهٔ به‌روزرسانی — چرخشِ کوتاه یعنی «دارد کار می‌کند» */
+.refresh-btn { line-height: 0; }
+.refresh-btn svg { width: 17px; height: 17px; }
+.chip.busy { opacity: .6; }
+.chip.busy::after { content: ' …'; }
+@keyframes spin { to { transform: rotate(-360deg); } }
+.refresh-btn:active svg { animation: spin .5s linear; }
+
+/* ---------------------------------------- ریل، قابل کلیک در صفحهٔ پرونده
+   هر گره یک مقصد دارد: همان فیلدی که تاریخش را می‌گوید. پس باید مثل دکمه
+   رفتار کند — نشانگر دست، حالت hover، و رسیدن با صفحه‌کلید. */
+.rail-step.pick { cursor: pointer; border-radius: 8px; padding: 2px 0 1px; }
+.rail-step.pick:hover .rail-dot { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--brass-line); }
+.rail-step.pick:hover .rail-name { color: var(--brass-ink); }
+.rail-step.pick:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+/* مرحلهٔ اختیاریِ ثبت‌نشده: هست، ولی ادعا نمی‌کند که جا افتاده */
+.rail-step.opt:not(.done):not(.current) .rail-dot { box-shadow: 0 0 0 2px var(--line-soft) inset, 0 0 0 3px var(--card); }
+.rail-step.opt:not(.done):not(.current) .rail-name { color: var(--ink-400); }
+
+/* ------------------------------------------------ بخش‌های اختیاری پرونده
+   هر پرونده استعلام یا ارجاع ندارد. بخشی که داده دارد باز و پررنگ است؛
+   بخشی که ندارد به یک سطر جمع می‌شود — پنهان نمی‌شود، فقط جا نمی‌گیرد. */
+.form-block {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 11px 13px 4px;
+  margin: 6px 0 16px;
+  background: var(--paper);
+  animation: block-in .16s ease-out;
+}
+@keyframes block-in { from { opacity: 0; transform: translateY(-3px); } }
+.form-block .field-grid { margin: 0; }
+.form-block-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
+.form-block-head h5 { margin: 0; font-size: 12.5px; }
+.form-block-n {
+  font-size: 11px;
+  color: var(--ink-500);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+.form-block.is-off {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 13px;
+  border-style: dashed;
+  background: transparent;
+}
+.form-block-off-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 180px; }
+.form-block-off-text b { font-size: 12.5px; font-weight: 600; color: var(--ink-700); }
+
 </style>
 
 </head>
@@ -5959,6 +6013,7 @@ window.SEED_CASES = [
     print: svg('<path d="M7 9.5V4.5h10v5"/><rect x="4.5" y="9.5" width="15" height="6.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>'),
     columns: svg('<rect x="4.5" y="5" width="15" height="14" rx="1.5"/><path d="M9.5 5v14M14.5 5v14"/>'),
     check: svg('<rect x="4.5" y="4.5" width="15" height="15" rx="2.5"/><path d="M8.3 12.2l2.6 2.6 4.8-5.2"/>'),
+    refresh: svg('<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.6 4.6v4.2h-4.2"/>'),
     cal: svg('<rect x="4.5" y="6" width="15" height="13.5" rx="2"/><path d="M4.5 10.2h15"/><path d="M8.5 4.2v3.4M15.5 4.2v3.4"/><path d="M8.2 13.4h2.2M13.6 13.4h2.2M8.2 16.6h2.2M13.6 16.6h2.2"/>'),
     chart: svg('<path d="M4.5 19.5h15"/><rect x="6" y="11" width="3" height="6" rx="1"/><rect x="11" y="7.5" width="3" height="9.5" rx="1"/><rect x="16" y="13.5" width="3" height="3.5" rx="1"/>'),
     task: svg('<path d="M4.2 7.6l1.9 1.9 3.3-3.5"/><path d="M4.2 16.6l1.9 1.9 3.3-3.5"/><path d="M12.6 8h7.2"/><path d="M12.6 17h7.2"/>'),
@@ -10847,6 +10902,7 @@ else if (typeof exports === 'object'){
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
+        field: st.field || '',
         done: done[i],
         date: st.field ? (rec[st.field] || '') : '',
         current: !closed && (manualAt >= 0
@@ -14654,6 +14710,55 @@ else if (typeof exports === 'object'){
     { key: 'enforce', label: 'ابلاغ، نتیجه و بایگانی', groups: ['enforce'] }
   ];
 
+  /*
+   * بخش‌های اختیاری پرونده.
+   *
+   * هر پرونده استعلام حراست ندارد، هر پرونده به کارشناس دیگری ارجاع
+   * نمی‌شود، و برای هر پرونده نامهٔ رفع نواقص نمی‌رود. تا امروز فیلدهای
+   * هر سه، خالی و بی‌ربط، در فرمِ همهٔ پرونده‌ها می‌نشستند — هم شلوغ،
+   * هم گمراه‌کننده («یعنی باید پرش کنم؟»).
+   *
+   * حالا هر خوشه یک بخش است که وقتی داده دارد باز و پررنگ دیده می‌شود،
+   * و وقتی ندارد به یک سطرِ «دارد/ندارد» جمع می‌شود. تصمیم پنهان نیست:
+   * سطر همیشه هست، فقط جا نمی‌گیرد.
+   *
+   * همین چهار خوشه دقیقاً همان مرحله‌های optional ریل گردش‌کارند، پس
+   * کلیک روی گرهِ ریل هم همین بخش را باز می‌کند.
+   */
+  var OPTIONAL_BLOCKS = [
+    {
+      key: 'transfer', group: 'case', label: 'ارجاع به کارشناس دیگر',
+      ask: 'این پرونده به کارشناس دیگری ارجاع شده',
+      hint: 'نامهٔ ارجاع، کارشناس تازه و علتش.',
+      fields: ['transferDate', 'transferTo', 'transferFrom',
+        'transferLetterNo', 'transferReason']
+    },
+    {
+      key: 'defect', group: 'defense', label: 'نامهٔ رفع نواقص',
+      ask: 'برای این پرونده نامهٔ رفع نواقص رفته',
+      hint: 'شماره و تاریخ نامه‌ای که برای تکمیل مدارک صادر شده.',
+      fields: ['defectLetterNo', 'defectLetterDate']
+    },
+    {
+      key: 'inquiry', group: 'defense', label: 'استعلام حراست',
+      ask: 'برای این پرونده استعلام حراست رفته',
+      hint: 'نامهٔ صادره، پاسخ وارده و موضوع پاسخ.',
+      fields: ['securityOutLetterNo', 'securityOutLetterDate',
+        'securityInLetterNo', 'securityInLetterDate', 'securityAnswerSubject']
+    },
+    {
+      key: 'hearingLetter', group: 'verdict', label: 'نامهٔ حضور در جلسهٔ دفاع',
+      ask: 'برای این پرونده نامهٔ حضور در جلسه صادر شده',
+      hint: 'شماره و تاریخ نامهٔ دعوت به جلسهٔ دفاع.',
+      fields: ['hearingLetterNo', 'hearingLetterDate']
+    }
+  ];
+
+  var BLOCK_OF_FIELD = {};
+  OPTIONAL_BLOCKS.forEach(function (b) {
+    b.fields.forEach(function (k) { BLOCK_OF_FIELD[k] = b; });
+  });
+
   var GROUP_LABEL = {};
   (w.GROUPS || []).forEach(function (g) { GROUP_LABEL[g.key] = g.label; });
 
@@ -14762,6 +14867,14 @@ else if (typeof exports === 'object'){
   function render(app, mount, id) {
     var existing = id ? M.get(id) : null;
     var draft = existing ? JSON.parse(JSON.stringify(M.strip(existing))) : {};
+    /* کلیدهایی که کاربر در همین نشست دست زده. لازم است چون پرونده ممکن
+       است «از بیرونِ فرم» هم عوض شود — هم‌خوان‌سازی سند، تنظیم دستی
+       مرحله، اقدام دسته‌ای — و آن‌وقت باید بدانیم کدام مقدار حرفِ کاربر
+       است و کدام را می‌شود از رکورد تازه گرفت. */
+    var edited = {};
+    /* بخش‌های اختیاری‌ای که کاربر در همین نشست باز کرده (بخشی که داده
+       دارد، خودبه‌خود باز است و اینجا نمی‌آید). */
+    var openBlocks = {};
     var dirty = false;
     var activeTab = app.state.formTab || w.GROUPS[0].key;
 
@@ -14778,6 +14891,7 @@ else if (typeof exports === 'object'){
 
     function setField(key, value) {
       if (value === '') delete draft[key]; else draft[key] = value;
+      edited[key] = true;
       markDirty();
       if (key === 'firstName' || key === 'lastName' || key === 'caseNo') updateTitle();
     }
@@ -14839,7 +14953,39 @@ else if (typeof exports === 'object'){
       ]));
     };
 
-    function collect() { return draft; }
+    /*
+     * خواندن دوبارهٔ پرونده در فرمِ باز.
+     *
+     * تا امروز draft یک بار — موقع باز شدن پرونده — ساخته می‌شد و دیگر
+     * عوض نمی‌شد. ولی وسط کار، خودِ برنامه هم روی پرونده می‌نویسد: سندی
+     * که بارگذاری می‌شود شمارهٔ نامه و تاریخش را در پرونده می‌نشاند
+     * (applyToCase). نتیجه این بود که آن فیلدها در فرم خالی می‌ماندند —
+     * و بدتر، ذخیرهٔ بعدی همان خالی را روی داده می‌نوشت.
+     *
+     * پس هر بار که پنل رندر می‌شود یا فرم ذخیره می‌شود، رکورد تازه خوانده
+     * می‌شود؛ ولی فقط برای فیلدهایی که کاربر دست نزده. دست‌نوشتهٔ کاربر
+     * هیچ‌وقت بازنویسی نمی‌شود، حتی اگر روی دیسک چیز دیگری نشسته باشد.
+     */
+    function adoptRecord() {
+      if (!existing) return;
+      var fresh = M.get(existing.id);
+      if (!fresh) return;
+      var now = M.strip(fresh);
+      Object.keys(now).forEach(function (k) {
+        if (edited[k] || k === 'id') return;
+        if (draft[k] === now[k]) return;
+        draft[k] = now[k];
+      });
+      Object.keys(draft).forEach(function (k) {
+        if (edited[k] || k === 'id') return;
+        if (now[k] === undefined) delete draft[k];
+      });
+    }
+
+    function collect() {
+      adoptRecord();
+      return draft;
+    }
 
     /**
      * بررسی پیش از ذخیره.
@@ -15042,7 +15188,80 @@ else if (typeof exports === 'object'){
 
     var panel = el('div.form-panel');
 
+    /** شبکهٔ فیلدها — همان چیدمانی که همه‌جای فرم است */
+    function fieldGrid(fields) {
+      var grid = el('div.field-grid');
+      fields.forEach(function (f) {
+        var input = makeInput(f, draft[f.key] || '',
+          function (v) { setField(f.key, v); }, app);
+        var label = el('span.field-label', {
+          text: cleanLabel(f.label), title: f.label
+        });
+        var clip = letterClip(f);
+        grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
+          { 'data-field': f.key }, [
+            // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
+            clip ? el('span.field-head', null, [label, clip]) : label,
+            input
+          ]));
+      });
+      return grid;
+    }
+
+    /** یک بخش اختیاری: باز اگر داده دارد یا کاربر بازش کرده، وگرنه یک سطر */
+    function blockNode(b) {
+      var fields = M.FIELDS.filter(function (f) {
+        return b.fields.indexOf(f.key) >= 0 && !f.hidden;
+      });
+      var filled = fields.filter(function (f) { return draft[f.key]; });
+      var open = filled.length > 0 || openBlocks[b.key];
+
+      if (!open) {
+        return el('div.form-block.is-off', { 'data-block': b.key }, [
+          el('div.form-block-off-text', null, [
+            el('b', { text: b.label }),
+            el('span.muted.tiny', { text: 'برای این پرونده ثبت نشده. ' + b.hint })
+          ]),
+          el('button.btn.small.ghost', {
+            type: 'button', text: '＋ ' + b.ask,
+            onclick: function () {
+              openBlocks[b.key] = true;
+              renderPanel();
+              setTimeout(function () {
+                var first = panel.querySelector('[data-block="' + b.key + '"] input');
+                if (first) first.focus();
+              }, 40);
+            }
+          })
+        ]);
+      }
+
+      var head = el('div.form-block-head', null, [
+        el('h5', { text: b.label }),
+        el('span.form-block-n', {
+          text: w.U.toFaDigits(filled.length) + ' از ' +
+            w.U.toFaDigits(fields.length) + ' پرشده'
+        }),
+        el('div.spacer')
+      ]);
+      /* بستنِ بخشی که داده دارد، یعنی پنهان کردن داده — پس فقط بخشِ خالی
+         جمع می‌شود. */
+      if (!filled.length) {
+        head.appendChild(el('button.linkish.tiny', {
+          type: 'button', text: 'ندارد، جمعش کن',
+          onclick: function () {
+            openBlocks[b.key] = false;
+            renderPanel();
+          }
+        }));
+      }
+      return el('section.form-block', { 'data-block': b.key }, [
+        head, fieldGrid(fields)
+      ]);
+    }
+
     function renderPanel() {
+      adoptRecord();
       w.U.clear(panel);
       if (activeTab === '__notes') {
         panel.appendChild(w.UINotes.render(app, existing, function () {
@@ -15082,36 +15301,28 @@ else if (typeof exports === 'object'){
 
       tab.groups.forEach(function (gk) {
         // فیلدهای پنهان (مثل مرحلهٔ دستی) جایشان بالای پرونده است، نه در فرم
-        var fields = M.FIELDS.filter(function (f) {
+        var all = M.FIELDS.filter(function (f) {
           return f.group === gk && !f.hidden;
         });
-        if (!fields.length) return;
+        var blocks = OPTIONAL_BLOCKS.filter(function (b) { return b.group === gk; });
+        var inBlock = {};
+        blocks.forEach(function (b) {
+          b.fields.forEach(function (k) { inBlock[k] = true; });
+        });
+        var fields = all.filter(function (f) { return !inBlock[f.key]; });
+        if (!fields.length && !blocks.length) return;
         // وقتی چند گروه در یک تب‌اند، هرکدام سربرگ خودش را دارد
         if (many) {
-          var filled = fields.filter(function (f) { return draft[f.key]; }).length;
+          var filled = all.filter(function (f) { return draft[f.key]; }).length;
           panel.appendChild(el('div.form-section-head', null, [
             el('h4', { text: GROUP_LABEL[gk] || gk }),
             el('span.form-section-count', {
-              text: w.U.toFaDigits(filled) + ' از ' + w.U.toFaDigits(fields.length) + ' پرشده'
+              text: w.U.toFaDigits(filled) + ' از ' + w.U.toFaDigits(all.length) + ' پرشده'
             })
           ]));
         }
-        var grid = el('div.field-grid');
-        fields.forEach(function (f) {
-          var input = makeInput(f, draft[f.key] || '',
-            function (v) { setField(f.key, v); }, app);
-          var label = el('span.field-label', {
-            text: cleanLabel(f.label), title: f.label
-          });
-          var clip = letterClip(f);
-          grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
-            { 'data-field': f.key }, [
-              // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
-              clip ? el('span.field-head', null, [label, clip]) : label,
-              input
-            ]));
-        });
-        panel.appendChild(grid);
+        if (fields.length) panel.appendChild(fieldGrid(fields));
+        blocks.forEach(function (b) { panel.appendChild(blockNode(b)); });
       });
     }
 
@@ -15125,14 +15336,23 @@ else if (typeof exports === 'object'){
       M.FIELDS.forEach(function (f) { if (f.key === key) field = f; });
       if (!field) return;
       var target = tabOf(field.group);
+      var needRender = false;
       if (target.key !== activeTab) {
         activeTab = target.key;
         app.state.formTab = activeTab;
         w.U.$$('.tab', tabs).forEach(function (t) {
           t.classList.toggle('active', t.dataset.tab === activeTab);
         });
-        renderPanel();
+        needRender = true;
       }
+      /* اگر فیلد داخل یک بخش اختیاریِ جمع‌شده است، اول بازش کن — وگرنه
+         «رفتن به فیلد» به جایی می‌رسد که فیلدی آنجا نیست. */
+      var block = BLOCK_OF_FIELD[key];
+      if (block && !openBlocks[block.key]) {
+        openBlocks[block.key] = true;
+        needRender = true;
+      }
+      if (needRender) renderPanel();
       setTimeout(function () {
         var node = panel.querySelector('[data-field="' + key + '"]');
         if (!node) return;
@@ -15389,7 +15609,9 @@ else if (typeof exports === 'object'){
         ]);
       }
       return el('div.case-rail', null, [
-        w.UIWorklist.rail(existing, 'full'),
+        w.UIWorklist.rail(existing, 'full', function (fieldKey) {
+          jumpToField(fieldKey);
+        }),
         transferNode || next,
         followNode
       ]);
@@ -20279,7 +20501,12 @@ else if (typeof exports === 'object'){
    * در سه اندازه ظاهر می‌شود: ریز در سطرهای فهرست، کامل در صفحهٔ پرونده،
    * و تجمیعی در کارتابل.
    */
-  function rail(rec, size) {
+  /**
+   * ریل گردش‌کار. با onPick، هر گره دکمه می‌شود و کلیک روی آن کلیدِ
+   * فیلدِ همان مرحله را پس می‌دهد — یعنی «روی آیکن بزن، برو سرِ همان
+   * فیلد». بدون آن، ریل همان چیز خواندنیِ قبلی است (فهرست و کارتابل).
+   */
+  function rail(rec, size, onPick) {
     var steps = WL.stages(rec);
     var box = el('ol.rail.rail-' + (size || 'mini'), {
       'aria-label': 'گردش‌کار پرونده'
@@ -20289,10 +20516,24 @@ else if (typeof exports === 'object'){
       if (st.done) cls += '.done';
       if (st.current) cls += '.current';
       if (st.manual) cls += '.manual';
+      if (st.optional && !st.date) cls += '.opt';
       if (i === 0) cls += '.first';
+      var pickable = onPick && st.field;
+      if (pickable) cls += '.pick';
+      var hint = st.date ? ' — ' + J.format(st.date)
+        : (st.optional ? ' — اختیاری، هنوز ثبت نشده' : ' — هنوز ثبت نشده');
       var node = el(cls, {
-        title: st.label + (st.date ? ' — ' + J.format(st.date) : '') +
-          (st.manual ? ' — مرحلهٔ دستی' : '')
+        title: st.label + hint + (st.manual ? ' — مرحلهٔ دستی' : '') +
+          (pickable ? '\nبرای رفتن به همین فیلد کلیک کنید' : ''),
+        role: pickable ? 'button' : null,
+        tabindex: pickable ? '0' : null,
+        onclick: pickable ? function () { onPick(st.field, st); } : null,
+        onkeydown: pickable ? function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onPick(st.field, st);
+          }
+        } : null
       }, [
         el('span.rail-dot'),
         size === 'full' ? el('span.rail-name', { text: st.short }) : null,
@@ -21964,6 +22205,62 @@ else if (typeof exports === 'object'){
     app.render();
   };
 
+  /*
+   * به‌روزرسانی کامل، بدون بستن و باز کردن برنامه.
+   *
+   * تا امروز تنها راهِ «تازه کن»، رفرش مرورگر بود — و رفرش یعنی صفحهٔ
+   * شروع، انتخاب دوبارهٔ فایل و رمز. این دکمه همان کار را بدون آن
+   * می‌کند: اول هرچه ننوشته مانده روی فایل می‌نویسد (وگرنه خواندنِ
+   * دوباره کارِ نوشته‌نشده را می‌بلعد)، بعد اگر فایلِ روی دیسک تازه‌تر
+   * است آن را می‌خوانَد، و در پایان همهٔ لایه‌ها را دوباره بار می‌کند.
+   *
+   * ترتیب عمدی است و «نوشتن قبل از خواندن» مهم‌ترین بندش.
+   */
+  app.refreshAll = function (silent) {
+    if (app.state.dirty &&
+      !window.confirm('در این پرونده تغییر ذخیره‌نشده دارید. با به‌روزرسانی از بین می‌رود. ادامه می‌دهید؟')) {
+      return Promise.resolve(false);
+    }
+    var chip = statusChip;
+    if (chip) chip.classList.add('busy');
+    return Promise.resolve()
+      .then(function () { return w.Store.flushNow(); })
+      .then(function () {
+        // اگر به فایلی وصل نیستیم، چیزی برای خواندن از دیسک نیست
+        return w.Store.status().linked ? w.Store.adoptFile() : false;
+      })
+      .then(function (took) {
+        return M.reload().then(function () { return took; });
+      })
+      .then(function (took) {
+        return w.Docs.load().then(function () { return took; });
+      })
+      .then(function (took) {
+        return w.Notes.load().then(function () { return took; });
+      })
+      .then(function (took) {
+        app.state.dirty = false;
+        app.render();
+        renderAccessBar();
+        if (!silent) {
+          w.U.toast(took
+            ? 'از فایل روی دیسک خوانده شد — ' +
+              w.U.toFaDigits(M.state.cases.length) + ' پرونده.'
+            : 'به‌روز شد — ' + w.U.toFaDigits(M.state.cases.length) + ' پرونده.',
+          'good');
+        }
+        return true;
+      })
+      .catch(function (e) {
+        w.U.toast('به‌روزرسانی ناموفق بود: ' + (e && e.message ? e.message : e), 'bad');
+        return false;
+      })
+      .then(function (ok) {
+        if (chip) chip.classList.remove('busy');
+        return ok;
+      });
+  };
+
   /** رندر دوباره؛ با resetSearch مقدار جعبهٔ جستجو هم به‌روز می‌شود. */
   app.refresh = function (resetSearch) {
     if (resetSearch && searchInput) searchInput.value = app.state.q;
@@ -22141,6 +22438,12 @@ else if (typeof exports === 'object'){
           title: 'ذخیرهٔ نسخهٔ پشتیبان',
           onclick: function () { w.UIMisc.exportJson(); }
         }),
+        el('button.icon-btn.refresh-btn', {
+          type: 'button', title: 'به‌روزرسانی از روی فایل — بدون بستن برنامه (F5)',
+          'aria-label': 'به‌روزرسانی',
+          html: w.Mobile.icon('refresh'),
+          onclick: function () { app.refreshAll(); }
+        }),
         el('button.icon-btn', {
           type: 'button', text: '🔒', title: 'قفل کردن برنامه (Ctrl+L)',
           onclick: function () {
@@ -22171,6 +22474,12 @@ else if (typeof exports === 'object'){
         icon: 'plus', label: 'پروندهٔ جدید',
         onclick: function () { app.newCase(); }
       },
+      {
+        icon: 'refresh', label: 'به‌روزرسانی',
+        hint: 'خواندن دوبارهٔ داده‌ها از فایل، بدون بستن برنامه',
+        onclick: function () { app.refreshAll(); }
+      },
+      { sep: true },
       {
         /* گزارش‌ها روی گوشی در نوار پایین جا نشد — «کارها» جایش را گرفت،
            چون هر روز لازم است و گزارش گاه‌به‌گاه. پس اینجا می‌ماند. */
@@ -22300,6 +22609,11 @@ else if (typeof exports === 'object'){
       } else if (ctrl && e.key.toLowerCase() === 'j') {
         e.preventDefault();
         app.goTasks();
+      } else if (e.key === 'F5' && !ctrl) {
+        /* رفرش مرورگر یعنی صفحهٔ شروع و رمز دوباره؛ همان کلید، اینجا
+           معنای درستش را می‌دهد: داده‌ها تازه شوند، نشست بماند. */
+        e.preventDefault();
+        app.refreshAll();
       } else if (ctrl && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         app.goCalendar();

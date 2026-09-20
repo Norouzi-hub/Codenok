@@ -3982,3 +3982,57 @@ select.input { cursor: pointer; }
   .cal-panel .cal-item-text { display: block; }
   .cal-panel .cal-more { display: inline; }
 }
+
+/* دکمهٔ به‌روزرسانی — چرخشِ کوتاه یعنی «دارد کار می‌کند» */
+.refresh-btn { line-height: 0; }
+.refresh-btn svg { width: 17px; height: 17px; }
+.chip.busy { opacity: .6; }
+.chip.busy::after { content: ' …'; }
+@keyframes spin { to { transform: rotate(-360deg); } }
+.refresh-btn:active svg { animation: spin .5s linear; }
+
+/* ---------------------------------------- ریل، قابل کلیک در صفحهٔ پرونده
+   هر گره یک مقصد دارد: همان فیلدی که تاریخش را می‌گوید. پس باید مثل دکمه
+   رفتار کند — نشانگر دست، حالت hover، و رسیدن با صفحه‌کلید. */
+.rail-step.pick { cursor: pointer; border-radius: 8px; padding: 2px 0 1px; }
+.rail-step.pick:hover .rail-dot { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--brass-line); }
+.rail-step.pick:hover .rail-name { color: var(--brass-ink); }
+.rail-step.pick:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+/* مرحلهٔ اختیاریِ ثبت‌نشده: هست، ولی ادعا نمی‌کند که جا افتاده */
+.rail-step.opt:not(.done):not(.current) .rail-dot { box-shadow: 0 0 0 2px var(--line-soft) inset, 0 0 0 3px var(--card); }
+.rail-step.opt:not(.done):not(.current) .rail-name { color: var(--ink-400); }
+
+/* ------------------------------------------------ بخش‌های اختیاری پرونده
+   هر پرونده استعلام یا ارجاع ندارد. بخشی که داده دارد باز و پررنگ است؛
+   بخشی که ندارد به یک سطر جمع می‌شود — پنهان نمی‌شود، فقط جا نمی‌گیرد. */
+.form-block {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 11px 13px 4px;
+  margin: 6px 0 16px;
+  background: var(--paper);
+  animation: block-in .16s ease-out;
+}
+@keyframes block-in { from { opacity: 0; transform: translateY(-3px); } }
+.form-block .field-grid { margin: 0; }
+.form-block-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
+.form-block-head h5 { margin: 0; font-size: 12.5px; }
+.form-block-n {
+  font-size: 11px;
+  color: var(--ink-500);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+.form-block.is-off {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 13px;
+  border-style: dashed;
+  background: transparent;
+}
+.form-block-off-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 180px; }
+.form-block-off-text b { font-size: 12.5px; font-weight: 600; color: var(--ink-700); }

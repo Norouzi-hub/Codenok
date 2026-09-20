@@ -115,6 +115,7 @@
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
+        field: st.field || '',
         done: done[i],
         date: st.field ? (rec[st.field] || '') : '',
         current: !closed && (manualAt >= 0
