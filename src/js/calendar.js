@@ -27,6 +27,7 @@
     { key: 'due', label: 'مهلت‌ها', tone: 'late' },
     { key: 'task', label: 'کارها', tone: 'task' },
     { key: 'follow', label: 'پیگیری‌ها', tone: 'follow' },
+    { key: 'doc', label: 'اسناد و دسته‌ها', tone: 'doc' },
     { key: 'action', label: 'اقدام‌های پرونده', tone: 'action' },
     { key: 'event', label: 'رویدادهای ثبت‌شده', tone: 'event' }
   ];
@@ -34,7 +35,7 @@
   /* «رویدادها» به‌طور پیش‌فرض خاموش است: هر ویرایشِ کوچک یک رویداد است و
      روشن بودنش تقویم را پر می‌کند از چیزی که کسی دنبالش نیست. هر وقت
      لازم شد، یک کلیک روشنش می‌کند. */
-  var DEFAULT_ON = ['due', 'task', 'follow', 'action'];
+  var DEFAULT_ON = ['due', 'task', 'follow', 'doc', 'action'];
 
   function personOf(rec) {
     return [rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بدون نام';
@@ -45,6 +46,13 @@
   }
 
   /** تاریخ جلالیِ ۸ رقمی از یک زمانِ ISO */
+  function merge(base, extra) {
+    var o = {};
+    Object.keys(base).forEach(function (k) { o[k] = base[k]; });
+    Object.keys(extra).forEach(function (k) { o[k] = extra[k]; });
+    return o;
+  }
+
   function jalaliOf(iso) {
     var d = new Date(iso);
     if (isNaN(d.getTime())) return '';
@@ -93,23 +101,88 @@
 
     if (on.task || on.follow) {
       w.Notes.all().forEach(function (n) {
-        if (!n.followUp) return;
         var isTask = n.kind === 'task';
         if (isTask && !on.task) return;
         if (!isTask && !on.follow) return;
+        if (n.archived) return;              // بایگانی‌شده یعنی کنار گذاشته
+        /*
+         * یک رویداد، یک سطر.
+         *
+         * کارِ «اسکن آرا — ۱۰ سند» و خودِ آن نوبتِ بارگذاری، یک اتفاق‌اند
+         * و دو بار نشستنشان روی یک روز، تقویم را دوتایی می‌کند. نمایندهٔ
+         * درست، سطرِ لایهٔ اسناد است: هم تعداد دارد هم راه برگشت به
+         * بایگانی. پس کارِ ساخته‌شده از یک دسته اینجا رد می‌شود.
+         */
+        if (n.batchId && on.doc) return;
         var rec = n.caseId ? M.get(n.caseId) : null;
-        if (n.caseId && !rec) return;
-        push({
+        if (n.caseId && (!rec || !M.inScope(rec))) return;
+        var base = {
           layer: isTask ? 'task' : 'follow',
-          date: n.followUp,
-          label: (n.status === 'done' ? '✓ ' : '') +
-            (n.status === 'cancelled' ? '⦸ ' : '') +
-            w.Notes.preview(w.Notes.textOf(n), 70),
+          label: w.Notes.preview(w.Notes.textOf(n), 70),
           sub: rec ? caseTag(rec) : 'بیرون از پرونده‌ها',
           caseId: rec ? rec.id : '',
-          taskId: n.id,
-          done: n.status !== 'open',
-          urgent: n.priority === 'urgent' && n.status === 'open'
+          taskId: n.id
+        };
+        /*
+         * یک کار می‌تواند دو جای تقویم بنشیند و این عمدی است: روزی که
+         * سررسیدش بود («قرار بود») و روزی که انجام شد («شد»). تقویمی که
+         * فقط قرارها را نشان بدهد، نصف ماجراست — و کاری که سررسید نداشته
+         * و همان روز انجام شده (مثل یک نوبت اسکن) اصلاً دیده نمی‌شد.
+         */
+        if (n.followUp && n.status === 'open') {
+          push(merge(base, {
+            date: n.followUp, urgent: n.priority === 'urgent'
+          }));
+        } else if (n.followUp) {
+          push(merge(base, { date: n.followUp, planned: true, done: true,
+            label: 'قرار بود: ' + base.label }));
+        }
+        if (n.doneAt) {
+          push(merge(base, {
+            date: n.doneAt, done: true,
+            label: (n.status === 'cancelled' ? '⦸ ' : '✓ ') + base.label
+          }));
+        }
+      });
+    }
+
+    /*
+     * اسناد و دسته‌ها.
+     * یک نوبتِ بارگذاری یک سطر است، نه بیست سطر — وگرنه روزِ اسکن، کل
+     * خانهٔ تقویم را می‌بلعد. سندِ تک‌افتاده (بدون دسته) سطر خودش را دارد.
+     */
+    if (on.doc && w.Docs && w.Docs.all) {
+      var seenBatch = {};
+      w.Docs.all().forEach(function (d) {
+        if (d.superseded) return;
+        var rec = d.caseId ? M.get(d.caseId) : null;
+        if (d.caseId && (!rec || !M.inScope(rec))) return;
+        var day = jalaliOf(d.addedAt);
+        if (!day) return;
+        if (d.batchId) {
+          var key = d.batchId + '|' + day;
+          if (seenBatch[key]) return;
+          seenBatch[key] = true;
+          var b = w.Docs.batch(d.batchId);
+          var n = b ? b.docs.length : 1;
+          push({
+            layer: 'doc', date: day,
+            label: (d.batchName || 'بارگذاری') + ' — ' +
+              w.U.toFaDigits(n) + ' سند',
+            sub: b && b.caseCount
+              ? w.U.toFaDigits(b.caseCount) + ' پرونده' +
+                (b.general ? '، ' + w.U.toFaDigits(b.general) + ' بی‌پرونده' : '')
+              : 'بایگانی',
+            batchId: d.batchId
+          });
+          return;
+        }
+        push({
+          layer: 'doc', date: day,
+          label: d.kind + (d.title ? ' — ' + d.title : ''),
+          sub: rec ? caseTag(rec) : 'بایگانی',
+          caseId: rec ? rec.id : '',
+          docId: d.id
         });
       });
     }

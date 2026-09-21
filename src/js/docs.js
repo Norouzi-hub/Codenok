@@ -624,15 +624,26 @@
     return generalDocs.filter(function (d) { return !d.superseded; });
   }
 
+  /** همهٔ سندهای دیدنی — مبنای شمارنده‌های بایگانی */
+  function visibleDocs() { return docs.filter(visible); }
+
   /**
    * دسته‌ها، تازه‌ترین اول.
    * از روی خودِ سندها ساخته می‌شود، نه از یک انبار جدا: دسته چیزی جز
    * «سندهایی با همین شناسه» نیست، و انبار جدا یعنی امکانِ ناهمخوانی.
    */
+  /** سندی که دیده می‌شود: نه بایگانی‌شدهٔ نسخهٔ قبلی، نه بیرون از دامنه */
+  function visible(d) {
+    if (d.superseded) return false;
+    if (!d.caseId) return true;
+    var rec = M.get(d.caseId);
+    return !!rec && (!M.inScope || M.inScope(rec));
+  }
+
   function batches() {
     var map = {};
     docs.forEach(function (d) {
-      if (!d.batchId || d.superseded) return;
+      if (!d.batchId || !visible(d)) return;
       var b = map[d.batchId] || (map[d.batchId] = {
         id: d.batchId, name: d.batchName || 'بدون نام',
         at: d.addedAt, atJalali: d.addedAtJalali, date: d.docDate,
@@ -713,6 +724,12 @@
     var tokens = w.U.normalize(q || '').split(' ').filter(Boolean);
     return docs.filter(function (d) {
       if (d.superseded) return false;
+      /* سندِ پرونده‌ای که بیرون دامنهٔ کار است، در جستجوی بایگانی هم
+         نمی‌آید — وگرنه یک صفحه چیزی می‌شمرد که صفحهٔ دیگر نمی‌شمرد. */
+      if (d.caseId) {
+        var owner = M.get(d.caseId);
+        if (!owner || (M.inScope && !M.inScope(owner))) return false;
+      }
       if (opts.scope && (d.scope || 'case') !== opts.scope) return false;
       if (opts.kind && d.kind !== opts.kind) return false;
       if (opts.batchId && d.batchId !== opts.batchId) return false;
@@ -1330,7 +1347,7 @@
     batches: batches, batch: batch, searchDocs: searchDocs,
     tagList: tagList, tagsInUse: tagsInUse, tagSuggestions: tagSuggestions,
     addTag: addTag, setTags: setTags, cleanTags: cleanTags,
-    archivePathOf: archivePathOf,
+    archivePathOf: archivePathOf, visibleDocs: visibleDocs,
     forPerson: forPerson, currentForPerson: currentForPerson,
     allForPerson: allForPerson, addPersonFile: addPersonFile,
     personFolderNameFor: personFolderNameFor,

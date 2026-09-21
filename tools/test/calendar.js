@@ -109,7 +109,7 @@ function check(name, ok, extra) {
     const today = J.today();
     const byLayer = {};
     window.Calendar.collect(today, today,
-      ['task', 'follow', 'action', 'due', 'event']).forEach(i => {
+      ['task', 'follow', 'action', 'due', 'event', 'doc']).forEach(i => {
         byLayer[i.layer] = (byLayer[i.layer] || 0) + 1;
       });
     return byLayer;
@@ -164,7 +164,7 @@ function check(name, ok, extra) {
     view.weekdayFirst === 'شنبه' && view.today === 1 && view.days % 7 === 0,
     view.days + ' خانه');
   check('لایهٔ «رویدادها» پیش‌فرض خاموش است تا تقویم شلوغ نشود',
-    view.chips === 5 && view.eventChipOff);
+    view.chips === 6 && view.eventChipOff, view.chips + ' لایه');
 
   const scroll = await page.evaluate(() => {
     const v = document.querySelector('.cal-view');

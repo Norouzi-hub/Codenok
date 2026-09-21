@@ -208,7 +208,23 @@
             e.stopPropagation();
             w.UIDocs.zipDocs(b.docs, null, b.name);
           }
-        })
+        }),
+        /* دسته و کار دو رویِ یک چیزند؛ راهِ رفت‌وبرگشت باید از هر دو
+           سمت باز باشد، وگرنه کاربر نمی‌داند این بارگذاری ثبت شده یا نه. */
+        (function () {
+          var tasks = w.Notes.tasksOfBatch(b.id);
+          if (!tasks.length) return null;
+          return el('button.btn.small.ghost', {
+            type: 'button', text: '✓ ' + fa(tasks.length) + ' کار ثبت‌شده ←',
+            title: 'دیدن این بارگذاری در فهرست کارها',
+            onclick: function (e) {
+              e.stopPropagation();
+              app.state.taskFilter = 'all';
+              app.state.taskCat = 'بایگانی و اسکن';
+              app.goTasks();
+            }
+          });
+        })()
       ])
     ]);
   }
@@ -268,10 +284,7 @@
         el('div.wl-eyebrow', null, [
           el('span.wl-eyebrow-tag', { text: 'بایگانی اسناد' }),
           el('span.wl-eyebrow-date.arc-batch-meta', null, [
-            el('span', {
-              text: fa(D.all().filter(function (d) { return !d.superseded; }).length) +
-                ' سند'
-            }),
+            el('span', { text: fa(D.visibleDocs().length) + ' سند' }),
             el('span', { text: fa(batches.length) + ' دسته' }),
             el('span', { text: fa(D.general().length) + ' بی‌پرونده' })
           ]),

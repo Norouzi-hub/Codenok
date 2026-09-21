@@ -4882,6 +4882,10 @@ button.tag-chip.ro { cursor: pointer; }
 .arc-batch-meta { display: inline-flex; flex-wrap: wrap; gap: 4px 0; font-size: 11.5px; color: var(--muted); }
 .arc-batch-meta > span + span::before { content: '•'; margin: 0 6px; opacity: .55; }
 
+/* لایهٔ اسناد در تقویم — همان رنگی که «سند» در همهٔ برنامه دارد */
+.t-doc, .l-doc { color: #5A7D8C; }
+.cal-item.l-doc .cal-item-text { font-weight: 600; }
+
 </style>
 
 </head>
@@ -11332,7 +11336,7 @@ else if (typeof exports === 'object'){
          قبلاً همین‌جا از قلم می‌افتاد. ولی یادداشتی که پرونده‌اش پاک شده
          بی‌صاحب است و نمایش دادنش فقط گیج می‌کند. */
       var rec = n.caseId ? M.get(n.caseId) : null;
-      if (n.caseId && !rec) return;
+      if (n.caseId && (!rec || !M.inScope(rec))) return;
       var days = J.diffDays(today, n.followUp);
       if (onlyDue && days != null && days < 0) return;
       out.push({ note: n, rec: rec, days: days, overdue: days != null && days > 0 });
@@ -11353,6 +11357,12 @@ else if (typeof exports === 'object'){
 
   function isTask(n) { return n.kind === 'task'; }
 
+  /** پرونده هم باشد، هم داخل دامنهٔ کار */
+  function inWorkScope(caseId) {
+    var rec = M.get(caseId);
+    return !!rec && (!M.inScope || M.inScope(rec));
+  }
+
   /**
    * tasks(f) — کارها با صافی اختیاری.
    * f: { status, caseId, standalone, owner, category, archived }
@@ -11371,8 +11381,10 @@ else if (typeof exports === 'object'){
       if (f.caseId != null && n.caseId !== f.caseId) return false;
       if (f.owner && n.owner !== f.owner) return false;
       if (f.category && (n.category || '') !== f.category) return false;
-      /* کارِ وصل به پروندهٔ پاک‌شده را نشان نمی‌دهیم */
-      if (n.caseId && !M.get(n.caseId)) return false;
+      /* کارِ وصل به پروندهٔ پاک‌شده یا بیرون از دامنهٔ کار را نشان
+         نمی‌دهیم: اگر گفته‌اید پرونده‌های ارجاع‌شده کار شما نیستند،
+         کارهای روی آنها هم نباید سراغتان بیایند. */
+      if (n.caseId && !inWorkScope(n.caseId)) return false;
       return true;
     }).sort(sortTasks);
   }
@@ -11435,6 +11447,7 @@ else if (typeof exports === 'object'){
     return notes.filter(function (n) {
       if (n.kind !== 'task') return false;
       if (n.status !== 'done' && n.status !== 'cancelled') return false;
+      if (n.caseId && !inWorkScope(n.caseId)) return false;
       var d = n.doneAt || '';
       return d && d >= from && d <= to;
     }).sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
@@ -11561,7 +11574,7 @@ else if (typeof exports === 'object'){
     var done = 0, cancelled = 0, open = 0, overdue = 0;
     notes.forEach(function (n) {
       if (!isTask(n)) return;
-      if (n.caseId && !M.get(n.caseId)) return;
+      if (n.caseId && !inWorkScope(n.caseId)) return;
       /* کارِ بایگانی‌شده که هنوز باز است، نه باز شمرده می‌شود نه
          عقب‌افتاده — بایگانی‌اش یعنی دیگر دنبالش نیستیم. ولی اگر
          انجام یا لغو شده باشد، در آمار همان ماه سرِ جایش می‌ماند. */
@@ -11657,6 +11670,7 @@ else if (typeof exports === 'object'){
     { key: 'due', label: 'مهلت‌ها', tone: 'late' },
     { key: 'task', label: 'کارها', tone: 'task' },
     { key: 'follow', label: 'پیگیری‌ها', tone: 'follow' },
+    { key: 'doc', label: 'اسناد و دسته‌ها', tone: 'doc' },
     { key: 'action', label: 'اقدام‌های پرونده', tone: 'action' },
     { key: 'event', label: 'رویدادهای ثبت‌شده', tone: 'event' }
   ];
@@ -11664,7 +11678,7 @@ else if (typeof exports === 'object'){
   /* «رویدادها» به‌طور پیش‌فرض خاموش است: هر ویرایشِ کوچک یک رویداد است و
      روشن بودنش تقویم را پر می‌کند از چیزی که کسی دنبالش نیست. هر وقت
      لازم شد، یک کلیک روشنش می‌کند. */
-  var DEFAULT_ON = ['due', 'task', 'follow', 'action'];
+  var DEFAULT_ON = ['due', 'task', 'follow', 'doc', 'action'];
 
   function personOf(rec) {
     return [rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بدون نام';
@@ -11675,6 +11689,13 @@ else if (typeof exports === 'object'){
   }
 
   /** تاریخ جلالیِ ۸ رقمی از یک زمانِ ISO */
+  function merge(base, extra) {
+    var o = {};
+    Object.keys(base).forEach(function (k) { o[k] = base[k]; });
+    Object.keys(extra).forEach(function (k) { o[k] = extra[k]; });
+    return o;
+  }
+
   function jalaliOf(iso) {
     var d = new Date(iso);
     if (isNaN(d.getTime())) return '';
@@ -11723,23 +11744,88 @@ else if (typeof exports === 'object'){
 
     if (on.task || on.follow) {
       w.Notes.all().forEach(function (n) {
-        if (!n.followUp) return;
         var isTask = n.kind === 'task';
         if (isTask && !on.task) return;
         if (!isTask && !on.follow) return;
+        if (n.archived) return;              // بایگانی‌شده یعنی کنار گذاشته
+        /*
+         * یک رویداد، یک سطر.
+         *
+         * کارِ «اسکن آرا — ۱۰ سند» و خودِ آن نوبتِ بارگذاری، یک اتفاق‌اند
+         * و دو بار نشستنشان روی یک روز، تقویم را دوتایی می‌کند. نمایندهٔ
+         * درست، سطرِ لایهٔ اسناد است: هم تعداد دارد هم راه برگشت به
+         * بایگانی. پس کارِ ساخته‌شده از یک دسته اینجا رد می‌شود.
+         */
+        if (n.batchId && on.doc) return;
         var rec = n.caseId ? M.get(n.caseId) : null;
-        if (n.caseId && !rec) return;
-        push({
+        if (n.caseId && (!rec || !M.inScope(rec))) return;
+        var base = {
           layer: isTask ? 'task' : 'follow',
-          date: n.followUp,
-          label: (n.status === 'done' ? '✓ ' : '') +
-            (n.status === 'cancelled' ? '⦸ ' : '') +
-            w.Notes.preview(w.Notes.textOf(n), 70),
+          label: w.Notes.preview(w.Notes.textOf(n), 70),
           sub: rec ? caseTag(rec) : 'بیرون از پرونده‌ها',
           caseId: rec ? rec.id : '',
-          taskId: n.id,
-          done: n.status !== 'open',
-          urgent: n.priority === 'urgent' && n.status === 'open'
+          taskId: n.id
+        };
+        /*
+         * یک کار می‌تواند دو جای تقویم بنشیند و این عمدی است: روزی که
+         * سررسیدش بود («قرار بود») و روزی که انجام شد («شد»). تقویمی که
+         * فقط قرارها را نشان بدهد، نصف ماجراست — و کاری که سررسید نداشته
+         * و همان روز انجام شده (مثل یک نوبت اسکن) اصلاً دیده نمی‌شد.
+         */
+        if (n.followUp && n.status === 'open') {
+          push(merge(base, {
+            date: n.followUp, urgent: n.priority === 'urgent'
+          }));
+        } else if (n.followUp) {
+          push(merge(base, { date: n.followUp, planned: true, done: true,
+            label: 'قرار بود: ' + base.label }));
+        }
+        if (n.doneAt) {
+          push(merge(base, {
+            date: n.doneAt, done: true,
+            label: (n.status === 'cancelled' ? '⦸ ' : '✓ ') + base.label
+          }));
+        }
+      });
+    }
+
+    /*
+     * اسناد و دسته‌ها.
+     * یک نوبتِ بارگذاری یک سطر است، نه بیست سطر — وگرنه روزِ اسکن، کل
+     * خانهٔ تقویم را می‌بلعد. سندِ تک‌افتاده (بدون دسته) سطر خودش را دارد.
+     */
+    if (on.doc && w.Docs && w.Docs.all) {
+      var seenBatch = {};
+      w.Docs.all().forEach(function (d) {
+        if (d.superseded) return;
+        var rec = d.caseId ? M.get(d.caseId) : null;
+        if (d.caseId && (!rec || !M.inScope(rec))) return;
+        var day = jalaliOf(d.addedAt);
+        if (!day) return;
+        if (d.batchId) {
+          var key = d.batchId + '|' + day;
+          if (seenBatch[key]) return;
+          seenBatch[key] = true;
+          var b = w.Docs.batch(d.batchId);
+          var n = b ? b.docs.length : 1;
+          push({
+            layer: 'doc', date: day,
+            label: (d.batchName || 'بارگذاری') + ' — ' +
+              w.U.toFaDigits(n) + ' سند',
+            sub: b && b.caseCount
+              ? w.U.toFaDigits(b.caseCount) + ' پرونده' +
+                (b.general ? '، ' + w.U.toFaDigits(b.general) + ' بی‌پرونده' : '')
+              : 'بایگانی',
+            batchId: d.batchId
+          });
+          return;
+        }
+        push({
+          layer: 'doc', date: day,
+          label: d.kind + (d.title ? ' — ' + d.title : ''),
+          sub: rec ? caseTag(rec) : 'بایگانی',
+          caseId: rec ? rec.id : '',
+          docId: d.id
         });
       });
     }
@@ -13544,15 +13630,26 @@ else if (typeof exports === 'object'){
     return generalDocs.filter(function (d) { return !d.superseded; });
   }
 
+  /** همهٔ سندهای دیدنی — مبنای شمارنده‌های بایگانی */
+  function visibleDocs() { return docs.filter(visible); }
+
   /**
    * دسته‌ها، تازه‌ترین اول.
    * از روی خودِ سندها ساخته می‌شود، نه از یک انبار جدا: دسته چیزی جز
    * «سندهایی با همین شناسه» نیست، و انبار جدا یعنی امکانِ ناهمخوانی.
    */
+  /** سندی که دیده می‌شود: نه بایگانی‌شدهٔ نسخهٔ قبلی، نه بیرون از دامنه */
+  function visible(d) {
+    if (d.superseded) return false;
+    if (!d.caseId) return true;
+    var rec = M.get(d.caseId);
+    return !!rec && (!M.inScope || M.inScope(rec));
+  }
+
   function batches() {
     var map = {};
     docs.forEach(function (d) {
-      if (!d.batchId || d.superseded) return;
+      if (!d.batchId || !visible(d)) return;
       var b = map[d.batchId] || (map[d.batchId] = {
         id: d.batchId, name: d.batchName || 'بدون نام',
         at: d.addedAt, atJalali: d.addedAtJalali, date: d.docDate,
@@ -13633,6 +13730,12 @@ else if (typeof exports === 'object'){
     var tokens = w.U.normalize(q || '').split(' ').filter(Boolean);
     return docs.filter(function (d) {
       if (d.superseded) return false;
+      /* سندِ پرونده‌ای که بیرون دامنهٔ کار است، در جستجوی بایگانی هم
+         نمی‌آید — وگرنه یک صفحه چیزی می‌شمرد که صفحهٔ دیگر نمی‌شمرد. */
+      if (d.caseId) {
+        var owner = M.get(d.caseId);
+        if (!owner || (M.inScope && !M.inScope(owner))) return false;
+      }
       if (opts.scope && (d.scope || 'case') !== opts.scope) return false;
       if (opts.kind && d.kind !== opts.kind) return false;
       if (opts.batchId && d.batchId !== opts.batchId) return false;
@@ -14250,7 +14353,7 @@ else if (typeof exports === 'object'){
     batches: batches, batch: batch, searchDocs: searchDocs,
     tagList: tagList, tagsInUse: tagsInUse, tagSuggestions: tagSuggestions,
     addTag: addTag, setTags: setTags, cleanTags: cleanTags,
-    archivePathOf: archivePathOf,
+    archivePathOf: archivePathOf, visibleDocs: visibleDocs,
     forPerson: forPerson, currentForPerson: currentForPerson,
     allForPerson: allForPerson, addPersonFile: addPersonFile,
     personFolderNameFor: personFolderNameFor,
@@ -20898,9 +21001,20 @@ else if (typeof exports === 'object'){
           doc.tags.map(function (t) {
             return el('span.tag-chip.ro', { text: t });
           })) : null,
-        doc.batchName ? el('div.doc-batch', {
-          text: 'از دستهٔ «' + doc.batchName + '»'
-        }) : null,
+        /* از داخل پرونده هم باید بشود به همان نوبتِ بارگذاری برگشت */
+        doc.batchName ? el('div.doc-batch', null, [
+          el('button.linkish.tiny', {
+            type: 'button',
+            text: 'از دستهٔ «' + doc.batchName + '» ←',
+            title: 'دیدن همهٔ سندهای این نوبت در بایگانی',
+            onclick: function () {
+              app.state.archive = {
+                q: '', tags: [], batchId: doc.batchId, scope: '', kind: ''
+              };
+              app.goArchive();
+            }
+          })
+        ]) : null,
         el('div.doc-file', { text: doc.fileName, title: 'نام فایل در پوشهٔ پرونده' }),
         doc.missing ? el('div.doc-warn', {
           text: 'این فایل در پوشه پیدا نشد؛ شاید جابه‌جا یا حذف شده است.'
@@ -22605,9 +22719,27 @@ else if (typeof exports === 'object'){
 
   /** رفتن به مقصد هر مورد: پرونده، یا خودِ کار اگر پرونده‌ای ندارد */
   function go(app, item) {
+    /* دستهٔ بارگذاری، مقصدش بایگانی است نه پرونده: یک دسته می‌تواند
+       چند پرونده را گرفته باشد و «کدامش؟» سؤال بی‌جوابی است. */
+    if (item.batchId) {
+      app.state.archive = {
+        q: '', tags: [], batchId: item.batchId, scope: '', kind: ''
+      };
+      app.goArchive();
+      return;
+    }
+    if (item.docId && !item.caseId) {
+      app.state.archive = {
+        q: '', tags: [], batchId: '', scope: 'general', kind: ''
+      };
+      app.goArchive();
+      return;
+    }
     if (item.caseId) {
       if (item.layer === 'task' || item.layer === 'follow') {
         app.state.formTab = '__notes';
+      } else if (item.layer === 'doc') {
+        app.state.formTab = '__docs';
       }
       app.openCase(item.caseId);
       return;
@@ -22995,7 +23127,23 @@ else if (typeof exports === 'object'){
             e.stopPropagation();
             w.UIDocs.zipDocs(b.docs, null, b.name);
           }
-        })
+        }),
+        /* دسته و کار دو رویِ یک چیزند؛ راهِ رفت‌وبرگشت باید از هر دو
+           سمت باز باشد، وگرنه کاربر نمی‌داند این بارگذاری ثبت شده یا نه. */
+        (function () {
+          var tasks = w.Notes.tasksOfBatch(b.id);
+          if (!tasks.length) return null;
+          return el('button.btn.small.ghost', {
+            type: 'button', text: '✓ ' + fa(tasks.length) + ' کار ثبت‌شده ←',
+            title: 'دیدن این بارگذاری در فهرست کارها',
+            onclick: function (e) {
+              e.stopPropagation();
+              app.state.taskFilter = 'all';
+              app.state.taskCat = 'بایگانی و اسکن';
+              app.goTasks();
+            }
+          });
+        })()
       ])
     ]);
   }
@@ -23055,10 +23203,7 @@ else if (typeof exports === 'object'){
         el('div.wl-eyebrow', null, [
           el('span.wl-eyebrow-tag', { text: 'بایگانی اسناد' }),
           el('span.wl-eyebrow-date.arc-batch-meta', null, [
-            el('span', {
-              text: fa(D.all().filter(function (d) { return !d.superseded; }).length) +
-                ' سند'
-            }),
+            el('span', { text: fa(D.visibleDocs().length) + ' سند' }),
             el('span', { text: fa(batches.length) + ' دسته' }),
             el('span', { text: fa(D.general().length) + ' بی‌پرونده' })
           ]),

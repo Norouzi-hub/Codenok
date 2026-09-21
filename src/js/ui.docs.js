@@ -920,9 +920,20 @@
           doc.tags.map(function (t) {
             return el('span.tag-chip.ro', { text: t });
           })) : null,
-        doc.batchName ? el('div.doc-batch', {
-          text: 'از دستهٔ «' + doc.batchName + '»'
-        }) : null,
+        /* از داخل پرونده هم باید بشود به همان نوبتِ بارگذاری برگشت */
+        doc.batchName ? el('div.doc-batch', null, [
+          el('button.linkish.tiny', {
+            type: 'button',
+            text: 'از دستهٔ «' + doc.batchName + '» ←',
+            title: 'دیدن همهٔ سندهای این نوبت در بایگانی',
+            onclick: function () {
+              app.state.archive = {
+                q: '', tags: [], batchId: doc.batchId, scope: '', kind: ''
+              };
+              app.goArchive();
+            }
+          })
+        ]) : null,
         el('div.doc-file', { text: doc.fileName, title: 'نام فایل در پوشهٔ پرونده' }),
         doc.missing ? el('div.doc-warn', {
           text: 'این فایل در پوشه پیدا نشد؛ شاید جابه‌جا یا حذف شده است.'

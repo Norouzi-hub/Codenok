@@ -312,7 +312,7 @@
          قبلاً همین‌جا از قلم می‌افتاد. ولی یادداشتی که پرونده‌اش پاک شده
          بی‌صاحب است و نمایش دادنش فقط گیج می‌کند. */
       var rec = n.caseId ? M.get(n.caseId) : null;
-      if (n.caseId && !rec) return;
+      if (n.caseId && (!rec || !M.inScope(rec))) return;
       var days = J.diffDays(today, n.followUp);
       if (onlyDue && days != null && days < 0) return;
       out.push({ note: n, rec: rec, days: days, overdue: days != null && days > 0 });
@@ -333,6 +333,12 @@
 
   function isTask(n) { return n.kind === 'task'; }
 
+  /** پرونده هم باشد، هم داخل دامنهٔ کار */
+  function inWorkScope(caseId) {
+    var rec = M.get(caseId);
+    return !!rec && (!M.inScope || M.inScope(rec));
+  }
+
   /**
    * tasks(f) — کارها با صافی اختیاری.
    * f: { status, caseId, standalone, owner, category, archived }
@@ -351,8 +357,10 @@
       if (f.caseId != null && n.caseId !== f.caseId) return false;
       if (f.owner && n.owner !== f.owner) return false;
       if (f.category && (n.category || '') !== f.category) return false;
-      /* کارِ وصل به پروندهٔ پاک‌شده را نشان نمی‌دهیم */
-      if (n.caseId && !M.get(n.caseId)) return false;
+      /* کارِ وصل به پروندهٔ پاک‌شده یا بیرون از دامنهٔ کار را نشان
+         نمی‌دهیم: اگر گفته‌اید پرونده‌های ارجاع‌شده کار شما نیستند،
+         کارهای روی آنها هم نباید سراغتان بیایند. */
+      if (n.caseId && !inWorkScope(n.caseId)) return false;
       return true;
     }).sort(sortTasks);
   }
@@ -415,6 +423,7 @@
     return notes.filter(function (n) {
       if (n.kind !== 'task') return false;
       if (n.status !== 'done' && n.status !== 'cancelled') return false;
+      if (n.caseId && !inWorkScope(n.caseId)) return false;
       var d = n.doneAt || '';
       return d && d >= from && d <= to;
     }).sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
@@ -541,7 +550,7 @@
     var done = 0, cancelled = 0, open = 0, overdue = 0;
     notes.forEach(function (n) {
       if (!isTask(n)) return;
-      if (n.caseId && !M.get(n.caseId)) return;
+      if (n.caseId && !inWorkScope(n.caseId)) return;
       /* کارِ بایگانی‌شده که هنوز باز است، نه باز شمرده می‌شود نه
          عقب‌افتاده — بایگانی‌اش یعنی دیگر دنبالش نیستیم. ولی اگر
          انجام یا لغو شده باشد، در آمار همان ماه سرِ جایش می‌ماند. */

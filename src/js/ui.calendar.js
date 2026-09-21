@@ -27,9 +27,27 @@
 
   /** رفتن به مقصد هر مورد: پرونده، یا خودِ کار اگر پرونده‌ای ندارد */
   function go(app, item) {
+    /* دستهٔ بارگذاری، مقصدش بایگانی است نه پرونده: یک دسته می‌تواند
+       چند پرونده را گرفته باشد و «کدامش؟» سؤال بی‌جوابی است. */
+    if (item.batchId) {
+      app.state.archive = {
+        q: '', tags: [], batchId: item.batchId, scope: '', kind: ''
+      };
+      app.goArchive();
+      return;
+    }
+    if (item.docId && !item.caseId) {
+      app.state.archive = {
+        q: '', tags: [], batchId: '', scope: 'general', kind: ''
+      };
+      app.goArchive();
+      return;
+    }
     if (item.caseId) {
       if (item.layer === 'task' || item.layer === 'follow') {
         app.state.formTab = '__notes';
+      } else if (item.layer === 'doc') {
+        app.state.formTab = '__docs';
       }
       app.openCase(item.caseId);
       return;
