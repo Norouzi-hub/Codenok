@@ -440,8 +440,96 @@
     run('صورت‌جلسهٔ کمیته');
   }
 
+  /**
+   * کارنامه روی کاغذ.
+   * همان چیدمان صفحه، چون گزارشی که روی کاغذ شکل دیگری داشته باشد،
+   * موقع ارائه سؤال می‌سازد به‌جای اینکه جواب بدهد.
+   */
+  function printKarnameh(data) {
+    var K = w.Karnameh;
+    var node = area();
+    var t = data.totals;
+    node.appendChild(header('کارنامهٔ عملکرد',
+      K.label(data) + (data.user ? ' — ' + data.user : '')));
+
+    node.appendChild(el('p.p-lead', { text: K.headline(data) }));
+
+    function twoCol(title, rows) {
+      if (!rows.length) return;
+      var tbl = el('table.p-table.p-kpi');
+      rows.forEach(function (r) {
+        tbl.appendChild(el('tr', null, [
+          el('th', { text: r[0] }), el('td', { text: r[1] })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: title }), tbl
+      ]));
+    }
+
+    twoCol('خلاصه', [
+      ['نامهٔ صادره', w.U.toFaDigits(t.letters)],
+      ['پروندهٔ طرح‌شده در کمیته', w.U.toFaDigits(t.sessions)],
+      ['رأی صادره', w.U.toFaDigits(t.verdicts)],
+      ['سند بایگانی‌شده', w.U.toFaDigits(t.docs) +
+        (t.batches ? ' (در ' + w.U.toFaDigits(t.batches) + ' نوبت)' : '')],
+      ['کار انجام‌شده', w.U.toFaDigits(t.tasksDone)],
+      ['پروندهٔ وارده', w.U.toFaDigits(t.created)],
+      ['پروندهٔ مختومه', w.U.toFaDigits(t.closed)],
+      ['پرونده‌هایی که روی آنها کار شد', w.U.toFaDigits(t.touched)]
+    ]);
+
+    twoCol('اقدام‌های انجام‌شده', data.steps.map(function (st) {
+      return [st.label, w.U.toFaDigits(st.n)];
+    }));
+
+    twoCol('نوبت‌های بارگذاری سند', data.docs.batches.map(function (b) {
+      return [b.name + ' — ' + J.format(b.date),
+        w.U.toFaDigits(b.docs.length) + ' سند'];
+    }));
+
+    twoCol('کارها به تفکیک دسته', data.tasks.byCat.map(function (c) {
+      return [c.label, w.U.toFaDigits(c.n)];
+    }));
+
+    function caseTable(title, list, dateOf) {
+      if (!list.length) return;
+      var tbl = el('table.p-table.p-list', null, [
+        el('tr', null, [
+          el('th', { text: 'شماره' }), el('th', { text: 'نام' }),
+          el('th', { text: 'واحد سازمانی' }), el('th', { text: 'تاریخ' })
+        ])
+      ]);
+      list.slice(0, 80).forEach(function (rec) {
+        tbl.appendChild(el('tr', null, [
+          el('td', { text: w.U.toLatinDigits(rec.caseNo || '') }),
+          el('td', { text: [rec.firstName, rec.lastName].filter(Boolean).join(' ') }),
+          el('td', { text: rec.orgUnit || '' }),
+          el('td', { text: J.format(dateOf(rec)) })
+        ]));
+      });
+      node.appendChild(el('section.p-section', null, [
+        el('h2', { text: title }), tbl
+      ]));
+    }
+
+    caseTable('پرونده‌های مختومه در این بازه', data.cases.closed,
+      function (r) { return K.closedOn(r); });
+    caseTable('پرونده‌های وارده در این بازه', data.cases.created,
+      function (r) { return r.intakeDate; });
+
+    twoCol('چه ماند', [
+      ['پروندهٔ در جریان', w.U.toFaDigits(data.rest.open)],
+      ['از مهلت گذشته', w.U.toFaDigits(data.rest.overdue)],
+      ['کار باز', w.U.toFaDigits(data.rest.openTasks)]
+    ]);
+
+    run('کارنامه — ' + K.label(data));
+  }
+
   w.UIPrint = {
     printCase: printCase, printList: printList, printReport: printReport,
-    printPerson: printPerson, printAgenda: printAgenda, printMinutes: printMinutes
+    printPerson: printPerson, printAgenda: printAgenda, printMinutes: printMinutes,
+    printKarnameh: printKarnameh
   };
 })(window);

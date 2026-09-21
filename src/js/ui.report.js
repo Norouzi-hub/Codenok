@@ -604,8 +604,32 @@
       }
     }));
 
+    /* گزارش‌ها دو جنس دارد و یکی جای دیگری را نمی‌گیرد: «تحلیل
+       پرونده‌ها» می‌گوید وضعِ کار چطور است، «کارنامه» می‌گوید من چه
+       کردم. اولی برای تصمیم، دومی برای ارائه. */
+    var tabs = el('div.rep-tabs', { role: 'tablist' }, [
+      { k: 'analysis', t: 'تحلیل پرونده‌ها' },
+      { k: 'karnameh', t: 'کارنامهٔ من' }
+    ].map(function (o) {
+      return el('button.rep-tab' + (app.state.reportTab === o.k ? '.on' : ''), {
+        type: 'button', text: o.t, role: 'tab',
+        onclick: function () { app.state.reportTab = o.k; app.render(); }
+      });
+    }));
+
+    if (app.state.reportTab === 'karnameh') {
+      w.U.clear(mount);
+      var holder = el('div.report-view', null, [tabs]);
+      mount.appendChild(holder);
+      var inner = el('div');
+      holder.appendChild(inner);
+      w.UIKarnameh.render(app, inner);
+      return;
+    }
+
     w.U.clear(mount);
     mount.appendChild(el('div.report-view', null, [
+      tabs,
       w.UIScope.banner(app),
       filterRow(app, data),
       data.cases.length

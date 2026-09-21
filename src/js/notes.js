@@ -177,7 +177,11 @@
 
   /**
    * ساخت کار یا یادداشت.
-   * o: { kind, caseId, title, text, followUp, priority, from, owner, category }
+   * o: { kind, caseId, title, text, followUp, priority, from, owner,
+   *      category, done, batchId, docCount }
+   *
+   * done:true یعنی کارِ از پیش انجام‌شده — کاری که همین الان انجامش
+   * دادید و فقط ثبتش می‌کنید. بارگذاری دسته‌ای از همین راه می‌آید.
    */
   function create(o) {
     o = o || {};
@@ -203,8 +207,11 @@
       from: String(o.from || '').trim(),
       owner: String(o.owner || '').trim() || (M.state.settings.user || ''),
       category: String(o.category || '').trim(),
-      status: 'open',
-      done: false,
+      status: o.done ? 'done' : 'open',
+      done: !!o.done,
+      doneAt: o.done ? J.today() : '',
+      batchId: o.batchId || '',
+      docCount: o.docCount || 0,
       at: new Date().toISOString(),
       atJalali: J.stamp(),
       user: M.state.settings.user || 'کاربر'
@@ -215,6 +222,7 @@
       if (rec) {
         M.addHistory(kind === 'task' ? 'task-add' : 'note-add', rec, [],
           (kind === 'task' ? 'کار: ' + title : 'یادداشت: ' + preview(text)) +
+          (item.done ? ' — انجام‌شده' : '') +
           (item.followUp ? ' — سررسید ' + J.format(item.followUp) : ''));
       }
       return item;
@@ -390,6 +398,27 @@
   }
 
   function archivedTasks() { return tasks({ archived: true }); }
+
+  /** کارهایی که از یک دستهٔ بارگذاری ساخته شده‌اند */
+  function tasksOfBatch(batchId) {
+    if (!batchId) return [];
+    return notes.filter(function (n) {
+      return n.kind === 'task' && n.batchId === batchId;
+    });
+  }
+
+  /**
+   * کارهای بسته‌شده در یک بازه — مبنای «چه کردم».
+   * بایگانی‌شده‌ها هم می‌آیند: بایگانی دربارهٔ دیده شدن است، نه سرنوشت.
+   */
+  function doneBetween(from, to) {
+    return notes.filter(function (n) {
+      if (n.kind !== 'task') return false;
+      if (n.status !== 'done' && n.status !== 'cancelled') return false;
+      var d = n.doneAt || '';
+      return d && d >= from && d <= to;
+    }).sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
+  }
 
   /** دسته‌های کار با تعدادشان — برای صافی و گروه‌بندی در نمای کارها */
   function taskCategories(f) {
@@ -569,6 +598,7 @@
     report: report, presets: presets, categories: categories,
     archive: archive, unarchive: unarchive, archiveClosed: archiveClosed,
     archivedTasks: archivedTasks, taskCategories: taskCategories,
+    tasksOfBatch: tasksOfBatch, doneBetween: doneBetween,
     addToList: addToList, usedValues: usedValues,
     PRIORITIES: PRIORITIES,
     clearMemory: clearMemory, preview: preview

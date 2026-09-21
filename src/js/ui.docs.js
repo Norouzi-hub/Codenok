@@ -523,7 +523,7 @@
     });
 
     // ------------------------------------------------------------- سربرگ
-    var head = null;
+    var head = null, asTask = null;
     var batchName = el('input.input.small', {
       type: 'text', value: opts.batchName || '',
       placeholder: 'مثلاً: اسکن آرای صادره'
@@ -538,6 +538,7 @@
       var hTags = tagField([], null);
       var hCase = freeCase ? caseField('', null) : null;
 
+      asTask = el('input', { type: 'checkbox', checked: true });
       head = el('div.batch-head', null, [
         el('div.batch-head-top', null, [
           el('h4', { text: 'روی همهٔ ' + w.U.toFaDigits(rows.length) + ' فایل' }),
@@ -552,6 +553,12 @@
             el('label.mini', { text: 'تگ' }), hTags,
             el('label.mini', { text: 'نام دسته' }), batchName
           ])),
+        /* بارگذاری خودش یک کار است. اگر ثبت نشود، آخر هفته که می‌خواهید
+           بگویید چه کردید، بیست اسکن هیچ ردی ندارد جز خودِ فایل‌ها. */
+        el('label.batch-astask', null, [
+          asTask,
+          el('span', { text: 'این بارگذاری به‌عنوان کارِ انجام‌شده ثبت شود' })
+        ]),
         el('button.btn.small.primary.batch-apply', {
           type: 'button', text: 'روی همه بنشان',
           onclick: function () {
@@ -666,12 +673,17 @@
                 '» پر شد.'
               : '.'), failed ? 'warn' : 'good');
           if (bname) D.addTag(bname).catch(function () { /* تگ نشد، مهم نیست */ });
-          onDone({
-            rows: rows.length, failed: failed, general: general,
-            docDate: rows[0] && rows[0].docDate,
-            batchId: batchId, batchName: bname,
-            filled: filled, versions: versions
-          });
+          var wantTask = !asTask || asTask.checked;
+          var finish = function () {
+            onDone({
+              rows: rows.length, failed: failed, general: general,
+              docDate: rows[0] && rows[0].docDate,
+              batchId: batchId, batchName: bname,
+              filled: filled, versions: versions
+            });
+          };
+          if (wantTask && ok) logBatchWork(batchId, bname, rec).then(finish, finish);
+          else finish();
         }).catch(function (err) {
           busy = false;
           save.textContent = 'ثبت دوباره';
@@ -1330,6 +1342,69 @@
     pickFiles(true).then(function (files) {
       if (files.length) addDialog(rec, files, onDone, opts || {});
     });
+  }
+
+  /*
+   * ثبت بارگذاری به‌عنوان کارِ انجام‌شده.
+   *
+   * بایگانی می‌گوید «چه چیزی هست»؛ کارها می‌گوید «چه کردم». بیست اسکن
+   * که فقط در بایگانی بنشیند، آخر ماه در کارنامه دیده نمی‌شود.
+   *
+   * یک کار برای خودِ دسته، و — وقتی دسته چند پرونده را گرفته — یک کارِ
+   * کوچک هم در هر پرونده، تا از داخل پرونده هم پیدا باشد. سقف هشت
+   * پرونده دارد: دسته‌ای که سی پرونده را بگیرد نباید سی کار بسازد؛
+   * آنجا تاریخچهٔ پرونده کافی است.
+   */
+  var PER_CASE_TASK_CAP = 8;
+
+  function logBatchWork(batchId, batchName, fromCase) {
+    var b = D.batch(batchId);
+    if (!b || !b.docs.length) return Promise.resolve(null);
+    var name = batchName || 'بارگذاری سند';
+    var byCase = {};
+    b.docs.forEach(function (d) {
+      if (d.caseId) (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
+    });
+    var caseIds = Object.keys(byCase);
+    var single = caseIds.length === 1 ? caseIds[0] : '';
+
+    var title = name + ' — ' + w.U.toFaDigits(b.docs.length) + ' سند';
+    var text = [
+      caseIds.length ? w.U.toFaDigits(caseIds.length) + ' پرونده' : '',
+      b.general ? w.U.toFaDigits(b.general) + ' سند بی‌پرونده' : ''
+    ].filter(Boolean).join('، ');
+
+    return w.Notes.create({
+      kind: 'task', done: true, caseId: single,
+      title: title, text: text,
+      category: 'بایگانی و اسکن',
+      batchId: batchId, docCount: b.docs.length
+    }).then(function () {
+      // کارِ هر پرونده، فقط وقتی دسته چندپرونده‌ای است
+      if (caseIds.length < 2 || caseIds.length > PER_CASE_TASK_CAP) {
+        return caseIds.length > PER_CASE_TASK_CAP ? noteInHistory(byCase, name) : null;
+      }
+      return caseIds.reduce(function (chain, id) {
+        return chain.then(function () {
+          return w.Notes.create({
+            kind: 'task', done: true, caseId: id,
+            title: w.U.toFaDigits(byCase[id].length) + ' سند از دستهٔ «' + name + '»',
+            category: 'بایگانی و اسکن',
+            batchId: batchId, docCount: byCase[id].length
+          });
+        });
+      }, Promise.resolve());
+    }).catch(function () { /* ثبت کار نشد؛ سندها سرِ جایشان‌اند */ });
+  }
+
+  function noteInHistory(byCase, name) {
+    Object.keys(byCase).forEach(function (id) {
+      var rec = M.get(id);
+      if (!rec) return;
+      M.addHistory('doc-batch', rec, [],
+        w.U.toFaDigits(byCase[id].length) + ' سند از دستهٔ «' + name + '»');
+    });
+    return null;
   }
 
   /**

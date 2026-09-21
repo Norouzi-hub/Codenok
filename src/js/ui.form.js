@@ -90,6 +90,8 @@
     'doc-person': 'مدرک شخص', 'note-add': 'یادداشت', 'note-done': 'پیگیری انجام شد',
     'note-remove': 'حذف یادداشت', 'task-add': 'کار', 'task-done': 'کار انجام شد',
     'task-cancel': 'کار لغو شد', 'task-remove': 'حذف کار',
+    'doc-batch': 'دستهٔ اسکن', 'doc-attach': 'وصل سند به پرونده',
+    'doc-sync': 'هم‌خوان‌سازی از سند', 'stage': 'تنظیم مرحله',
     'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه'
   };
 

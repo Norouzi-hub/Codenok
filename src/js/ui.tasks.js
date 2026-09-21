@@ -442,6 +442,21 @@
         }));
       }
     }
+    /* کاری که از یک بارگذاری ساخته شده، باید به همان دسته برگردد —
+       وگرنه «۱۰ اسکن آرا» فقط یک جملهٔ بی‌مرجع است. */
+    if (task.batchId) {
+      meta.push(el('button.task-batch', {
+        type: 'button', title: 'دیدن سندهای این دسته در بایگانی',
+        text: (task.docCount ? fa(task.docCount) + ' سند' : 'این دسته') + ' در بایگانی ←',
+        onclick: function (e) {
+          e.stopPropagation();
+          app.state.archive = {
+            q: '', tags: [], batchId: task.batchId, scope: '', kind: ''
+          };
+          app.goArchive();
+        }
+      }));
+    }
     if (task.from) meta.push(el('span.task-from', { text: 'از: ' + task.from }));
     if (task.category) meta.push(el('span.task-cat', { text: task.category }));
     if (cancelled) {

@@ -183,12 +183,17 @@
         el('span.arc-batch-n', { text: fa(b.docs.length) }),
         el('span.arc-batch-body', null, [
           el('b', { text: b.name }),
-          el('span.muted.tiny', {
-            text: J.format(b.date) + ' • ' + (b.user || '') + ' • ' +
-              sizeText(b.size) +
-              (b.caseCount ? ' • ' + fa(b.caseCount) + ' پرونده' : '') +
-              (b.general ? ' • ' + fa(b.general) + ' بی‌پرونده' : '')
-          })
+          /* هر تکه یک span جداست، نه یک رشته با «•».
+             دو عددِ فارسی که با یک نویسهٔ خنثی به هم چسبیده باشند، در
+             چیدمان راست‌به‌چپ به هم می‌پیوندند: «۱ پرونده • ۵ بی‌پرونده»
+             روی صفحه «۱۰ پرونده ۵۰ بی‌پرونده» خوانده می‌شد. */
+          el('span.arc-batch-meta', null, [
+            el('span', { text: J.format(b.date) }),
+            b.user ? el('span', { text: b.user }) : null,
+            el('span', { text: sizeText(b.size) }),
+            b.caseCount ? el('span', { text: fa(b.caseCount) + ' پرونده' }) : null,
+            b.general ? el('span', { text: fa(b.general) + ' بی‌پرونده' }) : null
+          ])
         ]),
         el('div.arc-batch-tags', null, b.tagList.slice(0, 4).map(function (t) {
           return el('span.tag-chip.ro', { text: t });
@@ -262,11 +267,14 @@
       el('div.arc-plate', null, [
         el('div.wl-eyebrow', null, [
           el('span.wl-eyebrow-tag', { text: 'بایگانی اسناد' }),
-          el('span.wl-eyebrow-date', {
-            text: fa(D.all().filter(function (d) { return !d.superseded; }).length) +
-              ' سند • ' + fa(batches.length) + ' دسته • ' +
-              fa(D.general().length) + ' بی‌پرونده'
-          }),
+          el('span.wl-eyebrow-date.arc-batch-meta', null, [
+            el('span', {
+              text: fa(D.all().filter(function (d) { return !d.superseded; }).length) +
+                ' سند'
+            }),
+            el('span', { text: fa(batches.length) + ' دسته' }),
+            el('span', { text: fa(D.general().length) + ' بی‌پرونده' })
+          ]),
           el('div.spacer'),
           el('button.btn.small.primary', {
             type: 'button', text: '＋ بارگذاری دسته‌ای',

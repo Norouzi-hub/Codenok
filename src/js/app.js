@@ -23,6 +23,7 @@
         expert: '', year: '', placeType: ''
       },
       reportData: null,
+      reportTab: 'analysis',
       archive: { q: '', tags: [], batchId: '', scope: '', kind: '' },
       personKey: null
     }

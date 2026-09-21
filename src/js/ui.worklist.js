@@ -303,6 +303,72 @@
     return box;
   }
 
+  /**
+   * «امروز چه شد» — تاشده، زیر کارهای امروز.
+   *
+   * عمداً جمع‌شده است: کارتابل جای «چه مانده» است و اگر کارهای انجام‌شده
+   * بازشان بگذاریم، بخش مهم‌تر را پایین می‌رانند. ولی باید یک کلیک
+   * فاصله داشته باشد، چون همین می‌شود گزارش آخر هفته.
+   */
+  function todayLog(app) {
+    var today = J.today();
+    var k = w.Karnameh.build(today, today, {});
+    var t = k.totals;
+    var n = t.tasksDone + t.docs + t.letters + t.created + t.closed;
+    if (!n) return null;
+
+    var bits = [];
+    if (t.letters) bits.push(fa(t.letters) + ' نامه');
+    if (t.sessions) bits.push(fa(t.sessions) + ' جلسه');
+    if (t.docs) bits.push(fa(t.docs) + ' سند');
+    if (t.tasksDone) bits.push(fa(t.tasksDone) + ' کار');
+    if (t.created) bits.push(fa(t.created) + ' پروندهٔ تازه');
+    if (t.closed) bits.push(fa(t.closed) + ' مختومه');
+
+    var box = el('details.wl-today-log', null, [
+      el('summary', null, [
+        el('span.wl-log-tick', { text: '✓' }),
+        el('span', { text: 'امروز: ' + bits.join('، ') }),
+        el('div.spacer'),
+        el('span.muted.tiny', { text: 'کارنامه ←' })
+      ])
+    ]);
+
+    var list = el('ul.wl-log-list');
+    k.tasks.done.slice(0, 8).forEach(function (task) {
+      list.appendChild(el('li', null, [
+        el('span.wl-log-tick', { text: '✓' }),
+        el('span', { text: task.title || '' }),
+        task.batchId ? el('button.linkish.tiny', {
+          type: 'button', text: 'در بایگانی ←',
+          onclick: function () {
+            app.state.archive = {
+              q: '', tags: [], batchId: task.batchId, scope: '', kind: ''
+            };
+            app.goArchive();
+          }
+        }) : null
+      ]));
+    });
+    k.steps.slice(0, 6).forEach(function (st) {
+      list.appendChild(el('li', null, [
+        el('span.wl-log-dot'),
+        el('span', { text: st.label }),
+        el('b', { text: fa(st.n) })
+      ]));
+    });
+    box.appendChild(list);
+    box.appendChild(el('button.btn.small.ghost.wl-log-more', {
+      type: 'button', text: 'کارنامهٔ این هفته',
+      onclick: function () {
+        app.state.reportTab = 'karnameh';
+        app.state.karnameh = { range: 'week', custom: { from: '', to: '' }, user: '' };
+        app.goReport();
+      }
+    }));
+    return box;
+  }
+
   // ------------------------------------------------------------------ صفحه
   function render(app, mount) {
     var cases = M.scoped();
@@ -406,6 +472,25 @@
           app.showCases(Object.keys(seen), 'پیگیری باز');
         }
       },
+      /* کارتابل تا امروز فقط «چه مانده» را می‌گفت. آدمی که آخر هفته باید
+         گزارش بدهد، لازم دارد «چه شد» را هم ببیند — همان لحظه، نه در
+         گزارش ماهانه. */
+      (function () {
+        var k = w.Karnameh.build(J.today(), J.today(), {});
+        var n = k.totals.tasksDone + k.totals.docs + k.totals.letters;
+        return {
+          value: n, label: 'انجام‌شدهٔ امروز', tone: n ? 'done' : '',
+          hint: 'کار، سند و نامهٔ امروز — برای دیدن کارنامه کلیک کنید',
+          ids: n ? [1] : [],
+          onclick: function () {
+            app.state.reportTab = 'karnameh';
+            app.state.karnameh = {
+              range: 'custom', custom: { from: J.today(), to: J.today() }, user: ''
+            };
+            app.goReport();
+          }
+        };
+      })(),
       {
         value: sum.closed, label: 'مختومه', tone: 'done',
         hint: 'پرونده‌های مختومه‌شده',
@@ -515,6 +600,9 @@
        کاربر»اند، نه حدسِ برنامه، و با هم یک تصویر از امروز می‌دهند. */
     var tasksToday = w.UITasks.todaySection(app);
     if (tasksToday) sections.push(tasksToday);
+
+    var doneToday = todayLog(app);
+    if (doneToday) sections.push(doneToday);
 
     var week = weekStrip(app, cases);
     if (week) sections.push(week);
