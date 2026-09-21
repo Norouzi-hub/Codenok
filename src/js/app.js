@@ -23,6 +23,7 @@
         expert: '', year: '', placeType: ''
       },
       reportData: null,
+      archive: { q: '', tags: [], batchId: '', scope: '', kind: '' },
       personKey: null
     }
   };
@@ -42,6 +43,7 @@
        #/person/<کلید>       پروندهٔ شخص
        #/tasks               کارها
        #/calendar            تقویم
+       #/archive             بایگانی اسناد
        #/report              گزارش‌ها
 
      شمارهٔ پرونده در نشانی می‌آید نه شناسهٔ داخلی، چون نشانی را آدم
@@ -63,6 +65,7 @@
     if (st.view === 'people') return '#/people';
     if (st.view === 'tasks') return '#/tasks';
     if (st.view === 'calendar') return '#/calendar';
+    if (st.view === 'archive') return '#/archive';
     if (st.view === 'report') return '#/report';
     if (st.view === 'list') return '#/list';
     return '#/';
@@ -105,6 +108,7 @@
     else if (parts[0] === 'report') { st.view = 'report'; st.caseId = null; }
     else if (parts[0] === 'tasks') { st.view = 'tasks'; st.caseId = null; }
     else if (parts[0] === 'calendar') { st.view = 'calendar'; st.caseId = null; }
+    else if (parts[0] === 'archive') { st.view = 'archive'; st.caseId = null; }
     else if (parts[0] === 'people') { st.view = 'people'; st.personKey = null; }
     else if (parts[0] === 'person' && parts[1]) {
       st.view = 'person';
@@ -201,6 +205,16 @@
     }
     app.state.dirty = false;
     app.state.view = 'calendar';
+    app.state.caseId = null;
+    app.render();
+  };
+
+  app.goArchive = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'archive';
     app.state.caseId = null;
     app.render();
   };
@@ -376,6 +390,8 @@
       w.UITasks.render(app, mount);
     } else if (app.state.view === 'calendar') {
       w.UICalendar.render(app, mount);
+    } else if (app.state.view === 'archive') {
+      w.UIArchive.render(app, mount);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
     } else if (app.state.view === 'people') {
@@ -393,7 +409,8 @@
 
   var NAV_FOR_VIEW = {
     work: 'work', list: 'list', case: 'list', report: 'report',
-    tasks: 'tasks', calendar: 'calendar', people: 'people', person: 'people'
+    tasks: 'tasks', calendar: 'calendar', archive: 'archive',
+    people: 'people', person: 'people'
   };
 
   function updateNav() {
@@ -494,6 +511,11 @@
         title: 'هر روز چه افتاده و چه در راه است',
         onclick: function () { app.goCalendar(); }
       }),
+      archive: el('button.nav-btn', {
+        type: 'button', text: 'بایگانی', 'data-nav': 'archive',
+        title: 'دسته‌های اسکن و سندهای بی‌پرونده',
+        onclick: function () { app.goArchive(); }
+      }),
       people: el('button.nav-btn', {
         type: 'button', text: 'اشخاص', 'data-nav': 'people',
         title: 'یک کارمند ممکن است چند پرونده داشته باشد',
@@ -516,8 +538,8 @@
         ])
       ]),
       el('nav.main-nav', null, [navButtons.work, navButtons.list,
-        navButtons.tasks, navButtons.calendar, navButtons.people,
-        navButtons.report]),
+        navButtons.tasks, navButtons.calendar, navButtons.archive,
+        navButtons.people, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -580,6 +602,11 @@
         icon: 'filter', label: 'دامنهٔ کار',
         hint: 'کدام پرونده‌ها شمرده شوند',
         onclick: function () { w.UIScope.dialog(app); }
+      },
+      {
+        icon: 'fileZip', label: 'بایگانی اسناد',
+        hint: 'دسته‌های اسکن و سندهای بی‌پرونده',
+        onclick: function () { app.goArchive(); }
       },
       {
         icon: 'refresh', label: 'به‌روزرسانی',

@@ -29,6 +29,9 @@
   var PERSON_KINDS = ['مدارک هویتی', 'حکم کارگزینی'];
 
   var PERSON_ROOT = '_مدارک اشخاص';
+  /* سندی که هیچ پرونده‌ای ندارد — «اسکن متفرقه» و هرچه هنوز معلوم نیست
+     مالِ کدام پرونده است. زیرپوشهٔ سال، و داخلش پوشهٔ همان دسته. */
+  var ARCHIVE_ROOT = '_بایگانی';
 
   /*
    * دستهٔ سند از روی نوعش درمی‌آید، نه با پرسیدن دوباره از کاربر: کسی که
@@ -211,6 +214,7 @@
   var docs = [];           // همهٔ رکوردهای فراداده
   var byCase = {};
   var byPerson = {};
+  var generalDocs = [];    // سندهای بی‌پرونده
   var root = null;         // FileSystemDirectoryHandle پوشهٔ ریشه
   var rootName = '';
   var listeners = [];
@@ -409,13 +413,22 @@
   function indexDocs() {
     byCase = {};
     byPerson = {};
+    generalDocs = [];
     docs.forEach(function (d) {
       if (d.scope === 'person') {
         (byPerson[d.personKey] = byPerson[d.personKey] || []).push(d);
         return;
       }
+      if (d.scope === 'general' || (!d.caseId && !d.personKey)) {
+        d.scope = 'general';
+        generalDocs.push(d);
+        return;
+      }
       if (!d.caseId) return;
       (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
+    });
+    generalDocs.sort(function (a, b) {
+      return (a.docDate || '') < (b.docDate || '') ? 1 : -1;
     });
     function byDate(a, b) { return (a.docDate || '') < (b.docDate || '') ? -1 : 1; }
     Object.keys(byPerson).forEach(function (k) { byPerson[k].sort(byDate); });
@@ -432,8 +445,8 @@
     rec._docText = (byCase[caseId] || []).map(function (d) {
       // متن نامه هم جستجو می‌شود؛ همین است که «آن نامه‌ای که نوشته بود…»
       // را بدون باز کردن تک‌تک فایل‌ها پیدا می‌کند.
-      return [d.kind, d.title, d.letterNo, d.body, d.fileName]
-        .filter(Boolean).join(' ');
+      return [d.kind, d.title, d.letterNo, d.body, d.fileName,
+        (d.tags || []).join(' '), d.batchName].filter(Boolean).join(' ');
     }).join(' ');
     M.reindex(rec);
   }
@@ -496,6 +509,9 @@
         title: meta.title || '',
         letterNo: meta.letterNo || '',
         body: meta.body || '',
+        tags: cleanTags(meta.tags),
+        batchId: meta.batchId || '',
+        batchName: meta.batchName || '',
         docDate: meta.docDate || J.today(),
         stage: KIND_STAGE[meta.kind] || '',
         size: file.size,
@@ -514,6 +530,211 @@
           ' — فایل: ' + doc.fileName);
         return doc;
       });
+    });
+  }
+
+  /* ================================================================
+     سندِ بی‌پرونده و «دسته»
+     ----------------------------------------------------------------
+     دسته، ظرفِ سند نیست؛ یک نوبتِ کار است.
+     
+     اگر دسته ظرف بود، سندِ رأیِ پروندهٔ ۱۴۰۴۳۰۸ می‌رفت داخل «اسکن
+     یکشنبه» و از پوشهٔ پروندهٔ خودش بیرون می‌ماند — و روزی که آن کار
+     حذف شود، سند هم می‌رفت. پس هر سند همان‌جا که باید می‌نشیند، و دسته
+     فقط برچسبی است که موقع بارگذاری روی همه‌شان می‌خورد. یک دسته
+     می‌تواند هم‌زمان سندِ سه پرونده و پنج سندِ بی‌پرونده داشته باشد.
+     
+     فقط سندِ بی‌پرونده جای فیزیکیِ تازه لازم دارد؛ پوشه‌اش شکلِ همان
+     دسته را روی دیسک نگه می‌دارد، چون آن پوشه چیزی است که در ویندوز
+     هم بازش می‌کنید:
+     
+       _بایگانی/۱۴۰۵/۱۴۰۵-۰۶-۳۰ اسکن آرای صادره/
+     ================================================================ */
+
+  /** نام پوشهٔ یک دسته روی دیسک */
+  function batchFolderName(meta) {
+    var p = J.unpack(meta.docDate || J.today());
+    var day = p ? (p.jy + '-' + J.pad2(p.jm) + '-' + J.pad2(p.jd)) : '';
+    return safeName([day, meta.batchName || 'اسکن'].filter(Boolean).join(' '), day);
+  }
+
+  function archiveFolder(meta, create) {
+    var p = J.unpack(meta.docDate || J.today());
+    var year = p ? String(p.jy) : 'بدون سال';
+    return requireRoot().then(function (r) {
+      return r.getDirectoryHandle(ARCHIVE_ROOT, { create: !!create });
+    }).then(function (dir) {
+      return dir.getDirectoryHandle(year, { create: !!create });
+    }).then(function (dir) {
+      if (!meta.batchName) return dir;
+      return dir.getDirectoryHandle(batchFolderName(meta), { create: !!create });
+    });
+  }
+
+  /** مسیر خواناى پوشهٔ یک سند بی‌پرونده، برای نمایش و بازگشایی */
+  function archivePathOf(meta) {
+    var p = J.unpack(meta.docDate || J.today());
+    var year = p ? String(p.jy) : 'بدون سال';
+    return ARCHIVE_ROOT + '/' + year +
+      (meta.batchName ? '/' + batchFolderName(meta) : '');
+  }
+
+  /**
+   * افزودن سندِ بی‌پرونده.
+   * meta: {kind, title, letterNo, docDate, tags, batchId, batchName, body}
+   */
+  function addGeneralFile(file, meta) {
+    meta = meta || {};
+    return archiveFolder(meta, true).then(function (dir) {
+      var wanted = fileNameFor(meta, file.name, null);
+      return uniqueName(dir, wanted).then(function (name) {
+        return dir.getFileHandle(name, { create: true }).then(function (fh) {
+          return fh.createWritable().then(function (wr) {
+            return wr.write(file).then(function () { return wr.close(); });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      var doc = {
+        id: w.U.uid(), chain: w.U.uid(),
+        scope: 'general', caseId: '', caseNo: '',
+        folderName: archivePathOf(meta),
+        fileName: name, originalName: file.name,
+        kind: meta.kind || 'سایر',
+        category: meta.category || categoryOf(meta.kind || 'سایر'),
+        direction: meta.direction == null
+          ? directionOf(meta.kind || 'سایر') : meta.direction,
+        title: meta.title || '', letterNo: meta.letterNo || '',
+        body: meta.body || '',
+        tags: cleanTags(meta.tags),
+        batchId: meta.batchId || '', batchName: meta.batchName || '',
+        docDate: meta.docDate || J.today(),
+        stage: '', size: file.size, mime: file.type || '',
+        version: 1, superseded: false,
+        addedAt: new Date().toISOString(), addedAtJalali: J.stamp(),
+        user: M.state.settings.user || 'کاربر'
+      };
+      docs.push(doc);
+      indexDocs();
+      return persist([doc]).then(function () { return doc; });
+    });
+  }
+
+  function general() {
+    return generalDocs.filter(function (d) { return !d.superseded; });
+  }
+
+  /**
+   * دسته‌ها، تازه‌ترین اول.
+   * از روی خودِ سندها ساخته می‌شود، نه از یک انبار جدا: دسته چیزی جز
+   * «سندهایی با همین شناسه» نیست، و انبار جدا یعنی امکانِ ناهمخوانی.
+   */
+  function batches() {
+    var map = {};
+    docs.forEach(function (d) {
+      if (!d.batchId || d.superseded) return;
+      var b = map[d.batchId] || (map[d.batchId] = {
+        id: d.batchId, name: d.batchName || 'بدون نام',
+        at: d.addedAt, atJalali: d.addedAtJalali, date: d.docDate,
+        user: d.user, docs: [], cases: {}, tags: {}, general: 0, size: 0
+      });
+      b.docs.push(d);
+      b.size += d.size || 0;
+      if (d.caseId) b.cases[d.caseId] = true; else b.general++;
+      (d.tags || []).forEach(function (t) { b.tags[t] = true; });
+      if (d.addedAt < b.at) { b.at = d.addedAt; b.atJalali = d.addedAtJalali; }
+    });
+    return Object.keys(map).map(function (k) {
+      var b = map[k];
+      b.caseCount = Object.keys(b.cases).length;
+      b.tagList = Object.keys(b.tags);
+      return b;
+    }).sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+  }
+
+  function batch(id) {
+    return batches().filter(function (b) { return b.id === id; })[0] || null;
+  }
+
+  /**
+   * وصل کردن یک سندِ بی‌پرونده به پرونده.
+   *
+   * فقط فراداده عوض نمی‌شود — خودِ فایل هم روی دیسک به پوشهٔ آن پرونده
+   * منتقل می‌شود. اگر فایل در «_بایگانی» بماند و رکورد بگوید مالِ فلان
+   * پرونده است، دو حقیقت داریم و یکی‌شان دروغ است.
+   *
+   * جابه‌جایی در این API «کپی و حذف» است: getFileHandle کپی ندارد.
+   */
+  function attachToCase(doc, rec) {
+    if (!doc || doc.scope !== 'general') {
+      return Promise.reject(new Error('این سند از قبل به پرونده‌ای وصل است'));
+    }
+    if (!rec) return Promise.reject(new Error('پرونده مشخص نیست'));
+    var oldName = doc.fileName;
+    return readFile(doc).then(function (file) {
+      return caseFolder(rec, true).then(function (dir) {
+        var wanted = fileNameFor(doc, doc.originalName || oldName, null);
+        return uniqueName(dir, wanted).then(function (name) {
+          return dir.getFileHandle(name, { create: true }).then(function (fh) {
+            return fh.createWritable().then(function (wr) {
+              return wr.write(file).then(function () { return wr.close(); });
+            });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      // فایل در جای تازه نشست؛ حالا نسخهٔ قدیمی برود
+      return archiveFolder(doc, false).then(function (dir) {
+        return dir.removeEntry(oldName).catch(function () { /* نبود، مهم نیست */ });
+      }).catch(function () { /* پوشه نبود */ }).then(function () { return name; });
+    }).then(function (name) {
+      doc.scope = 'case';
+      doc.caseId = rec.id;
+      doc.caseNo = rec.caseNo || '';
+      doc.folderName = rec.docFolder;
+      doc.fileName = name;
+      doc.stage = KIND_STAGE[doc.kind] || '';
+      doc.attachedAt = new Date().toISOString();
+      indexDocs();
+      return persist([doc]).then(function () {
+        M.addHistory('doc-attach', rec, [],
+          'سند بایگانی به این پرونده وصل شد: ' + doc.kind + ' — ' + doc.fileName);
+        return applyToCase(rec, doc).then(function () { return doc; });
+      });
+    });
+  }
+
+  /**
+   * جستجوی سندمحور — خروجی سند است نه پرونده.
+   * opts: { tags:[], kind, batchId, scope }
+   */
+  function searchDocs(q, opts) {
+    opts = opts || {};
+    var tokens = w.U.normalize(q || '').split(' ').filter(Boolean);
+    return docs.filter(function (d) {
+      if (d.superseded) return false;
+      if (opts.scope && (d.scope || 'case') !== opts.scope) return false;
+      if (opts.kind && d.kind !== opts.kind) return false;
+      if (opts.batchId && d.batchId !== opts.batchId) return false;
+      if (opts.tags && opts.tags.length) {
+        var has = d.tags || [];
+        for (var i = 0; i < opts.tags.length; i++) {
+          if (has.indexOf(opts.tags[i]) < 0) return false;
+        }
+      }
+      if (!tokens.length) return true;
+      var rec = d.caseId ? M.get(d.caseId) : null;
+      var blob = w.U.normalize([
+        d.kind, d.title, d.letterNo, d.body, d.fileName, d.originalName,
+        d.batchName, (d.tags || []).join(' '),
+        rec ? rec.caseNo : '', rec ? (rec.firstName + ' ' + rec.lastName) : ''
+      ].filter(Boolean).join(' '));
+      for (var k = 0; k < tokens.length; k++) {
+        if (blob.indexOf(tokens[k]) < 0) return false;
+      }
+      return true;
+    }).sort(function (a, b) {
+      return (a.addedAt || '') < (b.addedAt || '') ? 1 : -1;
     });
   }
 
@@ -628,7 +849,10 @@
       if (!person) return Promise.reject(new Error('شخص این سند پیدا نشد'));
       return personFolder(person, false);
     }
-    return caseFolder(M.get(doc.caseId), false);
+    if (doc.scope === 'general') return archiveFolder(doc, false);
+    var rec = M.get(doc.caseId);
+    if (!rec) return Promise.reject(new Error('پروندهٔ این سند پیدا نشد'));
+    return caseFolder(rec, false);
   }
 
   /** فایل یک سند را از پوشه می‌خواند (برای پیش‌نمایش یا باز کردن) */
@@ -799,6 +1023,82 @@
 
   function kinds() {
     return M.state.lists.DocKinds || KINDS_DEFAULT;
+  }
+
+  /* ================================================================
+     تگ
+     ----------------------------------------------------------------
+     برچسب آزادِ محض بعد از سه ماه می‌شود «آرا»، «آراء» و «آرای صادره»،
+     و جستجو بی‌معنا می‌شود. پس تگ‌ها یک فهرست‌اند که رشد می‌کند: هرچه
+     تا امروز به کار رفته پیشنهاد می‌شود، و تگ تازه همان‌جا اضافه
+     می‌شود — در همان فهرستی که تنظیمات هم ویرایشش می‌کند.
+     ================================================================ */
+  var TAGS_DEFAULT = ['آرا', 'ابلاغ', 'دفاعیه', 'استعلام', 'اسکن انبوه', 'متفرقه'];
+
+  function tagList() {
+    return (M.state.lists || {}).DocTags || TAGS_DEFAULT;
+  }
+
+  /** تگ‌هایی که واقعاً روی سندی نشسته‌اند، پرتکرارترین اول */
+  function tagsInUse() {
+    var count = {};
+    docs.forEach(function (d) {
+      (d.tags || []).forEach(function (t) { count[t] = (count[t] || 0) + 1; });
+    });
+    return Object.keys(count).sort(function (a, b) {
+      return count[b] - count[a] || (a < b ? -1 : 1);
+    });
+  }
+
+  /** پیشنهادها: آنچه به کار رفته، بعد آنچه در فهرست هست */
+  function tagSuggestions() {
+    var seen = {}, out = [];
+    tagsInUse().concat(tagList()).forEach(function (t) {
+      if (!t || seen[t]) return;
+      seen[t] = 1;
+      out.push(t);
+    });
+    return out;
+  }
+
+  function addTag(name) {
+    var v = cleanTag(name);
+    if (!v) return Promise.reject(new Error('نام تگ خالی است'));
+    var lists = M.state.lists || {};
+    var cur = (lists.DocTags || TAGS_DEFAULT).slice();
+    if (cur.indexOf(v) >= 0) return Promise.resolve(v);
+    cur.push(v);
+    var next = {};
+    Object.keys(lists).forEach(function (k) { next[k] = lists[k]; });
+    next.DocTags = cur;
+    return M.saveLists(next).then(function () { return v; });
+  }
+
+  /* تگ نباید فاصلهٔ اضافه، ویرگول یا نیم‌فاصلهٔ سرگردان داشته باشد،
+     وگرنه «آرا » و «آرا» دو تگ می‌شوند. */
+  function cleanTag(t) {
+    return String(t == null ? '' : t)
+      .replace(/[،,]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function cleanTags(list) {
+    var seen = {}, out = [];
+    (list || []).forEach(function (t) {
+      var v = cleanTag(t);
+      if (!v || seen[v]) return;
+      seen[v] = 1;
+      out.push(v);
+    });
+    return out;
+  }
+
+  /** تگ‌های یک سند را عوض می‌کند */
+  function setTags(doc, list) {
+    doc.tags = cleanTags(list);
+    indexDocs();
+    return persist([doc]).then(function () { return doc; });
   }
 
   // ------------------------------------------------------ پشتیبان خودکار
@@ -977,6 +1277,7 @@
     return w.Store.getAll('docs').then(function (list) {
       docs = list || [];
       indexDocs();
+      if (!M.state.lists.DocTags) M.state.lists.DocTags = TAGS_DEFAULT.slice();
       if (!M.state.lists.DocKinds) {
         M.state.lists.DocKinds = KINDS_DEFAULT.slice();
       } else {
@@ -994,6 +1295,7 @@
   /** پاک کردن فرادادهٔ مستندات از حافظه، هنگام قفل شدن برنامه */
   function clearMemory() {
     docs = [];
+    generalDocs = [];
     byCase = {};
     byPerson = {};
     root = null;
@@ -1023,6 +1325,12 @@
     scan: scan, register: register, renameFolder: renameFolder,
     hasStoredFolder: hasStoredFolder, storedFolderName: storedFolderName,
     PERSON_KINDS: PERSON_KINDS, PERSON_ROOT: PERSON_ROOT,
+    ARCHIVE_ROOT: ARCHIVE_ROOT,
+    addGeneralFile: addGeneralFile, general: general, attachToCase: attachToCase,
+    batches: batches, batch: batch, searchDocs: searchDocs,
+    tagList: tagList, tagsInUse: tagsInUse, tagSuggestions: tagSuggestions,
+    addTag: addTag, setTags: setTags, cleanTags: cleanTags,
+    archivePathOf: archivePathOf,
     forPerson: forPerson, currentForPerson: currentForPerson,
     allForPerson: allForPerson, addPersonFile: addPersonFile,
     personFolderNameFor: personFolderNameFor,

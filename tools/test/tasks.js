@@ -383,6 +383,131 @@ function check(name, ok, extra) {
     JSON.stringify(scrolled));
   check('گزارشِ پایین صفحه با اسکرول دیده می‌شود', scrolled.reportVisible);
 
+  // ------------------------------------------------ دسته و بایگانی کارها
+  console.log('\n— دسته‌بندی و بایگانی کارها —');
+
+  const cats = await page.evaluate(async () => {
+    const N = window.Notes, J = window.J;
+    await N.create({ kind: 'task', title: 'تایپ نامهٔ حراست',
+      category: 'مکاتبات اداری', followUp: J.today() });
+    await N.create({ kind: 'task', title: 'تایپ نامهٔ ابلاغ',
+      category: 'مکاتبات اداری' });
+    await N.create({ kind: 'task', title: 'اسکن آرا',
+      category: 'بایگانی و اسکن', followUp: J.addDays(J.today(), 2) });
+    window.App.state.taskFilter = 'all';
+    window.App.state.taskCat = null;
+    window.App.state.taskGroup = 'due';
+    window.App.goTasks();
+    await new Promise(r => setTimeout(r, 400));
+    return {
+      list: N.taskCategories({ status: 'open' }).map(c => c.label + ':' + c.n),
+      bar: [...document.querySelectorAll('.task-cats .chip-btn')].map(b => b.textContent)
+    };
+  });
+  check('دسته‌ها با تعدادشان درمی‌آیند',
+    cats.list.indexOf('مکاتبات اداری:2') >= 0 &&
+    cats.list.indexOf('بایگانی و اسکن:1') >= 0, cats.list.join(' | '));
+  check('نوار دسته در نما هست، با «همه» و دکمهٔ افزودن',
+    cats.bar[0] === 'همه' && cats.bar.some(t => /مکاتبات اداری/.test(t)) &&
+    cats.bar.some(t => /دسته$/.test(t)), cats.bar.join(' | '));
+
+  const byCat = await page.evaluate(async () => {
+    const bar = [...document.querySelectorAll('.task-cats .chip-btn')]
+      .find(b => /مکاتبات اداری/.test(b.textContent));
+    bar.click();
+    await new Promise(r => setTimeout(r, 400));
+    const shown = [...document.querySelectorAll('.task-buckets .task-title')]
+      .map(t => t.textContent);
+    return { shown: shown, cat: window.App.state.taskCat };
+  });
+  check('صافی دسته فقط کارهای همان دسته را می‌آورد',
+    byCat.cat === 'مکاتبات اداری' && byCat.shown.length === 2 &&
+    byCat.shown.every(t => /تایپ نامهٔ/.test(t)), byCat.shown.join(' / '));
+
+  const grouped = await page.evaluate(async () => {
+    document.querySelector('.task-cats .chip-btn').click();   // «همه»
+    await new Promise(r => setTimeout(r, 300));
+    [...document.querySelectorAll('.task-group-switch .fm-btn')]
+      .find(b => b.textContent === 'بر پایهٔ دسته').click();
+    await new Promise(r => setTimeout(r, 400));
+    return {
+      heads: [...document.querySelectorAll('.task-bucket-head h2')].map(h => h.textContent),
+      mode: window.App.state.taskGroup
+    };
+  });
+  check('کلید گروه‌بندی، فهرست را موضوعی می‌چیند نه زمانی',
+    grouped.mode === 'cat' &&
+    grouped.heads.indexOf('مکاتبات اداری') >= 0 &&
+    grouped.heads.indexOf('بایگانی و اسکن') >= 0 &&
+    grouped.heads.indexOf('عقب‌افتاده') < 0, grouped.heads.join(' | '));
+
+  const archived = await page.evaluate(async () => {
+    const N = window.Notes;
+    [...document.querySelectorAll('.task-group-switch .fm-btn')]
+      .find(b => b.textContent === 'بر پایهٔ سررسید').click();
+    await new Promise(r => setTimeout(r, 250));
+    const before = {
+      open: N.tasks({ status: 'open' }).length,
+      closed: N.tasks({ status: 'done' }).length + N.tasks({ status: 'cancelled' }).length
+    };
+    const n = await N.archiveClosed();
+    const r = N.report();
+    return {
+      before: before, moved: n,
+      closedNow: N.tasks({ status: 'done' }).length +
+        N.tasks({ status: 'cancelled' }).length,
+      archived: N.tasks({ archived: true }).length,
+      any: N.tasks({ archived: 'any' }).length,
+      openUntouched: N.tasks({ status: 'open' }).length,
+      reportDone: r.done
+    };
+  });
+  check('«بایگانی همه» کارهای بسته‌شده را کنار می‌گذارد',
+    archived.moved === archived.before.closed && archived.closedNow === 0 &&
+    archived.archived === archived.moved, archived.moved + ' کار');
+  check('کارهای باز دست نمی‌خورند',
+    archived.openUntouched === archived.before.open,
+    archived.before.open + ' → ' + archived.openUntouched);
+  check('بایگانی‌شده در گزارش می‌ماند — بایگانی دربارهٔ دیده شدن است، نه سرنوشت',
+    archived.reportDone > 0, archived.reportDone + ' انجام‌شده در گزارش');
+  check('archived:any هر دو را می‌آورد',
+    archived.any === archived.openUntouched + archived.archived,
+    archived.any + ' کار');
+
+  const arcView = await page.evaluate(async () => {
+    window.App.render();
+    await new Promise(r => setTimeout(r, 400));
+    const chip = [...document.querySelectorAll('.task-filters .chip-btn')]
+      .find(b => /^بایگانی/.test(b.textContent));
+    if (!chip) return 'چیپ بایگانی نبود';
+    chip.click();
+    await new Promise(r => setTimeout(r, 400));
+    return {
+      head: (document.querySelector('.task-bucket-head h2') || {}).textContent,
+      rows: document.querySelectorAll('.task.is-archived').length,
+      noQuick: !document.querySelector('.tasks-view .task-quick')
+    };
+  });
+  check('نمای بایگانی کارها، بایگانی‌شده‌ها را نشان می‌دهد',
+    arcView.head === 'بایگانی‌شده' && arcView.rows > 0,
+    JSON.stringify(arcView));
+  check('در نمای بایگانی، نوار ثبت سریع نمی‌آید', arcView.noQuick === true);
+
+  const back = await page.evaluate(async () => {
+    const t = window.Notes.tasks({ archived: true })[0];
+    await window.Notes.unarchive(t);
+    window.App.state.taskFilter = 'all';
+    window.App.render();
+    await new Promise(r => setTimeout(r, 300));
+    return {
+      archived: window.Notes.tasks({ archived: true }).length,
+      closed: window.Notes.tasks({ status: 'done' }).length +
+        window.Notes.tasks({ status: 'cancelled' }).length
+    };
+  });
+  check('برگرداندن از بایگانی، کار را به فهرست بسته‌شده‌ها برمی‌گرداند',
+    back.closed === 1, back.closed + ' کار بسته‌شده');
+
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));
 

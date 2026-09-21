@@ -102,6 +102,7 @@
     if (!n.status) n.status = n.done ? 'done' : 'open';
     if (n.caseId == null) n.caseId = '';
     if (!n.priority) n.priority = 'normal';
+    if (n.archived == null) n.archived = false;
     return n;
   }
 
@@ -138,7 +139,9 @@
    * چون سررسید دارد؛ وگرنه آخرین یادداشت.
    */
   function headline(caseId) {
-    var open = forCase(caseId).filter(function (n) { return !n.done; });
+    var open = forCase(caseId).filter(function (n) {
+      return !n.done && !n.archived;
+    });
     if (!open.length) return null;
     var withDue = open.filter(function (n) { return n.followUp; });
     if (withDue.length) {
@@ -152,7 +155,9 @@
 
   /** چند یادداشت باز دارد */
   function openCount(caseId) {
-    return forCase(caseId).filter(function (n) { return !n.done; }).length;
+    return forCase(caseId).filter(function (n) {
+      return !n.done && !n.archived;
+    }).length;
   }
 
   /** پیگیری باز: یادداشتی با تاریخ پیگیری که هنوز انجام‌نشده علامت خورده */
@@ -294,7 +299,7 @@
     var today = J.today();
     var out = [];
     notes.forEach(function (n) {
-      if (!n.followUp || n.done) return;
+      if (!n.followUp || n.done || n.archived) return;
       /* کار بی‌پرونده هم سررسید دارد؛ rec خالی می‌ماند ولی حذف نمی‌شود —
          قبلاً همین‌جا از قلم می‌افتاد. ولی یادداشتی که پرونده‌اش پاک شده
          بی‌صاحب است و نمایش دادنش فقط گیج می‌کند. */
@@ -322,21 +327,90 @@
 
   /**
    * tasks(f) — کارها با صافی اختیاری.
-   * f: { status:'open'|'done'|'cancelled', caseId, standalone:true, owner, category }
+   * f: { status, caseId, standalone, owner, category, archived }
+   *
+   * archived پیش‌فرض false است: کارِ بایگانی‌شده در هیچ فهرستی نمی‌آید
+   * مگر صریحاً خواسته شود. archived:'any' هر دو را می‌آورد.
    */
   function tasks(f) {
     f = f || {};
+    var wantArchived = f.archived === undefined ? false : f.archived;
     return notes.filter(function (n) {
       if (!isTask(n)) return false;
+      if (wantArchived !== 'any' && !!n.archived !== !!wantArchived) return false;
       if (f.status && n.status !== f.status) return false;
       if (f.standalone && n.caseId) return false;
       if (f.caseId != null && n.caseId !== f.caseId) return false;
       if (f.owner && n.owner !== f.owner) return false;
-      if (f.category && n.category !== f.category) return false;
+      if (f.category && (n.category || '') !== f.category) return false;
       /* کارِ وصل به پروندهٔ پاک‌شده را نشان نمی‌دهیم */
       if (n.caseId && !M.get(n.caseId)) return false;
       return true;
     }).sort(sortTasks);
+  }
+
+  /* ================================================================
+     بایگانی کار
+     ----------------------------------------------------------------
+     «بایگانی» با «انجام شد» فرق دارد و باید فرق داشته باشد: کارِ
+     انجام‌شده هنوز خبرِ این هفته است و باید دیده شود؛ کارِ بایگانی‌شده
+     تمام شده و فقط برای سابقه می‌ماند.
+     
+     بدون آن، فهرست کارهای بسته‌شده هر ماه بلندتر می‌شود تا جایی که کسی
+     بازش نمی‌کند — و آن‌وقت نه فهرست به درد می‌خورد نه بایگانی.
+     
+     وضعیت (انجام‌شده/لغو) دست نمی‌خورد، چون گزارش از روی آن حساب
+     می‌کند: بایگانی دربارهٔ دیده شدن است، نه دربارهٔ سرنوشتِ کار.
+     ================================================================ */
+  function archive(note) {
+    return update(note, { archived: true, archivedAt: J.today() });
+  }
+
+  function unarchive(note) {
+    return update(note, { archived: false, archivedAt: '' });
+  }
+
+  /** همهٔ کارهای بسته‌شده را یکجا بایگانی می‌کند */
+  function archiveClosed(olderThan) {
+    var list = notes.filter(function (n) {
+      if (!isTask(n) || n.archived) return false;
+      if (n.status !== 'done' && n.status !== 'cancelled') return false;
+      if (olderThan && (n.doneAt || '') > olderThan) return false;
+      return true;
+    });
+    if (!list.length) return Promise.resolve(0);
+    var today = J.today();
+    list.forEach(function (n) {
+      n.archived = true;
+      n.archivedAt = today;
+      n.editedAt = new Date().toISOString();
+    });
+    index();
+    return w.Store.put('notes', list).then(function () { return list.length; });
+  }
+
+  function archivedTasks() { return tasks({ archived: true }); }
+
+  /** دسته‌های کار با تعدادشان — برای صافی و گروه‌بندی در نمای کارها */
+  function taskCategories(f) {
+    var count = {}, order = [];
+    tasks(f || {}).forEach(function (t) {
+      var k = t.category || '';
+      if (!(k in count)) { count[k] = 0; order.push(k); }
+      count[k]++;
+    });
+    // دسته‌های تعریف‌شده اول و به ترتیب خودشان، بعد هرچه در داده هست
+    var out = [];
+    categories().forEach(function (c) {
+      if (count[c] != null) { out.push({ key: c, label: c, n: count[c] }); }
+    });
+    order.forEach(function (k) {
+      if (!k) return;
+      if (out.some(function (x) { return x.key === k; })) return;
+      out.push({ key: k, label: k, n: count[k] });
+    });
+    if (count[''] != null) out.push({ key: '', label: 'بدون دسته', n: count[''] });
+    return out;
   }
 
   /* فوری بالا، بعد سررسیدِ نزدیک‌تر، بی‌سررسید ته صف */
@@ -439,6 +513,10 @@
     notes.forEach(function (n) {
       if (!isTask(n)) return;
       if (n.caseId && !M.get(n.caseId)) return;
+      /* کارِ بایگانی‌شده که هنوز باز است، نه باز شمرده می‌شود نه
+         عقب‌افتاده — بایگانی‌اش یعنی دیگر دنبالش نیستیم. ولی اگر
+         انجام یا لغو شده باشد، در آمار همان ماه سرِ جایش می‌ماند. */
+      if (n.archived && n.status === 'open') return;
       var field = null;
       if (n.status === 'open') {
         field = bucketOf(n) === 'overdue' ? 'overdue' : 'open';
@@ -489,6 +567,8 @@
     tasks: tasks, standalone: standalone, taskBuckets: taskBuckets,
     todayTasks: todayTasks, bucketOf: bucketOf, BUCKETS: BUCKETS,
     report: report, presets: presets, categories: categories,
+    archive: archive, unarchive: unarchive, archiveClosed: archiveClosed,
+    archivedTasks: archivedTasks, taskCategories: taskCategories,
     addToList: addToList, usedValues: usedValues,
     PRIORITIES: PRIORITIES,
     clearMemory: clearMemory, preview: preview

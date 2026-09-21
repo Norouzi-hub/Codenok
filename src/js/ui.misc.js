@@ -590,7 +590,8 @@
     });
     titleByList.DocKinds = 'نوع سند (مستندات)';
     titleByList.TaskPresets = 'کارهای پرتکرار (دکمه‌های میان‌بر)';
-    titleByList.TaskCategories = 'دستهٔ کارهای بیرون از پرونده';
+    titleByList.TaskCategories = 'دستهٔ کارها';
+    titleByList.DocTags = 'تگ اسناد';
 
     names.forEach(function (name) {
       var ta = el('textarea.input.area', {

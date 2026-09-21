@@ -3281,7 +3281,7 @@ select.input { cursor: pointer; }
 /* زیر این پهنا شش مقصد و جعبهٔ جستجو در یک سطر جا نمی‌شوند. به‌جای اینکه
    نوار مقصدها بلغزد و «گزارش‌ها» بی‌هیچ نشانه‌ای پنهان بماند، جستجو
    می‌رود سطر دوم و نوار کامل دیده می‌شود. */
-@media (max-width: 1200px) {
+@media (max-width: 1300px) {
   .topbar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
   .main-nav { order: 2; overflow-x: visible; }
   .search-wrap { order: 3; flex-basis: 100%; max-width: none; }
@@ -3291,10 +3291,10 @@ select.input { cursor: pointer; }
    با شش مقصد در نوار، این نقطه از ۱۰۰۰ به ۱۲۰۰ آمد: وگرنه روی صفحهٔ
    ۱۱۰۰ پیکسلی جعبهٔ جستجو تا ۳۰ پیکسل له می‌شد و دکمه‌ها از نوار بیرون
    می‌زدند. جستجو هم کف پیدا کرد تا دیگر تا صفر جمع نشود. */
-@media (max-width: 1400px) {
+@media (max-width: 1600px) {
   .top-actions .btn.ghost { display: none; }
-  /* شش مقصد در یک سطر: کمی تنگ‌تر، ولی هر شش‌تا دیده می‌شوند */
-  .nav-btn { padding: 7px 10px; font-size: 12.5px; }
+  /* هفت مقصد در یک سطر: کمی تنگ‌تر، ولی هر هفت‌تا دیده می‌شوند */
+  .nav-btn { padding: 7px 9px; font-size: 12.5px; }
   .search-wrap { min-width: 96px; }
   .more-btn { display: grid; place-items: center; width: 36px; height: 36px; font-size: 19px; }
   .chip { max-width: 44%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -4488,6 +4488,240 @@ button.tally:hover .tally-label { color: var(--brass-ink); }
   .rep-plate-top { padding: 13px 15px 11px; gap: 12px; }
   .rep-big-n { font-size: 42px; }
   .rep-tally .tally { flex: 1 1 42%; min-width: 0; }
+}
+
+/* ================================================================
+   تگ، دسته و بایگانی اسناد
+   ================================================================ */
+.tag-field { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.tag-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.tag-input { min-width: 110px; flex: 1; }
+.tag-chip {
+  font: inherit;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: pointer;
+  animation: chip-in var(--t-fast) var(--ease) both;
+}
+.tag-chip::before { content: '#'; opacity: .5; }
+.tag-chip.ro { cursor: default; }
+button.tag-chip.ro { cursor: pointer; }
+.tag-x { opacity: .55; font-size: 12px; line-height: 1; }
+.tag-chip:hover .tag-x { opacity: 1; }
+.doc-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.doc-batch { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* سربرگ «روی همه بنشان» در بارگذاری دسته‌ای */
+.doc-add-modal { width: min(880px, 96vw); }
+.batch-head {
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  border-radius: var(--radius);
+  padding: 11px 13px;
+  margin-bottom: 14px;
+}
+.batch-head-top { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
+.batch-head-top h4 { margin: 0; font-size: 13px; }
+.batch-head .doc-add-fields { margin: 0; }
+.batch-apply { margin-top: 10px; }
+.dcase-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dcase-hint { line-height: 1.5; }
+.doc-batch-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+
+/* نوار پیشرفت بارگذاری */
+.doc-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.doc-progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--brass);
+  transition: width var(--t-mid) var(--ease);
+}
+.doc-progress-text { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+.doc-add-status { font-size: 13px; font-weight: 700; }
+.doc-add-status.ok { color: var(--moss); }
+.doc-add-status.bad { color: var(--cinnabar); cursor: help; }
+
+/* ---------------------------------------------------------- نمای بایگانی */
+.arc-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  padding: 20px 24px 52px;
+}
+.arc-view > * { max-width: 1180px; margin-inline: auto; }
+.arc-plate {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 15px 20px 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  animation: plate-in var(--t-slow) var(--ease) both;
+}
+.arc-plate::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: linear-gradient(to left, var(--brass), var(--brass-line) 60%, transparent);
+  transform-origin: right center;
+  animation: rule-draw var(--t-slow) var(--ease) both;
+}
+.arc-search { width: 100%; margin: 10px 0 10px; }
+.arc-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.arc-sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+.chip-btn.tag-filter::before { content: '#'; opacity: .5; margin-inline-end: 2px; }
+
+.arc-drop {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.arc-drop.over { border-color: var(--brass); background: var(--brass-soft); color: var(--brass-ink); }
+
+.arc-section { margin-bottom: 26px; }
+.arc-batches { display: flex; flex-direction: column; gap: 7px; }
+.arc-batch {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+  animation: rise var(--t-mid) var(--ease) both;
+}
+.arc-batch.open { border-color: var(--brass); box-shadow: var(--shadow-sm); }
+.arc-batch-head {
+  font: inherit;
+  text-align: start;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease);
+}
+.arc-batch-head:hover { background: var(--paper); }
+.arc-batch-n {
+  flex: none;
+  min-width: 38px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+.arc-batch-body { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.arc-batch-body b { font-size: 13px; }
+.arc-batch-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.arc-batch-go { color: var(--ink-400); font-size: 11px; }
+.arc-batch-actions { display: none; padding: 0 14px 10px; }
+.arc-batch.open .arc-batch-actions { display: flex; gap: 6px; }
+
+.arc-docs { list-style: none; margin: 0; padding: 0; }
+.arc-doc {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 13px;
+  margin-bottom: 7px;
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  animation: rise var(--t-mid) var(--ease) both;
+}
+.arc-doc.on-case { border-inline-start-color: var(--moss); }
+.arc-doc:not(.on-case) { border-inline-start-color: var(--brass); }
+.arc-doc-body { flex: 1; min-width: 0; }
+.arc-doc-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.arc-kind { font-size: 13px; }
+.arc-on-case {
+  font-size: 10.5px;
+  color: var(--moss);
+  background: var(--moss-soft);
+  border: 1px solid var(--moss-line);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.arc-loose {
+  font-size: 10.5px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.arc-doc-meta { display: flex; gap: 9px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-500); margin-top: 3px; }
+.arc-doc-name { font-size: 11px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arc-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.arc-actions { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.arc-actions .icon-btn { width: 28px; height: 28px; color: var(--ink-400); line-height: 0; }
+.arc-actions .icon-btn:hover { background: var(--paper-2); color: var(--ink-800); }
+.arc-actions .icon-btn.danger:hover { background: var(--cinnabar-soft); color: var(--cinnabar); }
+.arc-actions .icon-btn svg { width: 16px; height: 16px; }
+
+/* ------------------------------------------------- دسته و بایگانی کارها */
+.task-cats { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+.task-group-switch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--card);
+}
+.task.is-archived { opacity: .6; border-inline-start-style: dashed; }
+.task-archive-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 11px;
+  margin-bottom: 8px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 720px) {
+  .arc-view { padding: 14px 12px 40px; }
+  .arc-doc { flex-wrap: wrap; }
+  .arc-actions { width: 100%; justify-content: flex-end; }
+  .batch-head .doc-add-fields { grid-template-columns: 1fr; }
 }
 
 </style>
@@ -10730,6 +10964,7 @@ else if (typeof exports === 'object'){
     if (!n.status) n.status = n.done ? 'done' : 'open';
     if (n.caseId == null) n.caseId = '';
     if (!n.priority) n.priority = 'normal';
+    if (n.archived == null) n.archived = false;
     return n;
   }
 
@@ -10766,7 +11001,9 @@ else if (typeof exports === 'object'){
    * چون سررسید دارد؛ وگرنه آخرین یادداشت.
    */
   function headline(caseId) {
-    var open = forCase(caseId).filter(function (n) { return !n.done; });
+    var open = forCase(caseId).filter(function (n) {
+      return !n.done && !n.archived;
+    });
     if (!open.length) return null;
     var withDue = open.filter(function (n) { return n.followUp; });
     if (withDue.length) {
@@ -10780,7 +11017,9 @@ else if (typeof exports === 'object'){
 
   /** چند یادداشت باز دارد */
   function openCount(caseId) {
-    return forCase(caseId).filter(function (n) { return !n.done; }).length;
+    return forCase(caseId).filter(function (n) {
+      return !n.done && !n.archived;
+    }).length;
   }
 
   /** پیگیری باز: یادداشتی با تاریخ پیگیری که هنوز انجام‌نشده علامت خورده */
@@ -10922,7 +11161,7 @@ else if (typeof exports === 'object'){
     var today = J.today();
     var out = [];
     notes.forEach(function (n) {
-      if (!n.followUp || n.done) return;
+      if (!n.followUp || n.done || n.archived) return;
       /* کار بی‌پرونده هم سررسید دارد؛ rec خالی می‌ماند ولی حذف نمی‌شود —
          قبلاً همین‌جا از قلم می‌افتاد. ولی یادداشتی که پرونده‌اش پاک شده
          بی‌صاحب است و نمایش دادنش فقط گیج می‌کند. */
@@ -10950,21 +11189,90 @@ else if (typeof exports === 'object'){
 
   /**
    * tasks(f) — کارها با صافی اختیاری.
-   * f: { status:'open'|'done'|'cancelled', caseId, standalone:true, owner, category }
+   * f: { status, caseId, standalone, owner, category, archived }
+   *
+   * archived پیش‌فرض false است: کارِ بایگانی‌شده در هیچ فهرستی نمی‌آید
+   * مگر صریحاً خواسته شود. archived:'any' هر دو را می‌آورد.
    */
   function tasks(f) {
     f = f || {};
+    var wantArchived = f.archived === undefined ? false : f.archived;
     return notes.filter(function (n) {
       if (!isTask(n)) return false;
+      if (wantArchived !== 'any' && !!n.archived !== !!wantArchived) return false;
       if (f.status && n.status !== f.status) return false;
       if (f.standalone && n.caseId) return false;
       if (f.caseId != null && n.caseId !== f.caseId) return false;
       if (f.owner && n.owner !== f.owner) return false;
-      if (f.category && n.category !== f.category) return false;
+      if (f.category && (n.category || '') !== f.category) return false;
       /* کارِ وصل به پروندهٔ پاک‌شده را نشان نمی‌دهیم */
       if (n.caseId && !M.get(n.caseId)) return false;
       return true;
     }).sort(sortTasks);
+  }
+
+  /* ================================================================
+     بایگانی کار
+     ----------------------------------------------------------------
+     «بایگانی» با «انجام شد» فرق دارد و باید فرق داشته باشد: کارِ
+     انجام‌شده هنوز خبرِ این هفته است و باید دیده شود؛ کارِ بایگانی‌شده
+     تمام شده و فقط برای سابقه می‌ماند.
+     
+     بدون آن، فهرست کارهای بسته‌شده هر ماه بلندتر می‌شود تا جایی که کسی
+     بازش نمی‌کند — و آن‌وقت نه فهرست به درد می‌خورد نه بایگانی.
+     
+     وضعیت (انجام‌شده/لغو) دست نمی‌خورد، چون گزارش از روی آن حساب
+     می‌کند: بایگانی دربارهٔ دیده شدن است، نه دربارهٔ سرنوشتِ کار.
+     ================================================================ */
+  function archive(note) {
+    return update(note, { archived: true, archivedAt: J.today() });
+  }
+
+  function unarchive(note) {
+    return update(note, { archived: false, archivedAt: '' });
+  }
+
+  /** همهٔ کارهای بسته‌شده را یکجا بایگانی می‌کند */
+  function archiveClosed(olderThan) {
+    var list = notes.filter(function (n) {
+      if (!isTask(n) || n.archived) return false;
+      if (n.status !== 'done' && n.status !== 'cancelled') return false;
+      if (olderThan && (n.doneAt || '') > olderThan) return false;
+      return true;
+    });
+    if (!list.length) return Promise.resolve(0);
+    var today = J.today();
+    list.forEach(function (n) {
+      n.archived = true;
+      n.archivedAt = today;
+      n.editedAt = new Date().toISOString();
+    });
+    index();
+    return w.Store.put('notes', list).then(function () { return list.length; });
+  }
+
+  function archivedTasks() { return tasks({ archived: true }); }
+
+  /** دسته‌های کار با تعدادشان — برای صافی و گروه‌بندی در نمای کارها */
+  function taskCategories(f) {
+    var count = {}, order = [];
+    tasks(f || {}).forEach(function (t) {
+      var k = t.category || '';
+      if (!(k in count)) { count[k] = 0; order.push(k); }
+      count[k]++;
+    });
+    // دسته‌های تعریف‌شده اول و به ترتیب خودشان، بعد هرچه در داده هست
+    var out = [];
+    categories().forEach(function (c) {
+      if (count[c] != null) { out.push({ key: c, label: c, n: count[c] }); }
+    });
+    order.forEach(function (k) {
+      if (!k) return;
+      if (out.some(function (x) { return x.key === k; })) return;
+      out.push({ key: k, label: k, n: count[k] });
+    });
+    if (count[''] != null) out.push({ key: '', label: 'بدون دسته', n: count[''] });
+    return out;
   }
 
   /* فوری بالا، بعد سررسیدِ نزدیک‌تر، بی‌سررسید ته صف */
@@ -11067,6 +11375,10 @@ else if (typeof exports === 'object'){
     notes.forEach(function (n) {
       if (!isTask(n)) return;
       if (n.caseId && !M.get(n.caseId)) return;
+      /* کارِ بایگانی‌شده که هنوز باز است، نه باز شمرده می‌شود نه
+         عقب‌افتاده — بایگانی‌اش یعنی دیگر دنبالش نیستیم. ولی اگر
+         انجام یا لغو شده باشد، در آمار همان ماه سرِ جایش می‌ماند. */
+      if (n.archived && n.status === 'open') return;
       var field = null;
       if (n.status === 'open') {
         field = bucketOf(n) === 'overdue' ? 'overdue' : 'open';
@@ -11117,6 +11429,8 @@ else if (typeof exports === 'object'){
     tasks: tasks, standalone: standalone, taskBuckets: taskBuckets,
     todayTasks: todayTasks, bucketOf: bucketOf, BUCKETS: BUCKETS,
     report: report, presets: presets, categories: categories,
+    archive: archive, unarchive: unarchive, archiveClosed: archiveClosed,
+    archivedTasks: archivedTasks, taskCategories: taskCategories,
     addToList: addToList, usedValues: usedValues,
     PRIORITIES: PRIORITIES,
     clearMemory: clearMemory, preview: preview
@@ -12193,6 +12507,9 @@ else if (typeof exports === 'object'){
   var PERSON_KINDS = ['مدارک هویتی', 'حکم کارگزینی'];
 
   var PERSON_ROOT = '_مدارک اشخاص';
+  /* سندی که هیچ پرونده‌ای ندارد — «اسکن متفرقه» و هرچه هنوز معلوم نیست
+     مالِ کدام پرونده است. زیرپوشهٔ سال، و داخلش پوشهٔ همان دسته. */
+  var ARCHIVE_ROOT = '_بایگانی';
 
   /*
    * دستهٔ سند از روی نوعش درمی‌آید، نه با پرسیدن دوباره از کاربر: کسی که
@@ -12375,6 +12692,7 @@ else if (typeof exports === 'object'){
   var docs = [];           // همهٔ رکوردهای فراداده
   var byCase = {};
   var byPerson = {};
+  var generalDocs = [];    // سندهای بی‌پرونده
   var root = null;         // FileSystemDirectoryHandle پوشهٔ ریشه
   var rootName = '';
   var listeners = [];
@@ -12573,13 +12891,22 @@ else if (typeof exports === 'object'){
   function indexDocs() {
     byCase = {};
     byPerson = {};
+    generalDocs = [];
     docs.forEach(function (d) {
       if (d.scope === 'person') {
         (byPerson[d.personKey] = byPerson[d.personKey] || []).push(d);
         return;
       }
+      if (d.scope === 'general' || (!d.caseId && !d.personKey)) {
+        d.scope = 'general';
+        generalDocs.push(d);
+        return;
+      }
       if (!d.caseId) return;
       (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
+    });
+    generalDocs.sort(function (a, b) {
+      return (a.docDate || '') < (b.docDate || '') ? 1 : -1;
     });
     function byDate(a, b) { return (a.docDate || '') < (b.docDate || '') ? -1 : 1; }
     Object.keys(byPerson).forEach(function (k) { byPerson[k].sort(byDate); });
@@ -12596,8 +12923,8 @@ else if (typeof exports === 'object'){
     rec._docText = (byCase[caseId] || []).map(function (d) {
       // متن نامه هم جستجو می‌شود؛ همین است که «آن نامه‌ای که نوشته بود…»
       // را بدون باز کردن تک‌تک فایل‌ها پیدا می‌کند.
-      return [d.kind, d.title, d.letterNo, d.body, d.fileName]
-        .filter(Boolean).join(' ');
+      return [d.kind, d.title, d.letterNo, d.body, d.fileName,
+        (d.tags || []).join(' '), d.batchName].filter(Boolean).join(' ');
     }).join(' ');
     M.reindex(rec);
   }
@@ -12660,6 +12987,9 @@ else if (typeof exports === 'object'){
         title: meta.title || '',
         letterNo: meta.letterNo || '',
         body: meta.body || '',
+        tags: cleanTags(meta.tags),
+        batchId: meta.batchId || '',
+        batchName: meta.batchName || '',
         docDate: meta.docDate || J.today(),
         stage: KIND_STAGE[meta.kind] || '',
         size: file.size,
@@ -12678,6 +13008,211 @@ else if (typeof exports === 'object'){
           ' — فایل: ' + doc.fileName);
         return doc;
       });
+    });
+  }
+
+  /* ================================================================
+     سندِ بی‌پرونده و «دسته»
+     ----------------------------------------------------------------
+     دسته، ظرفِ سند نیست؛ یک نوبتِ کار است.
+     
+     اگر دسته ظرف بود، سندِ رأیِ پروندهٔ ۱۴۰۴۳۰۸ می‌رفت داخل «اسکن
+     یکشنبه» و از پوشهٔ پروندهٔ خودش بیرون می‌ماند — و روزی که آن کار
+     حذف شود، سند هم می‌رفت. پس هر سند همان‌جا که باید می‌نشیند، و دسته
+     فقط برچسبی است که موقع بارگذاری روی همه‌شان می‌خورد. یک دسته
+     می‌تواند هم‌زمان سندِ سه پرونده و پنج سندِ بی‌پرونده داشته باشد.
+     
+     فقط سندِ بی‌پرونده جای فیزیکیِ تازه لازم دارد؛ پوشه‌اش شکلِ همان
+     دسته را روی دیسک نگه می‌دارد، چون آن پوشه چیزی است که در ویندوز
+     هم بازش می‌کنید:
+     
+       _بایگانی/۱۴۰۵/۱۴۰۵-۰۶-۳۰ اسکن آرای صادره/
+     ================================================================ */
+
+  /** نام پوشهٔ یک دسته روی دیسک */
+  function batchFolderName(meta) {
+    var p = J.unpack(meta.docDate || J.today());
+    var day = p ? (p.jy + '-' + J.pad2(p.jm) + '-' + J.pad2(p.jd)) : '';
+    return safeName([day, meta.batchName || 'اسکن'].filter(Boolean).join(' '), day);
+  }
+
+  function archiveFolder(meta, create) {
+    var p = J.unpack(meta.docDate || J.today());
+    var year = p ? String(p.jy) : 'بدون سال';
+    return requireRoot().then(function (r) {
+      return r.getDirectoryHandle(ARCHIVE_ROOT, { create: !!create });
+    }).then(function (dir) {
+      return dir.getDirectoryHandle(year, { create: !!create });
+    }).then(function (dir) {
+      if (!meta.batchName) return dir;
+      return dir.getDirectoryHandle(batchFolderName(meta), { create: !!create });
+    });
+  }
+
+  /** مسیر خواناى پوشهٔ یک سند بی‌پرونده، برای نمایش و بازگشایی */
+  function archivePathOf(meta) {
+    var p = J.unpack(meta.docDate || J.today());
+    var year = p ? String(p.jy) : 'بدون سال';
+    return ARCHIVE_ROOT + '/' + year +
+      (meta.batchName ? '/' + batchFolderName(meta) : '');
+  }
+
+  /**
+   * افزودن سندِ بی‌پرونده.
+   * meta: {kind, title, letterNo, docDate, tags, batchId, batchName, body}
+   */
+  function addGeneralFile(file, meta) {
+    meta = meta || {};
+    return archiveFolder(meta, true).then(function (dir) {
+      var wanted = fileNameFor(meta, file.name, null);
+      return uniqueName(dir, wanted).then(function (name) {
+        return dir.getFileHandle(name, { create: true }).then(function (fh) {
+          return fh.createWritable().then(function (wr) {
+            return wr.write(file).then(function () { return wr.close(); });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      var doc = {
+        id: w.U.uid(), chain: w.U.uid(),
+        scope: 'general', caseId: '', caseNo: '',
+        folderName: archivePathOf(meta),
+        fileName: name, originalName: file.name,
+        kind: meta.kind || 'سایر',
+        category: meta.category || categoryOf(meta.kind || 'سایر'),
+        direction: meta.direction == null
+          ? directionOf(meta.kind || 'سایر') : meta.direction,
+        title: meta.title || '', letterNo: meta.letterNo || '',
+        body: meta.body || '',
+        tags: cleanTags(meta.tags),
+        batchId: meta.batchId || '', batchName: meta.batchName || '',
+        docDate: meta.docDate || J.today(),
+        stage: '', size: file.size, mime: file.type || '',
+        version: 1, superseded: false,
+        addedAt: new Date().toISOString(), addedAtJalali: J.stamp(),
+        user: M.state.settings.user || 'کاربر'
+      };
+      docs.push(doc);
+      indexDocs();
+      return persist([doc]).then(function () { return doc; });
+    });
+  }
+
+  function general() {
+    return generalDocs.filter(function (d) { return !d.superseded; });
+  }
+
+  /**
+   * دسته‌ها، تازه‌ترین اول.
+   * از روی خودِ سندها ساخته می‌شود، نه از یک انبار جدا: دسته چیزی جز
+   * «سندهایی با همین شناسه» نیست، و انبار جدا یعنی امکانِ ناهمخوانی.
+   */
+  function batches() {
+    var map = {};
+    docs.forEach(function (d) {
+      if (!d.batchId || d.superseded) return;
+      var b = map[d.batchId] || (map[d.batchId] = {
+        id: d.batchId, name: d.batchName || 'بدون نام',
+        at: d.addedAt, atJalali: d.addedAtJalali, date: d.docDate,
+        user: d.user, docs: [], cases: {}, tags: {}, general: 0, size: 0
+      });
+      b.docs.push(d);
+      b.size += d.size || 0;
+      if (d.caseId) b.cases[d.caseId] = true; else b.general++;
+      (d.tags || []).forEach(function (t) { b.tags[t] = true; });
+      if (d.addedAt < b.at) { b.at = d.addedAt; b.atJalali = d.addedAtJalali; }
+    });
+    return Object.keys(map).map(function (k) {
+      var b = map[k];
+      b.caseCount = Object.keys(b.cases).length;
+      b.tagList = Object.keys(b.tags);
+      return b;
+    }).sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+  }
+
+  function batch(id) {
+    return batches().filter(function (b) { return b.id === id; })[0] || null;
+  }
+
+  /**
+   * وصل کردن یک سندِ بی‌پرونده به پرونده.
+   *
+   * فقط فراداده عوض نمی‌شود — خودِ فایل هم روی دیسک به پوشهٔ آن پرونده
+   * منتقل می‌شود. اگر فایل در «_بایگانی» بماند و رکورد بگوید مالِ فلان
+   * پرونده است، دو حقیقت داریم و یکی‌شان دروغ است.
+   *
+   * جابه‌جایی در این API «کپی و حذف» است: getFileHandle کپی ندارد.
+   */
+  function attachToCase(doc, rec) {
+    if (!doc || doc.scope !== 'general') {
+      return Promise.reject(new Error('این سند از قبل به پرونده‌ای وصل است'));
+    }
+    if (!rec) return Promise.reject(new Error('پرونده مشخص نیست'));
+    var oldName = doc.fileName;
+    return readFile(doc).then(function (file) {
+      return caseFolder(rec, true).then(function (dir) {
+        var wanted = fileNameFor(doc, doc.originalName || oldName, null);
+        return uniqueName(dir, wanted).then(function (name) {
+          return dir.getFileHandle(name, { create: true }).then(function (fh) {
+            return fh.createWritable().then(function (wr) {
+              return wr.write(file).then(function () { return wr.close(); });
+            });
+          }).then(function () { return name; });
+        });
+      });
+    }).then(function (name) {
+      // فایل در جای تازه نشست؛ حالا نسخهٔ قدیمی برود
+      return archiveFolder(doc, false).then(function (dir) {
+        return dir.removeEntry(oldName).catch(function () { /* نبود، مهم نیست */ });
+      }).catch(function () { /* پوشه نبود */ }).then(function () { return name; });
+    }).then(function (name) {
+      doc.scope = 'case';
+      doc.caseId = rec.id;
+      doc.caseNo = rec.caseNo || '';
+      doc.folderName = rec.docFolder;
+      doc.fileName = name;
+      doc.stage = KIND_STAGE[doc.kind] || '';
+      doc.attachedAt = new Date().toISOString();
+      indexDocs();
+      return persist([doc]).then(function () {
+        M.addHistory('doc-attach', rec, [],
+          'سند بایگانی به این پرونده وصل شد: ' + doc.kind + ' — ' + doc.fileName);
+        return applyToCase(rec, doc).then(function () { return doc; });
+      });
+    });
+  }
+
+  /**
+   * جستجوی سندمحور — خروجی سند است نه پرونده.
+   * opts: { tags:[], kind, batchId, scope }
+   */
+  function searchDocs(q, opts) {
+    opts = opts || {};
+    var tokens = w.U.normalize(q || '').split(' ').filter(Boolean);
+    return docs.filter(function (d) {
+      if (d.superseded) return false;
+      if (opts.scope && (d.scope || 'case') !== opts.scope) return false;
+      if (opts.kind && d.kind !== opts.kind) return false;
+      if (opts.batchId && d.batchId !== opts.batchId) return false;
+      if (opts.tags && opts.tags.length) {
+        var has = d.tags || [];
+        for (var i = 0; i < opts.tags.length; i++) {
+          if (has.indexOf(opts.tags[i]) < 0) return false;
+        }
+      }
+      if (!tokens.length) return true;
+      var rec = d.caseId ? M.get(d.caseId) : null;
+      var blob = w.U.normalize([
+        d.kind, d.title, d.letterNo, d.body, d.fileName, d.originalName,
+        d.batchName, (d.tags || []).join(' '),
+        rec ? rec.caseNo : '', rec ? (rec.firstName + ' ' + rec.lastName) : ''
+      ].filter(Boolean).join(' '));
+      for (var k = 0; k < tokens.length; k++) {
+        if (blob.indexOf(tokens[k]) < 0) return false;
+      }
+      return true;
+    }).sort(function (a, b) {
+      return (a.addedAt || '') < (b.addedAt || '') ? 1 : -1;
     });
   }
 
@@ -12792,7 +13327,10 @@ else if (typeof exports === 'object'){
       if (!person) return Promise.reject(new Error('شخص این سند پیدا نشد'));
       return personFolder(person, false);
     }
-    return caseFolder(M.get(doc.caseId), false);
+    if (doc.scope === 'general') return archiveFolder(doc, false);
+    var rec = M.get(doc.caseId);
+    if (!rec) return Promise.reject(new Error('پروندهٔ این سند پیدا نشد'));
+    return caseFolder(rec, false);
   }
 
   /** فایل یک سند را از پوشه می‌خواند (برای پیش‌نمایش یا باز کردن) */
@@ -12963,6 +13501,82 @@ else if (typeof exports === 'object'){
 
   function kinds() {
     return M.state.lists.DocKinds || KINDS_DEFAULT;
+  }
+
+  /* ================================================================
+     تگ
+     ----------------------------------------------------------------
+     برچسب آزادِ محض بعد از سه ماه می‌شود «آرا»، «آراء» و «آرای صادره»،
+     و جستجو بی‌معنا می‌شود. پس تگ‌ها یک فهرست‌اند که رشد می‌کند: هرچه
+     تا امروز به کار رفته پیشنهاد می‌شود، و تگ تازه همان‌جا اضافه
+     می‌شود — در همان فهرستی که تنظیمات هم ویرایشش می‌کند.
+     ================================================================ */
+  var TAGS_DEFAULT = ['آرا', 'ابلاغ', 'دفاعیه', 'استعلام', 'اسکن انبوه', 'متفرقه'];
+
+  function tagList() {
+    return (M.state.lists || {}).DocTags || TAGS_DEFAULT;
+  }
+
+  /** تگ‌هایی که واقعاً روی سندی نشسته‌اند، پرتکرارترین اول */
+  function tagsInUse() {
+    var count = {};
+    docs.forEach(function (d) {
+      (d.tags || []).forEach(function (t) { count[t] = (count[t] || 0) + 1; });
+    });
+    return Object.keys(count).sort(function (a, b) {
+      return count[b] - count[a] || (a < b ? -1 : 1);
+    });
+  }
+
+  /** پیشنهادها: آنچه به کار رفته، بعد آنچه در فهرست هست */
+  function tagSuggestions() {
+    var seen = {}, out = [];
+    tagsInUse().concat(tagList()).forEach(function (t) {
+      if (!t || seen[t]) return;
+      seen[t] = 1;
+      out.push(t);
+    });
+    return out;
+  }
+
+  function addTag(name) {
+    var v = cleanTag(name);
+    if (!v) return Promise.reject(new Error('نام تگ خالی است'));
+    var lists = M.state.lists || {};
+    var cur = (lists.DocTags || TAGS_DEFAULT).slice();
+    if (cur.indexOf(v) >= 0) return Promise.resolve(v);
+    cur.push(v);
+    var next = {};
+    Object.keys(lists).forEach(function (k) { next[k] = lists[k]; });
+    next.DocTags = cur;
+    return M.saveLists(next).then(function () { return v; });
+  }
+
+  /* تگ نباید فاصلهٔ اضافه، ویرگول یا نیم‌فاصلهٔ سرگردان داشته باشد،
+     وگرنه «آرا » و «آرا» دو تگ می‌شوند. */
+  function cleanTag(t) {
+    return String(t == null ? '' : t)
+      .replace(/[،,]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function cleanTags(list) {
+    var seen = {}, out = [];
+    (list || []).forEach(function (t) {
+      var v = cleanTag(t);
+      if (!v || seen[v]) return;
+      seen[v] = 1;
+      out.push(v);
+    });
+    return out;
+  }
+
+  /** تگ‌های یک سند را عوض می‌کند */
+  function setTags(doc, list) {
+    doc.tags = cleanTags(list);
+    indexDocs();
+    return persist([doc]).then(function () { return doc; });
   }
 
   // ------------------------------------------------------ پشتیبان خودکار
@@ -13141,6 +13755,7 @@ else if (typeof exports === 'object'){
     return w.Store.getAll('docs').then(function (list) {
       docs = list || [];
       indexDocs();
+      if (!M.state.lists.DocTags) M.state.lists.DocTags = TAGS_DEFAULT.slice();
       if (!M.state.lists.DocKinds) {
         M.state.lists.DocKinds = KINDS_DEFAULT.slice();
       } else {
@@ -13158,6 +13773,7 @@ else if (typeof exports === 'object'){
   /** پاک کردن فرادادهٔ مستندات از حافظه، هنگام قفل شدن برنامه */
   function clearMemory() {
     docs = [];
+    generalDocs = [];
     byCase = {};
     byPerson = {};
     root = null;
@@ -13187,6 +13803,12 @@ else if (typeof exports === 'object'){
     scan: scan, register: register, renameFolder: renameFolder,
     hasStoredFolder: hasStoredFolder, storedFolderName: storedFolderName,
     PERSON_KINDS: PERSON_KINDS, PERSON_ROOT: PERSON_ROOT,
+    ARCHIVE_ROOT: ARCHIVE_ROOT,
+    addGeneralFile: addGeneralFile, general: general, attachToCase: attachToCase,
+    batches: batches, batch: batch, searchDocs: searchDocs,
+    tagList: tagList, tagsInUse: tagsInUse, tagSuggestions: tagSuggestions,
+    addTag: addTag, setTags: setTags, cleanTags: cleanTags,
+    archivePathOf: archivePathOf,
     forPerson: forPerson, currentForPerson: currentForPerson,
     allForPerson: allForPerson, addPersonFile: addPersonFile,
     personFolderNameFor: personFolderNameFor,
@@ -17577,7 +18199,8 @@ else if (typeof exports === 'object'){
     });
     titleByList.DocKinds = 'نوع سند (مستندات)';
     titleByList.TaskPresets = 'کارهای پرتکرار (دکمه‌های میان‌بر)';
-    titleByList.TaskCategories = 'دستهٔ کارهای بیرون از پرونده';
+    titleByList.TaskCategories = 'دستهٔ کارها';
+    titleByList.DocTags = 'تگ اسناد';
 
     names.forEach(function (name) {
       var ta = el('textarea.input.area', {
@@ -18992,7 +19615,11 @@ else if (typeof exports === 'object'){
       var packed = d[1] + d[2] + d[3];
       if (J.unpack(packed)) out.docDate = packed;
     }
-    var l = /(\d{2,6}[\/\-]\d{2,6}(?:[\/\-][؀-ۿ\w]+)*)/.exec(clean);
+    /* تاریخ را از نام برمی‌داریم پیش از حدسِ شمارهٔ نامه. وگرنه در
+       «۱۴۰۵-۰۶-۳۰-ray-1.pdf» خودِ تاریخ به‌عنوان شمارهٔ نامه خوانده
+       می‌شود — و در یک دستهٔ بیست‌تایی، بیست شمارهٔ غلط. */
+    var rest = d ? clean.replace(d[0], ' ') : clean;
+    var l = /(\d{2,6}[\/\-]\d{2,6}(?:[\/\-][؀-ۿ\w]+)*)/.exec(rest);
     if (l) out.letterNo = l[1];
     return out;
   }
@@ -19011,36 +19638,172 @@ else if (typeof exports === 'object'){
   }
 
   // --------------------------------------------------- پنجرهٔ افزودن مستندات
-  /** برای هر فایل یک ردیف با نوع، تاریخ، شمارهٔ نامه و عنوان */
+  /**
+   * ویرایشگر تگ: چیپ‌ها + یک ورودی با پیشنهاد.
+   *
+   * تگ آزادِ محض بعد از سه ماه می‌شود «آرا»، «آراء» و «آرای صادره»؛ پس
+   * هرچه تا امروز به کار رفته پیشنهاد می‌شود، پرتکرارترین اول.
+   */
+  function tagField(initial, onChange) {
+    var tags = D.cleanTags(initial || []);
+    var chips = el('div.tag-chips');
+    var listId = 'tags-' + w.U.uid();
+    var dl = el('datalist', { id: listId });
+    D.tagSuggestions().forEach(function (t) {
+      dl.appendChild(el('option', { value: t }));
+    });
+    var input = el('input.input.small.tag-input', {
+      type: 'text', list: listId, placeholder: 'تگ… (اختیاری)'
+    });
+
+    function emit() { if (onChange) onChange(tags.slice()); }
+
+    function paint() {
+      w.U.clear(chips);
+      tags.forEach(function (t) {
+        chips.appendChild(el('button.tag-chip', {
+          type: 'button', title: 'برداشتن این تگ',
+          onclick: function () {
+            tags = tags.filter(function (x) { return x !== t; });
+            paint();
+            emit();
+          }
+        }, [el('span', { text: t }), el('span.tag-x', { text: '×' })]));
+      });
+    }
+
+    function add(v) {
+      var next = D.cleanTags(tags.concat([v]));
+      if (next.length === tags.length) { input.value = ''; return; }
+      tags = next;
+      input.value = '';
+      paint();
+      emit();
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ',' || e.key === '،') {
+        e.preventDefault();
+        if (input.value.trim()) add(input.value);
+      } else if (e.key === 'Backspace' && !input.value && tags.length) {
+        tags.pop();
+        paint();
+        emit();
+      }
+    });
+    input.addEventListener('change', function () {
+      if (input.value.trim()) add(input.value);
+    });
+
+    paint();
+    var node = el('div.tag-field', null, [chips, input, dl]);
+    node.getTags = function () { return tags.slice(); };
+    node.setTags = function (list) { tags = D.cleanTags(list); paint(); };
+    return node;
+  }
+
+  /** ورودی پرونده: شماره، نام یا کد ملی */
+  function caseField(value, onPick) {
+    var listId = 'dcase-' + w.U.uid();
+    var dl = el('datalist', { id: listId });
+    M.state.cases.forEach(function (c) {
+      dl.appendChild(el('option', { value: caseLabel(c) }));
+    });
+    var input = el('input.input.small', {
+      type: 'text', list: listId, value: value || '',
+      placeholder: 'شماره، نام یا کد ملی — خالی یعنی بی‌پرونده'
+    });
+    var hint = el('span.muted.tiny.dcase-hint');
+    function sync() {
+      var rec = findCase(input.value);
+      hint.textContent = !input.value.trim() ? 'بی‌پرونده — در بایگانی می‌نشیند'
+        : (rec ? caseLabel(rec) : 'پیدا نشد؛ بی‌پرونده ثبت می‌شود');
+      hint.className = 'tiny dcase-hint ' + (!input.value.trim() || rec ? 'muted' : 'warn-text');
+      if (onPick) onPick(rec);
+    }
+    input.addEventListener('input', sync);
+    sync();
+    var node = el('div.dcase-field', null, [input, dl, hint]);
+    node.getCase = function () { return findCase(input.value); };
+    node.setValue = function (v) { input.value = v; sync(); };
+    return node;
+  }
+
+  function caseLabel(rec) {
+    return w.U.toLatinDigits(rec.caseNo || '') + ' — ' +
+      ([rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بدون نام') +
+      (rec.nationalId ? ' — ' + w.U.toLatinDigits(rec.nationalId) : '');
+  }
+
+  /** همان جستجوی «کارها»: شماره، نام، یا کد ملی */
+  function findCase(text) {
+    var raw = String(text || '').trim();
+    if (!raw) return null;
+    var head = w.U.toLatinDigits(raw.split('—')[0]).trim();
+    var norm = w.U.normalize(raw);
+    var exact = null, starts = null, has = null;
+    M.state.cases.forEach(function (c) {
+      var no = w.U.toLatinDigits(c.caseNo || '').trim();
+      var nid = w.U.toLatinDigits(c.nationalId || '').trim();
+      if (no && no === head) { exact = exact || c; return; }
+      if (nid && (nid === head || nid === w.U.toLatinDigits(raw).trim())) {
+        exact = exact || c;
+        return;
+      }
+      var name = w.U.normalize([c.firstName, c.lastName].filter(Boolean).join(' '));
+      if (!name || !norm) return;
+      if (name === norm) exact = exact || c;
+      else if (name.indexOf(norm) === 0) starts = starts || c;
+      else if (name.indexOf(norm) >= 0) has = has || c;
+    });
+    return exact || starts || has;
+  }
+
+  /**
+   * پنجرهٔ افزودن سند — یک سطر برای هر فایل.
+   *
+   * opts.freeCase: هر سطر پروندهٔ خودش را دارد و می‌تواند بی‌پرونده بماند
+   * (بارگذاری دسته‌ای از نمای بایگانی). بدون آن، همه‌چیز به rec می‌چسبد.
+   *
+   * با بیش از یک فایل، یک سربرگ بالا می‌آید که یک بار زده می‌شود و روی
+   * همه می‌نشیند — وگرنه برای بیست اسکن باید بیست بار نوع و تاریخ زد و
+   * کسی این کار را نمی‌کند.
+   */
   function addDialog(rec, files, onDone, opts) {
     opts = opts || {};
-    var person = w.Person.forCase(rec);
+    var freeCase = !!opts.freeCase;
+    var person = rec ? w.Person.forCase(rec) : null;
     var multiCase = person && person.caseCount > 1;
+    var batchId = w.U.uid();
 
-    var rows = files.map(function (file) {
+    var rows = files.map(function (file, idx) {
       var guess = guessFromName(file.name);
       /* آنچه پرونده از قبل دربارهٔ این نوع سند می‌داند — شمارهٔ نامه و
          تاریخش — همین‌جا از قبل پر می‌شود. کاربر دوباره تایپشان نمی‌کند. */
-      function fromCase(kind) {
+      function fromCase(kind, forRec) {
+        var target = forRec || state.rec;
         var map = D.fieldsForKind(kind);
-        if (!map) return {};
+        if (!map || !target) return {};
         return {
-          docDate: map.date ? (rec[map.date] || '') : '',
-          letterNo: map.no ? (rec[map.no] || '') : ''
+          docDate: map.date ? (target[map.date] || '') : '',
+          letterNo: map.no ? (target[map.no] || '') : ''
         };
       }
-      var known = fromCase(opts.kind || 'سایر');
       var state = {
         file: file,
+        rec: freeCase ? null : rec,
         kind: opts.kind || 'سایر',
-        docDate: known.docDate || guess.docDate || rec.intakeDate || J.today(),
-        letterNo: known.letterNo || guess.letterNo || '',
         title: '',
         body: '',
+        tags: (opts.tags || []).slice(),
         category: D.categoryOf(opts.kind || 'سایر'),
         direction: D.directionOf(opts.kind || 'سایر'),
-        scope: opts.scope || 'case'
+        scope: opts.scope || (freeCase ? 'general' : 'case')
       };
+      var known = fromCase(state.kind, state.rec);
+      state.docDate = known.docDate || guess.docDate ||
+        (state.rec ? state.rec.intakeDate : '') || J.today();
+      state.letterNo = known.letterNo || guess.letterNo || '';
 
       // سطح سند: این پرونده، یا مدرک مشترک شخص
       var scopeSel = el('select.input.small');
@@ -19050,7 +19813,7 @@ else if (typeof exports === 'object'){
         text: 'مدرک شخص' + (multiCase
           ? ' (مشترک بین ' + w.U.toFaDigits(person.caseCount) + ' پرونده)' : '')
       }));
-      scopeSel.value = state.scope;
+      scopeSel.value = state.scope === 'person' ? 'person' : 'case';
       scopeSel.addEventListener('change', function () { state.scope = scopeSel.value; });
 
       var kindSel = el('select.input.small');
@@ -19094,8 +19857,9 @@ else if (typeof exports === 'object'){
        * قبلی هم پاک نمی‌شود، زیر همان سند بایگانی می‌ماند.
        */
       function syncDup() {
-        var existing = state.scope === 'person' ? []
-          : D.sameKind(rec.id, state.kind);
+        var target = state.rec;
+        var existing = (state.scope === 'person' || !target) ? []
+          : D.sameKind(target.id, state.kind);
         state.existing = existing[existing.length - 1] || null;
         w.U.clear(dupNode);
         if (!state.existing) { state.dup = 'separate'; return; }
@@ -19114,7 +19878,7 @@ else if (typeof exports === 'object'){
         state.kind = kindSel.value;
         syncKind(true);
         // مدارک هویتی و حکم کارگزینی به شخص تعلق دارند، نه به یک پرونده
-        if (!opts.scope) {
+        if (!opts.scope && !freeCase) {
           state.scope = D.PERSON_KINDS.indexOf(state.kind) >= 0 ? 'person' : 'case';
           scopeSel.value = state.scope;
         }
@@ -19130,6 +19894,17 @@ else if (typeof exports === 'object'){
       });
       titleInput.addEventListener('input', function () { state.title = titleInput.value; });
 
+      var tagsField = tagField(state.tags, function (list) { state.tags = list; });
+
+      var caseNode = null;
+      if (freeCase) {
+        caseNode = caseField('', function (found) {
+          state.rec = found;
+          state.scope = found ? 'case' : 'general';
+          syncDup();
+        });
+      }
+
       /* متن نامه تاشده است: بیشتر وقت‌ها لازم نیست، و باز گذاشتنش پنجره را
          شلوغ می‌کند. ولی وقتی نوشته شود، در جستجوی پرونده هم پیدا می‌شود. */
       var bodyInput = el('textarea.input.area', {
@@ -19144,33 +19919,127 @@ else if (typeof exports === 'object'){
       syncKind(false);
       dirSel.value = state.direction;
 
+      var fields = [
+        el('label.mini', { text: 'نوع سند' }), kindSel,
+        el('label.mini', { text: 'وارده / صادره' }), dirSel
+      ];
+      if (freeCase) {
+        fields.push(el('label.mini', { text: 'پرونده' }), caseNode);
+      } else {
+        fields.push(el('label.mini', { text: 'سطح سند' }), scopeSel);
+      }
+      fields.push(
+        el('label.mini', { text: 'تاریخ سند' }), dateField,
+        el('label.mini', { text: 'شمارهٔ نامه' }), letterInput,
+        el('label.mini', { text: 'توضیح' }), titleInput,
+        el('label.mini', { text: 'تگ' }), tagsField
+      );
+
+      var statusNode = el('span.doc-add-status');
       state.node = el('div.doc-add-row', null, [
         el('div.doc-add-file', null, [
           el('span.doc-icon', { html: iconFor(file.name) }),
           el('span.doc-add-name', { text: file.name, title: file.name }),
           el('span.muted.tiny', { text: sizeText(file.size) }),
-          el('div.spacer'), catNode
+          el('div.spacer'), statusNode, catNode
         ]),
-        el('div.doc-add-fields', null, [
-          el('label.mini', { text: 'نوع سند' }), kindSel,
-          el('label.mini', { text: 'وارده / صادره' }), dirSel,
-          el('label.mini', { text: 'سطح سند' }), scopeSel,
-          el('label.mini', { text: 'تاریخ سند' }), dateField,
-          el('label.mini', { text: 'شمارهٔ نامه' }), letterInput,
-          el('label.mini', { text: 'توضیح' }), titleInput
-        ]),
+        el('div.doc-add-fields', null, fields),
         dupNode,
         bodyBox
       ]);
+      state.statusNode = statusNode;
+      state.index = idx;
+      /* سربرگ «روی همه بنشان» از همین دسته‌ها استفاده می‌کند */
+      state.apply = function (h) {
+        if (h.kind) {
+          state.kind = h.kind;
+          kindSel.value = h.kind;
+          syncKind(true);
+        }
+        if (h.docDate) { state.docDate = h.docDate; dateField.setValue(h.docDate); }
+        if (h.tags && h.tags.length) {
+          state.tags = D.cleanTags(state.tags.concat(h.tags));
+          tagsField.setTags(state.tags);
+        }
+        if (freeCase && h.caseText != null) {
+          caseNode.setValue(h.caseText);
+        }
+      };
       return state;
     });
 
-    var body = el('div.doc-add', null,
-      [el('p.muted.tiny', {
+    // ------------------------------------------------------------- سربرگ
+    var head = null;
+    var batchName = el('input.input.small', {
+      type: 'text', value: opts.batchName || '',
+      placeholder: 'مثلاً: اسکن آرای صادره'
+    });
+    if (rows.length > 1) {
+      var hKind = el('select.input.small');
+      hKind.appendChild(el('option', { value: '', text: '— بدون تغییر —' }));
+      D.kinds().forEach(function (k) {
+        hKind.appendChild(el('option', { value: k, text: k }));
+      });
+      var hDate = w.DatePicker.field('', function () { });
+      var hTags = tagField([], null);
+      var hCase = freeCase ? caseField('', null) : null;
+
+      head = el('div.batch-head', null, [
+        el('div.batch-head-top', null, [
+          el('h4', { text: 'روی همهٔ ' + w.U.toFaDigits(rows.length) + ' فایل' }),
+          el('span.muted.tiny', { text: 'هر سطر می‌تواند بعدش خودش را عوض کند.' })
+        ]),
+        el('div.doc-add-fields', null, ([
+          el('label.mini', { text: 'نوع سند' }), hKind,
+          el('label.mini', { text: 'تاریخ سند' }), hDate
+        ]).concat(freeCase
+          ? [el('label.mini', { text: 'پرونده' }), hCase] : [])
+          .concat([
+            el('label.mini', { text: 'تگ' }), hTags,
+            el('label.mini', { text: 'نام دسته' }), batchName
+          ])),
+        el('button.btn.small.primary.batch-apply', {
+          type: 'button', text: 'روی همه بنشان',
+          onclick: function () {
+            /* تاریخِ نیمه‌تایپ‌شده نباید روی بیست فایل بنشیند؛ اگر
+               خوانده نشد، تاریخ‌ها دست‌نخورده می‌مانند. */
+            var d = hDate.getValue ? hDate.getValue() : '';
+            if (d && !J.unpack(d)) {
+              w.U.toast('تاریخ خوانده نشد — به شکل ۱۴۰۴/۰۷/۲۰ بنویسید.', 'warn');
+              return;
+            }
+            var h = {
+              kind: hKind.value,
+              docDate: d,
+              tags: hTags.getTags(),
+              caseText: hCase ? hCase.querySelector('input').value : null
+            };
+            rows.forEach(function (r) { r.apply(h); });
+            w.U.toast('روی ' + w.U.toFaDigits(rows.length) + ' فایل نشست.', 'good');
+          }
+        })
+      ]);
+    }
+
+    var lead = freeCase
+      ? el('p.muted.tiny', {
+        text: 'سندی که پرونده‌اش را بزنید در پوشهٔ همان پرونده می‌نشیند؛ ' +
+          'بقیه در «' + D.ARCHIVE_ROOT + '» و زیر نام دسته.'
+      })
+      : el('p.muted.tiny', {
         text: 'سند پرونده در پوشهٔ «' + (rec.docFolder || D.folderNameFor(rec)) +
           '» ذخیره می‌شود و مدرک شخص در «' + D.PERSON_ROOT + '/' +
           (person ? D.personFolderNameFor(person) : '') + '».'
-      })].concat(rows.map(function (r) { return r.node; })));
+      });
+
+    var progress = el('div.doc-progress');
+    var bar = el('div.doc-progress-bar');
+    var progText = el('span.doc-progress-text');
+    progress.appendChild(bar);
+    progress.style.display = 'none';
+
+    var body = el('div.doc-add', null,
+      [lead, head, progress, progText].concat(rows.map(function (r) { return r.node; })));
 
     var m, busy = false;
     var save = el('button.btn.primary', {
@@ -19179,40 +20048,74 @@ else if (typeof exports === 'object'){
         if (busy) return;
         busy = true;
         save.textContent = 'در حال ذخیره…';
-        var filled = [], versions = 0;
-        rows.reduce(function (chain, r) {
+        progress.style.display = '';
+        var filled = [], versions = 0, done = 0, failed = 0, general = 0;
+        var bname = batchName.value.trim();
+
+        function step(n) {
+          done = n;
+          bar.style.width = Math.round((done / rows.length) * 100) + '%';
+          progText.textContent = w.U.toFaDigits(done) + ' از ' +
+            w.U.toFaDigits(rows.length) + ' ذخیره شد' +
+            (failed ? ' — ' + w.U.toFaDigits(failed) + ' ناموفق' : '');
+        }
+        step(0);
+
+        rows.reduce(function (chain, r, i) {
           return chain.then(function () {
             var meta = {
               kind: r.kind, docDate: r.docDate, category: r.category,
               direction: r.direction, body: r.body,
-              letterNo: r.letterNo, title: r.title
+              letterNo: r.letterNo, title: r.title,
+              tags: r.tags, batchId: batchId, batchName: bname
             };
+            var target = r.rec || (freeCase ? null : rec);
             if (r.scope === 'person' && person) {
               return D.addPersonFile(person, r.file, meta, rec);
+            }
+            if (!target) {
+              general += 1;
+              return D.addGeneralFile(r.file, meta);
             }
             /* سند تکراری: به‌جای سند دوم، نسخهٔ تازه از همان. نسخهٔ قبلی
                پاک نمی‌شود؛ زیر همان سند بایگانی می‌ماند. */
             if (r.dup === 'version' && r.existing) {
               versions += 1;
-              return D.addVersion(rec, r.existing, r.file, meta);
+              return D.addVersion(target, r.existing, r.file, meta);
             }
-            return D.addFile(rec, r.file, meta);
+            return D.addFile(target, r.file, meta);
           }).then(function (doc) {
             // هر مسیری که سند ثبت کند، فیلدهای پرونده را هم پر می‌کند
-            return D.applyToCase(rec, doc).then(function (list) {
+            var target = r.rec || (freeCase ? null : rec);
+            r.statusNode.textContent = '✓';
+            r.statusNode.className = 'doc-add-status ok';
+            if (!target) return null;
+            return D.applyToCase(target, doc).then(function (list) {
               filled = filled.concat(list);
             });
-          });
+          }).catch(function (err) {
+            /* یک فایلِ خراب نباید نوزده‌تای دیگر را زمین بزند */
+            failed += 1;
+            r.statusNode.textContent = '✕';
+            r.statusNode.className = 'doc-add-status bad';
+            r.statusNode.title = err && err.message ? err.message : String(err);
+          }).then(function () { step(i + 1); });
         }, Promise.resolve()).then(function () {
           m.close();
-          w.U.toast(w.U.toFaDigits(rows.length) + ' سند ذخیره شد' +
+          var ok = rows.length - failed;
+          w.U.toast(w.U.toFaDigits(ok) + ' سند ذخیره شد' +
+            (general ? ' (' + w.U.toFaDigits(general) + ' در بایگانی)' : '') +
             (versions ? ' (' + w.U.toFaDigits(versions) + ' نسخهٔ تازه)' : '') +
+            (failed ? ' — ' + w.U.toFaDigits(failed) + ' ناموفق' : '') +
             (filled.length
               ? ' و «' + filled.map(function (f) { return f.label; }).join('»، «') +
                 '» پر شد.'
-              : '.'), 'good');
+              : '.'), failed ? 'warn' : 'good');
+          if (bname) D.addTag(bname).catch(function () { /* تگ نشد، مهم نیست */ });
           onDone({
-            rows: rows.length, docDate: rows[0] && rows[0].docDate,
+            rows: rows.length, failed: failed, general: general,
+            docDate: rows[0] && rows[0].docDate,
+            batchId: batchId, batchName: bname,
             filled: filled, versions: versions
           });
         }).catch(function (err) {
@@ -19223,10 +20126,12 @@ else if (typeof exports === 'object'){
       }
     });
 
-    m = w.U.modal('افزودن سند به پرونده', body, [
+    m = w.U.modal(freeCase
+      ? 'بارگذاری دسته‌ای سند' : 'افزودن سند به پرونده', body, [
       el('button.btn.ghost', { type: 'button', text: 'انصراف', onclick: function () { m.close(); } }),
       save
     ]);
+    m.root.classList.add('doc-add-modal');
   }
 
   // ------------------------------------------------------- ویرایش مشخصات
@@ -19443,6 +20348,15 @@ else if (typeof exports === 'object'){
           el('b.doc-title', { text: headline, title: headline })
         ]),
         el('div.doc-meta', { text: meta }),
+        /* تگ‌ها اینجا هم دیده می‌شوند، وگرنه فقط در بایگانی معلوم‌اند و
+           کسی که از داخل پرونده نگاه می‌کند نمی‌داند سند تگ دارد. */
+        (doc.tags || []).length ? el('div.doc-tags', null,
+          doc.tags.map(function (t) {
+            return el('span.tag-chip.ro', { text: t });
+          })) : null,
+        doc.batchName ? el('div.doc-batch', {
+          text: 'از دستهٔ «' + doc.batchName + '»'
+        }) : null,
         el('div.doc-file', { text: doc.fileName, title: 'نام فایل در پوشهٔ پرونده' }),
         doc.missing ? el('div.doc-warn', {
           text: 'این فایل در پوشه پیدا نشد؛ شاید جابه‌جا یا حذف شده است.'
@@ -19652,6 +20566,19 @@ else if (typeof exports === 'object'){
       ]));
     }
 
+    /* بارگذاری دسته‌ای از داخل پرونده هم در دسترس است: نوبتِ اسکن معمولاً
+       از یک پرونده شروع می‌شود و بعد معلوم می‌شود چند پرونده را می‌گیرد. */
+    panel.appendChild(el('div.doc-batch-hint', null, [
+      el('span.muted.tiny', {
+        text: 'یک دسته اسکن دارید که مالِ چند پرونده است یا هنوز معلوم نیست؟'
+      }),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'بارگذاری دسته‌ای…',
+        title: 'هر فایل پروندهٔ خودش را می‌گیرد؛ بی‌پرونده‌ها به بایگانی می‌روند',
+        onclick: function () { batchUpload(refresh); }
+      })
+    ]));
+
     /* ناحیهٔ کشیدن‌و‌رها نازک است و تا فایلی بالای صفحه کشیده نشود، خودش را
        به رخ نمی‌کشد؛ یک کادر بزرگ خالی وسط پنل، فقط جا می‌گرفت. */
     var drop = el('div.doc-drop', null, [
@@ -19851,10 +20778,35 @@ else if (typeof exports === 'object'){
     });
   }
 
+  /**
+   * بارگذاری دسته‌ای — بدون پروندهٔ ثابت.
+   * هر فایل پروندهٔ خودش را دارد و می‌تواند بی‌پرونده بماند.
+   */
+  function batchUpload(onDone, files, opts) {
+    var st = D.status();
+    if (!st.supported) {
+      w.U.toast(w.Mobile.isPhone() ? w.Mobile.NO_FOLDER_MSG
+        : 'این مرورگر از ذخیرهٔ مستندات در پوشه پشتیبانی نمی‌کند.', 'warn');
+      return;
+    }
+    if (!st.linked) {
+      w.U.toast('اول از تب «مستندات» یا تنظیمات، پوشهٔ مستندات را انتخاب کنید.', 'warn');
+      return;
+    }
+    var o = opts || {};
+    o.freeCase = true;
+    if (files && files.length) { addDialog(null, files, onDone, o); return; }
+    pickFiles(true).then(function (list) {
+      if (list.length) addDialog(null, list, onDone, o);
+    });
+  }
+
   w.UIDocs = {
     render: render, iconFor: iconFor, sizeText: sizeText, thumb: thumb,
     isImage: isImage, isPdf: isPdf, releaseThumbs: releaseThumbs,
-    addFrom: addFrom, familyOf: familyOf, editDialog: editDialog,
+    addFrom: addFrom, batchUpload: batchUpload, tagField: tagField,
+    caseField: caseField, findCase: findCase, caseLabel: caseLabel,
+    familyOf: familyOf, editDialog: editDialog,
     saveDoc: saveDoc, zipDocs: zipDocs, pickFiles: pickFiles
   };
 })(window);
@@ -20487,7 +21439,8 @@ else if (typeof exports === 'object'){
     var late = !done && !cancelled && bucket === 'overdue';
 
     var cls = 'li.task' + (done ? '.is-done' : '') + (cancelled ? '.is-cancelled' : '') +
-      (late ? '.is-late' : '') + (task.priority === 'urgent' ? '.is-urgent' : '');
+      (late ? '.is-late' : '') + (task.priority === 'urgent' ? '.is-urgent' : '') +
+      (task.archived ? '.is-archived' : '');
 
     var box = el('button.task-check', {
       type: 'button',
@@ -20535,6 +21488,18 @@ else if (typeof exports === 'object'){
         'aria-label': 'لغو کار', text: '⦸',
         onclick: function () { askCancel(task, refresh); }
       }),
+      /* بایگانی فقط برای کارِ بسته‌شده معنا دارد: کارِ بازِ بایگانی‌شده
+         یعنی کاری که نه انجام شده نه دیده می‌شود. */
+      (done || cancelled) ? el('button.icon-btn.tiny', {
+        type: 'button',
+        title: task.archived ? 'برگرداندن از بایگانی' : 'بایگانی کن',
+        'aria-label': task.archived ? 'برگرداندن از بایگانی' : 'بایگانی',
+        html: w.Mobile.icon(task.archived ? 'upload' : 'backup'),
+        onclick: function () {
+          (task.archived ? N.unarchive(task) : N.archive(task))
+            .then(function () { if (refresh) refresh(); });
+        }
+      }) : null,
       el('button.icon-btn.tiny.danger', {
         type: 'button', title: 'حذف', 'aria-label': 'حذف',
         html: w.Mobile.icon('trash'),
@@ -20752,49 +21717,110 @@ else if (typeof exports === 'object'){
   function render(app, mount) {
     var st = app.state;
     if (!st.taskFilter) st.taskFilter = 'all';
+    if (st.taskCat == null) st.taskCat = null;      // null = همهٔ دسته‌ها
+    if (!st.taskGroup) st.taskGroup = 'due';        // due | cat
     var refresh = function () { app.render(); };
+    var archived = st.taskFilter === 'archived';
 
-    var f = {};
-    if (st.taskFilter === 'standalone') f.standalone = true;
-    var buckets = N.taskBuckets(f).map(function (b) {
-      return {
-        key: b.key, label: b.label,
-        items: b.items.filter(function (t) {
-          if (st.taskFilter === 'oncase') return !!t.caseId;
-          if (st.taskFilter === 'urgent') return t.priority === 'urgent';
-          return true;
-        })
-      };
-    });
-    var total = buckets.reduce(function (n, b) { return n + b.items.length; }, 0);
+    /* یک صافی، در یک جا: هر سه چیز (دامنه، دسته، بایگانی) به همین شکل
+       می‌رسند تا شمارنده و فهرست هیچ‌وقت از هم جدا نیفتند. */
+    function keep(t) {
+      if (st.taskFilter === 'oncase' && !t.caseId) return false;
+      if (st.taskFilter === 'urgent' && t.priority !== 'urgent') return false;
+      if (st.taskCat != null && (t.category || '') !== st.taskCat) return false;
+      return true;
+    }
+
+    var base = { archived: archived };
+    if (st.taskFilter === 'standalone') base.standalone = true;
+
+    var groups;
+    if (archived) {
+      var arc = N.tasks({ archived: true }).filter(keep);
+      arc.sort(function (a, b) { return (a.archivedAt || '') < (b.archivedAt || '') ? 1 : -1; });
+      groups = [{ key: 'archived', label: 'بایگانی‌شده', items: arc }];
+    } else if (st.taskGroup === 'cat') {
+      /* گروه‌بندی بر پایهٔ دسته — وقتی کارها را «موضوعی» می‌بینید نه
+         «زمانی»: همهٔ مکاتبات اداری با هم، همهٔ بایگانی و اسکن با هم. */
+      var byCat = {};
+      var order = [];
+      N.tasks({ status: 'open', archived: false }).filter(keep).forEach(function (t) {
+        var k = t.category || '';
+        if (!byCat[k]) { byCat[k] = []; order.push(k); }
+        byCat[k].push(t);
+      });
+      /* ترتیب: اول دسته‌های تعریف‌شده به ترتیب خودشان، بعد هرچه در داده
+         هست و در فهرست نیست، و ته صف بی‌دسته‌ها. */
+      var known = N.categories().filter(function (c) { return byCat[c]; });
+      var extra = order.filter(function (k) { return k && known.indexOf(k) < 0; });
+      groups = known.concat(extra).map(function (k) {
+        return { key: 'c', label: k, items: byCat[k] };
+      });
+      if (byCat['']) groups.push({ key: 'c', label: 'بدون دسته', items: byCat[''] });
+    } else {
+      groups = N.taskBuckets(base).map(function (b) {
+        return { key: b.key, label: b.label, items: b.items.filter(keep) };
+      });
+    }
+
+    var total = groups.reduce(function (n, b) { return n + b.items.length; }, 0);
     var s = N.stats();
+    var nArchived = N.tasks({ archived: true }).length;
+    var cats = N.taskCategories({ status: archived ? undefined : 'open',
+      archived: archived });
+
+    var filterRow = FILTERS.map(function (x) {
+      return el('button.chip-btn' + (st.taskFilter === x.key ? '.on' : ''), {
+        type: 'button', text: x.label,
+        onclick: function () { st.taskFilter = x.key; app.render(); }
+      });
+    });
+    if (nArchived) {
+      filterRow.push(el('button.chip-btn' + (archived ? '.on' : ''), {
+        type: 'button', text: 'بایگانی (' + fa(nArchived) + ')',
+        title: 'کارهای بسته‌شده‌ای که کنار گذاشته‌اید',
+        onclick: function () {
+          st.taskFilter = archived ? 'all' : 'archived';
+          app.render();
+        }
+      }));
+    }
+    filterRow.push(el('div.spacer'));
+    if (!archived) {
+      /* گروه‌بندی: زمانی یا موضوعی. هر دو بر یک دادهٔ واحد، فقط دو نگاه. */
+      filterRow.push(el('div.task-group-switch', { role: 'group' }, [
+        { k: 'due', t: 'بر پایهٔ سررسید' },
+        { k: 'cat', t: 'بر پایهٔ دسته' }
+      ].map(function (o) {
+        return el('button.fm-btn' + (st.taskGroup === o.k ? '.on' : ''), {
+          type: 'button', text: o.t,
+          onclick: function () { st.taskGroup = o.k; app.render(); }
+        });
+      })));
+    }
+    filterRow.push(el('button.btn.small.primary', {
+      type: 'button', text: '＋ کار تازه',
+      onclick: function () { dialog(app, {}, refresh); }
+    }));
 
     var head = el('header.wl-hero.task-hero', null, [
       el('div.wl-hero-date', { text: J.format(J.today(), { long: true }) }),
       el('h1.wl-hero-line', {
-        text: !s.openTasks ? 'کارِ بازی نمانده است.'
-          : (s.overdueTasks
-            ? fa(s.openTasks) + ' کار باز، که ' + fa(s.overdueTasks) + ' تای آن عقب افتاده.'
-            : fa(s.openTasks) + ' کار باز، همه در مهلت.')
+        text: archived
+          ? fa(nArchived) + ' کار در بایگانی.'
+          : (!s.openTasks ? 'کارِ بازی نمانده است.'
+            : (s.overdueTasks
+              ? fa(s.openTasks) + ' کار باز، که ' + fa(s.overdueTasks) + ' تای آن عقب افتاده.'
+              : fa(s.openTasks) + ' کار باز، همه در مهلت.'))
       }),
-      el('div.task-filters', null, FILTERS.map(function (x) {
-        return el('button.chip-btn' + (st.taskFilter === x.key ? '.on' : ''), {
-          type: 'button', text: x.label,
-          onclick: function () { st.taskFilter = x.key; app.render(); }
-        });
-      }).concat([
-        el('div.spacer'),
-        el('button.btn.small.primary', {
-          type: 'button', text: '＋ کار تازه',
-          onclick: function () { dialog(app, {}, refresh); }
-        })
-      ]))
+      el('div.task-filters', null, filterRow),
+      catBar(app, st, cats)
     ]);
 
     /* میان‌برهای ثبت سریع: همان کارهایی که هر روز تکرار می‌شوند، یک کلیک
        فاصله دارند. بدون پرونده ثبت می‌شوند چون از این صفحه معلوم نیست
        کدام پرونده مراد است. */
-    var quickBar = el('div.task-quick', null,
+    var quickBar = archived ? null : el('div.task-quick', null,
       [el('span.muted.tiny', { text: 'ثبت سریع برای امروز:' })].concat(
         N.presets().map(function (p) {
           return el('button.chip-btn', {
@@ -20814,7 +21840,7 @@ else if (typeof exports === 'object'){
       ]));
 
     var body = el('div.task-buckets');
-    buckets.forEach(function (b) {
+    groups.forEach(function (b) {
       if (!b.items.length) return;
       body.appendChild(el('section.task-bucket.b-' + b.key, null, [
         el('div.task-bucket-head', null, [
@@ -20832,34 +21858,91 @@ else if (typeof exports === 'object'){
     if (!total) {
       body.appendChild(el('div.empty-state', null, [
         el('p', {
-          text: st.taskFilter === 'all'
-            ? 'کاری ثبت نشده است. کارهای شفاهی و ارجاع‌های بیرون از پرونده را ' +
-              'همین‌جا بنویسید تا فراموش نشوند.'
-            : 'با این صافی کاری پیدا نشد.'
+          text: archived ? 'بایگانی خالی است.'
+            : (st.taskFilter === 'all' && st.taskCat == null
+              ? 'کاری ثبت نشده است. کارهای شفاهی و ارجاع‌های بیرون از پرونده را ' +
+                'همین‌جا بنویسید تا فراموش نشوند.'
+              : 'با این صافی کاری پیدا نشد.')
         }),
-        el('button.btn.primary', {
+        archived ? null : el('button.btn.primary', {
           type: 'button', text: 'ثبت کار تازه',
           onclick: function () { dialog(app, {}, refresh); }
         })
       ]));
     }
 
-    var closed = N.tasks({ status: 'done' }).concat(N.tasks({ status: 'cancelled' }));
-    if (closed.length) {
-      closed.sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
-      var doneBox = el('details.task-done-box', null, [
-        el('summary', { text: fa(closed.length) + ' کار بسته‌شده' })
-      ]);
-      doneBox.appendChild(el('ul.task-list', null, closed.slice(0, 60).map(function (t) {
-        return row(app, t, refresh);
-      })));
-      body.appendChild(doneBox);
+    if (!archived) {
+      var closed = N.tasks({ status: 'done' }).concat(N.tasks({ status: 'cancelled' }))
+        .filter(keep);
+      if (closed.length) {
+        closed.sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
+        var doneBox = el('details.task-done-box', null, [
+          el('summary', { text: fa(closed.length) + ' کار بسته‌شده' })
+        ]);
+        /* فهرست بسته‌شده‌ها هر ماه بلندتر می‌شود تا جایی که کسی بازش
+           نمی‌کند؛ یک دکمه، همه را یکجا کنار می‌گذارد. */
+        doneBox.appendChild(el('div.task-archive-bar', null, [
+          el('span.muted.tiny', {
+            text: 'کارِ بسته‌شده هنوز در فهرست می‌ماند تا ببینیدش. وقتی دیگر ' +
+              'لازم نبود، بایگانی‌اش کنید — از گزارش حذف نمی‌شود.'
+          }),
+          el('div.spacer'),
+          el('button.btn.small.ghost', {
+            type: 'button', text: 'بایگانی همهٔ ' + fa(closed.length) + ' کار',
+            onclick: function () {
+              w.U.confirmBox('بایگانی کارهای بسته‌شده',
+                fa(closed.length) + ' کار بایگانی می‌شود. از فهرست می‌روند ولی ' +
+                'در گزارش و بایگانی می‌مانند.', 'بایگانی کن').then(function (ok) {
+                  if (!ok) return;
+                  N.archiveClosed().then(function (n) {
+                    w.U.toast(fa(n) + ' کار بایگانی شد.', 'good');
+                    refresh();
+                  });
+                });
+            }
+          })
+        ]));
+        doneBox.appendChild(el('ul.task-list', null, closed.slice(0, 60).map(function (t) {
+          return row(app, t, refresh);
+        })));
+        body.appendChild(doneBox);
+      }
     }
 
-    body.appendChild(reportBlock(app));
+    if (!archived) body.appendChild(reportBlock(app));
 
     w.U.clear(mount);
     mount.appendChild(el('div.tasks-view', null, [head, quickBar, body]));
+  }
+
+  /** نوار دسته‌ها — صافی، نه گروه‌بندی؛ گروه‌بندی کلید جداگانه دارد */
+  function catBar(app, st, cats) {
+    if (!cats.length) return null;
+    var bar = el('div.task-cats', null, [
+      el('span.muted.tiny', { text: 'دسته:' }),
+      el('button.chip-btn' + (st.taskCat == null ? '.on' : ''), {
+        type: 'button', text: 'همه',
+        onclick: function () { st.taskCat = null; app.render(); }
+      })
+    ]);
+    cats.forEach(function (c) {
+      bar.appendChild(el('button.chip-btn' + (st.taskCat === c.key ? '.on' : ''), {
+        type: 'button', text: c.label + ' ' + fa(c.n),
+        onclick: function () {
+          st.taskCat = st.taskCat === c.key ? null : c.key;
+          app.render();
+        }
+      }));
+    });
+    bar.appendChild(el('button.chip-btn.chip-add', {
+      type: 'button', text: '＋ دسته',
+      title: 'افزودن دستهٔ تازه به فهرست',
+      onclick: function () {
+        askNewItem('دستهٔ تازه', 'TaskCategories', '',
+          'به فهرست دسته‌ها اضافه می‌شود.', function () { app.render(); });
+      }
+    }));
+    return bar;
   }
 
   w.UITasks = {
@@ -21075,6 +22158,431 @@ else if (typeof exports === 'object'){
   }
 
   w.UICalendar = { render: render };
+})(window);
+
+</script>
+<script>
+/* ==== js/ui.archive.js ==== */
+/*
+ * بایگانی — دسته‌های اسکن و سندهای بی‌پرونده.
+ *
+ * تا امروز هر سند یا به پرونده وصل بود یا به شخص. ولی کار واقعی
+ * دبیرخانه این‌طور نیست: یک نوبت می‌نشینید و یک دسته اسکن می‌کنید —
+ * «اسکن آرای صادره» — و بعضی‌شان مالِ پرونده‌های شماست و بعضی نه.
+ *
+ * دو چیز اینجا دیده می‌شود:
+ *
+ *   دسته‌ها  — هر نوبتِ بارگذاری، با نام و تاریخ و تعداد. دسته ظرفِ سند
+ *             نیست؛ برچسبی است که موقع بارگذاری روی همه می‌خورد. پس یک
+ *             دسته می‌تواند هم سندِ سه پرونده داشته باشد هم پنج سندِ
+ *             بی‌پرونده — و سند پرونده در پوشهٔ خودش مانده است.
+ *
+ *   سندهای بی‌پرونده — «اسکن متفرقه» و هرچه هنوز معلوم نیست مالِ کدام
+ *             پرونده است. هر کدام با دکمهٔ «وصل به پرونده» که فایل را
+ *             هم روی دیسک جابه‌جا می‌کند، نه فقط فراداده را.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model, D = w.Docs;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  function sizeText(bytes) {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return fa(bytes) + ' بایت';
+    if (bytes < 1048576) return fa(Math.round(bytes / 1024)) + ' کیلوبایت';
+    return fa((bytes / 1048576).toFixed(1)) + ' مگابایت';
+  }
+
+  // ------------------------------------------------------------ یک سند
+  function docRow(app, doc, refresh) {
+    var rec = doc.caseId ? M.get(doc.caseId) : null;
+    var meta = [];
+    if (doc.docDate) meta.push(el('span', { text: J.format(doc.docDate) }));
+    if (doc.letterNo) meta.push(el('span.reg-no', { text: w.U.toLatinDigits(doc.letterNo) }));
+    meta.push(el('span.muted', { text: sizeText(doc.size) }));
+    if (doc.batchName) meta.push(el('span.muted', { text: 'دسته: ' + doc.batchName }));
+
+    var tags = el('div.arc-tags', null, (doc.tags || []).map(function (t) {
+      return el('button.tag-chip.ro', {
+        type: 'button', title: 'جستجوی این تگ',
+        text: t,
+        onclick: function () {
+          app.state.archive.tags = [t];
+          app.state.archive.q = '';
+          app.render();
+        }
+      });
+    }));
+
+    var actions = el('div.arc-actions', null, [
+      rec ? el('button.btn.small.ghost', {
+        type: 'button', text: w.U.toLatinDigits(rec.caseNo || '') + ' ←',
+        title: 'رفتن به پرونده',
+        onclick: function () { app.openCase(rec.id); }
+      }) : el('button.btn.small', {
+        type: 'button', text: 'وصل به پرونده',
+        title: 'فایل هم روی دیسک به پوشهٔ همان پرونده منتقل می‌شود',
+        onclick: function () { attachDialog(app, doc, refresh); }
+      }),
+      el('button.icon-btn.tiny', {
+        type: 'button', title: 'ویرایش مشخصات', 'aria-label': 'ویرایش',
+        html: w.Mobile.icon('pencil'),
+        onclick: function () { w.UIDocs.editDialog(doc, refresh); }
+      }),
+      el('button.icon-btn.tiny', {
+        type: 'button', title: 'تگ‌ها', 'aria-label': 'تگ‌ها', text: '#',
+        onclick: function () { tagDialog(doc, refresh); }
+      }),
+      el('button.icon-btn.tiny.danger', {
+        type: 'button', title: 'حذف', 'aria-label': 'حذف',
+        html: w.Mobile.icon('trash'),
+        onclick: function () {
+          w.U.confirmBox('حذف سند',
+            'فایل «' + doc.fileName + '» از دیسک پاک شود؟', 'حذف کن')
+            .then(function (ok) {
+              if (ok) D.removeDoc(doc).then(refresh);
+            });
+        }
+      })
+    ]);
+
+    return el('li.arc-doc' + (rec ? '.on-case' : ''), null, [
+      w.UIDocs.thumb(doc, function () {
+        D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+      }),
+      el('div.arc-doc-body', null, [
+        el('div.arc-doc-top', null, [
+          el('b.arc-kind', { text: doc.kind }),
+          doc.title ? el('span.muted', { text: doc.title }) : null,
+          el('div.spacer'),
+          rec ? el('span.arc-on-case', { text: 'در پرونده' })
+            : el('span.arc-loose', { text: 'بی‌پرونده' })
+        ]),
+        el('div.arc-doc-meta', null, meta),
+        el('div.arc-doc-name', { text: doc.fileName, title: doc.folderName }),
+        tags
+      ]),
+      actions
+    ]);
+  }
+
+  /** وصل کردن سندِ بی‌پرونده به یک پرونده */
+  function attachDialog(app, doc, refresh) {
+    var field = w.UIDocs.caseField('', null);
+    var m;
+    var go = el('button.btn.primary', {
+      type: 'button', text: 'وصل کن',
+      onclick: function () {
+        var rec = field.getCase();
+        if (!rec) { w.U.toast('پرونده را مشخص کنید.', 'warn'); return; }
+        go.disabled = true;
+        go.textContent = 'در حال جابه‌جایی…';
+        D.attachToCase(doc, rec).then(function () {
+          m.close();
+          w.U.toast('سند به پروندهٔ ' + w.U.toLatinDigits(rec.caseNo || '') +
+            ' وصل شد و فایلش به پوشهٔ همان پرونده منتقل شد.', 'good');
+          refresh();
+        }).catch(function (e) {
+          go.disabled = false;
+          go.textContent = 'وصل کن';
+          w.U.toast('وصل کردن ناموفق بود: ' + e.message, 'bad');
+        });
+      }
+    });
+    m = w.U.modal('وصل کردن سند به پرونده', el('div', null, [
+      el('p', { text: doc.kind + ' — ' + doc.fileName }),
+      el('p.muted.tiny', {
+        text: 'فایل از پوشهٔ بایگانی به پوشهٔ همان پرونده منتقل می‌شود، نه ' +
+          'فقط فراداده. اگر نوع سند فیلدی در پرونده داشته باشد (تاریخ رأی، ' +
+          'شمارهٔ ابلاغ…) همان‌جا هم پر می‌شود.'
+      }),
+      field
+    ]), [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      go
+    ]);
+    m.root.classList.add('small-modal');
+  }
+
+  /** ویرایش تگ‌های یک سند */
+  function tagDialog(doc, refresh) {
+    var field = w.UIDocs.tagField(doc.tags || [], null);
+    var m;
+    m = w.U.modal('تگ‌های سند', el('div', null, [
+      el('p.muted.tiny', { text: doc.kind + ' — ' + doc.fileName }),
+      field
+    ]), [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'ذخیره',
+        onclick: function () {
+          D.setTags(doc, field.getTags()).then(function () {
+            m.close();
+            refresh();
+          });
+        }
+      })
+    ]);
+    m.root.classList.add('small-modal');
+  }
+
+  // ----------------------------------------------------------- دسته‌ها
+  function batchCard(app, b, refresh) {
+    var st = app.state.archive;
+    var open = st.batchId === b.id;
+    return el('article.arc-batch' + (open ? '.open' : ''), null, [
+      el('button.arc-batch-head', {
+        type: 'button',
+        onclick: function () {
+          st.batchId = open ? '' : b.id;
+          st.scope = '';
+          app.render();
+        }
+      }, [
+        el('span.arc-batch-n', { text: fa(b.docs.length) }),
+        el('span.arc-batch-body', null, [
+          el('b', { text: b.name }),
+          el('span.muted.tiny', {
+            text: J.format(b.date) + ' • ' + (b.user || '') + ' • ' +
+              sizeText(b.size) +
+              (b.caseCount ? ' • ' + fa(b.caseCount) + ' پرونده' : '') +
+              (b.general ? ' • ' + fa(b.general) + ' بی‌پرونده' : '')
+          })
+        ]),
+        el('div.arc-batch-tags', null, b.tagList.slice(0, 4).map(function (t) {
+          return el('span.tag-chip.ro', { text: t });
+        })),
+        el('span.arc-batch-go', { text: open ? '▲' : '▼' })
+      ]),
+      el('div.arc-batch-actions', null, [
+        el('button.btn.small.ghost', {
+          type: 'button', text: '⬇ زیپ این دسته',
+          title: fa(b.docs.length) + ' فایل در یک بسته',
+          onclick: function (e) {
+            e.stopPropagation();
+            w.UIDocs.zipDocs(b.docs, null, b.name);
+          }
+        })
+      ])
+    ]);
+  }
+
+  // ------------------------------------------------------------- صفحه
+  function render(app, mount) {
+    var st = app.state.archive || (app.state.archive = {
+      q: '', tags: [], batchId: '', scope: '', kind: ''
+    });
+    var refresh = function () { app.render(); };
+    var status = D.status();
+
+    if (!status.linked) {
+      w.U.clear(mount);
+      mount.appendChild(el('div.arc-view', null, [
+        el('div.empty-state', null, [
+          el('p', { text: 'پوشهٔ مستندات وصل نیست.' }),
+          el('p.muted.tiny', {
+            text: status.supported
+              ? 'بایگانی، سندها را در پوشهٔ واقعی روی دیسک نگه می‌دارد. ' +
+                'اول پوشه را انتخاب کنید.'
+              : w.Mobile.NO_FOLDER_MSG
+          }),
+          status.supported ? el('button.btn.primary', {
+            type: 'button', text: 'انتخاب پوشهٔ مستندات',
+            onclick: function () {
+              D.linkFolder().then(refresh).catch(function (e) {
+                if (e && e.name !== 'AbortError') w.U.toast(e.message, 'bad');
+              });
+            }
+          }) : null
+        ])
+      ]));
+      return;
+    }
+
+    var batches = D.batches();
+    var found = D.searchDocs(st.q, {
+      tags: st.tags, kind: st.kind, batchId: st.batchId,
+      scope: st.scope || undefined
+    });
+
+    // ------------------------------------------------------------ سربرگ
+    var search = el('input.input.arc-search', {
+      type: 'search', value: st.q,
+      placeholder: 'جستجو در سندها — نوع، تگ، شمارهٔ نامه، نام فایل، متن نامه، پرونده'
+    });
+    search.addEventListener('input', w.U.debounce(function () {
+      st.q = search.value;
+      app.render();
+      var again = document.querySelector('.arc-search');
+      if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+    }, 220));
+
+    var head = el('header.arc-head', null, [
+      el('div.arc-plate', null, [
+        el('div.wl-eyebrow', null, [
+          el('span.wl-eyebrow-tag', { text: 'بایگانی اسناد' }),
+          el('span.wl-eyebrow-date', {
+            text: fa(D.all().filter(function (d) { return !d.superseded; }).length) +
+              ' سند • ' + fa(batches.length) + ' دسته • ' +
+              fa(D.general().length) + ' بی‌پرونده'
+          }),
+          el('div.spacer'),
+          el('button.btn.small.primary', {
+            type: 'button', text: '＋ بارگذاری دسته‌ای',
+            onclick: function () {
+              w.UIDocs.batchUpload(function () { app.render(); });
+            }
+          })
+        ]),
+        search,
+        filterBar(app, st, batches)
+      ])
+    ]);
+
+    // ------------------------------------------------- کادر رها کردن فایل
+    var drop = el('div.arc-drop', null, [
+      el('span', { text: 'یک دسته فایل را همین‌جا رها کنید' })
+    ]);
+    ['dragenter', 'dragover'].forEach(function (evt) {
+      drop.addEventListener(evt, function (e) {
+        e.preventDefault();
+        drop.classList.add('over');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (evt) {
+      drop.addEventListener(evt, function () { drop.classList.remove('over'); });
+    });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var files = Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || []);
+      if (files.length) w.UIDocs.batchUpload(function () { app.render(); }, files);
+    });
+
+    var sections = [];
+
+    if (batches.length) {
+      sections.push(el('section.arc-section', null, [
+        el('div.wl-section-head', null, [
+          el('h2', { text: 'دسته‌های بارگذاری' }),
+          el('span.wl-count', { text: fa(batches.length) + ' دسته' }),
+          el('p.wl-sub', {
+            text: 'هر دسته یک نوبتِ کار است؛ سندِ پرونده‌دار در پوشهٔ ' +
+              'پروندهٔ خودش مانده و فقط برچسبِ دسته را دارد.'
+          })
+        ]),
+        el('div.arc-batches', null, batches.slice(0, 40).map(function (b) {
+          return batchCard(app, b, refresh);
+        }))
+      ]));
+    }
+
+    var title = st.batchId
+      ? 'سندهای دستهٔ «' + ((D.batch(st.batchId) || {}).name || '') + '»'
+      : (st.q || st.tags.length || st.kind || st.scope ? 'نتیجهٔ جستجو' : 'همهٔ سندها');
+
+    sections.push(el('section.arc-section', null, [
+      el('div.wl-section-head', null, [
+        el('h2', { text: title }),
+        el('span.wl-count', { text: fa(found.length) + ' سند' }),
+        el('div.spacer'),
+        found.length ? el('button.btn.small.ghost', {
+          type: 'button', text: '⬇ زیپ این نتیجه',
+          onclick: function () { w.UIDocs.zipDocs(found, null, title); }
+        }) : null
+      ]),
+      found.length
+        ? el('ul.arc-docs', null, found.slice(0, 200).map(function (d) {
+          return docRow(app, d, refresh);
+        }))
+        : el('div.empty-state', null, [
+          el('p', {
+            text: st.q || st.tags.length
+              ? 'سندی با این جستجو پیدا نشد.'
+              : 'هنوز سندی ثبت نشده است.'
+          })
+        ])
+    ]));
+
+    if (found.length > 200) {
+      sections.push(el('p.muted.tiny', {
+        text: 'فقط ۲۰۰ سند اول نشان داده شد؛ جستجو را باریک‌تر کنید.'
+      }));
+    }
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.arc-view', null,
+      [head, drop].concat(sections)));
+  }
+
+  /** چیپ‌های صافی: دامنه، نوع و تگ */
+  function filterBar(app, st, batches) {
+    var bar = el('div.arc-filters');
+
+    function chip(label, on, onclick, cls) {
+      return el('button.chip-btn' + (on ? '.on' : '') + (cls || ''), {
+        type: 'button', text: label, onclick: onclick
+      });
+    }
+
+    bar.appendChild(chip('همه', !st.scope && !st.batchId, function () {
+      st.scope = ''; st.batchId = '';
+      app.render();
+    }));
+    bar.appendChild(chip('بی‌پرونده', st.scope === 'general', function () {
+      st.scope = st.scope === 'general' ? '' : 'general';
+      st.batchId = '';
+      app.render();
+    }));
+    bar.appendChild(chip('روی پرونده', st.scope === 'case', function () {
+      st.scope = st.scope === 'case' ? '' : 'case';
+      st.batchId = '';
+      app.render();
+    }));
+
+    if (st.batchId) {
+      var b = D.batch(st.batchId);
+      bar.appendChild(el('button.fchip', {
+        type: 'button', title: 'برداشتن صافی دسته',
+        onclick: function () { st.batchId = ''; app.render(); }
+      }, [
+        el('span.fchip-op', { text: 'دسته' }),
+        el('span.fchip-v', { text: b ? b.name : '' }),
+        el('span.fchip-x', { text: '×' })
+      ]));
+    }
+
+    var tags = D.tagsInUse();
+    if (tags.length) {
+      bar.appendChild(el('span.arc-sep'));
+      tags.slice(0, 10).forEach(function (t) {
+        var on = st.tags.indexOf(t) >= 0;
+        bar.appendChild(chip(t, on, function () {
+          st.tags = on ? st.tags.filter(function (x) { return x !== t; })
+            : st.tags.concat([t]);
+          app.render();
+        }, '.tag-filter'));
+      });
+    }
+
+    if (st.tags.length || st.kind || st.q) {
+      bar.appendChild(el('button.linkish.tiny', {
+        type: 'button', text: 'پاک کردن جستجو',
+        onclick: function () {
+          st.q = ''; st.tags = []; st.kind = '';
+          app.render();
+        }
+      }));
+    }
+    return bar;
+  }
+
+  w.UIArchive = { render: render, attachDialog: attachDialog, tagDialog: tagDialog };
 })(window);
 
 </script>
@@ -22952,6 +24460,7 @@ else if (typeof exports === 'object'){
         expert: '', year: '', placeType: ''
       },
       reportData: null,
+      archive: { q: '', tags: [], batchId: '', scope: '', kind: '' },
       personKey: null
     }
   };
@@ -22971,6 +24480,7 @@ else if (typeof exports === 'object'){
        #/person/<کلید>       پروندهٔ شخص
        #/tasks               کارها
        #/calendar            تقویم
+       #/archive             بایگانی اسناد
        #/report              گزارش‌ها
 
      شمارهٔ پرونده در نشانی می‌آید نه شناسهٔ داخلی، چون نشانی را آدم
@@ -22992,6 +24502,7 @@ else if (typeof exports === 'object'){
     if (st.view === 'people') return '#/people';
     if (st.view === 'tasks') return '#/tasks';
     if (st.view === 'calendar') return '#/calendar';
+    if (st.view === 'archive') return '#/archive';
     if (st.view === 'report') return '#/report';
     if (st.view === 'list') return '#/list';
     return '#/';
@@ -23034,6 +24545,7 @@ else if (typeof exports === 'object'){
     else if (parts[0] === 'report') { st.view = 'report'; st.caseId = null; }
     else if (parts[0] === 'tasks') { st.view = 'tasks'; st.caseId = null; }
     else if (parts[0] === 'calendar') { st.view = 'calendar'; st.caseId = null; }
+    else if (parts[0] === 'archive') { st.view = 'archive'; st.caseId = null; }
     else if (parts[0] === 'people') { st.view = 'people'; st.personKey = null; }
     else if (parts[0] === 'person' && parts[1]) {
       st.view = 'person';
@@ -23130,6 +24642,16 @@ else if (typeof exports === 'object'){
     }
     app.state.dirty = false;
     app.state.view = 'calendar';
+    app.state.caseId = null;
+    app.render();
+  };
+
+  app.goArchive = function () {
+    if (app.state.dirty && !window.confirm('تغییرات ذخیره‌نشده از بین می‌رود. ادامه می‌دهید؟')) {
+      return;
+    }
+    app.state.dirty = false;
+    app.state.view = 'archive';
     app.state.caseId = null;
     app.render();
   };
@@ -23305,6 +24827,8 @@ else if (typeof exports === 'object'){
       w.UITasks.render(app, mount);
     } else if (app.state.view === 'calendar') {
       w.UICalendar.render(app, mount);
+    } else if (app.state.view === 'archive') {
+      w.UIArchive.render(app, mount);
     } else if (app.state.view === 'report') {
       w.UIReport.render(app, mount);
     } else if (app.state.view === 'people') {
@@ -23322,7 +24846,8 @@ else if (typeof exports === 'object'){
 
   var NAV_FOR_VIEW = {
     work: 'work', list: 'list', case: 'list', report: 'report',
-    tasks: 'tasks', calendar: 'calendar', people: 'people', person: 'people'
+    tasks: 'tasks', calendar: 'calendar', archive: 'archive',
+    people: 'people', person: 'people'
   };
 
   function updateNav() {
@@ -23423,6 +24948,11 @@ else if (typeof exports === 'object'){
         title: 'هر روز چه افتاده و چه در راه است',
         onclick: function () { app.goCalendar(); }
       }),
+      archive: el('button.nav-btn', {
+        type: 'button', text: 'بایگانی', 'data-nav': 'archive',
+        title: 'دسته‌های اسکن و سندهای بی‌پرونده',
+        onclick: function () { app.goArchive(); }
+      }),
       people: el('button.nav-btn', {
         type: 'button', text: 'اشخاص', 'data-nav': 'people',
         title: 'یک کارمند ممکن است چند پرونده داشته باشد',
@@ -23445,8 +24975,8 @@ else if (typeof exports === 'object'){
         ])
       ]),
       el('nav.main-nav', null, [navButtons.work, navButtons.list,
-        navButtons.tasks, navButtons.calendar, navButtons.people,
-        navButtons.report]),
+        navButtons.tasks, navButtons.calendar, navButtons.archive,
+        navButtons.people, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -23509,6 +25039,11 @@ else if (typeof exports === 'object'){
         icon: 'filter', label: 'دامنهٔ کار',
         hint: 'کدام پرونده‌ها شمرده شوند',
         onclick: function () { w.UIScope.dialog(app); }
+      },
+      {
+        icon: 'fileZip', label: 'بایگانی اسناد',
+        hint: 'دسته‌های اسکن و سندهای بی‌پرونده',
+        onclick: function () { app.goArchive(); }
       },
       {
         icon: 'refresh', label: 'به‌روزرسانی',

@@ -412,7 +412,8 @@
     var late = !done && !cancelled && bucket === 'overdue';
 
     var cls = 'li.task' + (done ? '.is-done' : '') + (cancelled ? '.is-cancelled' : '') +
-      (late ? '.is-late' : '') + (task.priority === 'urgent' ? '.is-urgent' : '');
+      (late ? '.is-late' : '') + (task.priority === 'urgent' ? '.is-urgent' : '') +
+      (task.archived ? '.is-archived' : '');
 
     var box = el('button.task-check', {
       type: 'button',
@@ -460,6 +461,18 @@
         'aria-label': 'لغو کار', text: '⦸',
         onclick: function () { askCancel(task, refresh); }
       }),
+      /* بایگانی فقط برای کارِ بسته‌شده معنا دارد: کارِ بازِ بایگانی‌شده
+         یعنی کاری که نه انجام شده نه دیده می‌شود. */
+      (done || cancelled) ? el('button.icon-btn.tiny', {
+        type: 'button',
+        title: task.archived ? 'برگرداندن از بایگانی' : 'بایگانی کن',
+        'aria-label': task.archived ? 'برگرداندن از بایگانی' : 'بایگانی',
+        html: w.Mobile.icon(task.archived ? 'upload' : 'backup'),
+        onclick: function () {
+          (task.archived ? N.unarchive(task) : N.archive(task))
+            .then(function () { if (refresh) refresh(); });
+        }
+      }) : null,
       el('button.icon-btn.tiny.danger', {
         type: 'button', title: 'حذف', 'aria-label': 'حذف',
         html: w.Mobile.icon('trash'),
@@ -677,49 +690,110 @@
   function render(app, mount) {
     var st = app.state;
     if (!st.taskFilter) st.taskFilter = 'all';
+    if (st.taskCat == null) st.taskCat = null;      // null = همهٔ دسته‌ها
+    if (!st.taskGroup) st.taskGroup = 'due';        // due | cat
     var refresh = function () { app.render(); };
+    var archived = st.taskFilter === 'archived';
 
-    var f = {};
-    if (st.taskFilter === 'standalone') f.standalone = true;
-    var buckets = N.taskBuckets(f).map(function (b) {
-      return {
-        key: b.key, label: b.label,
-        items: b.items.filter(function (t) {
-          if (st.taskFilter === 'oncase') return !!t.caseId;
-          if (st.taskFilter === 'urgent') return t.priority === 'urgent';
-          return true;
-        })
-      };
-    });
-    var total = buckets.reduce(function (n, b) { return n + b.items.length; }, 0);
+    /* یک صافی، در یک جا: هر سه چیز (دامنه، دسته، بایگانی) به همین شکل
+       می‌رسند تا شمارنده و فهرست هیچ‌وقت از هم جدا نیفتند. */
+    function keep(t) {
+      if (st.taskFilter === 'oncase' && !t.caseId) return false;
+      if (st.taskFilter === 'urgent' && t.priority !== 'urgent') return false;
+      if (st.taskCat != null && (t.category || '') !== st.taskCat) return false;
+      return true;
+    }
+
+    var base = { archived: archived };
+    if (st.taskFilter === 'standalone') base.standalone = true;
+
+    var groups;
+    if (archived) {
+      var arc = N.tasks({ archived: true }).filter(keep);
+      arc.sort(function (a, b) { return (a.archivedAt || '') < (b.archivedAt || '') ? 1 : -1; });
+      groups = [{ key: 'archived', label: 'بایگانی‌شده', items: arc }];
+    } else if (st.taskGroup === 'cat') {
+      /* گروه‌بندی بر پایهٔ دسته — وقتی کارها را «موضوعی» می‌بینید نه
+         «زمانی»: همهٔ مکاتبات اداری با هم، همهٔ بایگانی و اسکن با هم. */
+      var byCat = {};
+      var order = [];
+      N.tasks({ status: 'open', archived: false }).filter(keep).forEach(function (t) {
+        var k = t.category || '';
+        if (!byCat[k]) { byCat[k] = []; order.push(k); }
+        byCat[k].push(t);
+      });
+      /* ترتیب: اول دسته‌های تعریف‌شده به ترتیب خودشان، بعد هرچه در داده
+         هست و در فهرست نیست، و ته صف بی‌دسته‌ها. */
+      var known = N.categories().filter(function (c) { return byCat[c]; });
+      var extra = order.filter(function (k) { return k && known.indexOf(k) < 0; });
+      groups = known.concat(extra).map(function (k) {
+        return { key: 'c', label: k, items: byCat[k] };
+      });
+      if (byCat['']) groups.push({ key: 'c', label: 'بدون دسته', items: byCat[''] });
+    } else {
+      groups = N.taskBuckets(base).map(function (b) {
+        return { key: b.key, label: b.label, items: b.items.filter(keep) };
+      });
+    }
+
+    var total = groups.reduce(function (n, b) { return n + b.items.length; }, 0);
     var s = N.stats();
+    var nArchived = N.tasks({ archived: true }).length;
+    var cats = N.taskCategories({ status: archived ? undefined : 'open',
+      archived: archived });
+
+    var filterRow = FILTERS.map(function (x) {
+      return el('button.chip-btn' + (st.taskFilter === x.key ? '.on' : ''), {
+        type: 'button', text: x.label,
+        onclick: function () { st.taskFilter = x.key; app.render(); }
+      });
+    });
+    if (nArchived) {
+      filterRow.push(el('button.chip-btn' + (archived ? '.on' : ''), {
+        type: 'button', text: 'بایگانی (' + fa(nArchived) + ')',
+        title: 'کارهای بسته‌شده‌ای که کنار گذاشته‌اید',
+        onclick: function () {
+          st.taskFilter = archived ? 'all' : 'archived';
+          app.render();
+        }
+      }));
+    }
+    filterRow.push(el('div.spacer'));
+    if (!archived) {
+      /* گروه‌بندی: زمانی یا موضوعی. هر دو بر یک دادهٔ واحد، فقط دو نگاه. */
+      filterRow.push(el('div.task-group-switch', { role: 'group' }, [
+        { k: 'due', t: 'بر پایهٔ سررسید' },
+        { k: 'cat', t: 'بر پایهٔ دسته' }
+      ].map(function (o) {
+        return el('button.fm-btn' + (st.taskGroup === o.k ? '.on' : ''), {
+          type: 'button', text: o.t,
+          onclick: function () { st.taskGroup = o.k; app.render(); }
+        });
+      })));
+    }
+    filterRow.push(el('button.btn.small.primary', {
+      type: 'button', text: '＋ کار تازه',
+      onclick: function () { dialog(app, {}, refresh); }
+    }));
 
     var head = el('header.wl-hero.task-hero', null, [
       el('div.wl-hero-date', { text: J.format(J.today(), { long: true }) }),
       el('h1.wl-hero-line', {
-        text: !s.openTasks ? 'کارِ بازی نمانده است.'
-          : (s.overdueTasks
-            ? fa(s.openTasks) + ' کار باز، که ' + fa(s.overdueTasks) + ' تای آن عقب افتاده.'
-            : fa(s.openTasks) + ' کار باز، همه در مهلت.')
+        text: archived
+          ? fa(nArchived) + ' کار در بایگانی.'
+          : (!s.openTasks ? 'کارِ بازی نمانده است.'
+            : (s.overdueTasks
+              ? fa(s.openTasks) + ' کار باز، که ' + fa(s.overdueTasks) + ' تای آن عقب افتاده.'
+              : fa(s.openTasks) + ' کار باز، همه در مهلت.'))
       }),
-      el('div.task-filters', null, FILTERS.map(function (x) {
-        return el('button.chip-btn' + (st.taskFilter === x.key ? '.on' : ''), {
-          type: 'button', text: x.label,
-          onclick: function () { st.taskFilter = x.key; app.render(); }
-        });
-      }).concat([
-        el('div.spacer'),
-        el('button.btn.small.primary', {
-          type: 'button', text: '＋ کار تازه',
-          onclick: function () { dialog(app, {}, refresh); }
-        })
-      ]))
+      el('div.task-filters', null, filterRow),
+      catBar(app, st, cats)
     ]);
 
     /* میان‌برهای ثبت سریع: همان کارهایی که هر روز تکرار می‌شوند، یک کلیک
        فاصله دارند. بدون پرونده ثبت می‌شوند چون از این صفحه معلوم نیست
        کدام پرونده مراد است. */
-    var quickBar = el('div.task-quick', null,
+    var quickBar = archived ? null : el('div.task-quick', null,
       [el('span.muted.tiny', { text: 'ثبت سریع برای امروز:' })].concat(
         N.presets().map(function (p) {
           return el('button.chip-btn', {
@@ -739,7 +813,7 @@
       ]));
 
     var body = el('div.task-buckets');
-    buckets.forEach(function (b) {
+    groups.forEach(function (b) {
       if (!b.items.length) return;
       body.appendChild(el('section.task-bucket.b-' + b.key, null, [
         el('div.task-bucket-head', null, [
@@ -757,34 +831,91 @@
     if (!total) {
       body.appendChild(el('div.empty-state', null, [
         el('p', {
-          text: st.taskFilter === 'all'
-            ? 'کاری ثبت نشده است. کارهای شفاهی و ارجاع‌های بیرون از پرونده را ' +
-              'همین‌جا بنویسید تا فراموش نشوند.'
-            : 'با این صافی کاری پیدا نشد.'
+          text: archived ? 'بایگانی خالی است.'
+            : (st.taskFilter === 'all' && st.taskCat == null
+              ? 'کاری ثبت نشده است. کارهای شفاهی و ارجاع‌های بیرون از پرونده را ' +
+                'همین‌جا بنویسید تا فراموش نشوند.'
+              : 'با این صافی کاری پیدا نشد.')
         }),
-        el('button.btn.primary', {
+        archived ? null : el('button.btn.primary', {
           type: 'button', text: 'ثبت کار تازه',
           onclick: function () { dialog(app, {}, refresh); }
         })
       ]));
     }
 
-    var closed = N.tasks({ status: 'done' }).concat(N.tasks({ status: 'cancelled' }));
-    if (closed.length) {
-      closed.sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
-      var doneBox = el('details.task-done-box', null, [
-        el('summary', { text: fa(closed.length) + ' کار بسته‌شده' })
-      ]);
-      doneBox.appendChild(el('ul.task-list', null, closed.slice(0, 60).map(function (t) {
-        return row(app, t, refresh);
-      })));
-      body.appendChild(doneBox);
+    if (!archived) {
+      var closed = N.tasks({ status: 'done' }).concat(N.tasks({ status: 'cancelled' }))
+        .filter(keep);
+      if (closed.length) {
+        closed.sort(function (a, b) { return (a.doneAt || '') < (b.doneAt || '') ? 1 : -1; });
+        var doneBox = el('details.task-done-box', null, [
+          el('summary', { text: fa(closed.length) + ' کار بسته‌شده' })
+        ]);
+        /* فهرست بسته‌شده‌ها هر ماه بلندتر می‌شود تا جایی که کسی بازش
+           نمی‌کند؛ یک دکمه، همه را یکجا کنار می‌گذارد. */
+        doneBox.appendChild(el('div.task-archive-bar', null, [
+          el('span.muted.tiny', {
+            text: 'کارِ بسته‌شده هنوز در فهرست می‌ماند تا ببینیدش. وقتی دیگر ' +
+              'لازم نبود، بایگانی‌اش کنید — از گزارش حذف نمی‌شود.'
+          }),
+          el('div.spacer'),
+          el('button.btn.small.ghost', {
+            type: 'button', text: 'بایگانی همهٔ ' + fa(closed.length) + ' کار',
+            onclick: function () {
+              w.U.confirmBox('بایگانی کارهای بسته‌شده',
+                fa(closed.length) + ' کار بایگانی می‌شود. از فهرست می‌روند ولی ' +
+                'در گزارش و بایگانی می‌مانند.', 'بایگانی کن').then(function (ok) {
+                  if (!ok) return;
+                  N.archiveClosed().then(function (n) {
+                    w.U.toast(fa(n) + ' کار بایگانی شد.', 'good');
+                    refresh();
+                  });
+                });
+            }
+          })
+        ]));
+        doneBox.appendChild(el('ul.task-list', null, closed.slice(0, 60).map(function (t) {
+          return row(app, t, refresh);
+        })));
+        body.appendChild(doneBox);
+      }
     }
 
-    body.appendChild(reportBlock(app));
+    if (!archived) body.appendChild(reportBlock(app));
 
     w.U.clear(mount);
     mount.appendChild(el('div.tasks-view', null, [head, quickBar, body]));
+  }
+
+  /** نوار دسته‌ها — صافی، نه گروه‌بندی؛ گروه‌بندی کلید جداگانه دارد */
+  function catBar(app, st, cats) {
+    if (!cats.length) return null;
+    var bar = el('div.task-cats', null, [
+      el('span.muted.tiny', { text: 'دسته:' }),
+      el('button.chip-btn' + (st.taskCat == null ? '.on' : ''), {
+        type: 'button', text: 'همه',
+        onclick: function () { st.taskCat = null; app.render(); }
+      })
+    ]);
+    cats.forEach(function (c) {
+      bar.appendChild(el('button.chip-btn' + (st.taskCat === c.key ? '.on' : ''), {
+        type: 'button', text: c.label + ' ' + fa(c.n),
+        onclick: function () {
+          st.taskCat = st.taskCat === c.key ? null : c.key;
+          app.render();
+        }
+      }));
+    });
+    bar.appendChild(el('button.chip-btn.chip-add', {
+      type: 'button', text: '＋ دسته',
+      title: 'افزودن دستهٔ تازه به فهرست',
+      onclick: function () {
+        askNewItem('دستهٔ تازه', 'TaskCategories', '',
+          'به فهرست دسته‌ها اضافه می‌شود.', function () { app.render(); });
+      }
+    }));
+    return bar;
   }
 
   w.UITasks = {
