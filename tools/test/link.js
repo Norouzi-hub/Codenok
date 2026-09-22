@@ -111,10 +111,11 @@ function check(name, ok, extra) {
   const inTasks = await page.evaluate((b) => {
     const t = window.Notes.tasksOfBatch(b);
     return { n: t.length, allDone: t.every(x => x.status === 'done'),
-      linked: t.every(x => x.batchId === b) };
+      linked: t.every(x => x.batchId === b), onCase: t.some(x => !!x.caseId) };
   }, made.batchId);
-  check('۲) کارها: کارِ انجام‌شده، با پیوند به همان دسته',
-    inTasks.n === 3 && inTasks.allDone && inTasks.linked, inTasks.n + ' کار');
+  check('۲) کارها: یک کارِ انجام‌شده، بی‌پرونده، با پیوند به همان دسته',
+    inTasks.n === 1 && inTasks.allDone && inTasks.linked && !inTasks.onCase,
+    inTasks.n + ' کار');
 
   const inCalendar = await page.evaluate(async () => {
     const J = window.J, today = J.today();
@@ -144,7 +145,7 @@ function check(name, ok, extra) {
     inCalendar.docLayer.length === 1, inCalendar.doneTasks + ' کار');
   /* یک رویداد، یک سطر: کارِ ساخته‌شده از دسته با خودِ دسته دوتایی نشود */
   check('و کارِ ساخته‌شده از دسته، سطر دوم نمی‌سازد',
-    inCalendar.batchTasksWithDoc === 0 && inCalendar.batchTasksWithoutDoc === 3,
+    inCalendar.batchTasksWithDoc === 0 && inCalendar.batchTasksWithoutDoc === 1,
     'با لایهٔ سند ' + inCalendar.batchTasksWithDoc +
     ' / بدونش ' + inCalendar.batchTasksWithoutDoc);
 
@@ -180,7 +181,7 @@ function check(name, ok, extra) {
   });
   check('۷) کارنامه: همان اعداد، از همان منبع',
     inKarnameh.docs === 10 && inKarnameh.batches === 1 &&
-    inKarnameh.tasks === 4 && inKarnameh.names[0] === 'اسکن آرا',
+    inKarnameh.tasks === 2 && inKarnameh.names[0] === 'اسکن آرا',
     JSON.stringify(inKarnameh));
 
   const inCase = await page.evaluate(async (ids) => {
@@ -197,12 +198,18 @@ function check(name, ok, extra) {
     await new Promise(r => setTimeout(r, 500));
     return {
       titles: titles,
-      batchLink: !!document.querySelector('.doc-batch button')
+      docs: document.querySelectorAll('.doc-item').length,
+      batchLink: !!document.querySelector('.doc-batch button'),
+      history: window.Model.historyFor(ids[0])
+        .filter(h => h.kind === 'doc-batch').length
     };
   }, made.caseIds);
-  check('۸) خودِ پرونده: کارِ همان پرونده در تبش دیده می‌شود',
-    inCase.titles.some(t => /از دستهٔ «اسکن آرا»/.test(t)),
-    inCase.titles.join(' | '));
+  /* ردِ کار در پرونده هست — ولی در مستندات و تاریخچه، نه در فهرست
+     کارهایش. تب «کارها و یادداشت‌ها» جای دست‌نوشتهٔ آدم است. */
+  check('۸) خودِ پرونده: سندش را دارد و ردش در تاریخچه، نه کارِ خودکار',
+    inCase.docs >= 1 && inCase.history === 1 && !inCase.titles.length,
+    inCase.docs + ' سند، ' + inCase.history + ' رویداد، ' +
+    inCase.titles.length + ' کارِ خودکار');
   check('و سند داخل پرونده، راه برگشت به دسته دارد', inCase.batchLink);
 
   const caseToArchive = await page.evaluate(async (b) => {
@@ -263,14 +270,15 @@ function check(name, ok, extra) {
 
   const b = scoped.before, a = scoped.after;
   check('بدون دامنه، همه‌چیز شمرده می‌شود',
-    b.docs === 10 && b.tasks === 4 && b.karnamehDocs === 10,
+    b.docs === 10 && b.tasks === 2 && b.karnamehDocs === 10,
     JSON.stringify(b));
   check('با دامنه، سندهای دو پروندهٔ ارجاع‌شده از بایگانی می‌روند',
     a.docs === 8 && a.search === 8 && a.batchDocs === 8,
     b.docs + ' → ' + a.docs);
-  check('و کارهایشان از کارها',
+  /* کارِ دسته بی‌پرونده است، پس دامنه رویش اثر ندارد — و همین درست
+     است: آن کار مالِ یک نوبتِ کار است نه مالِ یک پرونده. */
+  check('و کارهای پرونده‌دار از کارها',
     a.tasks === 2 && a.doneBetween === 2, b.tasks + ' → ' + a.tasks);
-  /* لایهٔ کار بدون لایهٔ سند سنجیده می‌شود تا کارهای دسته هم شمرده شوند */
   check('و از تقویم', a.calTask === 2, b.calTask + ' → ' + a.calTask);
   check('و کارنامه هم همان را می‌شمرد — نه عددی بیشتر، نه کمتر',
     a.karnamehDocs === a.docs && a.karnamehTasks === a.doneBetween,

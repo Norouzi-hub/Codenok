@@ -39,6 +39,16 @@
     }
 
     var actions = el('div.note-actions');
+    /*
+     * ویرایش یادداشت.
+     * تا امروز یادداشتِ نوشته‌شده فقط خواندنی بود و غلط تایپی یعنی
+     * حذف و نوشتن دوباره — که تاریخچه را هم شلوغ می‌کرد. متن و تاریخ
+     * پیگیری همان‌جا، درجا، ویرایش می‌شوند.
+     */
+    actions.appendChild(el('button.btn.small.ghost', {
+      type: 'button', text: 'ویرایش',
+      onclick: function () { editNote(note, refresh); }
+    }));
     if (note.followUp && !note.done) {
       actions.appendChild(el('button.btn.small', {
         type: 'button', text: 'انجام شد',
@@ -75,6 +85,51 @@
       ]),
       actions
     ]);
+  }
+
+  /** پنجرهٔ ویرایش یک یادداشت — متن و تاریخ پیگیری */
+  function editNote(note, refresh) {
+    var text = el('textarea.input.area', { rows: 4, value: note.text || '' });
+    var due = note.followUp || '';
+    var dateField = w.DatePicker.field(due, function (v) { due = v; });
+    var m;
+    var save = el('button.btn.primary', {
+      type: 'button', text: 'ذخیره',
+      onclick: function () {
+        var v = text.value.trim();
+        if (!v) { w.U.toast('متن یادداشت خالی است.', 'warn'); text.focus(); return; }
+        save.disabled = true;
+        N.update(note, { text: v, followUp: due }).then(function () {
+          m.close();
+          w.U.toast('یادداشت ویرایش شد.', 'good');
+          refresh();
+        }).catch(function (e) {
+          save.disabled = false;
+          w.U.toast(e.message, 'bad');
+        });
+      }
+    });
+    m = w.U.modal('ویرایش یادداشت', el('div.note-edit', null, [
+      text,
+      el('div.note-form-row', null, [
+        el('span.field-label', { text: 'پیگیری در تاریخ' }),
+        dateField,
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'بدون پیگیری',
+          onclick: function () { due = ''; dateField.setValue(''); }
+        })
+      ]),
+      el('p.muted.tiny', {
+        text: 'زمانِ ثبت اولیه و نویسنده‌اش دست نمی‌خورد؛ فقط متن و سررسید.'
+      })
+    ]), [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      save
+    ]);
+    m.root.classList.add('small-modal');
+    setTimeout(function () { text.focus(); }, 50);
   }
 
   /** پنل یادداشت‌های یک پرونده */
@@ -167,7 +222,7 @@
       panel.appendChild(el('div.note-docs', null, recentDocs.map(function (d) {
         return el('div.note-doc', null, [
           w.UIDocs.thumb(d, function () {
-            w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+            w.UIViewer.open(recentDocs, recentDocs.indexOf(d));
           }),
           el('span.note-doc-name', { text: d.kind || d.fileName, title: d.fileName })
         ]);

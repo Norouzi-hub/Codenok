@@ -233,7 +233,7 @@
             el('button.linkish', {
               type: 'button', text: 'باز کردن',
               onclick: function () {
-                w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+                w.UIViewer.open([d], 0);
               }
             })
           ])

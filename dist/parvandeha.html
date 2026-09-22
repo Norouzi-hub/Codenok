@@ -4886,6 +4886,15 @@ button.tag-chip.ro { cursor: pointer; }
 .t-doc, .l-doc { color: #5A7D8C; }
 .cal-item.l-doc .cal-item-text { font-weight: 600; }
 
+/* محتوای دسته، داخل خودِ کارت */
+.arc-batch-docs {
+  padding: 4px 14px 2px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--paper);
+  animation: rise var(--t-fast) var(--ease) both;
+}
+.arc-batch-docs .arc-doc { background: var(--card); }
+
 </style>
 
 </head>
@@ -16621,7 +16630,7 @@ else if (typeof exports === 'object'){
             el('button.linkish', {
               type: 'button', text: 'باز کردن',
               onclick: function () {
-                w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+                w.UIViewer.open([d], 0);
               }
             })
           ])
@@ -20533,11 +20542,15 @@ else if (typeof exports === 'object'){
 
       var caseNode = null;
       if (freeCase) {
-        caseNode = caseField('', function (found) {
+        /* پروندهٔ پیش‌فرض: وقتی بارگذاری از دلِ یک کارِ پرونده‌دار شروع
+           شده، همان پرونده از پیش نشسته — ولی هر سطر می‌تواند عوضش کند. */
+        caseNode = caseField(opts.caseText || '', function (found) {
           state.rec = found;
           state.scope = found ? 'case' : 'general';
           syncDup();
         });
+        state.rec = findCase(opts.caseText || '');
+        if (state.rec) state.scope = 'case';
       }
 
       /* متن نامه تاشده است: بیشتر وقت‌ها لازم نیست، و باز گذاشتنش پنجره را
@@ -20692,7 +20705,22 @@ else if (typeof exports === 'object'){
         save.textContent = 'در حال ذخیره…';
         progress.style.display = '';
         var filled = [], versions = 0, done = 0, failed = 0, general = 0;
-        var bname = batchName.value.trim();
+        /*
+         * نام دسته هیچ‌وقت خالی نمی‌ماند.
+         * تا امروز اگر کاربر نامی نمی‌نوشت، دسته در بایگانی و تقویم
+         * «بدون نام» دیده می‌شد — یعنی همان‌جایی که باید پیدایش کند،
+         * بی‌نشان بود. حالا از نوعِ غالب و تاریخ ساخته می‌شود.
+         *
+         * و یک فایلِ تنها، «دسته» نیست: شناسهٔ دسته فقط وقتی می‌خورد که
+         * چند فایل با هم آمده باشند یا کاربر خودش نامی داده باشد. وگرنه
+         * بایگانی پر می‌شد از دسته‌های یک‌نفره.
+         */
+        var bname = batchName.value.trim() || autoBatchName(rows);
+        /* کارِ میزبان هم دسته می‌سازد، حتی با یک فایل: همان کار باید
+           بتواند به سندهایش پیوند بخورد. */
+        var isBatch = rows.length > 1 || !!batchName.value.trim() || !!opts.task;
+        var bid = isBatch ? batchId : '';
+        if (!isBatch) bname = '';
 
         function step(n) {
           done = n;
@@ -20709,7 +20737,7 @@ else if (typeof exports === 'object'){
               kind: r.kind, docDate: r.docDate, category: r.category,
               direction: r.direction, body: r.body,
               letterNo: r.letterNo, title: r.title,
-              tags: r.tags, batchId: batchId, batchName: bname
+              tags: r.tags, batchId: bid, batchName: bname
             };
             var target = r.rec || (freeCase ? null : rec);
             if (r.scope === 'person' && person) {
@@ -20753,17 +20781,16 @@ else if (typeof exports === 'object'){
               ? ' و «' + filled.map(function (f) { return f.label; }).join('»، «') +
                 '» پر شد.'
               : '.'), failed ? 'warn' : 'good');
-          if (bname) D.addTag(bname).catch(function () { /* تگ نشد، مهم نیست */ });
-          var wantTask = !asTask || asTask.checked;
+          var wantTask = isBatch && (!asTask || asTask.checked);
           var finish = function () {
             onDone({
               rows: rows.length, failed: failed, general: general,
               docDate: rows[0] && rows[0].docDate,
-              batchId: batchId, batchName: bname,
+              batchId: bid, batchName: bname,
               filled: filled, versions: versions
             });
           };
-          if (wantTask && ok) logBatchWork(batchId, bname, rec).then(finish, finish);
+          if (wantTask && ok) logBatchWork(bid, bname, opts.task).then(finish, finish);
           else finish();
         }).catch(function (err) {
           busy = false;
@@ -21442,14 +21469,30 @@ else if (typeof exports === 'object'){
    * بایگانی می‌گوید «چه چیزی هست»؛ کارها می‌گوید «چه کردم». بیست اسکن
    * که فقط در بایگانی بنشیند، آخر ماه در کارنامه دیده نمی‌شود.
    *
-   * یک کار برای خودِ دسته، و — وقتی دسته چند پرونده را گرفته — یک کارِ
-   * کوچک هم در هر پرونده، تا از داخل پرونده هم پیدا باشد. سقف هشت
-   * پرونده دارد: دسته‌ای که سی پرونده را بگیرد نباید سی کار بسازد؛
-   * آنجا تاریخچهٔ پرونده کافی است.
+   * **یک کار، و فقط یکی** — و همیشه بی‌پرونده.
+   *
+   * اول برای هر پروندهٔ لمس‌شده هم یک کار می‌ساختیم تا «از داخل پرونده
+   * هم پیدا باشد». کاربر درست گفت که این اشتباه است: تب پرونده جای
+   * چیزهایی است که آدم نوشته، نه سطرهایی که برنامه خودش تولید کرده.
+   * ردِ کار در پرونده هست — خودِ سندها در مستندات، و یک سطر در تاریخچه —
+   * ولی فهرست کارهای پرونده تمیز می‌ماند.
    */
-  var PER_CASE_TASK_CAP = 8;
+  /** نام خودکار دسته: نوعِ غالب + روز — تا هیچ دسته‌ای «بدون نام» نباشد */
+  function autoBatchName(rows) {
+    var count = {}, best = '', n = 0;
+    rows.forEach(function (r) {
+      var k = r.kind || 'سایر';
+      count[k] = (count[k] || 0) + 1;
+      if (count[k] > n) { n = count[k]; best = k; }
+    });
+    var day = rows[0] && rows[0].docDate ? J.format(rows[0].docDate, { long: true })
+      : J.format(J.today(), { long: true });
+    return (best || 'بارگذاری') + ' — ' + day;
+  }
 
-  function logBatchWork(batchId, batchName, fromCase) {
+
+  function logBatchWork(batchId, batchName, linkTask) {
+    if (!batchId) return Promise.resolve(null);
     var b = D.batch(batchId);
     if (!b || !b.docs.length) return Promise.resolve(null);
     var name = batchName || 'بارگذاری سند';
@@ -21458,37 +21501,35 @@ else if (typeof exports === 'object'){
       if (d.caseId) (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
     });
     var caseIds = Object.keys(byCase);
-    var single = caseIds.length === 1 ? caseIds[0] : '';
-
     var title = name + ' — ' + w.U.toFaDigits(b.docs.length) + ' سند';
     var text = [
       caseIds.length ? w.U.toFaDigits(caseIds.length) + ' پرونده' : '',
       b.general ? w.U.toFaDigits(b.general) + ' سند بی‌پرونده' : ''
     ].filter(Boolean).join('، ');
 
+    // ردِ کار در هر پروندهٔ لمس‌شده، در تاریخچه — نه در فهرست کارهایش
+    noteInHistory(byCase, name);
+
+    /* اگر بارگذاری از دلِ یک کارِ موجود شروع شده (مثلاً «اسکن مدارک»)،
+       همان کار صاحبِ این دسته می‌شود؛ کارِ تازه‌ای ساخته نمی‌شود. */
+    if (linkTask) {
+      return w.Notes.update(linkTask, {
+        batchId: batchId, docCount: b.docs.length
+      }).then(function () {
+        return linkTask.status === 'open'
+          ? w.Notes.complete(linkTask) : linkTask;
+      }).catch(function () { return null; });
+    }
+
     return w.Notes.create({
-      kind: 'task', done: true, caseId: single,
+      kind: 'task', done: true, caseId: '',
       title: title, text: text,
       category: 'بایگانی و اسکن',
       batchId: batchId, docCount: b.docs.length
-    }).then(function () {
-      // کارِ هر پرونده، فقط وقتی دسته چندپرونده‌ای است
-      if (caseIds.length < 2 || caseIds.length > PER_CASE_TASK_CAP) {
-        return caseIds.length > PER_CASE_TASK_CAP ? noteInHistory(byCase, name) : null;
-      }
-      return caseIds.reduce(function (chain, id) {
-        return chain.then(function () {
-          return w.Notes.create({
-            kind: 'task', done: true, caseId: id,
-            title: w.U.toFaDigits(byCase[id].length) + ' سند از دستهٔ «' + name + '»',
-            category: 'بایگانی و اسکن',
-            batchId: batchId, docCount: byCase[id].length
-          });
-        });
-      }, Promise.resolve());
     }).catch(function () { /* ثبت کار نشد؛ سندها سرِ جایشان‌اند */ });
   }
 
+  /** یک سطر در تاریخچهٔ هر پرونده‌ای که دسته لمسش کرده */
   function noteInHistory(byCase, name) {
     Object.keys(byCase).forEach(function (id) {
       var rec = M.get(id);
@@ -21576,6 +21617,16 @@ else if (typeof exports === 'object'){
     }
 
     var actions = el('div.note-actions');
+    /*
+     * ویرایش یادداشت.
+     * تا امروز یادداشتِ نوشته‌شده فقط خواندنی بود و غلط تایپی یعنی
+     * حذف و نوشتن دوباره — که تاریخچه را هم شلوغ می‌کرد. متن و تاریخ
+     * پیگیری همان‌جا، درجا، ویرایش می‌شوند.
+     */
+    actions.appendChild(el('button.btn.small.ghost', {
+      type: 'button', text: 'ویرایش',
+      onclick: function () { editNote(note, refresh); }
+    }));
     if (note.followUp && !note.done) {
       actions.appendChild(el('button.btn.small', {
         type: 'button', text: 'انجام شد',
@@ -21612,6 +21663,51 @@ else if (typeof exports === 'object'){
       ]),
       actions
     ]);
+  }
+
+  /** پنجرهٔ ویرایش یک یادداشت — متن و تاریخ پیگیری */
+  function editNote(note, refresh) {
+    var text = el('textarea.input.area', { rows: 4, value: note.text || '' });
+    var due = note.followUp || '';
+    var dateField = w.DatePicker.field(due, function (v) { due = v; });
+    var m;
+    var save = el('button.btn.primary', {
+      type: 'button', text: 'ذخیره',
+      onclick: function () {
+        var v = text.value.trim();
+        if (!v) { w.U.toast('متن یادداشت خالی است.', 'warn'); text.focus(); return; }
+        save.disabled = true;
+        N.update(note, { text: v, followUp: due }).then(function () {
+          m.close();
+          w.U.toast('یادداشت ویرایش شد.', 'good');
+          refresh();
+        }).catch(function (e) {
+          save.disabled = false;
+          w.U.toast(e.message, 'bad');
+        });
+      }
+    });
+    m = w.U.modal('ویرایش یادداشت', el('div.note-edit', null, [
+      text,
+      el('div.note-form-row', null, [
+        el('span.field-label', { text: 'پیگیری در تاریخ' }),
+        dateField,
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'بدون پیگیری',
+          onclick: function () { due = ''; dateField.setValue(''); }
+        })
+      ]),
+      el('p.muted.tiny', {
+        text: 'زمانِ ثبت اولیه و نویسنده‌اش دست نمی‌خورد؛ فقط متن و سررسید.'
+      })
+    ]), [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      save
+    ]);
+    m.root.classList.add('small-modal');
+    setTimeout(function () { text.focus(); }, 50);
   }
 
   /** پنل یادداشت‌های یک پرونده */
@@ -21704,7 +21800,7 @@ else if (typeof exports === 'object'){
       panel.appendChild(el('div.note-docs', null, recentDocs.map(function (d) {
         return el('div.note-doc', null, [
           w.UIDocs.thumb(d, function () {
-            w.Docs.openDoc(d).catch(function (e) { w.U.toast(e.message, 'bad'); });
+            w.UIViewer.open(recentDocs, recentDocs.indexOf(d));
           }),
           el('span.note-doc-name', { text: d.kind || d.fileName, title: d.fileName })
         ]);
@@ -22214,6 +22310,20 @@ else if (typeof exports === 'object'){
     }
 
     var actions = el('div.task-actions', null, [
+      /*
+       * بارگذاری از دلِ خودِ کار.
+       * «اسکن مدارک» یک کار است و خروجی‌اش فایل — و تا امروز باید
+       * می‌رفتی به بایگانی، بارگذاری می‌کردی، برمی‌گشتی و کار را تیک
+       * می‌زدی. حالا همان‌جا: اگر کار پرونده دارد سندها به همان پرونده
+       * می‌روند، وگرنه به بایگانی؛ و خودِ کار صاحب آن دسته می‌شود و
+       * تیک می‌خورد.
+       */
+      task.batchId ? null : el('button.icon-btn.tiny', {
+        type: 'button', title: 'بارگذاری دسته‌ای سند برای این کار',
+        'aria-label': 'بارگذاری سند',
+        html: w.Mobile.icon('upload'),
+        onclick: function () { uploadForTask(app, task, refresh); }
+      }),
       el('button.icon-btn.tiny', {
         type: 'button', title: 'ویرایش', 'aria-label': 'ویرایش',
         html: w.Mobile.icon('pencil'),
@@ -22257,6 +22367,22 @@ else if (typeof exports === 'object'){
       ]),
       actions
     ]);
+  }
+
+  /**
+   * بارگذاری دسته‌ای برای یک کار.
+   * پروندهٔ کار، پروندهٔ پیش‌فرضِ همهٔ فایل‌هاست — ولی هر سطر می‌تواند
+   * خودش را عوض کند، چون یک نوبت اسکن ممکن است چند پرونده را بگیرد.
+   */
+  function uploadForTask(app, task, refresh) {
+    var rec = task.caseId ? M.get(task.caseId) : null;
+    w.UIDocs.batchUpload(function () {
+      if (refresh) refresh();
+    }, null, {
+      batchName: task.title || '',
+      task: task,
+      caseText: rec ? w.UIDocs.caseLabel(rec) : ''
+    });
   }
 
   function askCancel(task, refresh) {
@@ -22950,7 +23076,7 @@ else if (typeof exports === 'object'){
   }
 
   // ------------------------------------------------------------ یک سند
-  function docRow(app, doc, refresh) {
+  function docRow(app, doc, refresh, siblings) {
     var rec = doc.caseId ? M.get(doc.caseId) : null;
     var meta = [];
     if (doc.docDate) meta.push(el('span', { text: J.format(doc.docDate) }));
@@ -23003,8 +23129,11 @@ else if (typeof exports === 'object'){
     ]);
 
     return el('li.arc-doc' + (rec ? '.on-case' : ''), null, [
+      /* دیدن در همین برنامه، نه دانلود — دکمهٔ دانلود داخل نمایشگر است.
+         siblings همان فهرستی است که کاربر می‌بیند، تا بشود با فلش بینشان
+         ورق زد. */
       w.UIDocs.thumb(doc, function () {
-        D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+        w.UIViewer.open(siblings || [doc], (siblings || [doc]).indexOf(doc));
       }),
       el('div.arc-doc-body', null, [
         el('div.arc-doc-top', null, [
@@ -23087,9 +23216,25 @@ else if (typeof exports === 'object'){
   }
 
   // ----------------------------------------------------------- دسته‌ها
+  /*
+   * محتوای دسته، زیر خودِ دسته باز می‌شود — نه در فهرست جدا پایین صفحه.
+   *
+   * اول همین‌طور بود و کاربر درست گفت که گم می‌شود: روی دسته کلیک
+   * می‌کردی و سندهایش دو بخش پایین‌تر، زیر عنوان دیگری ظاهر می‌شدند.
+   * چیزی که با یک کلیک باز می‌شود باید همان‌جا باز شود.
+   */
   function batchCard(app, b, refresh) {
     var st = app.state.archive;
     var open = st.batchId === b.id;
+    var inner = null;
+    if (open) {
+      var mine = b.docs.filter(function (d) { return !d.superseded; });
+      inner = el('div.arc-batch-docs', null, [
+        el('ul.arc-docs', null, mine.map(function (d) {
+          return docRow(app, d, refresh, mine);
+        }))
+      ]);
+    }
     return el('article.arc-batch' + (open ? '.open' : ''), null, [
       el('button.arc-batch-head', {
         type: 'button',
@@ -23119,6 +23264,7 @@ else if (typeof exports === 'object'){
         })),
         el('span.arc-batch-go', { text: open ? '▲' : '▼' })
       ]),
+      inner,
       el('div.arc-batch-actions', null, [
         el('button.btn.small.ghost', {
           type: 'button', text: '⬇ زیپ این دسته',
@@ -23257,37 +23403,39 @@ else if (typeof exports === 'object'){
       ]));
     }
 
-    var title = st.batchId
-      ? 'سندهای دستهٔ «' + ((D.batch(st.batchId) || {}).name || '') + '»'
-      : (st.q || st.tags.length || st.kind || st.scope ? 'نتیجهٔ جستجو' : 'همهٔ سندها');
+    /* وقتی دسته‌ای باز است، سندهایش داخل خودِ کارت‌اند؛ تکرارشان در
+       فهرست پایین یعنی همان گم شدنی که قرار بود درست شود. */
+    if (!st.batchId) {
+      var title = (st.q || st.tags.length || st.kind || st.scope)
+        ? 'نتیجهٔ جستجو' : 'همهٔ سندها';
+      sections.push(el('section.arc-section', null, [
+        el('div.wl-section-head', null, [
+          el('h2', { text: title }),
+          el('span.wl-count', { text: fa(found.length) + ' سند' }),
+          el('div.spacer'),
+          found.length ? el('button.btn.small.ghost', {
+            type: 'button', text: '⬇ زیپ این نتیجه',
+            onclick: function () { w.UIDocs.zipDocs(found, null, title); }
+          }) : null
+        ]),
+        found.length
+          ? el('ul.arc-docs', null, found.slice(0, 200).map(function (d) {
+            return docRow(app, d, refresh, found);
+          }))
+          : el('div.empty-state', null, [
+            el('p', {
+              text: st.q || st.tags.length
+                ? 'سندی با این جستجو پیدا نشد.'
+                : 'هنوز سندی ثبت نشده است.'
+            })
+          ])
+      ]));
 
-    sections.push(el('section.arc-section', null, [
-      el('div.wl-section-head', null, [
-        el('h2', { text: title }),
-        el('span.wl-count', { text: fa(found.length) + ' سند' }),
-        el('div.spacer'),
-        found.length ? el('button.btn.small.ghost', {
-          type: 'button', text: '⬇ زیپ این نتیجه',
-          onclick: function () { w.UIDocs.zipDocs(found, null, title); }
-        }) : null
-      ]),
-      found.length
-        ? el('ul.arc-docs', null, found.slice(0, 200).map(function (d) {
-          return docRow(app, d, refresh);
-        }))
-        : el('div.empty-state', null, [
-          el('p', {
-            text: st.q || st.tags.length
-              ? 'سندی با این جستجو پیدا نشد.'
-              : 'هنوز سندی ثبت نشده است.'
-          })
-        ])
-    ]));
-
-    if (found.length > 200) {
-      sections.push(el('p.muted.tiny', {
-        text: 'فقط ۲۰۰ سند اول نشان داده شد؛ جستجو را باریک‌تر کنید.'
-      }));
+      if (found.length > 200) {
+        sections.push(el('p.muted.tiny', {
+          text: 'فقط ۲۰۰ سند اول نشان داده شد؛ جستجو را باریک‌تر کنید.'
+        }));
+      }
     }
 
     w.U.clear(mount);
@@ -24511,6 +24659,7 @@ else if (typeof exports === 'object'){
       }));
       return box;
     }
+    var docs = shared;
     box.appendChild(el('ul.doc-list', null, shared.map(function (doc) {
       return el('li.doc-item.person-doc', null, [
         el('span.doc-icon', { html: w.UIDocs.iconFor(doc.fileName) }),
@@ -24526,9 +24675,12 @@ else if (typeof exports === 'object'){
         ]),
         el('div.doc-actions', null, [
           el('button.btn.small', {
-            type: 'button', text: 'باز کردن',
+            /* دیدن، نه دانلود: عکس و PDF همین‌جا باز می‌شوند و دکمهٔ
+               دانلود داخل نمایشگر است — همان قاعده‌ای که در پرونده
+               داریم و باید همه‌جای برنامه یکی باشد. */
+            type: 'button', text: 'دیدن',
             onclick: function () {
-              D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+              w.UIViewer.open(docs, docs.indexOf(doc));
             }
           })
         ])
@@ -24558,9 +24710,9 @@ else if (typeof exports === 'object'){
             text: ' — ' + (it.doc.title || it.doc.letterNo || it.doc.originalName) + ' '
           }),
           el('button.linkish', {
-            type: 'button', text: 'باز کردن',
+            type: 'button', text: 'دیدن',
             onclick: function () {
-              D.openDoc(it.doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+              w.UIViewer.open([it.doc], 0);
             }
           })];
       } else {

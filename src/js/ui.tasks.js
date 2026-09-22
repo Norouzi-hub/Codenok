@@ -466,6 +466,20 @@
     }
 
     var actions = el('div.task-actions', null, [
+      /*
+       * بارگذاری از دلِ خودِ کار.
+       * «اسکن مدارک» یک کار است و خروجی‌اش فایل — و تا امروز باید
+       * می‌رفتی به بایگانی، بارگذاری می‌کردی، برمی‌گشتی و کار را تیک
+       * می‌زدی. حالا همان‌جا: اگر کار پرونده دارد سندها به همان پرونده
+       * می‌روند، وگرنه به بایگانی؛ و خودِ کار صاحب آن دسته می‌شود و
+       * تیک می‌خورد.
+       */
+      task.batchId ? null : el('button.icon-btn.tiny', {
+        type: 'button', title: 'بارگذاری دسته‌ای سند برای این کار',
+        'aria-label': 'بارگذاری سند',
+        html: w.Mobile.icon('upload'),
+        onclick: function () { uploadForTask(app, task, refresh); }
+      }),
       el('button.icon-btn.tiny', {
         type: 'button', title: 'ویرایش', 'aria-label': 'ویرایش',
         html: w.Mobile.icon('pencil'),
@@ -509,6 +523,22 @@
       ]),
       actions
     ]);
+  }
+
+  /**
+   * بارگذاری دسته‌ای برای یک کار.
+   * پروندهٔ کار، پروندهٔ پیش‌فرضِ همهٔ فایل‌هاست — ولی هر سطر می‌تواند
+   * خودش را عوض کند، چون یک نوبت اسکن ممکن است چند پرونده را بگیرد.
+   */
+  function uploadForTask(app, task, refresh) {
+    var rec = task.caseId ? M.get(task.caseId) : null;
+    w.UIDocs.batchUpload(function () {
+      if (refresh) refresh();
+    }, null, {
+      batchName: task.title || '',
+      task: task,
+      caseText: rec ? w.UIDocs.caseLabel(rec) : ''
+    });
   }
 
   function askCancel(task, refresh) {

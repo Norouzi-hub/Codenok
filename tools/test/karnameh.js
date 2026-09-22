@@ -128,11 +128,14 @@ function check(name, ok, extra) {
     made.tasks.some(t => /^اسکن آرا — /.test(t.title) && t.status === 'done' &&
       !t.onCase && t.docCount === 10),
     made.tasks.map(t => t.title).join(' | '));
-  /* «یه نسخه ازش به همون پرونده» — هر پرونده‌ای که دسته لمسش کرده،
-     کارِ خودش را می‌گیرد. */
-  check('هر پروندهٔ لمس‌شده هم یک کارِ انجام‌شده گرفت',
-    made.tasks.filter(t => t.onCase).length === made.cases && made.cases === 2,
-    made.cases + ' پرونده');
+  /*
+   * یک کار، و فقط یکی — و بی‌پرونده.
+   * اول برای هر پروندهٔ لمس‌شده هم کاری می‌ساختیم؛ کاربر درست گفت که تب
+   * پرونده جای چیزهایی است که آدم نوشته، نه سطرهای خودکار.
+   */
+  check('فقط یک کار ساخته می‌شود و بی‌پرونده است',
+    made.tasks.length === 1 && !made.tasks[0].onCase,
+    made.tasks.length + ' کار');
   check('دستهٔ کارها «بایگانی و اسکن» است',
     made.tasks.every(t => t.cat === 'بایگانی و اسکن'));
 
@@ -172,8 +175,8 @@ function check(name, ok, extra) {
   });
   check('کارنامهٔ امروز، سندها و نوبت بارگذاری را می‌شمرد',
     k.docs === 10 && k.batches === 1, k.docs + ' سند در ' + k.batches + ' نوبت');
-  check('و هر سه کارِ ساخته‌شده را',
-    k.tasksDone === 3 && k.taskTitles.some(t => /اسکن آرا/.test(t)),
+  check('و کارِ ساخته‌شده را',
+    k.tasksDone === 1 && k.taskTitles.some(t => /اسکن آرا/.test(t)),
     k.taskTitles.join(' | '));
   check('جملهٔ سرِ گزارش، فارسی و کامل است',
     /سند بایگانی شد/.test(k.headline) && /\.$/.test(k.headline), k.headline);

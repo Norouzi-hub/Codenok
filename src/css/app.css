@@ -4870,3 +4870,12 @@ button.tag-chip.ro { cursor: pointer; }
 /* لایهٔ اسناد در تقویم — همان رنگی که «سند» در همهٔ برنامه دارد */
 .t-doc, .l-doc { color: #5A7D8C; }
 .cal-item.l-doc .cal-item-text { font-weight: 600; }
+
+/* محتوای دسته، داخل خودِ کارت */
+.arc-batch-docs {
+  padding: 4px 14px 2px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--paper);
+  animation: rise var(--t-fast) var(--ease) both;
+}
+.arc-batch-docs .arc-doc { background: var(--card); }

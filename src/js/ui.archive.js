@@ -31,7 +31,7 @@
   }
 
   // ------------------------------------------------------------ یک سند
-  function docRow(app, doc, refresh) {
+  function docRow(app, doc, refresh, siblings) {
     var rec = doc.caseId ? M.get(doc.caseId) : null;
     var meta = [];
     if (doc.docDate) meta.push(el('span', { text: J.format(doc.docDate) }));
@@ -84,8 +84,11 @@
     ]);
 
     return el('li.arc-doc' + (rec ? '.on-case' : ''), null, [
+      /* دیدن در همین برنامه، نه دانلود — دکمهٔ دانلود داخل نمایشگر است.
+         siblings همان فهرستی است که کاربر می‌بیند، تا بشود با فلش بینشان
+         ورق زد. */
       w.UIDocs.thumb(doc, function () {
-        D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+        w.UIViewer.open(siblings || [doc], (siblings || [doc]).indexOf(doc));
       }),
       el('div.arc-doc-body', null, [
         el('div.arc-doc-top', null, [
@@ -168,9 +171,25 @@
   }
 
   // ----------------------------------------------------------- دسته‌ها
+  /*
+   * محتوای دسته، زیر خودِ دسته باز می‌شود — نه در فهرست جدا پایین صفحه.
+   *
+   * اول همین‌طور بود و کاربر درست گفت که گم می‌شود: روی دسته کلیک
+   * می‌کردی و سندهایش دو بخش پایین‌تر، زیر عنوان دیگری ظاهر می‌شدند.
+   * چیزی که با یک کلیک باز می‌شود باید همان‌جا باز شود.
+   */
   function batchCard(app, b, refresh) {
     var st = app.state.archive;
     var open = st.batchId === b.id;
+    var inner = null;
+    if (open) {
+      var mine = b.docs.filter(function (d) { return !d.superseded; });
+      inner = el('div.arc-batch-docs', null, [
+        el('ul.arc-docs', null, mine.map(function (d) {
+          return docRow(app, d, refresh, mine);
+        }))
+      ]);
+    }
     return el('article.arc-batch' + (open ? '.open' : ''), null, [
       el('button.arc-batch-head', {
         type: 'button',
@@ -200,6 +219,7 @@
         })),
         el('span.arc-batch-go', { text: open ? '▲' : '▼' })
       ]),
+      inner,
       el('div.arc-batch-actions', null, [
         el('button.btn.small.ghost', {
           type: 'button', text: '⬇ زیپ این دسته',
@@ -338,37 +358,39 @@
       ]));
     }
 
-    var title = st.batchId
-      ? 'سندهای دستهٔ «' + ((D.batch(st.batchId) || {}).name || '') + '»'
-      : (st.q || st.tags.length || st.kind || st.scope ? 'نتیجهٔ جستجو' : 'همهٔ سندها');
+    /* وقتی دسته‌ای باز است، سندهایش داخل خودِ کارت‌اند؛ تکرارشان در
+       فهرست پایین یعنی همان گم شدنی که قرار بود درست شود. */
+    if (!st.batchId) {
+      var title = (st.q || st.tags.length || st.kind || st.scope)
+        ? 'نتیجهٔ جستجو' : 'همهٔ سندها';
+      sections.push(el('section.arc-section', null, [
+        el('div.wl-section-head', null, [
+          el('h2', { text: title }),
+          el('span.wl-count', { text: fa(found.length) + ' سند' }),
+          el('div.spacer'),
+          found.length ? el('button.btn.small.ghost', {
+            type: 'button', text: '⬇ زیپ این نتیجه',
+            onclick: function () { w.UIDocs.zipDocs(found, null, title); }
+          }) : null
+        ]),
+        found.length
+          ? el('ul.arc-docs', null, found.slice(0, 200).map(function (d) {
+            return docRow(app, d, refresh, found);
+          }))
+          : el('div.empty-state', null, [
+            el('p', {
+              text: st.q || st.tags.length
+                ? 'سندی با این جستجو پیدا نشد.'
+                : 'هنوز سندی ثبت نشده است.'
+            })
+          ])
+      ]));
 
-    sections.push(el('section.arc-section', null, [
-      el('div.wl-section-head', null, [
-        el('h2', { text: title }),
-        el('span.wl-count', { text: fa(found.length) + ' سند' }),
-        el('div.spacer'),
-        found.length ? el('button.btn.small.ghost', {
-          type: 'button', text: '⬇ زیپ این نتیجه',
-          onclick: function () { w.UIDocs.zipDocs(found, null, title); }
-        }) : null
-      ]),
-      found.length
-        ? el('ul.arc-docs', null, found.slice(0, 200).map(function (d) {
-          return docRow(app, d, refresh);
-        }))
-        : el('div.empty-state', null, [
-          el('p', {
-            text: st.q || st.tags.length
-              ? 'سندی با این جستجو پیدا نشد.'
-              : 'هنوز سندی ثبت نشده است.'
-          })
-        ])
-    ]));
-
-    if (found.length > 200) {
-      sections.push(el('p.muted.tiny', {
-        text: 'فقط ۲۰۰ سند اول نشان داده شد؛ جستجو را باریک‌تر کنید.'
-      }));
+      if (found.length > 200) {
+        sections.push(el('p.muted.tiny', {
+          text: 'فقط ۲۰۰ سند اول نشان داده شد؛ جستجو را باریک‌تر کنید.'
+        }));
+      }
     }
 
     w.U.clear(mount);

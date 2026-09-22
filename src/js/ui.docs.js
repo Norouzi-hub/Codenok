@@ -452,11 +452,15 @@
 
       var caseNode = null;
       if (freeCase) {
-        caseNode = caseField('', function (found) {
+        /* پروندهٔ پیش‌فرض: وقتی بارگذاری از دلِ یک کارِ پرونده‌دار شروع
+           شده، همان پرونده از پیش نشسته — ولی هر سطر می‌تواند عوضش کند. */
+        caseNode = caseField(opts.caseText || '', function (found) {
           state.rec = found;
           state.scope = found ? 'case' : 'general';
           syncDup();
         });
+        state.rec = findCase(opts.caseText || '');
+        if (state.rec) state.scope = 'case';
       }
 
       /* متن نامه تاشده است: بیشتر وقت‌ها لازم نیست، و باز گذاشتنش پنجره را
@@ -611,7 +615,22 @@
         save.textContent = 'در حال ذخیره…';
         progress.style.display = '';
         var filled = [], versions = 0, done = 0, failed = 0, general = 0;
-        var bname = batchName.value.trim();
+        /*
+         * نام دسته هیچ‌وقت خالی نمی‌ماند.
+         * تا امروز اگر کاربر نامی نمی‌نوشت، دسته در بایگانی و تقویم
+         * «بدون نام» دیده می‌شد — یعنی همان‌جایی که باید پیدایش کند،
+         * بی‌نشان بود. حالا از نوعِ غالب و تاریخ ساخته می‌شود.
+         *
+         * و یک فایلِ تنها، «دسته» نیست: شناسهٔ دسته فقط وقتی می‌خورد که
+         * چند فایل با هم آمده باشند یا کاربر خودش نامی داده باشد. وگرنه
+         * بایگانی پر می‌شد از دسته‌های یک‌نفره.
+         */
+        var bname = batchName.value.trim() || autoBatchName(rows);
+        /* کارِ میزبان هم دسته می‌سازد، حتی با یک فایل: همان کار باید
+           بتواند به سندهایش پیوند بخورد. */
+        var isBatch = rows.length > 1 || !!batchName.value.trim() || !!opts.task;
+        var bid = isBatch ? batchId : '';
+        if (!isBatch) bname = '';
 
         function step(n) {
           done = n;
@@ -628,7 +647,7 @@
               kind: r.kind, docDate: r.docDate, category: r.category,
               direction: r.direction, body: r.body,
               letterNo: r.letterNo, title: r.title,
-              tags: r.tags, batchId: batchId, batchName: bname
+              tags: r.tags, batchId: bid, batchName: bname
             };
             var target = r.rec || (freeCase ? null : rec);
             if (r.scope === 'person' && person) {
@@ -672,17 +691,16 @@
               ? ' و «' + filled.map(function (f) { return f.label; }).join('»، «') +
                 '» پر شد.'
               : '.'), failed ? 'warn' : 'good');
-          if (bname) D.addTag(bname).catch(function () { /* تگ نشد، مهم نیست */ });
-          var wantTask = !asTask || asTask.checked;
+          var wantTask = isBatch && (!asTask || asTask.checked);
           var finish = function () {
             onDone({
               rows: rows.length, failed: failed, general: general,
               docDate: rows[0] && rows[0].docDate,
-              batchId: batchId, batchName: bname,
+              batchId: bid, batchName: bname,
               filled: filled, versions: versions
             });
           };
-          if (wantTask && ok) logBatchWork(batchId, bname, rec).then(finish, finish);
+          if (wantTask && ok) logBatchWork(bid, bname, opts.task).then(finish, finish);
           else finish();
         }).catch(function (err) {
           busy = false;
@@ -1361,14 +1379,30 @@
    * بایگانی می‌گوید «چه چیزی هست»؛ کارها می‌گوید «چه کردم». بیست اسکن
    * که فقط در بایگانی بنشیند، آخر ماه در کارنامه دیده نمی‌شود.
    *
-   * یک کار برای خودِ دسته، و — وقتی دسته چند پرونده را گرفته — یک کارِ
-   * کوچک هم در هر پرونده، تا از داخل پرونده هم پیدا باشد. سقف هشت
-   * پرونده دارد: دسته‌ای که سی پرونده را بگیرد نباید سی کار بسازد؛
-   * آنجا تاریخچهٔ پرونده کافی است.
+   * **یک کار، و فقط یکی** — و همیشه بی‌پرونده.
+   *
+   * اول برای هر پروندهٔ لمس‌شده هم یک کار می‌ساختیم تا «از داخل پرونده
+   * هم پیدا باشد». کاربر درست گفت که این اشتباه است: تب پرونده جای
+   * چیزهایی است که آدم نوشته، نه سطرهایی که برنامه خودش تولید کرده.
+   * ردِ کار در پرونده هست — خودِ سندها در مستندات، و یک سطر در تاریخچه —
+   * ولی فهرست کارهای پرونده تمیز می‌ماند.
    */
-  var PER_CASE_TASK_CAP = 8;
+  /** نام خودکار دسته: نوعِ غالب + روز — تا هیچ دسته‌ای «بدون نام» نباشد */
+  function autoBatchName(rows) {
+    var count = {}, best = '', n = 0;
+    rows.forEach(function (r) {
+      var k = r.kind || 'سایر';
+      count[k] = (count[k] || 0) + 1;
+      if (count[k] > n) { n = count[k]; best = k; }
+    });
+    var day = rows[0] && rows[0].docDate ? J.format(rows[0].docDate, { long: true })
+      : J.format(J.today(), { long: true });
+    return (best || 'بارگذاری') + ' — ' + day;
+  }
 
-  function logBatchWork(batchId, batchName, fromCase) {
+
+  function logBatchWork(batchId, batchName, linkTask) {
+    if (!batchId) return Promise.resolve(null);
     var b = D.batch(batchId);
     if (!b || !b.docs.length) return Promise.resolve(null);
     var name = batchName || 'بارگذاری سند';
@@ -1377,37 +1411,35 @@
       if (d.caseId) (byCase[d.caseId] = byCase[d.caseId] || []).push(d);
     });
     var caseIds = Object.keys(byCase);
-    var single = caseIds.length === 1 ? caseIds[0] : '';
-
     var title = name + ' — ' + w.U.toFaDigits(b.docs.length) + ' سند';
     var text = [
       caseIds.length ? w.U.toFaDigits(caseIds.length) + ' پرونده' : '',
       b.general ? w.U.toFaDigits(b.general) + ' سند بی‌پرونده' : ''
     ].filter(Boolean).join('، ');
 
+    // ردِ کار در هر پروندهٔ لمس‌شده، در تاریخچه — نه در فهرست کارهایش
+    noteInHistory(byCase, name);
+
+    /* اگر بارگذاری از دلِ یک کارِ موجود شروع شده (مثلاً «اسکن مدارک»)،
+       همان کار صاحبِ این دسته می‌شود؛ کارِ تازه‌ای ساخته نمی‌شود. */
+    if (linkTask) {
+      return w.Notes.update(linkTask, {
+        batchId: batchId, docCount: b.docs.length
+      }).then(function () {
+        return linkTask.status === 'open'
+          ? w.Notes.complete(linkTask) : linkTask;
+      }).catch(function () { return null; });
+    }
+
     return w.Notes.create({
-      kind: 'task', done: true, caseId: single,
+      kind: 'task', done: true, caseId: '',
       title: title, text: text,
       category: 'بایگانی و اسکن',
       batchId: batchId, docCount: b.docs.length
-    }).then(function () {
-      // کارِ هر پرونده، فقط وقتی دسته چندپرونده‌ای است
-      if (caseIds.length < 2 || caseIds.length > PER_CASE_TASK_CAP) {
-        return caseIds.length > PER_CASE_TASK_CAP ? noteInHistory(byCase, name) : null;
-      }
-      return caseIds.reduce(function (chain, id) {
-        return chain.then(function () {
-          return w.Notes.create({
-            kind: 'task', done: true, caseId: id,
-            title: w.U.toFaDigits(byCase[id].length) + ' سند از دستهٔ «' + name + '»',
-            category: 'بایگانی و اسکن',
-            batchId: batchId, docCount: byCase[id].length
-          });
-        });
-      }, Promise.resolve());
     }).catch(function () { /* ثبت کار نشد؛ سندها سرِ جایشان‌اند */ });
   }
 
+  /** یک سطر در تاریخچهٔ هر پرونده‌ای که دسته لمسش کرده */
   function noteInHistory(byCase, name) {
     Object.keys(byCase).forEach(function (id) {
       var rec = M.get(id);

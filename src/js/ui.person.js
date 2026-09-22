@@ -161,6 +161,7 @@
       }));
       return box;
     }
+    var docs = shared;
     box.appendChild(el('ul.doc-list', null, shared.map(function (doc) {
       return el('li.doc-item.person-doc', null, [
         el('span.doc-icon', { html: w.UIDocs.iconFor(doc.fileName) }),
@@ -176,9 +177,12 @@
         ]),
         el('div.doc-actions', null, [
           el('button.btn.small', {
-            type: 'button', text: 'باز کردن',
+            /* دیدن، نه دانلود: عکس و PDF همین‌جا باز می‌شوند و دکمهٔ
+               دانلود داخل نمایشگر است — همان قاعده‌ای که در پرونده
+               داریم و باید همه‌جای برنامه یکی باشد. */
+            type: 'button', text: 'دیدن',
             onclick: function () {
-              D.openDoc(doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+              w.UIViewer.open(docs, docs.indexOf(doc));
             }
           })
         ])
@@ -208,9 +212,9 @@
             text: ' — ' + (it.doc.title || it.doc.letterNo || it.doc.originalName) + ' '
           }),
           el('button.linkish', {
-            type: 'button', text: 'باز کردن',
+            type: 'button', text: 'دیدن',
             onclick: function () {
-              D.openDoc(it.doc).catch(function (e) { w.U.toast(e.message, 'bad'); });
+              w.UIViewer.open([it.doc], 0);
             }
           })];
       } else {
