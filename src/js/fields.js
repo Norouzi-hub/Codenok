@@ -172,6 +172,14 @@ window.FIELDS = [
     "hidden": true
   },
   {
+    "key": "caseSummary",
+    "label": "خلاصه پرونده",
+    "type": "textarea",
+    "group": "case",
+    "col": null,
+    "hidden": true
+  },
+  {
     "key": "nationalId",
     "label": "کد ملی*(1)",
     "type": "text",
@@ -417,6 +425,20 @@ window.FIELDS = [
     "col": null
   },
   {
+    "key": "salaryStopLetterNo",
+    "label": "شماره نامه بستن حقوق",
+    "type": "text",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "salaryStopLetterDate",
+    "label": "تاریخ نامه بستن حقوق",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
     "key": "committeeDate",
     "label": "تاریخ طرح در کمیته(2)",
     "type": "date",
@@ -471,6 +493,14 @@ window.FIELDS = [
     "type": "date",
     "group": "verdict",
     "col": null
+  },
+  {
+    "key": "verdictResult",
+    "label": "نتیجه رأی کمیته",
+    "type": "select",
+    "group": "verdict",
+    "col": null,
+    "list": "NatijeRay"
   },
   {
     "key": "noticeLetterNo",
@@ -561,6 +591,56 @@ window.FIELDS = [
     "key": "archiveDate",
     "label": "تاریخ ارسال به بایگانی",
     "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "salaryResumeLetterNo",
+    "label": "شماره نامه باز کردن حقوق",
+    "type": "text",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "salaryResumeLetterDate",
+    "label": "تاریخ نامه باز کردن حقوق",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "enforceOutcome",
+    "label": "وضعیت کارمند پس از ابلاغ رأی",
+    "type": "select",
+    "group": "enforce",
+    "col": null,
+    "list": "NatijeEjra"
+  },
+  {
+    "key": "dismissalLetterNo",
+    "label": "شماره نامه اخراج / خاتمه همکاری",
+    "type": "text",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "dismissalDate",
+    "label": "تاریخ اخراج / خاتمه همکاری",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "undertakingDate",
+    "label": "تاریخ اخذ تعهد",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "undertakingNote",
+    "label": "موضوع تعهد اخذشده",
+    "type": "textarea",
     "group": "enforce",
     "col": null
   }
@@ -655,6 +735,19 @@ window.DEFAULT_LISTS = {
     "ابلاغ نشد",
     "در انتظار بازگشت",
     "مستنکف از ابلاغ"
+  ],
+  "NatijeRay": [
+    "تبرئه",
+    "محکومیت (صدور تنبیه)",
+    "منع تعقیب / مختومه",
+    "سایر"
+  ],
+  "NatijeEjra": [
+    "اخراج / خاتمه همکاری",
+    "اخذ تعهد",
+    "اجرای تنبیه",
+    "بدون اقدام اجرایی",
+    "سایر"
   ]
 };
 window.DEFAULT_COLUMNS = ["caseNo", "status", "firstName", "lastName", "nationalId", "caseType", "orgUnit", "intakeDate", "committeeDate", "expert"];
@@ -686,6 +779,10 @@ window.MILESTONES = [
   {
     "key": "invitationLetterDate",
     "label": "دعوت به کمیته جهت اخذ دفاعیه"
+  },
+  {
+    "key": "salaryStopLetterDate",
+    "label": "ارسال نامه بستن حقوق"
   },
   {
     "key": "defenseChaseLetterDate",
@@ -722,6 +819,18 @@ window.MILESTONES = [
   {
     "key": "noticeResultDate",
     "label": "دریافت نتیجه ابلاغ"
+  },
+  {
+    "key": "salaryResumeLetterDate",
+    "label": "ارسال نامه باز کردن حقوق"
+  },
+  {
+    "key": "dismissalDate",
+    "label": "اخراج / خاتمه همکاری"
+  },
+  {
+    "key": "undertakingDate",
+    "label": "اخذ تعهد از کارمند"
   },
   {
     "key": "archiveDate",

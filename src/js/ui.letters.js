@@ -177,6 +177,9 @@
             { label: 'سابقهٔ تخلف', value: val(rec.priorRecord) },
             { label: 'مرجع گزارش‌دهنده', value: val(rec.reporterOrg) },
             { label: 'موضوع تخلف', value: val(rec.reportSubject), minMm: 22 },
+            /* همان خلاصه‌ای که کارشناس سرِ تب «کارها و یادداشت‌ها» نوشته —
+               نوشته شده که خوانده شود، پس در برگهٔ خلاصه هم می‌آید. */
+            { label: 'خلاصهٔ پرونده', value: val(rec.caseSummary), minMm: 28 },
             { label: 'خلاصهٔ دفاعیه', value: val(rec.defenseSummary), minMm: 42 }
           ]
         }

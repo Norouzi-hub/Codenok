@@ -211,7 +211,7 @@ const FAKE_DISK = `(function () {
   });
   check('بخشی که داده دارد باز است و بخشی که ندارد جمع',
     JSON.stringify(blocks.list) ===
-    JSON.stringify([['defect', 'جمع'], ['inquiry', 'باز']]),
+    JSON.stringify([['defect', 'جمع'], ['inquiry', 'باز'], ['salaryStop', 'جمع']]),
     JSON.stringify(blocks.list));
   check('فیلدهای بخشِ جمع‌شده اصلاً رندر نمی‌شوند',
     blocks.inquiryFields === 5 && blocks.defectFields === 0,
@@ -266,7 +266,7 @@ const FAKE_DISK = `(function () {
     };
   }, blocks.id);
   check('همهٔ گره‌های ریل قابل کلیک‌اند',
-    railGo.pickable === railGo.total && railGo.total === 15,
+    railGo.pickable === railGo.total && railGo.total === 18,
     railGo.pickable + ' از ' + railGo.total);
   check('کلیک، تبِ درست را باز می‌کند و فیلد را روشن و فوکوس',
     /دعوت/.test(railGo.tab) && railGo.focused === 'invitationLetterDate' &&

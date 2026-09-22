@@ -341,9 +341,15 @@
     });
 
     var sections = [];
+    /* وقتی جستجویی در کار است، نتیجه اولین چیزِ صفحه است.
+       تا امروز فهرست دسته‌ها بالا می‌ماند و نتیجهٔ جستجو زیر آن — یعنی
+       کاربر تایپ می‌کرد و بعد باید تا ته صفحه اسکرول می‌کرد تا ببیند چه
+       پیدا شده. جوابِ سؤال، بالای صفحه است. */
+    var searching = !!(st.q || st.tags.length || st.kind || st.scope);
 
-    if (batches.length) {
-      sections.push(el('section.arc-section', null, [
+    function batchSection() {
+      if (!batches.length) return null;
+      return el('section.arc-section', null, [
         el('div.wl-section-head', null, [
           el('h2', { text: 'دسته‌های بارگذاری' }),
           el('span.wl-count', { text: fa(batches.length) + ' دسته' }),
@@ -355,15 +361,15 @@
         el('div.arc-batches', null, batches.slice(0, 40).map(function (b) {
           return batchCard(app, b, refresh);
         }))
-      ]));
+      ]);
     }
 
     /* وقتی دسته‌ای باز است، سندهایش داخل خودِ کارت‌اند؛ تکرارشان در
        فهرست پایین یعنی همان گم شدنی که قرار بود درست شود. */
+    var docSection = null, overflowNote = null;
     if (!st.batchId) {
-      var title = (st.q || st.tags.length || st.kind || st.scope)
-        ? 'نتیجهٔ جستجو' : 'همهٔ سندها';
-      sections.push(el('section.arc-section', null, [
+      var title = searching ? 'نتیجهٔ جستجو' : 'همهٔ سندها';
+      docSection = el('section.arc-section' + (searching ? '.is-result' : ''), null, [
         el('div.wl-section-head', null, [
           el('h2', { text: title }),
           el('span.wl-count', { text: fa(found.length) + ' سند' }),
@@ -384,14 +390,21 @@
                 : 'هنوز سندی ثبت نشده است.'
             })
           ])
-      ]));
+      ]);
 
       if (found.length > 200) {
-        sections.push(el('p.muted.tiny', {
+        overflowNote = el('p.muted.tiny', {
           text: 'فقط ۲۰۰ سند اول نشان داده شد؛ جستجو را باریک‌تر کنید.'
-        }));
+        });
       }
     }
+
+    if (searching) {
+      sections.push(docSection, overflowNote, batchSection());
+    } else {
+      sections.push(batchSection(), docSection, overflowNote);
+    }
+    sections = sections.filter(Boolean);
 
     w.U.clear(mount);
     mount.appendChild(el('div.arc-view', null,

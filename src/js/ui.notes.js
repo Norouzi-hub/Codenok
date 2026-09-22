@@ -9,7 +9,7 @@
 (function (w) {
   'use strict';
 
-  var el = w.U.el, J = w.J, N = w.Notes;
+  var el = w.U.el, J = w.J, M = w.Model, N = w.Notes;
 
   function fa(n) { return w.U.toFaDigits(n); }
 
@@ -23,6 +23,82 @@
     return days > 0
       ? fa(days) + ' روز گذشته'
       : fa(-days) + ' روز دیگر';
+  }
+
+  /*
+   * خلاصهٔ پرونده.
+   *
+   * پرونده سی‌ونه فیلد دارد و هیچ‌کدام در یک نگاه نمی‌گوید «قصه چیست».
+   * این چند خط را خودِ کارشناس می‌نویسد و وقتی بعد از دو ماه پرونده را
+   * باز می‌کند، همین اول صفحه می‌خواندش. جایش بالای «کارها و یادداشت‌ها»
+   * است چون این تب، تبِ «چه خبر است» است.
+   *
+   * ویرایش درجاست: یک دکمه، همان کادر، ذخیره. فیلدِ واقعیِ پرونده است، پس
+   * در تاریخچه، خروجی اکسل و جستجو هم می‌آید.
+   */
+  function summaryBlock(rec, refresh) {
+    var box = el('section.note-summary');
+    var text = (rec.caseSummary || '').trim();
+
+    function view() {
+      w.U.clear(box);
+      box.classList.remove('editing');
+      box.appendChild(el('div.note-summary-head', null, [
+        el('h3', { text: 'خلاصهٔ پرونده' }),
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', text: text ? 'ویرایش' : '＋ نوشتن خلاصه',
+          onclick: edit
+        })
+      ]));
+      box.appendChild(text
+        ? el('p.note-summary-text', { text: text })
+        : el('p.note-summary-empty', {
+          text: 'خلاصه‌ای نوشته نشده. در دو سه خط بنویسید این پرونده ' +
+            'دربارهٔ چیست و کجای کار است؛ دفعهٔ بعد همین را می‌خوانید.'
+        }));
+    }
+
+    function edit() {
+      w.U.clear(box);
+      box.classList.add('editing');
+      var area = el('textarea.input.area.note-summary-input', {
+        rows: 4, value: text,
+        placeholder: 'مثلاً: گزارش بازرسی دربارهٔ غیبت غیرموجه ' +
+          'مردادماه؛ دفاعیه گرفته شده، منتظر پاسخ حراست.'
+      });
+      var save = el('button.btn.small.primary', {
+        type: 'button', text: 'ذخیرهٔ خلاصه',
+        onclick: function () {
+          var v = area.value.trim();
+          if (v === text) { view(); return; }
+          save.disabled = true;
+          M.applyPatches([{ id: rec.id, patch: { caseSummary: v } }], {
+            kind: 'update', note: v ? 'خلاصهٔ پرونده به‌روز شد' : 'خلاصهٔ پرونده پاک شد'
+          }).then(function () {
+            text = v;
+            w.U.toast('خلاصهٔ پرونده ذخیره شد.', 'good');
+            refresh();
+          }).catch(function (e) {
+            save.disabled = false;
+            w.U.toast(e.message, 'bad');
+          });
+        }
+      });
+      box.appendChild(el('div.note-summary-head', null, [
+        el('h3', { text: 'خلاصهٔ پرونده' }),
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'انصراف', onclick: view
+        }),
+        save
+      ]));
+      box.appendChild(area);
+      setTimeout(function () { area.focus(); }, 40);
+    }
+
+    view();
+    return box;
   }
 
   function noteRow(app, note, refresh) {
@@ -136,6 +212,13 @@
   function render(app, rec, refresh) {
     var panel = el('div.note-panel');
 
+    /* رکورد را تازه بخوان.
+       صفحهٔ پرونده یک بار باز می‌شود و همان شیء را نگه می‌دارد، ولی هر
+       نوشتنی روی پرونده — از جمله ذخیرهٔ همین خلاصه — نسخهٔ تازه‌ای در
+       مدل می‌نشاند. بدون این، خلاصه ذخیره می‌شد و بلافاصله خالی نشان
+       داده می‌شد؛ تا وقتی پرونده را نمی‌بستید و باز نمی‌کردید. */
+    if (rec) rec = M.get(rec.id) || rec;
+
     if (!rec) {
       panel.appendChild(el('p.muted', {
         text: 'برای افزودن یادداشت، اول پرونده را ذخیره کنید.'
@@ -143,7 +226,10 @@
       return panel;
     }
 
-    /* چک‌لیست کارهای همین پرونده — بالای همه، چون کارِ نکرده مهم‌تر از
+    // خلاصهٔ پرونده، بالاتر از همه: اول «قصه چیست»، بعد «چه باید کرد»
+    panel.appendChild(summaryBlock(rec, refresh));
+
+    /* چک‌لیست کارهای همین پرونده — بعد از خلاصه، چون کارِ نکرده مهم‌تر از
        یادداشتِ نوشته‌شده است. */
     panel.appendChild(el('div.note-part', null, [
       el('h3.note-part-head', { text: 'کارهای این پرونده' }),
@@ -200,8 +286,13 @@
       ])
     ]));
 
-    /* بارگذاری سند از همین‌جا: خیلی وقت‌ها یادداشت و سند با هم می‌آیند
-       («نامه‌اش رسید» + خود نامه)، و رفتن به تب دیگر یعنی نصفه رها کردن کار. */
+    /* بارگذاری سند از همین‌جا می‌ماند، ولی نمایش سندها نه.
+       تا امروز چهار سندِ آخر همین‌جا هم تکرار می‌شدند و کاربر درست گفت که
+       جایشان اینجا نیست: مدارک و تصاویر یک خانه دارند — تب «مستندات» — و
+       دو جا نشان دادنشان یعنی دو جا دنبالشان گشتن. آنچه ماند فقط یک راهِ
+       میان‌بر است: خیلی وقت‌ها یادداشت و سند با هم می‌آیند («نامه‌اش
+       رسید» + خود نامه) و رفتن به تب دیگر یعنی نصفه رها کردن کار. سند،
+       مثل همیشه، در تب مستندات می‌نشیند. */
     panel.appendChild(el('div.note-attach', null, [
       el('button.btn.small.ghost.note-attach-btn', {
         type: 'button',
@@ -212,22 +303,9 @@
         el('span', { text: 'بارگذاری سند برای این پرونده' })
       ]),
       el('span.muted.tiny', {
-        text: 'عکس، PDF، ورد، اکسل یا زیپ — در پوشهٔ همین پرونده روی دیسک می‌نشیند.'
+        text: 'عکس، PDF، ورد، اکسل یا زیپ — در تب «مستندات» همین پرونده می‌نشیند.'
       })
     ]));
-
-    // چند سند آخر، همین‌جا دیده شوند تا معلوم باشد چه چیزی بارگذاری شده
-    var recentDocs = w.Docs.current(rec.id).slice(-4).reverse();
-    if (recentDocs.length) {
-      panel.appendChild(el('div.note-docs', null, recentDocs.map(function (d) {
-        return el('div.note-doc', null, [
-          w.UIDocs.thumb(d, function () {
-            w.UIViewer.open(recentDocs, recentDocs.indexOf(d));
-          }),
-          el('span.note-doc-name', { text: d.kind || d.fileName, title: d.fileName })
-        ]);
-      })));
-    }
 
     // --- فهرست یادداشت‌ها (کارها بالا، در چک‌لیست خودشان) ---
     var list = N.forCase(rec.id).filter(function (n) { return n.kind !== 'task'; });

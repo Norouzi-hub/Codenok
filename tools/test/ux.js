@@ -179,7 +179,7 @@ function check(name, ok, extra) {
     ribClick.view === 'list' && ribClick.got === ribClick.n,
     ribClick.got + ' از ' + ribClick.n);
 
-  // ریل ریزِ پانزده‌مرحله‌ای باید به‌شکل نوار قطعه‌قطعه خوانده شود، نه نقطه‌های چسبیده
+  // ریل ریزِ هجده‌مرحله‌ای باید به‌شکل نوار قطعه‌قطعه خوانده شود، نه نقطه‌های چسبیده
   await page.evaluate(() => { window.App.setDirty(false); window.App.goList(); });
   await page.waitForSelector('.tr .rail-mini', { timeout: 20000 });
   const miniRail = await page.evaluate(() => {
@@ -193,8 +193,8 @@ function check(name, ok, extra) {
       shape: getComputedStyle(r.children[0].querySelector('.rail-dot')).borderRadius
     };
   });
-  check('ریل ریز با پانزده مرحله هم خوانا می‌ماند',
-    miniRail.steps === 15 && miniRail.segWidth >= 4,
+  check('ریل ریز با هجده مرحله هم خوانا می‌ماند',
+    miniRail.steps === 18 && miniRail.segWidth >= 4,
     miniRail.steps + ' قطعه، هرکدام ' + miniRail.segWidth + 'px در ' + miniRail.width + 'px');
 
   console.log('\n— فهرست خالی —');
@@ -268,7 +268,7 @@ function check(name, ok, extra) {
   await page.waitForSelector('.sla-editor');
   const slaFields = await page.evaluate(() =>
     document.querySelectorAll('.sla-input').length);
-  check('مهلت همهٔ مرحله‌ها در تنظیمات قابل ویرایش است', slaFields === 15,
+  check('مهلت همهٔ مرحله‌ها در تنظیمات قابل ویرایش است', slaFields === 18,
     slaFields + ' فیلد');
 
   await page.evaluate(() => {

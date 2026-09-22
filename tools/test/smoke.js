@@ -56,8 +56,8 @@ async function openList(page) {
   }));
   const REMOVED = ['reportType', 'reportYear', 'verdict1', 'verdict2', 'verdict3',
     'verdict4', 'verdict5'];
-  // ۶۲ فیلد اکسل (پس از حذف هفت‌تا) + ۱۷ فیلد گردش‌کار و ارجاع
-  check('۷۸ فیلد تعریف شده', schema.count === 78, 'fields=' + schema.count);
+  // ۶۲ فیلد اکسل (پس از حذف هفت‌تا) + ۲۷ فیلد گردش‌کار، ارجاع، حقوق و اجرا
+  check('۸۹ فیلد تعریف شده', schema.count === 89, 'fields=' + schema.count);
   check('فیلدهای گردش‌کار به اسکیما اضافه شده‌اند',
     ['decreeDate', 'defectLetterDate', 'defenseReceivedDate', 'defenseChaseLetterDate',
       'docsCompleteDate', 'hearingLetterDate', 'verdictDate', 'verdictSignedDate',
@@ -239,7 +239,7 @@ async function openList(page) {
       sample: rows[1] ? rows[1][0] : null };
   }, fs.readFileSync(xlsxPath).toString('base64'));
   check('فایل اکسل دوباره خوانده می‌شود',
-    importResult.rows === 33 && importResult.cols === 78 &&
+    importResult.rows === 33 && importResult.cols === 89 &&
     importResult.firstHeader.includes('شماره پرونده'),
     JSON.stringify(importResult));
 
@@ -331,7 +331,7 @@ async function openList(page) {
     wl.sum.ours + wl.sum.theirs === wl.sum.open,
     wl.sum.ours + ' + ' + wl.sum.theirs);
   check('قیف گردش‌کار نزولی است', wl.monotonic, JSON.stringify(wl.pipeline));
-  check('ریل گردش‌کار همهٔ مرحله‌های واقعی را دارد', wl.pipeRail === 15,
+  check('ریل گردش‌کار همهٔ مرحله‌های واقعی را دارد', wl.pipeRail === 18,
     wl.pipeRail + ' گره');
   check('ریل در سطرهای کارتابل رندر می‌شود', wl.railsInDom > 0,
     wl.railsInDom + ' ریل');
@@ -354,6 +354,13 @@ async function openList(page) {
     var afterSign = Object.assign({}, afterVerdict, { verdictSignedDate: '14050202' });
     var afterNotice = Object.assign({}, afterSign, { noticeLetterDate: '14050205' });
     var afterResult = Object.assign({}, afterNotice, { noticeResultDate: '14050215' });
+    // اجرای رأی (اخراج یا تعهد) ثبت شد → تازه نوبت بایگانی است
+    var afterOutcome = Object.assign({}, afterResult, { enforceOutcome: 'اخذ تعهد' });
+    /* پروندهٔ تبرئه با حقوقِ بسته: تا نامهٔ باز کردن حقوق نرود، هیچ کار
+       دیگری — حتی ابلاغ — جلو نمی‌افتد. */
+    var acquittedStopped = Object.assign({}, afterSign, {
+      salaryStopLetterDate: '14050112', verdictResult: 'تبرئه'
+    });
     return {
       needsAssign: WL.nextAction(mk({})).key,
       needsDecree: WL.nextAction(mk(afterAssign)).key,
@@ -371,7 +378,21 @@ async function openList(page) {
       needsSign: WL.nextAction(mk(afterVerdict)).key,
       needsNotice: WL.nextAction(mk(afterSign)).key,
       needsResult: WL.nextAction(mk(afterNotice)).key,
-      needsArchive: WL.nextAction(mk(afterResult)).key,
+      needsOutcome: WL.nextAction(mk(afterResult)).key,
+      needsArchive: WL.nextAction(mk(afterOutcome)).key,
+      // تبرئه‌شده، اجرای رأی ندارد؛ بعد از نتیجهٔ ابلاغ یک‌راست بایگانی
+      acquittedToArchive: WL.nextAction(mk(Object.assign({}, afterResult, {
+        verdictResult: 'تبرئه'
+      }))).key,
+      salaryResume: WL.nextAction(mk(acquittedStopped)).key,
+      // همان پرونده وقتی نامهٔ باز کردن حقوق ثبت شد
+      salaryResumed: WL.nextAction(mk(Object.assign({}, acquittedStopped, {
+        salaryResumeLetterDate: '14050204'
+      }))).key,
+      // محکومیت با حقوقِ بسته، نامهٔ باز کردن حقوق نمی‌خواهد
+      convictedStopped: WL.nextAction(mk(Object.assign({}, afterSign, {
+        salaryStopLetterDate: '14050112', verdictResult: 'محکومیت (صدور تنبیه)'
+      }))).key,
       chasingSecurity: WL.nextAction(mk(Object.assign({}, afterDecree, {
         securityOutLetterDate: '14050105'
       }))).key,
@@ -384,20 +405,23 @@ async function openList(page) {
       overdue: WL.nextAction(mk({ intakeDate: '14040101' })).overdue
     };
   });
-  // پانزده مرحله، دقیقاً به همان ترتیبی که در دبیرخانه انجام می‌شود
+  // هجده مرحله، دقیقاً به همان ترتیبی که در دبیرخانه انجام می‌شود
   var EXPECTED_CHAIN = {
     needsAssign: 'assign', needsDecree: 'decree', needsInvite: 'invite',
     needsDefense: 'defense', chasingDefense: 'chase', needsComplete: 'complete',
     needsHearing: 'hearing', needsVerdict: 'verdict', needsSign: 'sign',
-    needsNotice: 'notice', needsResult: 'result', needsArchive: 'archive',
+    needsNotice: 'notice', needsResult: 'result', needsOutcome: 'outcome',
+    needsArchive: 'archive', acquittedToArchive: 'archive',
+    salaryResume: 'salaryResume', salaryResumed: 'notice',
+    convictedStopped: 'notice',
     chasingSecurity: 'inquiry', securityAnswered: 'invite', closed: 'closed'
   };
   var wrong = Object.keys(EXPECTED_CHAIN).filter(
     k => nextActions[k] !== EXPECTED_CHAIN[k]);
-  check('اقدام بعدی، هر پانزده مرحله را به ترتیب واقعی دنبال می‌کند',
+  check('اقدام بعدی، هر هجده مرحله را به ترتیب واقعی دنبال می‌کند',
     wrong.length === 0,
     wrong.map(k => k + ': ' + nextActions[k] + '≠' + EXPECTED_CHAIN[k]).join(' | ')
-      || 'هر پانزده مرحله درست');
+      || 'هر هجده مرحله درست');
   check('دیرکرد از روی مهلت مرحله تشخیص داده می‌شود', nextActions.overdue === true);
 
   const agenda = await page.evaluate(() => {
@@ -488,7 +512,7 @@ async function openList(page) {
       hasCaseNo: cols.map.caseNo != null };
   }, fs.readFileSync(xlsxPath).toString('base64'));
   check('همهٔ ستون‌های خروجی برنامه دوباره شناسایی می‌شوند',
-    mapping.matched === 78 && mapping.ignored === 0 && mapping.hasCaseNo,
+    mapping.matched === 89 && mapping.ignored === 0 && mapping.hasCaseNo,
     mapping.matched + ' ستون، ' + mapping.ignored + ' ناشناس');
 
   // پنجرهٔ ورود واقعاً باز شود (شمارهٔ پرونده ستون صفر است؛ بررسی نباید falsy باشد)

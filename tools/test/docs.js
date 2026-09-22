@@ -449,14 +449,19 @@ async function openList(page) {
     return {
       button: !!document.querySelector('.note-attach-btn'),
       hint: (document.querySelector('.note-attach') || {}).textContent || '',
-      recent: document.querySelectorAll('.note-doc').length
+      recent: document.querySelectorAll('.note-doc').length,
+      summaryFirst: (document.querySelector('.note-panel > *') || {}).className
     };
   }, types.recId);
   check('تب یادداشت دکمهٔ بارگذاری سند دارد', fromNotes.button);
-  check('چند سند آخر در تب یادداشت دیده می‌شوند', fromNotes.recent > 0,
+  /* سندها در تب یادداشت نمایش داده نمی‌شوند: یک سند، یک خانه — تب
+     «مستندات». تکرارشان اینجا فقط دو جا دنبال گشتن بود. */
+  check('سندها در تب یادداشت تکرار نمی‌شوند', fromNotes.recent === 0,
     fromNotes.recent + ' سند');
   check('راهنما می‌گوید چه فرمت‌هایی قبول است',
     /عکس/.test(fromNotes.hint) && /زیپ/.test(fromNotes.hint));
+  check('خلاصهٔ پرونده، اولین چیزِ این تب است',
+    fromNotes.summaryFirst === 'note-summary', fromNotes.summaryFirst);
 
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));

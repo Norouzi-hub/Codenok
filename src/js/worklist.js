@@ -24,6 +24,8 @@
     { key: 'inquiry', label: 'استعلام حراست', short: 'استعلام',
       field: 'securityInLetterDate', optional: true },
     { key: 'invite', label: 'نامهٔ دعوت', short: 'دعوت', field: 'invitationLetterDate' },
+    { key: 'salaryStop', label: 'نامهٔ بستن حقوق', short: 'بستن حقوق',
+      field: 'salaryStopLetterDate', optional: true },
     { key: 'defense', label: 'دریافت دفاعیات', short: 'دفاعیه', field: 'defenseReceivedDate' },
     { key: 'complete', label: 'تکمیل مستندات', short: 'تکمیل', field: 'docsCompleteDate' },
     { key: 'hearing', label: 'جلسهٔ دفاع', short: 'جلسه', field: 'committeeDate' },
@@ -33,6 +35,10 @@
     { key: 'sign', label: 'امضای رأی توسط اعضا', short: 'امضا', field: 'verdictSignedDate' },
     { key: 'notice', label: 'ابلاغ رأی', short: 'ابلاغ', field: 'noticeLetterDate' },
     { key: 'result', label: 'دریافت نتیجهٔ ابلاغ', short: 'نتیجه', field: 'noticeResultDate' },
+    { key: 'salaryResume', label: 'نامهٔ باز کردن حقوق', short: 'بازکردن حقوق',
+      field: 'salaryResumeLetterDate', optional: true },
+    { key: 'outcome', label: 'اجرای رأی: اخراج یا تعهد', short: 'اجرای رأی',
+      field: 'enforceOutcome', optional: true },
     { key: 'archive', label: 'بایگانی و اختتام', short: 'بایگانی', field: 'archiveDate' }
   ];
 
@@ -72,14 +78,55 @@
       (rec.noticeReturn && rec.noticeReturn !== 'در انتظار بازگشت'));
   }
 
+  /* اجرای رأی یک تاریخ ندارد: یا اخراج است یا تعهد، و هرکدام تاریخ خودش
+     را دارد. پس هم «انجام شد» و هم تاریخِ روی ریل، از هر سه فیلد خوانده
+     می‌شود. */
+  function hasOutcome(rec) {
+    return !!(rec.enforceOutcome || rec.dismissalDate || rec.undertakingDate);
+  }
+
   function stageDone(rec, stage) {
     if (stage.key === 'verdict') return hasVerdict(rec);
     if (stage.key === 'result') return hasNoticeResult(rec);
+    if (stage.key === 'outcome') return hasOutcome(rec);
     if (stage.key === 'archive') return !!(rec.archiveDate || isClosed(rec));
     return !!rec[stage.field];
   }
 
+  /** تاریخی که روی ریل زیر هر مرحله می‌نشیند (فقط فیلدهای تاریخ‌دار) */
+  function stageDate(rec, stage) {
+    if (stage.key === 'outcome') {
+      return rec.dismissalDate || rec.undertakingDate || '';
+    }
+    var f = M.FIELD_BY_KEY[stage.field];
+    if (!f || f.type !== 'date') return '';
+    return rec[stage.field] || '';
+  }
+
   function isClosed(rec) { return /مختومه/.test(rec.status || ''); }
+
+  /*
+   * تبرئه.
+   *
+   * از امروز فیلد صریحِ «نتیجهٔ رأی» هست و همان حرفِ آخر است. ولی
+   * پرونده‌های قدیمی این فیلد را ندارند و نتیجه فقط در متن رأی نوشته شده؛
+   * پس اگر فیلد خالی بود، متن رأی خوانده می‌شود تا پرونده‌های گذشته هم از
+   * قاعدهٔ «حقوقش باید باز شود» جا نمانند.
+   */
+  function isAcquitted(rec) {
+    if (rec.verdictResult) return /تبرئه|برائت/.test(rec.verdictResult);
+    return /تبرئه|برائت/.test(rec.verdictFull || '');
+  }
+
+  /**
+   * حقوقِ بسته‌شده‌ای که باید باز شود.
+   * سه شرط با هم: نامهٔ بستن حقوق رفته، رأی تبرئه است، و نامهٔ باز کردن
+   * حقوق هنوز صادر نشده. تا هر سه برقرار باشد، کارتابل دست برنمی‌دارد.
+   */
+  function needsSalaryResume(rec) {
+    return !!(rec.salaryStopLetterDate && isAcquitted(rec) &&
+      !rec.salaryResumeLetterDate);
+  }
 
   /**
    * ارجاع به کارشناس دیگر: پرونده از دست ما خارج شده است.
@@ -112,15 +159,22 @@
     if (manual && !closed) {
       STAGES.forEach(function (st, i) { if (st.key === manual.key) manualAt = i; });
     }
+    /* «اکنون» فقط روی مرحله‌های الزامی می‌نشیند.
+       مرحله‌های اختیاری (رفع نواقص، استعلام، بستن حقوق، اخراج/تعهد) برای
+       بیشتر پرونده‌ها اصلاً پیش نمی‌آیند؛ اگر «اکنون» رویشان بنشیند، ریل
+       چیزی می‌گوید که آلارمِ پرونده نمی‌گوید. پس اولین مرحلهٔ الزامیِ
+       انجام‌نشده، مرحلهٔ جاری است. */
+    var autoAt = -1;
+    for (var k = 0; k < STAGES.length; k++) {
+      if (!done[k] && !STAGES[k].optional) { autoAt = k; break; }
+    }
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
         field: st.field || '',
         done: done[i],
-        date: st.field ? (rec[st.field] || '') : '',
-        current: !closed && (manualAt >= 0
-          ? i === manualAt
-          : (!done[i] && i === lastDone + 1)),
+        date: stageDate(rec, st),
+        current: !closed && (manualAt >= 0 ? i === manualAt : i === autoAt),
         manual: manualAt >= 0 && i === manualAt,
         optional: !!st.optional
       };
@@ -146,6 +200,9 @@
     sign: 7,            // امضای رأی توسط اعضا
     notice: 5,          // از امضا تا صدور ابلاغیه
     result: 10,         // از ابلاغ تا دریافت نتیجه
+    salaryStop: 3,      // ثبت نامهٔ بستن حقوق، از تاریخ دعوت‌نامه
+    salaryResume: 3,    // باز کردن حقوقِ فردِ تبرئه‌شده — کوتاه، چون حقوق کسی بسته است
+    outcome: 10,        // اجرای رأی (اخراج یا اخذ تعهد)، از تاریخ ابلاغ
     archive: 7          // از نتیجهٔ ابلاغ تا بایگانی
   };
 
@@ -165,6 +222,9 @@
     sign: 'امضای رأی توسط اعضا، از صدور رأی',
     notice: 'صدور ابلاغیه، از امضای رأی',
     result: 'دریافت نتیجهٔ ابلاغ، از تاریخ ابلاغیه',
+    salaryStop: 'ثبت نامهٔ بستن حقوق، از تاریخ دعوت‌نامه',
+    salaryResume: 'نامهٔ باز کردن حقوق پس از تبرئه، از امضای رأی',
+    outcome: 'اجرای رأی (اخراج یا اخذ تعهد)، از تاریخ ابلاغ',
     archive: 'ارسال به بایگانی، از دریافت نتیجه'
   };
 
@@ -234,6 +294,9 @@
     hearingLetter: 'صدور نامهٔ حضور در جلسهٔ دفاع',
     verdict: 'صدور و ثبت متن رأی', sign: 'گرفتن امضای اعضا پای رأی',
     notice: 'صدور ابلاغیهٔ رأی', result: 'پیگیری نتیجهٔ ابلاغ',
+    salaryStop: 'صدور نامهٔ بستن حقوق',
+    salaryResume: 'صدور نامهٔ باز کردن حقوق',
+    outcome: 'ثبت نتیجهٔ اجرای رأی (اخراج یا تعهد)',
     archive: 'ارسال پرونده به بایگانی و اختتام'
   };
 
@@ -242,7 +305,9 @@
     defect: 'واحد سازمانی', inquiry: 'حراست', invite: 'کارشناس',
     defense: 'کارمند', complete: 'کارشناس', hearing: 'دبیر کمیته',
     hearingLetter: 'دبیرخانه', verdict: 'دبیر کمیته', sign: 'اعضای کمیته',
-    notice: 'دبیرخانه', result: 'واحد سازمانی', archive: 'دبیرخانه'
+    notice: 'دبیرخانه', result: 'واحد سازمانی',
+    salaryStop: 'دبیرخانه', salaryResume: 'دبیرخانه', outcome: 'واحد سازمانی',
+    archive: 'دبیرخانه'
   };
 
   /** همان مسیر خودکار، از روی تاریخ‌های خودِ پرونده */
@@ -332,19 +397,35 @@
         rec.verdictDate || rec.committeeDate, limits.sign);
     }
 
-    // ۱۳) ابلاغ رأی
+    /* ۱۳) باز کردن حقوق پس از تبرئه.
+       جایش عمداً همین‌جاست — پیش از ابلاغ. وقتی رأی تبرئه امضا شده و
+       حقوق کسی بسته مانده، این از صدور ابلاغیه هم فوری‌تر است. */
+    if (needsSalaryResume(rec)) {
+      return make('salaryResume', 'صدور نامهٔ باز کردن حقوق (رأی تبرئه)', 'دبیرخانه',
+        rec.verdictSignedDate || rec.verdictDate, limits.salaryResume);
+    }
+
+    // ۱۴) ابلاغ رأی
     if (!rec.noticeLetterDate) {
       return make('notice', 'صدور ابلاغیهٔ رأی', 'دبیرخانه',
         rec.verdictSignedDate, limits.notice);
     }
 
-    // ۱۴) نتیجهٔ ابلاغ
+    // ۱۵) نتیجهٔ ابلاغ
     if (!hasNoticeResult(rec)) {
       return make('result', 'پیگیری نتیجهٔ ابلاغ', 'واحد سازمانی',
         rec.noticeLetterDate, limits.result);
     }
 
-    // ۱۵) بایگانی
+    /* ۱۶) اجرای رأی: بعد از ابلاغ، یکی اخراج می‌شود و از یکی تعهد گرفته
+       می‌شود. تا وقتی رأیِ محکومیت ابلاغ شده و معلوم نیست چه شد، پرونده
+       تمام نیست. پروندهٔ تبرئه این مرحله را ندارد. */
+    if (!hasOutcome(rec) && !isAcquitted(rec)) {
+      return make('outcome', 'ثبت نتیجهٔ اجرای رأی (اخراج یا تعهد)', 'واحد سازمانی',
+        rec.noticeResultDate || rec.noticeLetterDate, limits.outcome);
+    }
+
+    // ۱۷) بایگانی
     return make('archive', 'ارسال پرونده به بایگانی و اختتام', 'دبیرخانه',
       rec.noticeResultDate || rec.noticeLetterDate, limits.archive);
   }
@@ -413,6 +494,18 @@
       type: 'upload', kind: 'نتیجهٔ ابلاغ', field: 'noticeResultDate',
       label: 'بارگذاری نتیجهٔ ابلاغ'
     },
+    salaryStop: {
+      type: 'upload', kind: 'نامهٔ بستن حقوق',
+      field: 'salaryStopLetterDate', label: 'بارگذاری نامهٔ بستن حقوق'
+    },
+    salaryResume: {
+      type: 'upload', kind: 'نامهٔ باز کردن حقوق',
+      field: 'salaryResumeLetterDate', label: 'بارگذاری نامهٔ باز کردن حقوق'
+    },
+    outcome: {
+      type: 'field', field: 'enforceOutcome',
+      label: 'ثبت اخراج یا تعهد'
+    },
     archive: { type: 'field', field: 'archiveDate', label: 'ثبت تاریخ بایگانی' }
   };
 
@@ -421,7 +514,8 @@
   /** «منتظر ما» در برابر «منتظر دیگران» */
   var OURS = {
     intake: 1, assign: 1, decree: 1, invite: 1, complete: 1,
-    hearing: 1, hearingLetter: 1, verdict: 1, notice: 1, archive: 1
+    hearing: 1, hearingLetter: 1, verdict: 1, notice: 1, archive: 1,
+    salaryStop: 1, salaryResume: 1
   };
 
   function isOurs(action) { return !!OURS[action.key]; }
@@ -561,6 +655,8 @@
     CTA: CTA, cta: cta,
     stageByKey: stageByKey, overrideOf: overrideOf, MANUAL_LABEL: MANUAL_LABEL,
     isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
+    isAcquitted: isAcquitted, needsSalaryResume: needsSalaryResume,
+    hasOutcome: hasOutcome,
     readyForCommittee: readyForCommittee, week: week
   };
 })(window);

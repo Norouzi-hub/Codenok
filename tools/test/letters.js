@@ -265,11 +265,13 @@ function check(name, ok, extra) {
   }, { id: recId, extra });
   check('فرم خلاصهٔ پرونده روی کاغذ سفید ساخته می‌شود',
     summary.plain && !summary.head && summary.title === 'خلاصهٔ پرونده');
-  check('یازده سطر نمونه، با همان ترتیب فرم شما',
-    summary.labels.length === 11 &&
+  // دوازده سطر: یازده سطرِ فرم شما، به‌علاوهٔ خلاصه‌ای که کارشناس نوشته
+  check('دوازده سطر نمونه، با همان ترتیب فرم شما',
+    summary.labels.length === 12 &&
     summary.labels[0] === 'نام' &&
     summary.labels[5] === 'سابقهٔ کار در شهرداری' &&
-    summary.labels[10] === 'خلاصهٔ دفاعیه',
+    summary.labels[10] === 'خلاصهٔ پرونده' &&
+    summary.labels[11] === 'خلاصهٔ دفاعیه',
     summary.labels.join('/'));
   check('مقدارها از خود پرونده پر می‌شوند',
     /لیسانس/.test(summary.values.join(' ')) &&
@@ -415,8 +417,8 @@ function check(name, ok, extra) {
     vx.indexOf('هادی حق‌بین') > 0 && vx.indexOf('مأمور ابلاغ') > 0);
 
   const sx = unzip(docs.summary.file, 'word/document.xml');
-  check('خلاصهٔ پرونده در ورد، همان یازده سطر جدول را دارد',
-    (sx.match(/<w:tr>/g) || []).length === 11 && sx.indexOf('خلاصهٔ دفاعیه') > 0,
+  check('خلاصهٔ پرونده در ورد، همان دوازده سطر جدول را دارد',
+    (sx.match(/<w:tr>/g) || []).length === 12 && sx.indexOf('خلاصهٔ دفاعیه') > 0,
     (sx.match(/<w:tr>/g) || []).length + ' سطر');
 
   /** حاشیهٔ صفحه در ورد، از twip به میلی‌متر */

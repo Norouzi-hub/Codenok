@@ -395,9 +395,9 @@ a { color: var(--ink-700); }
 }
 
 /* ریز — داخل سطرهای فهرست و کارتابل.
-   با پانزده مرحله، نقطه‌ها در ۹۰ پیکسل به هم می‌چسبند و خوانده نمی‌شوند؛
+   با هجده مرحله، نقطه‌ها در ۹۰ پیکسل به هم می‌چسبند و خوانده نمی‌شوند؛
    پس همان ریل به نوار قطعه‌قطعه تبدیل می‌شود: هر قطعه یک مرحله. */
-.rail-mini { width: 104px; flex: 0 0 104px; gap: 2px; align-items: center; }
+.rail-mini { width: 118px; flex: 0 0 118px; gap: 2px; align-items: center; }
 .rail-mini .rail-step::before { display: none; }
 .rail-mini .rail-dot {
   width: 100%;
@@ -419,12 +419,17 @@ a { color: var(--ink-700); }
   gap: 2px;
   padding: 4px 0 2px;
 }
+/* با هجده مرحله، اسمِ تک‌خطی از خانهٔ خودش بیرون می‌زند و روی گرهٔ بغلی
+   می‌افتد. پس اسم می‌شکند و وسط‌چین می‌ماند — دو کلمه، دو خط. */
 .rail-full .rail-name {
   margin-top: 9px;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--muted);
-  white-space: nowrap;
+  text-align: center;
+  line-height: 1.35;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .rail-full .rail-date {
   font-size: 10.5px;
@@ -1964,7 +1969,7 @@ select.input { cursor: pointer; }
 .note-form-row .date-field { min-width: 158px; }
 .note-form-row .date-hint { display: none; }
 
-/* بارگذاری سند از داخل تب یادداشت */
+/* بارگذاری سند از داخل تب یادداشت (نمایش خودِ سندها اینجا نیست) */
 .note-attach {
   display: flex;
   align-items: center;
@@ -1979,16 +1984,47 @@ select.input { cursor: pointer; }
 .note-attach-btn { display: flex; align-items: center; gap: 7px; }
 .note-attach-icon { line-height: 0; color: var(--brass); }
 .note-attach-icon svg { width: 16px; height: 16px; }
-.note-docs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-.note-doc { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 62px; }
-.note-doc-name {
-  font-size: 10.5px;
-  color: var(--muted);
-  text-align: center;
-  width: 100%;
+
+/* --- خلاصهٔ پرونده، سرِ تب «کارها و یادداشت‌ها» ---
+   قابِ برنجی و کاغذِ روشن، تا در یک نگاه از بقیهٔ صفحه جدا باشد: این
+   تنها جایی است که خودِ کارشناس، به زبان خودش، پرونده را تعریف کرده. */
+.note-summary {
+  position: relative;
+  margin: 0 0 20px;
+  padding: 12px 15px 14px;
+  border: 1px solid var(--brass-line);
+  border-radius: var(--radius);
+  background: var(--brass-soft);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.note-summary::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--brass);
+}
+.note-summary-head { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.note-summary-head h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brass-ink);
+}
+.note-summary-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.95;
+  color: var(--ink-800);
+  white-space: pre-wrap;
+  animation: fade-in var(--t-mid) var(--ease);
+}
+.note-summary-empty { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.85; }
+.note-summary-input {
+  width: 100%;
+  background: var(--card);
+  animation: fade-in var(--t-fast) var(--ease);
 }
 
 .note-list { list-style: none; margin: 0; padding: 0; }
@@ -4010,6 +4046,10 @@ select.input { cursor: pointer; }
 /* مرحلهٔ اختیاریِ ثبت‌نشده: هست، ولی ادعا نمی‌کند که جا افتاده */
 .rail-step.opt:not(.done):not(.current) .rail-dot { box-shadow: 0 0 0 2px var(--line-soft) inset, 0 0 0 3px var(--card); }
 .rail-step.opt:not(.done):not(.current) .rail-name { color: var(--ink-400); }
+/* مرحلهٔ اختیاریِ بی‌تاریخ که فقط چون از رویش گذشته‌ایم «انجام‌شده» شمرده
+   می‌شود، نباید به پررنگیِ مرحله‌ای باشد که واقعاً ثبت شده. */
+.rail-step.opt.done .rail-dot { opacity: .4; }
+.rail-step.opt.done .rail-name { color: var(--ink-400); font-weight: 500; }
 
 /* ------------------------------------------------ بخش‌های اختیاری پرونده
    هر پرونده استعلام یا ارجاع ندارد. بخشی که داده دارد باز و پررنگ است؛
@@ -4045,6 +4085,10 @@ select.input { cursor: pointer; }
 }
 .form-block-off-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 180px; }
 .form-block-off-text b { font-size: 12.5px; font-weight: 600; color: var(--ink-700); }
+/* بخشِ همیشگی: خوشه‌ای از فیلدهای ثابت که فقط قاب می‌خواهد، نه سؤالِ
+   «دارد/ندارد». پس نه جمع می‌شود و نه شمارندهٔ «چند از چند» دارد. */
+.form-block.is-always { background: var(--card); border-color: var(--line-soft); }
+.form-block.is-always .form-block-head h5 { color: var(--brass-ink); }
 
 /* ================================================================
    کارتابل — «برگهٔ امروز»
@@ -4595,6 +4639,8 @@ button.tag-chip.ro { cursor: pointer; }
 .arc-drop.over { border-color: var(--brass); background: var(--brass-soft); color: var(--brass-ink); }
 
 .arc-section { margin-bottom: 26px; }
+.arc-section.is-result > .wl-section-head h2 { color: var(--brass-ink); }
+.arc-section.is-result { animation: fade-in var(--t-mid) var(--ease); }
 .arc-batches { display: flex; flex-direction: column; gap: 7px; }
 .arc-batch {
   border: 1px solid var(--line);

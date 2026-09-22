@@ -15,9 +15,10 @@
     'حکم کارگزینی', 'نامهٔ رفع نواقص',
     'استعلام حراست', 'پاسخ حراست',
     'دعوت‌نامهٔ جلسه', 'دفاعیهٔ کتبی', 'نامهٔ پیگیری دفاعیات',
+    'نامهٔ بستن حقوق', 'نامهٔ باز کردن حقوق',
     'مدارک تکمیلی', 'نامهٔ حضور در جلسهٔ دفاع',
     'صورت‌جلسهٔ کمیته', 'رأی کمیته', 'نامهٔ ابلاغ رأی',
-    'بازگشت ابلاغ', 'نتیجهٔ ابلاغ',
+    'بازگشت ابلاغ', 'نتیجهٔ ابلاغ', 'نامهٔ اخراج', 'تعهدنامهٔ کارمند',
     'مدارک هویتی', 'سایر'
   ];
 
@@ -51,11 +52,13 @@
     'نامهٔ وارده': 'letters', 'نامهٔ صادره': 'letters',
     'نامهٔ رفع نواقص': 'letters', 'نامهٔ پیگیری دفاعیات': 'letters',
     'نامهٔ حضور در جلسهٔ دفاع': 'letters', 'دعوت‌نامهٔ جلسه': 'letters',
+    'نامهٔ بستن حقوق': 'letters', 'نامهٔ باز کردن حقوق': 'letters',
     'گزارش بازرسی': 'report', 'مدارک تکمیلی': 'report',
     'حکم کارگزینی': 'identity', 'مدارک هویتی': 'identity',
     'دفاعیهٔ کتبی': 'defense', 'استعلام حراست': 'defense', 'پاسخ حراست': 'defense',
     'صورت‌جلسهٔ کمیته': 'verdict', 'رأی کمیته': 'verdict',
-    'نامهٔ ابلاغ رأی': 'verdict', 'بازگشت ابلاغ': 'verdict', 'نتیجهٔ ابلاغ': 'verdict'
+    'نامهٔ ابلاغ رأی': 'verdict', 'بازگشت ابلاغ': 'verdict', 'نتیجهٔ ابلاغ': 'verdict',
+    'نامهٔ اخراج': 'verdict', 'تعهدنامهٔ کارمند': 'verdict'
   };
 
   /*
@@ -73,9 +76,11 @@
   var KIND_DIRECTION = {
     'نامهٔ وارده': 'in', 'گزارش بازرسی': 'in', 'دفاعیهٔ کتبی': 'in',
     'پاسخ حراست': 'in', 'بازگشت ابلاغ': 'in', 'نتیجهٔ ابلاغ': 'in',
+    'تعهدنامهٔ کارمند': 'in',
     'نامهٔ صادره': 'out', 'نامهٔ رفع نواقص': 'out', 'دعوت‌نامهٔ جلسه': 'out',
     'نامهٔ پیگیری دفاعیات': 'out', 'نامهٔ حضور در جلسهٔ دفاع': 'out',
-    'استعلام حراست': 'out', 'نامهٔ ابلاغ رأی': 'out'
+    'استعلام حراست': 'out', 'نامهٔ ابلاغ رأی': 'out',
+    'نامهٔ بستن حقوق': 'out', 'نامهٔ باز کردن حقوق': 'out', 'نامهٔ اخراج': 'out'
   };
 
   /*
@@ -102,6 +107,14 @@
     },
     'دفاعیهٔ کتبی': { date: 'defenseReceivedDate', body: 'defenseSummary' },
     'نامهٔ پیگیری دفاعیات': { date: 'defenseChaseLetterDate' },
+    'نامهٔ بستن حقوق': {
+      date: 'salaryStopLetterDate', no: 'salaryStopLetterNo'
+    },
+    'نامهٔ باز کردن حقوق': {
+      date: 'salaryResumeLetterDate', no: 'salaryResumeLetterNo'
+    },
+    'نامهٔ اخراج': { date: 'dismissalDate', no: 'dismissalLetterNo' },
+    'تعهدنامهٔ کارمند': { date: 'undertakingDate', body: 'undertakingNote' },
     'مدارک تکمیلی': { date: 'docsCompleteDate' },
     'نامهٔ حضور در جلسهٔ دفاع': {
       date: 'hearingLetterDate', no: 'hearingLetterNo'
@@ -191,6 +204,11 @@
     verdictFull: 'رأی کمیته', verdictSignedDate: 'رأی کمیته',
     noticeLetterNo: 'نامهٔ ابلاغ رأی', noticeLetterDate: 'نامهٔ ابلاغ رأی',
     noticeResultDate: 'نتیجهٔ ابلاغ', noticeReturn: 'نتیجهٔ ابلاغ',
+    salaryStopLetterNo: 'نامهٔ بستن حقوق', salaryStopLetterDate: 'نامهٔ بستن حقوق',
+    salaryResumeLetterNo: 'نامهٔ باز کردن حقوق',
+    salaryResumeLetterDate: 'نامهٔ باز کردن حقوق',
+    dismissalLetterNo: 'نامهٔ اخراج', dismissalDate: 'نامهٔ اخراج',
+    undertakingDate: 'تعهدنامهٔ کارمند', undertakingNote: 'تعهدنامهٔ کارمند',
     transferLetterNo: 'نامهٔ صادره'
   };
 
@@ -208,7 +226,9 @@
     'استعلام حراست': 'defense', 'پاسخ حراست': 'defense',
     'صورت‌جلسهٔ کمیته': 'verdict', 'رأی کمیته': 'verdict',
     'نامهٔ ابلاغ رأی': 'notice', 'بازگشت ابلاغ': 'notice',
-    'حکم کارگزینی': 'notice'
+    'حکم کارگزینی': 'notice',
+    'نامهٔ بستن حقوق': 'defense', 'نامهٔ باز کردن حقوق': 'notice',
+    'نامهٔ اخراج': 'notice', 'تعهدنامهٔ کارمند': 'notice'
   };
 
   var docs = [];           // همهٔ رکوردهای فراداده
@@ -1038,8 +1058,21 @@
     return !!(rec.docFolder && rec.docFolder !== folderNameFor(rec));
   }
 
+  /*
+   * فهرست نوع‌ها.
+   *
+   * کاربر می‌تواند نوع تازه اضافه کند و آن‌وقت فهرستش در پایگاه ذخیره
+   * می‌شود. ولی خودِ برنامه هم گاهی نوع تازه می‌آورد («نامهٔ بستن حقوق»)،
+   * و اگر فقط فهرستِ ذخیره‌شده خوانده شود، آن نوع هیچ‌وقت در پنجرهٔ
+   * بارگذاری دیده نمی‌شود — در حالی که فیلدهای پرونده منتظرش‌اند. پس
+   * فهرست کاربر مقدم است و نوع‌های تازهٔ برنامه ته آن اضافه می‌شوند.
+   */
   function kinds() {
-    return M.state.lists.DocKinds || KINDS_DEFAULT;
+    var saved = M.state.lists.DocKinds;
+    if (!saved || !saved.length) return KINDS_DEFAULT;
+    return saved.concat(KINDS_DEFAULT.filter(function (k) {
+      return saved.indexOf(k) < 0;
+    }));
   }
 
   /* ================================================================

@@ -285,6 +285,27 @@ function check(name, ok, extra) {
   });
   check('صافی «بی‌پرونده» فهرست را باریک می‌کند', filtered === 4, filtered + ' سند');
 
+  /* جوابِ جستجو باید اولین چیزِ صفحه باشد، نه زیرِ فهرست دسته‌ها. */
+  const order = await page.evaluate(async () => {
+    window.App.state.archive = { q: '', tags: [], batchId: '', scope: '', kind: '' };
+    window.App.render();
+    await new Promise(r => setTimeout(r, 350));
+    const quiet = [...document.querySelectorAll('.arc-view .arc-section h2')]
+      .map(h => h.textContent);
+    window.App.state.archive.q = 'vizhe';
+    window.App.render();
+    await new Promise(r => setTimeout(r, 350));
+    const searching = [...document.querySelectorAll('.arc-view .arc-section h2')]
+      .map(h => h.textContent);
+    return { quiet: quiet, searching: searching,
+      found: document.querySelectorAll('.arc-doc').length };
+  });
+  check('بدون جستجو، دسته‌ها اول‌اند', order.quiet[0] === 'دسته‌های بارگذاری',
+    order.quiet.join(' → '));
+  check('با جستجو، نتیجه بالاترین بخش صفحه است',
+    order.searching[0] === 'نتیجهٔ جستجو' && order.found === 1,
+    order.searching.join(' → ') + ' • ' + order.found + ' سند');
+
   console.log('\n— خطاهای کنسول —');
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));
 

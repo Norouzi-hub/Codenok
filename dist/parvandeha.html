@@ -410,9 +410,9 @@ a { color: var(--ink-700); }
 }
 
 /* ریز — داخل سطرهای فهرست و کارتابل.
-   با پانزده مرحله، نقطه‌ها در ۹۰ پیکسل به هم می‌چسبند و خوانده نمی‌شوند؛
+   با هجده مرحله، نقطه‌ها در ۹۰ پیکسل به هم می‌چسبند و خوانده نمی‌شوند؛
    پس همان ریل به نوار قطعه‌قطعه تبدیل می‌شود: هر قطعه یک مرحله. */
-.rail-mini { width: 104px; flex: 0 0 104px; gap: 2px; align-items: center; }
+.rail-mini { width: 118px; flex: 0 0 118px; gap: 2px; align-items: center; }
 .rail-mini .rail-step::before { display: none; }
 .rail-mini .rail-dot {
   width: 100%;
@@ -434,12 +434,17 @@ a { color: var(--ink-700); }
   gap: 2px;
   padding: 4px 0 2px;
 }
+/* با هجده مرحله، اسمِ تک‌خطی از خانهٔ خودش بیرون می‌زند و روی گرهٔ بغلی
+   می‌افتد. پس اسم می‌شکند و وسط‌چین می‌ماند — دو کلمه، دو خط. */
 .rail-full .rail-name {
   margin-top: 9px;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--muted);
-  white-space: nowrap;
+  text-align: center;
+  line-height: 1.35;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .rail-full .rail-date {
   font-size: 10.5px;
@@ -1979,7 +1984,7 @@ select.input { cursor: pointer; }
 .note-form-row .date-field { min-width: 158px; }
 .note-form-row .date-hint { display: none; }
 
-/* بارگذاری سند از داخل تب یادداشت */
+/* بارگذاری سند از داخل تب یادداشت (نمایش خودِ سندها اینجا نیست) */
 .note-attach {
   display: flex;
   align-items: center;
@@ -1994,16 +1999,47 @@ select.input { cursor: pointer; }
 .note-attach-btn { display: flex; align-items: center; gap: 7px; }
 .note-attach-icon { line-height: 0; color: var(--brass); }
 .note-attach-icon svg { width: 16px; height: 16px; }
-.note-docs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-.note-doc { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 62px; }
-.note-doc-name {
-  font-size: 10.5px;
-  color: var(--muted);
-  text-align: center;
-  width: 100%;
+
+/* --- خلاصهٔ پرونده، سرِ تب «کارها و یادداشت‌ها» ---
+   قابِ برنجی و کاغذِ روشن، تا در یک نگاه از بقیهٔ صفحه جدا باشد: این
+   تنها جایی است که خودِ کارشناس، به زبان خودش، پرونده را تعریف کرده. */
+.note-summary {
+  position: relative;
+  margin: 0 0 20px;
+  padding: 12px 15px 14px;
+  border: 1px solid var(--brass-line);
+  border-radius: var(--radius);
+  background: var(--brass-soft);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.note-summary::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--brass);
+}
+.note-summary-head { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.note-summary-head h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brass-ink);
+}
+.note-summary-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.95;
+  color: var(--ink-800);
+  white-space: pre-wrap;
+  animation: fade-in var(--t-mid) var(--ease);
+}
+.note-summary-empty { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.85; }
+.note-summary-input {
+  width: 100%;
+  background: var(--card);
+  animation: fade-in var(--t-fast) var(--ease);
 }
 
 .note-list { list-style: none; margin: 0; padding: 0; }
@@ -4025,6 +4061,10 @@ select.input { cursor: pointer; }
 /* مرحلهٔ اختیاریِ ثبت‌نشده: هست، ولی ادعا نمی‌کند که جا افتاده */
 .rail-step.opt:not(.done):not(.current) .rail-dot { box-shadow: 0 0 0 2px var(--line-soft) inset, 0 0 0 3px var(--card); }
 .rail-step.opt:not(.done):not(.current) .rail-name { color: var(--ink-400); }
+/* مرحلهٔ اختیاریِ بی‌تاریخ که فقط چون از رویش گذشته‌ایم «انجام‌شده» شمرده
+   می‌شود، نباید به پررنگیِ مرحله‌ای باشد که واقعاً ثبت شده. */
+.rail-step.opt.done .rail-dot { opacity: .4; }
+.rail-step.opt.done .rail-name { color: var(--ink-400); font-weight: 500; }
 
 /* ------------------------------------------------ بخش‌های اختیاری پرونده
    هر پرونده استعلام یا ارجاع ندارد. بخشی که داده دارد باز و پررنگ است؛
@@ -4060,6 +4100,10 @@ select.input { cursor: pointer; }
 }
 .form-block-off-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 180px; }
 .form-block-off-text b { font-size: 12.5px; font-weight: 600; color: var(--ink-700); }
+/* بخشِ همیشگی: خوشه‌ای از فیلدهای ثابت که فقط قاب می‌خواهد، نه سؤالِ
+   «دارد/ندارد». پس نه جمع می‌شود و نه شمارندهٔ «چند از چند» دارد. */
+.form-block.is-always { background: var(--card); border-color: var(--line-soft); }
+.form-block.is-always .form-block-head h5 { color: var(--brass-ink); }
 
 /* ================================================================
    کارتابل — «برگهٔ امروز»
@@ -4610,6 +4654,8 @@ button.tag-chip.ro { cursor: pointer; }
 .arc-drop.over { border-color: var(--brass); background: var(--brass-soft); color: var(--brass-ink); }
 
 .arc-section { margin-bottom: 26px; }
+.arc-section.is-result > .wl-section-head h2 { color: var(--brass-ink); }
+.arc-section.is-result { animation: fade-in var(--t-mid) var(--ease); }
 .arc-batches { display: flex; flex-direction: column; gap: 7px; }
 .arc-batch {
   border: 1px solid var(--line);
@@ -5083,6 +5129,14 @@ window.FIELDS = [
     "hidden": true
   },
   {
+    "key": "caseSummary",
+    "label": "خلاصه پرونده",
+    "type": "textarea",
+    "group": "case",
+    "col": null,
+    "hidden": true
+  },
+  {
     "key": "nationalId",
     "label": "کد ملی*(1)",
     "type": "text",
@@ -5328,6 +5382,20 @@ window.FIELDS = [
     "col": null
   },
   {
+    "key": "salaryStopLetterNo",
+    "label": "شماره نامه بستن حقوق",
+    "type": "text",
+    "group": "defense",
+    "col": null
+  },
+  {
+    "key": "salaryStopLetterDate",
+    "label": "تاریخ نامه بستن حقوق",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
     "key": "committeeDate",
     "label": "تاریخ طرح در کمیته(2)",
     "type": "date",
@@ -5382,6 +5450,14 @@ window.FIELDS = [
     "type": "date",
     "group": "verdict",
     "col": null
+  },
+  {
+    "key": "verdictResult",
+    "label": "نتیجه رأی کمیته",
+    "type": "select",
+    "group": "verdict",
+    "col": null,
+    "list": "NatijeRay"
   },
   {
     "key": "noticeLetterNo",
@@ -5472,6 +5548,56 @@ window.FIELDS = [
     "key": "archiveDate",
     "label": "تاریخ ارسال به بایگانی",
     "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "salaryResumeLetterNo",
+    "label": "شماره نامه باز کردن حقوق",
+    "type": "text",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "salaryResumeLetterDate",
+    "label": "تاریخ نامه باز کردن حقوق",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "enforceOutcome",
+    "label": "وضعیت کارمند پس از ابلاغ رأی",
+    "type": "select",
+    "group": "enforce",
+    "col": null,
+    "list": "NatijeEjra"
+  },
+  {
+    "key": "dismissalLetterNo",
+    "label": "شماره نامه اخراج / خاتمه همکاری",
+    "type": "text",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "dismissalDate",
+    "label": "تاریخ اخراج / خاتمه همکاری",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "undertakingDate",
+    "label": "تاریخ اخذ تعهد",
+    "type": "date",
+    "group": "enforce",
+    "col": null
+  },
+  {
+    "key": "undertakingNote",
+    "label": "موضوع تعهد اخذشده",
+    "type": "textarea",
     "group": "enforce",
     "col": null
   }
@@ -5566,6 +5692,19 @@ window.DEFAULT_LISTS = {
     "ابلاغ نشد",
     "در انتظار بازگشت",
     "مستنکف از ابلاغ"
+  ],
+  "NatijeRay": [
+    "تبرئه",
+    "محکومیت (صدور تنبیه)",
+    "منع تعقیب / مختومه",
+    "سایر"
+  ],
+  "NatijeEjra": [
+    "اخراج / خاتمه همکاری",
+    "اخذ تعهد",
+    "اجرای تنبیه",
+    "بدون اقدام اجرایی",
+    "سایر"
   ]
 };
 window.DEFAULT_COLUMNS = ["caseNo", "status", "firstName", "lastName", "nationalId", "caseType", "orgUnit", "intakeDate", "committeeDate", "expert"];
@@ -5597,6 +5736,10 @@ window.MILESTONES = [
   {
     "key": "invitationLetterDate",
     "label": "دعوت به کمیته جهت اخذ دفاعیه"
+  },
+  {
+    "key": "salaryStopLetterDate",
+    "label": "ارسال نامه بستن حقوق"
   },
   {
     "key": "defenseChaseLetterDate",
@@ -5633,6 +5776,18 @@ window.MILESTONES = [
   {
     "key": "noticeResultDate",
     "label": "دریافت نتیجه ابلاغ"
+  },
+  {
+    "key": "salaryResumeLetterDate",
+    "label": "ارسال نامه باز کردن حقوق"
+  },
+  {
+    "key": "dismissalDate",
+    "label": "اخراج / خاتمه همکاری"
+  },
+  {
+    "key": "undertakingDate",
+    "label": "اخذ تعهد از کارمند"
   },
   {
     "key": "archiveDate",
@@ -12202,6 +12357,8 @@ else if (typeof exports === 'object'){
     { key: 'inquiry', label: 'استعلام حراست', short: 'استعلام',
       field: 'securityInLetterDate', optional: true },
     { key: 'invite', label: 'نامهٔ دعوت', short: 'دعوت', field: 'invitationLetterDate' },
+    { key: 'salaryStop', label: 'نامهٔ بستن حقوق', short: 'بستن حقوق',
+      field: 'salaryStopLetterDate', optional: true },
     { key: 'defense', label: 'دریافت دفاعیات', short: 'دفاعیه', field: 'defenseReceivedDate' },
     { key: 'complete', label: 'تکمیل مستندات', short: 'تکمیل', field: 'docsCompleteDate' },
     { key: 'hearing', label: 'جلسهٔ دفاع', short: 'جلسه', field: 'committeeDate' },
@@ -12211,6 +12368,10 @@ else if (typeof exports === 'object'){
     { key: 'sign', label: 'امضای رأی توسط اعضا', short: 'امضا', field: 'verdictSignedDate' },
     { key: 'notice', label: 'ابلاغ رأی', short: 'ابلاغ', field: 'noticeLetterDate' },
     { key: 'result', label: 'دریافت نتیجهٔ ابلاغ', short: 'نتیجه', field: 'noticeResultDate' },
+    { key: 'salaryResume', label: 'نامهٔ باز کردن حقوق', short: 'بازکردن حقوق',
+      field: 'salaryResumeLetterDate', optional: true },
+    { key: 'outcome', label: 'اجرای رأی: اخراج یا تعهد', short: 'اجرای رأی',
+      field: 'enforceOutcome', optional: true },
     { key: 'archive', label: 'بایگانی و اختتام', short: 'بایگانی', field: 'archiveDate' }
   ];
 
@@ -12250,14 +12411,55 @@ else if (typeof exports === 'object'){
       (rec.noticeReturn && rec.noticeReturn !== 'در انتظار بازگشت'));
   }
 
+  /* اجرای رأی یک تاریخ ندارد: یا اخراج است یا تعهد، و هرکدام تاریخ خودش
+     را دارد. پس هم «انجام شد» و هم تاریخِ روی ریل، از هر سه فیلد خوانده
+     می‌شود. */
+  function hasOutcome(rec) {
+    return !!(rec.enforceOutcome || rec.dismissalDate || rec.undertakingDate);
+  }
+
   function stageDone(rec, stage) {
     if (stage.key === 'verdict') return hasVerdict(rec);
     if (stage.key === 'result') return hasNoticeResult(rec);
+    if (stage.key === 'outcome') return hasOutcome(rec);
     if (stage.key === 'archive') return !!(rec.archiveDate || isClosed(rec));
     return !!rec[stage.field];
   }
 
+  /** تاریخی که روی ریل زیر هر مرحله می‌نشیند (فقط فیلدهای تاریخ‌دار) */
+  function stageDate(rec, stage) {
+    if (stage.key === 'outcome') {
+      return rec.dismissalDate || rec.undertakingDate || '';
+    }
+    var f = M.FIELD_BY_KEY[stage.field];
+    if (!f || f.type !== 'date') return '';
+    return rec[stage.field] || '';
+  }
+
   function isClosed(rec) { return /مختومه/.test(rec.status || ''); }
+
+  /*
+   * تبرئه.
+   *
+   * از امروز فیلد صریحِ «نتیجهٔ رأی» هست و همان حرفِ آخر است. ولی
+   * پرونده‌های قدیمی این فیلد را ندارند و نتیجه فقط در متن رأی نوشته شده؛
+   * پس اگر فیلد خالی بود، متن رأی خوانده می‌شود تا پرونده‌های گذشته هم از
+   * قاعدهٔ «حقوقش باید باز شود» جا نمانند.
+   */
+  function isAcquitted(rec) {
+    if (rec.verdictResult) return /تبرئه|برائت/.test(rec.verdictResult);
+    return /تبرئه|برائت/.test(rec.verdictFull || '');
+  }
+
+  /**
+   * حقوقِ بسته‌شده‌ای که باید باز شود.
+   * سه شرط با هم: نامهٔ بستن حقوق رفته، رأی تبرئه است، و نامهٔ باز کردن
+   * حقوق هنوز صادر نشده. تا هر سه برقرار باشد، کارتابل دست برنمی‌دارد.
+   */
+  function needsSalaryResume(rec) {
+    return !!(rec.salaryStopLetterDate && isAcquitted(rec) &&
+      !rec.salaryResumeLetterDate);
+  }
 
   /**
    * ارجاع به کارشناس دیگر: پرونده از دست ما خارج شده است.
@@ -12290,15 +12492,22 @@ else if (typeof exports === 'object'){
     if (manual && !closed) {
       STAGES.forEach(function (st, i) { if (st.key === manual.key) manualAt = i; });
     }
+    /* «اکنون» فقط روی مرحله‌های الزامی می‌نشیند.
+       مرحله‌های اختیاری (رفع نواقص، استعلام، بستن حقوق، اخراج/تعهد) برای
+       بیشتر پرونده‌ها اصلاً پیش نمی‌آیند؛ اگر «اکنون» رویشان بنشیند، ریل
+       چیزی می‌گوید که آلارمِ پرونده نمی‌گوید. پس اولین مرحلهٔ الزامیِ
+       انجام‌نشده، مرحلهٔ جاری است. */
+    var autoAt = -1;
+    for (var k = 0; k < STAGES.length; k++) {
+      if (!done[k] && !STAGES[k].optional) { autoAt = k; break; }
+    }
     return STAGES.map(function (st, i) {
       return {
         key: st.key, label: st.label, short: st.short,
         field: st.field || '',
         done: done[i],
-        date: st.field ? (rec[st.field] || '') : '',
-        current: !closed && (manualAt >= 0
-          ? i === manualAt
-          : (!done[i] && i === lastDone + 1)),
+        date: stageDate(rec, st),
+        current: !closed && (manualAt >= 0 ? i === manualAt : i === autoAt),
         manual: manualAt >= 0 && i === manualAt,
         optional: !!st.optional
       };
@@ -12324,6 +12533,9 @@ else if (typeof exports === 'object'){
     sign: 7,            // امضای رأی توسط اعضا
     notice: 5,          // از امضا تا صدور ابلاغیه
     result: 10,         // از ابلاغ تا دریافت نتیجه
+    salaryStop: 3,      // ثبت نامهٔ بستن حقوق، از تاریخ دعوت‌نامه
+    salaryResume: 3,    // باز کردن حقوقِ فردِ تبرئه‌شده — کوتاه، چون حقوق کسی بسته است
+    outcome: 10,        // اجرای رأی (اخراج یا اخذ تعهد)، از تاریخ ابلاغ
     archive: 7          // از نتیجهٔ ابلاغ تا بایگانی
   };
 
@@ -12343,6 +12555,9 @@ else if (typeof exports === 'object'){
     sign: 'امضای رأی توسط اعضا، از صدور رأی',
     notice: 'صدور ابلاغیه، از امضای رأی',
     result: 'دریافت نتیجهٔ ابلاغ، از تاریخ ابلاغیه',
+    salaryStop: 'ثبت نامهٔ بستن حقوق، از تاریخ دعوت‌نامه',
+    salaryResume: 'نامهٔ باز کردن حقوق پس از تبرئه، از امضای رأی',
+    outcome: 'اجرای رأی (اخراج یا اخذ تعهد)، از تاریخ ابلاغ',
     archive: 'ارسال به بایگانی، از دریافت نتیجه'
   };
 
@@ -12412,6 +12627,9 @@ else if (typeof exports === 'object'){
     hearingLetter: 'صدور نامهٔ حضور در جلسهٔ دفاع',
     verdict: 'صدور و ثبت متن رأی', sign: 'گرفتن امضای اعضا پای رأی',
     notice: 'صدور ابلاغیهٔ رأی', result: 'پیگیری نتیجهٔ ابلاغ',
+    salaryStop: 'صدور نامهٔ بستن حقوق',
+    salaryResume: 'صدور نامهٔ باز کردن حقوق',
+    outcome: 'ثبت نتیجهٔ اجرای رأی (اخراج یا تعهد)',
     archive: 'ارسال پرونده به بایگانی و اختتام'
   };
 
@@ -12420,7 +12638,9 @@ else if (typeof exports === 'object'){
     defect: 'واحد سازمانی', inquiry: 'حراست', invite: 'کارشناس',
     defense: 'کارمند', complete: 'کارشناس', hearing: 'دبیر کمیته',
     hearingLetter: 'دبیرخانه', verdict: 'دبیر کمیته', sign: 'اعضای کمیته',
-    notice: 'دبیرخانه', result: 'واحد سازمانی', archive: 'دبیرخانه'
+    notice: 'دبیرخانه', result: 'واحد سازمانی',
+    salaryStop: 'دبیرخانه', salaryResume: 'دبیرخانه', outcome: 'واحد سازمانی',
+    archive: 'دبیرخانه'
   };
 
   /** همان مسیر خودکار، از روی تاریخ‌های خودِ پرونده */
@@ -12510,19 +12730,35 @@ else if (typeof exports === 'object'){
         rec.verdictDate || rec.committeeDate, limits.sign);
     }
 
-    // ۱۳) ابلاغ رأی
+    /* ۱۳) باز کردن حقوق پس از تبرئه.
+       جایش عمداً همین‌جاست — پیش از ابلاغ. وقتی رأی تبرئه امضا شده و
+       حقوق کسی بسته مانده، این از صدور ابلاغیه هم فوری‌تر است. */
+    if (needsSalaryResume(rec)) {
+      return make('salaryResume', 'صدور نامهٔ باز کردن حقوق (رأی تبرئه)', 'دبیرخانه',
+        rec.verdictSignedDate || rec.verdictDate, limits.salaryResume);
+    }
+
+    // ۱۴) ابلاغ رأی
     if (!rec.noticeLetterDate) {
       return make('notice', 'صدور ابلاغیهٔ رأی', 'دبیرخانه',
         rec.verdictSignedDate, limits.notice);
     }
 
-    // ۱۴) نتیجهٔ ابلاغ
+    // ۱۵) نتیجهٔ ابلاغ
     if (!hasNoticeResult(rec)) {
       return make('result', 'پیگیری نتیجهٔ ابلاغ', 'واحد سازمانی',
         rec.noticeLetterDate, limits.result);
     }
 
-    // ۱۵) بایگانی
+    /* ۱۶) اجرای رأی: بعد از ابلاغ، یکی اخراج می‌شود و از یکی تعهد گرفته
+       می‌شود. تا وقتی رأیِ محکومیت ابلاغ شده و معلوم نیست چه شد، پرونده
+       تمام نیست. پروندهٔ تبرئه این مرحله را ندارد. */
+    if (!hasOutcome(rec) && !isAcquitted(rec)) {
+      return make('outcome', 'ثبت نتیجهٔ اجرای رأی (اخراج یا تعهد)', 'واحد سازمانی',
+        rec.noticeResultDate || rec.noticeLetterDate, limits.outcome);
+    }
+
+    // ۱۷) بایگانی
     return make('archive', 'ارسال پرونده به بایگانی و اختتام', 'دبیرخانه',
       rec.noticeResultDate || rec.noticeLetterDate, limits.archive);
   }
@@ -12591,6 +12827,18 @@ else if (typeof exports === 'object'){
       type: 'upload', kind: 'نتیجهٔ ابلاغ', field: 'noticeResultDate',
       label: 'بارگذاری نتیجهٔ ابلاغ'
     },
+    salaryStop: {
+      type: 'upload', kind: 'نامهٔ بستن حقوق',
+      field: 'salaryStopLetterDate', label: 'بارگذاری نامهٔ بستن حقوق'
+    },
+    salaryResume: {
+      type: 'upload', kind: 'نامهٔ باز کردن حقوق',
+      field: 'salaryResumeLetterDate', label: 'بارگذاری نامهٔ باز کردن حقوق'
+    },
+    outcome: {
+      type: 'field', field: 'enforceOutcome',
+      label: 'ثبت اخراج یا تعهد'
+    },
     archive: { type: 'field', field: 'archiveDate', label: 'ثبت تاریخ بایگانی' }
   };
 
@@ -12599,7 +12847,8 @@ else if (typeof exports === 'object'){
   /** «منتظر ما» در برابر «منتظر دیگران» */
   var OURS = {
     intake: 1, assign: 1, decree: 1, invite: 1, complete: 1,
-    hearing: 1, hearingLetter: 1, verdict: 1, notice: 1, archive: 1
+    hearing: 1, hearingLetter: 1, verdict: 1, notice: 1, archive: 1,
+    salaryStop: 1, salaryResume: 1
   };
 
   function isOurs(action) { return !!OURS[action.key]; }
@@ -12739,6 +12988,8 @@ else if (typeof exports === 'object'){
     CTA: CTA, cta: cta,
     stageByKey: stageByKey, overrideOf: overrideOf, MANUAL_LABEL: MANUAL_LABEL,
     isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
+    isAcquitted: isAcquitted, needsSalaryResume: needsSalaryResume,
+    hasOutcome: hasOutcome,
     readyForCommittee: readyForCommittee, week: week
   };
 })(window);
@@ -13030,9 +13281,10 @@ else if (typeof exports === 'object'){
     'حکم کارگزینی', 'نامهٔ رفع نواقص',
     'استعلام حراست', 'پاسخ حراست',
     'دعوت‌نامهٔ جلسه', 'دفاعیهٔ کتبی', 'نامهٔ پیگیری دفاعیات',
+    'نامهٔ بستن حقوق', 'نامهٔ باز کردن حقوق',
     'مدارک تکمیلی', 'نامهٔ حضور در جلسهٔ دفاع',
     'صورت‌جلسهٔ کمیته', 'رأی کمیته', 'نامهٔ ابلاغ رأی',
-    'بازگشت ابلاغ', 'نتیجهٔ ابلاغ',
+    'بازگشت ابلاغ', 'نتیجهٔ ابلاغ', 'نامهٔ اخراج', 'تعهدنامهٔ کارمند',
     'مدارک هویتی', 'سایر'
   ];
 
@@ -13066,11 +13318,13 @@ else if (typeof exports === 'object'){
     'نامهٔ وارده': 'letters', 'نامهٔ صادره': 'letters',
     'نامهٔ رفع نواقص': 'letters', 'نامهٔ پیگیری دفاعیات': 'letters',
     'نامهٔ حضور در جلسهٔ دفاع': 'letters', 'دعوت‌نامهٔ جلسه': 'letters',
+    'نامهٔ بستن حقوق': 'letters', 'نامهٔ باز کردن حقوق': 'letters',
     'گزارش بازرسی': 'report', 'مدارک تکمیلی': 'report',
     'حکم کارگزینی': 'identity', 'مدارک هویتی': 'identity',
     'دفاعیهٔ کتبی': 'defense', 'استعلام حراست': 'defense', 'پاسخ حراست': 'defense',
     'صورت‌جلسهٔ کمیته': 'verdict', 'رأی کمیته': 'verdict',
-    'نامهٔ ابلاغ رأی': 'verdict', 'بازگشت ابلاغ': 'verdict', 'نتیجهٔ ابلاغ': 'verdict'
+    'نامهٔ ابلاغ رأی': 'verdict', 'بازگشت ابلاغ': 'verdict', 'نتیجهٔ ابلاغ': 'verdict',
+    'نامهٔ اخراج': 'verdict', 'تعهدنامهٔ کارمند': 'verdict'
   };
 
   /*
@@ -13088,9 +13342,11 @@ else if (typeof exports === 'object'){
   var KIND_DIRECTION = {
     'نامهٔ وارده': 'in', 'گزارش بازرسی': 'in', 'دفاعیهٔ کتبی': 'in',
     'پاسخ حراست': 'in', 'بازگشت ابلاغ': 'in', 'نتیجهٔ ابلاغ': 'in',
+    'تعهدنامهٔ کارمند': 'in',
     'نامهٔ صادره': 'out', 'نامهٔ رفع نواقص': 'out', 'دعوت‌نامهٔ جلسه': 'out',
     'نامهٔ پیگیری دفاعیات': 'out', 'نامهٔ حضور در جلسهٔ دفاع': 'out',
-    'استعلام حراست': 'out', 'نامهٔ ابلاغ رأی': 'out'
+    'استعلام حراست': 'out', 'نامهٔ ابلاغ رأی': 'out',
+    'نامهٔ بستن حقوق': 'out', 'نامهٔ باز کردن حقوق': 'out', 'نامهٔ اخراج': 'out'
   };
 
   /*
@@ -13117,6 +13373,14 @@ else if (typeof exports === 'object'){
     },
     'دفاعیهٔ کتبی': { date: 'defenseReceivedDate', body: 'defenseSummary' },
     'نامهٔ پیگیری دفاعیات': { date: 'defenseChaseLetterDate' },
+    'نامهٔ بستن حقوق': {
+      date: 'salaryStopLetterDate', no: 'salaryStopLetterNo'
+    },
+    'نامهٔ باز کردن حقوق': {
+      date: 'salaryResumeLetterDate', no: 'salaryResumeLetterNo'
+    },
+    'نامهٔ اخراج': { date: 'dismissalDate', no: 'dismissalLetterNo' },
+    'تعهدنامهٔ کارمند': { date: 'undertakingDate', body: 'undertakingNote' },
     'مدارک تکمیلی': { date: 'docsCompleteDate' },
     'نامهٔ حضور در جلسهٔ دفاع': {
       date: 'hearingLetterDate', no: 'hearingLetterNo'
@@ -13206,6 +13470,11 @@ else if (typeof exports === 'object'){
     verdictFull: 'رأی کمیته', verdictSignedDate: 'رأی کمیته',
     noticeLetterNo: 'نامهٔ ابلاغ رأی', noticeLetterDate: 'نامهٔ ابلاغ رأی',
     noticeResultDate: 'نتیجهٔ ابلاغ', noticeReturn: 'نتیجهٔ ابلاغ',
+    salaryStopLetterNo: 'نامهٔ بستن حقوق', salaryStopLetterDate: 'نامهٔ بستن حقوق',
+    salaryResumeLetterNo: 'نامهٔ باز کردن حقوق',
+    salaryResumeLetterDate: 'نامهٔ باز کردن حقوق',
+    dismissalLetterNo: 'نامهٔ اخراج', dismissalDate: 'نامهٔ اخراج',
+    undertakingDate: 'تعهدنامهٔ کارمند', undertakingNote: 'تعهدنامهٔ کارمند',
     transferLetterNo: 'نامهٔ صادره'
   };
 
@@ -13223,7 +13492,9 @@ else if (typeof exports === 'object'){
     'استعلام حراست': 'defense', 'پاسخ حراست': 'defense',
     'صورت‌جلسهٔ کمیته': 'verdict', 'رأی کمیته': 'verdict',
     'نامهٔ ابلاغ رأی': 'notice', 'بازگشت ابلاغ': 'notice',
-    'حکم کارگزینی': 'notice'
+    'حکم کارگزینی': 'notice',
+    'نامهٔ بستن حقوق': 'defense', 'نامهٔ باز کردن حقوق': 'notice',
+    'نامهٔ اخراج': 'notice', 'تعهدنامهٔ کارمند': 'notice'
   };
 
   var docs = [];           // همهٔ رکوردهای فراداده
@@ -14053,8 +14324,21 @@ else if (typeof exports === 'object'){
     return !!(rec.docFolder && rec.docFolder !== folderNameFor(rec));
   }
 
+  /*
+   * فهرست نوع‌ها.
+   *
+   * کاربر می‌تواند نوع تازه اضافه کند و آن‌وقت فهرستش در پایگاه ذخیره
+   * می‌شود. ولی خودِ برنامه هم گاهی نوع تازه می‌آورد («نامهٔ بستن حقوق»)،
+   * و اگر فقط فهرستِ ذخیره‌شده خوانده شود، آن نوع هیچ‌وقت در پنجرهٔ
+   * بارگذاری دیده نمی‌شود — در حالی که فیلدهای پرونده منتظرش‌اند. پس
+   * فهرست کاربر مقدم است و نوع‌های تازهٔ برنامه ته آن اضافه می‌شوند.
+   */
   function kinds() {
-    return M.state.lists.DocKinds || KINDS_DEFAULT;
+    var saved = M.state.lists.DocKinds;
+    if (!saved || !saved.length) return KINDS_DEFAULT;
+    return saved.concat(KINDS_DEFAULT.filter(function (k) {
+      return saved.indexOf(k) < 0;
+    }));
   }
 
   /* ================================================================
@@ -15158,6 +15442,9 @@ else if (typeof exports === 'object'){
             { label: 'سابقهٔ تخلف', value: val(rec.priorRecord) },
             { label: 'مرجع گزارش‌دهنده', value: val(rec.reporterOrg) },
             { label: 'موضوع تخلف', value: val(rec.reportSubject), minMm: 22 },
+            /* همان خلاصه‌ای که کارشناس سرِ تب «کارها و یادداشت‌ها» نوشته —
+               نوشته شده که خوانده شود، پس در برگهٔ خلاصه هم می‌آید. */
+            { label: 'خلاصهٔ پرونده', value: val(rec.caseSummary), minMm: 28 },
             { label: 'خلاصهٔ دفاعیه', value: val(rec.defenseSummary), minMm: 42 }
           ]
         }
@@ -16560,6 +16847,15 @@ else if (typeof exports === 'object'){
    * همین چهار خوشه دقیقاً همان مرحله‌های optional ریل گردش‌کارند، پس
    * کلیک روی گرهِ ریل هم همین بخش را باز می‌کند.
    */
+  /*
+   * جای هر بخش در تب: بالای همهٔ گروه‌ها، یا پایین همه. بدون این، بخش
+   * همان‌جایی می‌نشیند که گروهش است — و برای بخشی مثل «نوع پرونده» که باید
+   * ته صفحه باشد یا «نامهٔ دعوت به جلسهٔ کمیته» که باید سرِ صفحه باشد،
+   * کافی نیست.
+   *
+   * always یعنی بخشی که همیشه باز است: خوشه‌ای از فیلدهای همیشگی که فقط
+   * دور خودش قاب می‌خواهد، نه سؤالِ «دارد/ندارد».
+   */
   var OPTIONAL_BLOCKS = [
     {
       key: 'transfer', group: 'case', label: 'ارجاع به کارشناس دیگر',
@@ -16582,10 +16878,45 @@ else if (typeof exports === 'object'){
         'securityInLetterNo', 'securityInLetterDate', 'securityAnswerSubject']
     },
     {
-      key: 'hearingLetter', group: 'verdict', label: 'نامهٔ حضور در جلسهٔ دفاع',
-      ask: 'برای این پرونده نامهٔ حضور در جلسه صادر شده',
-      hint: 'شماره و تاریخ نامهٔ دعوت به جلسهٔ دفاع.',
+      key: 'salaryStop', group: 'defense', label: 'نامهٔ بستن حقوق',
+      ask: 'برای این پرونده نامهٔ بستن حقوق صادر شده',
+      hint: 'بعد از دعوت اولیه به دفاعیه می‌آید. اگر رأی تبرئه شود، ' +
+        'کارتابل تا صدور نامهٔ باز کردن حقوق دست برنمی‌دارد.',
+      fields: ['salaryStopLetterNo', 'salaryStopLetterDate']
+    },
+    {
+      /* نامهٔ دعوت به جلسهٔ کمیته، سرِ تبِ «جلسه و رأی» — پیش از خودِ
+         جلسه و رأی، چون در واقعیت هم اول این نامه می‌رود. */
+      key: 'hearingLetter', group: 'verdict', place: 'tabTop',
+      label: 'نامهٔ دعوت به جلسهٔ کمیته',
+      ask: 'برای این پرونده نامهٔ دعوت به جلسهٔ کمیته صادر شده',
+      hint: 'شماره و تاریخ نامهٔ دعوت/حضور در جلسهٔ کمیته.',
       fields: ['hearingLetterNo', 'hearingLetterDate']
+    },
+    {
+      key: 'salaryResume', group: 'enforce', label: 'نامهٔ باز کردن حقوق',
+      ask: 'نامهٔ باز کردن حقوق صادر شده',
+      hint: 'برای کسی که حقوقش بسته شده و رأی تبرئه گرفته، الزامی است.',
+      fields: ['salaryResumeLetterNo', 'salaryResumeLetterDate']
+    },
+    {
+      key: 'outcome', group: 'enforce', place: 'tabBottom',
+      label: 'پس از ابلاغ رأی: اخراج یا تعهد',
+      ask: 'بعد از ابلاغ رأی، اقدامی روی کارمند انجام شده',
+      hint: 'یکی اخراج می‌شود، از یکی تعهد گرفته می‌شود؛ هرکدام شد، همین‌جا.',
+      fields: ['enforceOutcome', 'dismissalLetterNo', 'dismissalDate',
+        'undertakingDate', 'undertakingNote']
+    },
+    {
+      /* «نوع پرونده» یک فیلد تنها نیست: نوع، موضوع گزارش، سابقه، مراجع و
+         توضیحات با هم یک چیز را می‌گویند — این پرونده دربارهٔ چیست. جایشان
+         ته صفحه است، چون متن‌اند و بلند، و بالای صفحه باید شماره و تاریخ و
+         نام باشد. */
+      key: 'subject', group: 'case', place: 'tabBottom', always: true,
+      label: 'نوع پرونده و موضوع گزارش',
+      hint: 'نوع پرونده، موضوع گزارش، سابقه، مراجع و توضیحات.',
+      fields: ['caseType', 'reportSubject', 'priorRecord',
+        'pastReporters', 'notes']
     }
   ];
 
@@ -17048,8 +17379,12 @@ else if (typeof exports === 'object'){
       var fields = M.FIELDS.filter(function (f) {
         return b.fields.indexOf(f.key) >= 0 && !f.hidden;
       });
+      // ترتیبِ نوشته‌شده در خودِ بخش مقدم است، نه ترتیب فایل فیلدها
+      fields.sort(function (a, c) {
+        return b.fields.indexOf(a.key) - b.fields.indexOf(c.key);
+      });
       var filled = fields.filter(function (f) { return draft[f.key]; });
-      var open = filled.length > 0 || openBlocks[b.key];
+      var open = b.always || filled.length > 0 || openBlocks[b.key];
 
       if (!open) {
         return el('div.form-block.is-off', { 'data-block': b.key }, [
@@ -17080,8 +17415,8 @@ else if (typeof exports === 'object'){
         el('div.spacer')
       ]);
       /* بستنِ بخشی که داده دارد، یعنی پنهان کردن داده — پس فقط بخشِ خالی
-         جمع می‌شود. */
-      if (!filled.length) {
+         جمع می‌شود. بخش همیشگی هم اصلاً جمع نمی‌شود. */
+      if (!filled.length && !b.always) {
         head.appendChild(el('button.linkish.tiny', {
           type: 'button', text: 'ندارد، جمعش کن',
           onclick: function () {
@@ -17090,9 +17425,8 @@ else if (typeof exports === 'object'){
           }
         }));
       }
-      return el('section.form-block', { 'data-block': b.key }, [
-        head, fieldGrid(fields)
-      ]);
+      return el('section.form-block' + (b.always ? '.is-always' : ''),
+        { 'data-block': b.key }, [head, fieldGrid(fields)]);
     }
 
     function renderPanel() {
@@ -17134,14 +17468,22 @@ else if (typeof exports === 'object'){
       if (!tab) tab = FORM_TABS[0];
       var many = tab.groups.length > 1;
 
+      var tabBlocks = OPTIONAL_BLOCKS.filter(function (b) {
+        return tab.groups.indexOf(b.group) >= 0;
+      });
+      // بخش‌هایی که جای ثابت دارند، از چرخهٔ گروه‌ها بیرون‌اند
+      tabBlocks.filter(function (b) { return b.place === 'tabTop'; })
+        .forEach(function (b) { panel.appendChild(blockNode(b)); });
+
       tab.groups.forEach(function (gk) {
         // فیلدهای پنهان (مثل مرحلهٔ دستی) جایشان بالای پرونده است، نه در فرم
         var all = M.FIELDS.filter(function (f) {
           return f.group === gk && !f.hidden;
         });
-        var blocks = OPTIONAL_BLOCKS.filter(function (b) { return b.group === gk; });
+        var mine = tabBlocks.filter(function (b) { return b.group === gk; });
+        var blocks = mine.filter(function (b) { return !b.place; });
         var inBlock = {};
-        blocks.forEach(function (b) {
+        mine.forEach(function (b) {
           b.fields.forEach(function (k) { inBlock[k] = true; });
         });
         var fields = all.filter(function (f) { return !inBlock[f.key]; });
@@ -17159,6 +17501,9 @@ else if (typeof exports === 'object'){
         if (fields.length) panel.appendChild(fieldGrid(fields));
         blocks.forEach(function (b) { panel.appendChild(blockNode(b)); });
       });
+
+      tabBlocks.filter(function (b) { return b.place === 'tabBottom'; })
+        .forEach(function (b) { panel.appendChild(blockNode(b)); });
     }
 
     /**
@@ -21587,7 +21932,7 @@ else if (typeof exports === 'object'){
 (function (w) {
   'use strict';
 
-  var el = w.U.el, J = w.J, N = w.Notes;
+  var el = w.U.el, J = w.J, M = w.Model, N = w.Notes;
 
   function fa(n) { return w.U.toFaDigits(n); }
 
@@ -21601,6 +21946,82 @@ else if (typeof exports === 'object'){
     return days > 0
       ? fa(days) + ' روز گذشته'
       : fa(-days) + ' روز دیگر';
+  }
+
+  /*
+   * خلاصهٔ پرونده.
+   *
+   * پرونده سی‌ونه فیلد دارد و هیچ‌کدام در یک نگاه نمی‌گوید «قصه چیست».
+   * این چند خط را خودِ کارشناس می‌نویسد و وقتی بعد از دو ماه پرونده را
+   * باز می‌کند، همین اول صفحه می‌خواندش. جایش بالای «کارها و یادداشت‌ها»
+   * است چون این تب، تبِ «چه خبر است» است.
+   *
+   * ویرایش درجاست: یک دکمه، همان کادر، ذخیره. فیلدِ واقعیِ پرونده است، پس
+   * در تاریخچه، خروجی اکسل و جستجو هم می‌آید.
+   */
+  function summaryBlock(rec, refresh) {
+    var box = el('section.note-summary');
+    var text = (rec.caseSummary || '').trim();
+
+    function view() {
+      w.U.clear(box);
+      box.classList.remove('editing');
+      box.appendChild(el('div.note-summary-head', null, [
+        el('h3', { text: 'خلاصهٔ پرونده' }),
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', text: text ? 'ویرایش' : '＋ نوشتن خلاصه',
+          onclick: edit
+        })
+      ]));
+      box.appendChild(text
+        ? el('p.note-summary-text', { text: text })
+        : el('p.note-summary-empty', {
+          text: 'خلاصه‌ای نوشته نشده. در دو سه خط بنویسید این پرونده ' +
+            'دربارهٔ چیست و کجای کار است؛ دفعهٔ بعد همین را می‌خوانید.'
+        }));
+    }
+
+    function edit() {
+      w.U.clear(box);
+      box.classList.add('editing');
+      var area = el('textarea.input.area.note-summary-input', {
+        rows: 4, value: text,
+        placeholder: 'مثلاً: گزارش بازرسی دربارهٔ غیبت غیرموجه ' +
+          'مردادماه؛ دفاعیه گرفته شده، منتظر پاسخ حراست.'
+      });
+      var save = el('button.btn.small.primary', {
+        type: 'button', text: 'ذخیرهٔ خلاصه',
+        onclick: function () {
+          var v = area.value.trim();
+          if (v === text) { view(); return; }
+          save.disabled = true;
+          M.applyPatches([{ id: rec.id, patch: { caseSummary: v } }], {
+            kind: 'update', note: v ? 'خلاصهٔ پرونده به‌روز شد' : 'خلاصهٔ پرونده پاک شد'
+          }).then(function () {
+            text = v;
+            w.U.toast('خلاصهٔ پرونده ذخیره شد.', 'good');
+            refresh();
+          }).catch(function (e) {
+            save.disabled = false;
+            w.U.toast(e.message, 'bad');
+          });
+        }
+      });
+      box.appendChild(el('div.note-summary-head', null, [
+        el('h3', { text: 'خلاصهٔ پرونده' }),
+        el('div.spacer'),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'انصراف', onclick: view
+        }),
+        save
+      ]));
+      box.appendChild(area);
+      setTimeout(function () { area.focus(); }, 40);
+    }
+
+    view();
+    return box;
   }
 
   function noteRow(app, note, refresh) {
@@ -21714,6 +22135,13 @@ else if (typeof exports === 'object'){
   function render(app, rec, refresh) {
     var panel = el('div.note-panel');
 
+    /* رکورد را تازه بخوان.
+       صفحهٔ پرونده یک بار باز می‌شود و همان شیء را نگه می‌دارد، ولی هر
+       نوشتنی روی پرونده — از جمله ذخیرهٔ همین خلاصه — نسخهٔ تازه‌ای در
+       مدل می‌نشاند. بدون این، خلاصه ذخیره می‌شد و بلافاصله خالی نشان
+       داده می‌شد؛ تا وقتی پرونده را نمی‌بستید و باز نمی‌کردید. */
+    if (rec) rec = M.get(rec.id) || rec;
+
     if (!rec) {
       panel.appendChild(el('p.muted', {
         text: 'برای افزودن یادداشت، اول پرونده را ذخیره کنید.'
@@ -21721,7 +22149,10 @@ else if (typeof exports === 'object'){
       return panel;
     }
 
-    /* چک‌لیست کارهای همین پرونده — بالای همه، چون کارِ نکرده مهم‌تر از
+    // خلاصهٔ پرونده، بالاتر از همه: اول «قصه چیست»، بعد «چه باید کرد»
+    panel.appendChild(summaryBlock(rec, refresh));
+
+    /* چک‌لیست کارهای همین پرونده — بعد از خلاصه، چون کارِ نکرده مهم‌تر از
        یادداشتِ نوشته‌شده است. */
     panel.appendChild(el('div.note-part', null, [
       el('h3.note-part-head', { text: 'کارهای این پرونده' }),
@@ -21778,8 +22209,13 @@ else if (typeof exports === 'object'){
       ])
     ]));
 
-    /* بارگذاری سند از همین‌جا: خیلی وقت‌ها یادداشت و سند با هم می‌آیند
-       («نامه‌اش رسید» + خود نامه)، و رفتن به تب دیگر یعنی نصفه رها کردن کار. */
+    /* بارگذاری سند از همین‌جا می‌ماند، ولی نمایش سندها نه.
+       تا امروز چهار سندِ آخر همین‌جا هم تکرار می‌شدند و کاربر درست گفت که
+       جایشان اینجا نیست: مدارک و تصاویر یک خانه دارند — تب «مستندات» — و
+       دو جا نشان دادنشان یعنی دو جا دنبالشان گشتن. آنچه ماند فقط یک راهِ
+       میان‌بر است: خیلی وقت‌ها یادداشت و سند با هم می‌آیند («نامه‌اش
+       رسید» + خود نامه) و رفتن به تب دیگر یعنی نصفه رها کردن کار. سند،
+       مثل همیشه، در تب مستندات می‌نشیند. */
     panel.appendChild(el('div.note-attach', null, [
       el('button.btn.small.ghost.note-attach-btn', {
         type: 'button',
@@ -21790,22 +22226,9 @@ else if (typeof exports === 'object'){
         el('span', { text: 'بارگذاری سند برای این پرونده' })
       ]),
       el('span.muted.tiny', {
-        text: 'عکس، PDF، ورد، اکسل یا زیپ — در پوشهٔ همین پرونده روی دیسک می‌نشیند.'
+        text: 'عکس، PDF، ورد، اکسل یا زیپ — در تب «مستندات» همین پرونده می‌نشیند.'
       })
     ]));
-
-    // چند سند آخر، همین‌جا دیده شوند تا معلوم باشد چه چیزی بارگذاری شده
-    var recentDocs = w.Docs.current(rec.id).slice(-4).reverse();
-    if (recentDocs.length) {
-      panel.appendChild(el('div.note-docs', null, recentDocs.map(function (d) {
-        return el('div.note-doc', null, [
-          w.UIDocs.thumb(d, function () {
-            w.UIViewer.open(recentDocs, recentDocs.indexOf(d));
-          }),
-          el('span.note-doc-name', { text: d.kind || d.fileName, title: d.fileName })
-        ]);
-      })));
-    }
 
     // --- فهرست یادداشت‌ها (کارها بالا، در چک‌لیست خودشان) ---
     var list = N.forCase(rec.id).filter(function (n) { return n.kind !== 'task'; });
@@ -23386,9 +23809,15 @@ else if (typeof exports === 'object'){
     });
 
     var sections = [];
+    /* وقتی جستجویی در کار است، نتیجه اولین چیزِ صفحه است.
+       تا امروز فهرست دسته‌ها بالا می‌ماند و نتیجهٔ جستجو زیر آن — یعنی
+       کاربر تایپ می‌کرد و بعد باید تا ته صفحه اسکرول می‌کرد تا ببیند چه
+       پیدا شده. جوابِ سؤال، بالای صفحه است. */
+    var searching = !!(st.q || st.tags.length || st.kind || st.scope);
 
-    if (batches.length) {
-      sections.push(el('section.arc-section', null, [
+    function batchSection() {
+      if (!batches.length) return null;
+      return el('section.arc-section', null, [
         el('div.wl-section-head', null, [
           el('h2', { text: 'دسته‌های بارگذاری' }),
           el('span.wl-count', { text: fa(batches.length) + ' دسته' }),
@@ -23400,15 +23829,15 @@ else if (typeof exports === 'object'){
         el('div.arc-batches', null, batches.slice(0, 40).map(function (b) {
           return batchCard(app, b, refresh);
         }))
-      ]));
+      ]);
     }
 
     /* وقتی دسته‌ای باز است، سندهایش داخل خودِ کارت‌اند؛ تکرارشان در
        فهرست پایین یعنی همان گم شدنی که قرار بود درست شود. */
+    var docSection = null, overflowNote = null;
     if (!st.batchId) {
-      var title = (st.q || st.tags.length || st.kind || st.scope)
-        ? 'نتیجهٔ جستجو' : 'همهٔ سندها';
-      sections.push(el('section.arc-section', null, [
+      var title = searching ? 'نتیجهٔ جستجو' : 'همهٔ سندها';
+      docSection = el('section.arc-section' + (searching ? '.is-result' : ''), null, [
         el('div.wl-section-head', null, [
           el('h2', { text: title }),
           el('span.wl-count', { text: fa(found.length) + ' سند' }),
@@ -23429,14 +23858,21 @@ else if (typeof exports === 'object'){
                 : 'هنوز سندی ثبت نشده است.'
             })
           ])
-      ]));
+      ]);
 
       if (found.length > 200) {
-        sections.push(el('p.muted.tiny', {
+        overflowNote = el('p.muted.tiny', {
           text: 'فقط ۲۰۰ سند اول نشان داده شد؛ جستجو را باریک‌تر کنید.'
-        }));
+        });
       }
     }
+
+    if (searching) {
+      sections.push(docSection, overflowNote, batchSection());
+    } else {
+      sections.push(batchSection(), docSection, overflowNote);
+    }
+    sections = sections.filter(Boolean);
 
     w.U.clear(mount);
     mount.appendChild(el('div.arc-view', null,

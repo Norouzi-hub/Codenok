@@ -295,9 +295,9 @@ function fakeFile(name, text, type) {
     const keys = Object.keys(window.Worklist.CTA);
     return keys.map(k => ({ k: k, t: window.Worklist.CTA[k].type }));
   });
-  // پانزده مرحله به‌علاوهٔ «پیگیری دفاعیات» که مرحلهٔ جدا ندارد ولی اقدام دارد
+  // هجده مرحله به‌علاوهٔ «پیگیری دفاعیات» که مرحلهٔ جدا ندارد ولی اقدام دارد
   check('برای هر مرحله، یک اقدام یک‌کلیکی تعریف شده',
-    ctaAll.length === 16 &&
+    ctaAll.length === 19 &&
     ctaAll.every(c => ['upload', 'form', 'field'].indexOf(c.t) >= 0),
     ctaAll.length + ' مرحله');
 
@@ -412,8 +412,8 @@ function fakeFile(name, text, type) {
     canRevert: [...document.querySelectorAll('.modal-foot .btn')]
       .some(b => /خودکار/.test(b.textContent))
   }));
-  check('پنجرهٔ مرحله، هر پانزده مرحله را با انتخاب فعلی نشان می‌دهد',
-    picker.options === 15 && picker.selected === 'جلسهٔ دفاع' &&
+  check('پنجرهٔ مرحله، هر هجده مرحله را با انتخاب فعلی نشان می‌دهد',
+    picker.options === 18 && picker.selected === 'جلسهٔ دفاع' &&
     picker.autoMark === 'خودکار', JSON.stringify(picker));
   check('راه برگشت به حالت خودکار هست', picker.canRevert);
 
@@ -576,8 +576,10 @@ function fakeFile(name, text, type) {
   check('چهار ستون دسته‌بندی تخلف حذف شده‌اند', kept.gone.length === 0,
     kept.gone.join(','));
   // «سال رسیدگی» هم به درخواست کاربر از فرم برداشته شد
+  // «خلاصهٔ پرونده» هم فیلدِ واقعی است ولی جایش تب «کارها و یادداشت‌ها»ست
   check('فیلدهای پنهان در فرم نمی‌آیند',
-    kept.hidden.length === 4 && kept.hidden.indexOf('year') >= 0 &&
+    kept.hidden.length === 5 && kept.hidden.indexOf('year') >= 0 &&
+    kept.hidden.indexOf('caseSummary') >= 0 &&
     !clips.some(c => /stageOverride/.test(c.field)), kept.hidden.join(','));
   const noYear = await page.evaluate(() =>
     !document.querySelector('[data-field="year"]'));

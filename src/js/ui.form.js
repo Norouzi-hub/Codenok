@@ -163,6 +163,15 @@
    * همین چهار خوشه دقیقاً همان مرحله‌های optional ریل گردش‌کارند، پس
    * کلیک روی گرهِ ریل هم همین بخش را باز می‌کند.
    */
+  /*
+   * جای هر بخش در تب: بالای همهٔ گروه‌ها، یا پایین همه. بدون این، بخش
+   * همان‌جایی می‌نشیند که گروهش است — و برای بخشی مثل «نوع پرونده» که باید
+   * ته صفحه باشد یا «نامهٔ دعوت به جلسهٔ کمیته» که باید سرِ صفحه باشد،
+   * کافی نیست.
+   *
+   * always یعنی بخشی که همیشه باز است: خوشه‌ای از فیلدهای همیشگی که فقط
+   * دور خودش قاب می‌خواهد، نه سؤالِ «دارد/ندارد».
+   */
   var OPTIONAL_BLOCKS = [
     {
       key: 'transfer', group: 'case', label: 'ارجاع به کارشناس دیگر',
@@ -185,10 +194,45 @@
         'securityInLetterNo', 'securityInLetterDate', 'securityAnswerSubject']
     },
     {
-      key: 'hearingLetter', group: 'verdict', label: 'نامهٔ حضور در جلسهٔ دفاع',
-      ask: 'برای این پرونده نامهٔ حضور در جلسه صادر شده',
-      hint: 'شماره و تاریخ نامهٔ دعوت به جلسهٔ دفاع.',
+      key: 'salaryStop', group: 'defense', label: 'نامهٔ بستن حقوق',
+      ask: 'برای این پرونده نامهٔ بستن حقوق صادر شده',
+      hint: 'بعد از دعوت اولیه به دفاعیه می‌آید. اگر رأی تبرئه شود، ' +
+        'کارتابل تا صدور نامهٔ باز کردن حقوق دست برنمی‌دارد.',
+      fields: ['salaryStopLetterNo', 'salaryStopLetterDate']
+    },
+    {
+      /* نامهٔ دعوت به جلسهٔ کمیته، سرِ تبِ «جلسه و رأی» — پیش از خودِ
+         جلسه و رأی، چون در واقعیت هم اول این نامه می‌رود. */
+      key: 'hearingLetter', group: 'verdict', place: 'tabTop',
+      label: 'نامهٔ دعوت به جلسهٔ کمیته',
+      ask: 'برای این پرونده نامهٔ دعوت به جلسهٔ کمیته صادر شده',
+      hint: 'شماره و تاریخ نامهٔ دعوت/حضور در جلسهٔ کمیته.',
       fields: ['hearingLetterNo', 'hearingLetterDate']
+    },
+    {
+      key: 'salaryResume', group: 'enforce', label: 'نامهٔ باز کردن حقوق',
+      ask: 'نامهٔ باز کردن حقوق صادر شده',
+      hint: 'برای کسی که حقوقش بسته شده و رأی تبرئه گرفته، الزامی است.',
+      fields: ['salaryResumeLetterNo', 'salaryResumeLetterDate']
+    },
+    {
+      key: 'outcome', group: 'enforce', place: 'tabBottom',
+      label: 'پس از ابلاغ رأی: اخراج یا تعهد',
+      ask: 'بعد از ابلاغ رأی، اقدامی روی کارمند انجام شده',
+      hint: 'یکی اخراج می‌شود، از یکی تعهد گرفته می‌شود؛ هرکدام شد، همین‌جا.',
+      fields: ['enforceOutcome', 'dismissalLetterNo', 'dismissalDate',
+        'undertakingDate', 'undertakingNote']
+    },
+    {
+      /* «نوع پرونده» یک فیلد تنها نیست: نوع، موضوع گزارش، سابقه، مراجع و
+         توضیحات با هم یک چیز را می‌گویند — این پرونده دربارهٔ چیست. جایشان
+         ته صفحه است، چون متن‌اند و بلند، و بالای صفحه باید شماره و تاریخ و
+         نام باشد. */
+      key: 'subject', group: 'case', place: 'tabBottom', always: true,
+      label: 'نوع پرونده و موضوع گزارش',
+      hint: 'نوع پرونده، موضوع گزارش، سابقه، مراجع و توضیحات.',
+      fields: ['caseType', 'reportSubject', 'priorRecord',
+        'pastReporters', 'notes']
     }
   ];
 
@@ -651,8 +695,12 @@
       var fields = M.FIELDS.filter(function (f) {
         return b.fields.indexOf(f.key) >= 0 && !f.hidden;
       });
+      // ترتیبِ نوشته‌شده در خودِ بخش مقدم است، نه ترتیب فایل فیلدها
+      fields.sort(function (a, c) {
+        return b.fields.indexOf(a.key) - b.fields.indexOf(c.key);
+      });
       var filled = fields.filter(function (f) { return draft[f.key]; });
-      var open = filled.length > 0 || openBlocks[b.key];
+      var open = b.always || filled.length > 0 || openBlocks[b.key];
 
       if (!open) {
         return el('div.form-block.is-off', { 'data-block': b.key }, [
@@ -683,8 +731,8 @@
         el('div.spacer')
       ]);
       /* بستنِ بخشی که داده دارد، یعنی پنهان کردن داده — پس فقط بخشِ خالی
-         جمع می‌شود. */
-      if (!filled.length) {
+         جمع می‌شود. بخش همیشگی هم اصلاً جمع نمی‌شود. */
+      if (!filled.length && !b.always) {
         head.appendChild(el('button.linkish.tiny', {
           type: 'button', text: 'ندارد، جمعش کن',
           onclick: function () {
@@ -693,9 +741,8 @@
           }
         }));
       }
-      return el('section.form-block', { 'data-block': b.key }, [
-        head, fieldGrid(fields)
-      ]);
+      return el('section.form-block' + (b.always ? '.is-always' : ''),
+        { 'data-block': b.key }, [head, fieldGrid(fields)]);
     }
 
     function renderPanel() {
@@ -737,14 +784,22 @@
       if (!tab) tab = FORM_TABS[0];
       var many = tab.groups.length > 1;
 
+      var tabBlocks = OPTIONAL_BLOCKS.filter(function (b) {
+        return tab.groups.indexOf(b.group) >= 0;
+      });
+      // بخش‌هایی که جای ثابت دارند، از چرخهٔ گروه‌ها بیرون‌اند
+      tabBlocks.filter(function (b) { return b.place === 'tabTop'; })
+        .forEach(function (b) { panel.appendChild(blockNode(b)); });
+
       tab.groups.forEach(function (gk) {
         // فیلدهای پنهان (مثل مرحلهٔ دستی) جایشان بالای پرونده است، نه در فرم
         var all = M.FIELDS.filter(function (f) {
           return f.group === gk && !f.hidden;
         });
-        var blocks = OPTIONAL_BLOCKS.filter(function (b) { return b.group === gk; });
+        var mine = tabBlocks.filter(function (b) { return b.group === gk; });
+        var blocks = mine.filter(function (b) { return !b.place; });
         var inBlock = {};
-        blocks.forEach(function (b) {
+        mine.forEach(function (b) {
           b.fields.forEach(function (k) { inBlock[k] = true; });
         });
         var fields = all.filter(function (f) { return !inBlock[f.key]; });
@@ -762,6 +817,9 @@
         if (fields.length) panel.appendChild(fieldGrid(fields));
         blocks.forEach(function (b) { panel.appendChild(blockNode(b)); });
       });
+
+      tabBlocks.filter(function (b) { return b.place === 'tabBottom'; })
+        .forEach(function (b) { panel.appendChild(blockNode(b)); });
     }
 
     /**

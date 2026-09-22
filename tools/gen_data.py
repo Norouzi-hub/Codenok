@@ -126,6 +126,23 @@ EXTRA_FIELDS = [
     ('verdictSignedDate', 'تاریخ امضای رأی توسط اعضا', 'date', 'verdict'),
     ('noticeResultDate', 'تاریخ دریافت نتیجه ابلاغ', 'date', 'enforce'),
     ('archiveDate', 'تاریخ ارسال به بایگانی', 'date', 'enforce'),
+    # خلاصهٔ پرونده: در فرم دیده نمی‌شود (جایش بالای تب «کارها و یادداشت‌ها»
+    # است) ولی فیلدِ واقعی است تا ذخیره، خروجی اکسل و تاریخچه‌اش کار کند.
+    ('caseSummary', 'خلاصه پرونده', 'textarea', 'case'),
+    # بستن و باز کردن حقوق: بعضی پرونده‌ها بعد از دعوت اولیه به دفاعیه،
+    # نامهٔ بستن حقوق هم دارند. اگر رأی «تبرئه» شد، نامهٔ باز کردن حقوق
+    # الزامی است و کارتابل تا ثبت‌نشدنش دست برنمی‌دارد.
+    ('salaryStopLetterNo', 'شماره نامه بستن حقوق', 'text', 'defense'),
+    ('salaryStopLetterDate', 'تاریخ نامه بستن حقوق', 'date', 'defense'),
+    ('verdictResult', 'نتیجه رأی کمیته', 'select', 'verdict'),
+    ('salaryResumeLetterNo', 'شماره نامه باز کردن حقوق', 'text', 'enforce'),
+    ('salaryResumeLetterDate', 'تاریخ نامه باز کردن حقوق', 'date', 'enforce'),
+    # پس از ابلاغ رأی: یکی اخراج می‌شود، از یکی تعهد گرفته می‌شود.
+    ('enforceOutcome', 'وضعیت کارمند پس از ابلاغ رأی', 'select', 'enforce'),
+    ('dismissalLetterNo', 'شماره نامه اخراج / خاتمه همکاری', 'text', 'enforce'),
+    ('dismissalDate', 'تاریخ اخراج / خاتمه همکاری', 'date', 'enforce'),
+    ('undertakingDate', 'تاریخ اخذ تعهد', 'date', 'enforce'),
+    ('undertakingNote', 'موضوع تعهد اخذشده', 'textarea', 'enforce'),
 ]
 
 # مرحلهٔ دستی: در فرم پرونده دیده نمی‌شود (جایش بالای پرونده است، کنار خود
@@ -149,7 +166,7 @@ GROUPS = [
 # «سال رسیدگی» به درخواست کاربر از تب پرونده برداشته شد: از تاریخ ورود
 # خودش درمی‌آید و جای تکراری می‌گرفت. گزارش‌ها همچنان با آن فیلتر می‌کنند
 # و اگر خالی باشد، سالِ تاریخ ورود مبنا می‌شود.
-HIDE_FROM_FORM = {'year'}
+HIDE_FROM_FORM = {'year', 'caseSummary'}
 
 # فیلدهایی که به‌صورت پیش‌فرض در جدول فهرست دیده می‌شوند
 DEFAULT_COLUMNS = [
@@ -171,6 +188,8 @@ SELECT_LISTS = {
     'caseType': 'NoeParvande',
     'noticeReturn': 'Eblagh',
     'transferTo': 'Karshenas',
+    'verdictResult': 'NatijeRay',
+    'enforceOutcome': 'NatijeEjra',
 }
 
 # گزینه‌هایی که در فایل نمونه نبودند ولی منطقاً لازم‌اند
@@ -179,6 +198,9 @@ EXTRA_OPTIONS = {
     'vazeiat': ['ارجاع به کارشناس دیگر'],
     'Eshteghal': ['شاغل', 'بازنشسته', 'خاتمه همکاری', 'تعلیق'],
     'NoeParvande': ['تنبیه', 'تشویق', 'غیبت', 'سایر'],
+    'NatijeRay': ['تبرئه', 'محکومیت (صدور تنبیه)', 'منع تعقیب / مختومه', 'سایر'],
+    'NatijeEjra': ['اخراج / خاتمه همکاری', 'اخذ تعهد', 'اجرای تنبیه',
+                   'بدون اقدام اجرایی', 'سایر'],
 }
 
 # رویدادهای تایم‌لاین که خودکار از روی فیلدهای تاریخ ساخته می‌شوند
@@ -190,6 +212,7 @@ MILESTONES = [
     ('securityOutLetterDate',   'ارسال استعلام حراست'),
     ('securityInLetterDate',    'وصول پاسخ استعلام حراست'),
     ('invitationLetterDate',    'دعوت به کمیته جهت اخذ دفاعیه'),
+    ('salaryStopLetterDate',    'ارسال نامه بستن حقوق'),
     ('defenseChaseLetterDate',  'ارسال نامه پیگیری دفاعیات'),
     ('defenseReceivedDate',     'دریافت دفاعیات'),
     ('docsCompleteDate',        'تکمیل مستندات پرونده'),
@@ -199,6 +222,9 @@ MILESTONES = [
     ('verdictSignedDate',       'امضای رأی توسط اعضا'),
     ('noticeLetterDate',        'صدور نامه ابلاغ رأی'),
     ('noticeResultDate',        'دریافت نتیجه ابلاغ'),
+    ('salaryResumeLetterDate',  'ارسال نامه باز کردن حقوق'),
+    ('dismissalDate',           'اخراج / خاتمه همکاری'),
+    ('undertakingDate',         'اخذ تعهد از کارمند'),
     ('archiveDate',             'ارسال به بایگانی'),
 ]
 
@@ -271,7 +297,12 @@ def main(xlsx_path):
     for key, label, kind, group in EXTRA_FIELDS:
         f = {'key': key, 'label': label, 'type': kind, 'group': group, 'col': None}
         if kind == 'select':
-            f['list'] = SELECT_LISTS[key]
+            name = SELECT_LISTS[key]
+            f['list'] = name
+            if name not in lists:
+                lists[name] = list(EXTRA_OPTIONS.get(name, []))
+        if key in HIDE_FROM_FORM:
+            f['hidden'] = True
         fields.append(f)
     # فیلدهای پنهان: در فرم دیده نمی‌شوند، ولی ذخیره و خروجی می‌گیرند
     for key, label, kind, group in HIDDEN_FIELDS:
