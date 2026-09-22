@@ -193,10 +193,13 @@
   function buildTable(app, rows) {
     var fields = M.state.columns.map(function (k) { return M.FIELD_BY_KEY[k]; })
       .filter(Boolean);
-    // ستون ثابت گردش‌کار، پیش از ستون‌های انتخابی کاربر
-    var template = '38px 116px ' + fields.map(function (f) {
-      return colWidth(f) + 'px';
-    }).join(' ');
+    /* ستون ساعت فقط وقتی می‌آید که در همین نتیجه، دستِ‌کم یک پرونده مهلت
+       دفاعیهٔ باز داشته باشد. یک ستونِ همیشه‌خالی، هم جا می‌گیرد و هم
+       چشم را عادت می‌دهد به ندیدنش. */
+    var hasClock = rows.some(function (r) { return !!w.Worklist.defenseWatch(r); });
+    // ستون‌های ثابت (انتخاب، ساعت، گردش‌کار) پیش از ستون‌های انتخابی کاربر
+    var template = '38px ' + (hasClock ? '52px ' : '') + '132px ' +
+      fields.map(function (f) { return colWidth(f) + 'px'; }).join(' ');
 
     var header = el('div.trow.thead');
     header.style.gridTemplateColumns = template;
@@ -213,6 +216,12 @@
       app.render();
     });
     header.appendChild(el('div.th.th-pick', null, [allBox]));
+    if (hasClock) {
+      header.appendChild(el('div.th.th-clock', {
+        html: w.Mobile.icon('clock'),
+        title: 'مهلت حضور و ارائهٔ دفاعیه — هرچه قرص پُرتر، مهلت کمتر'
+      }));
+    }
     header.appendChild(el('div.th', { text: 'گردش‌کار', title: 'مرحله‌ای که پرونده در آن است' }));
     fields.forEach(function (f) {
       var active = app.state.sortKey === f.key;
@@ -254,7 +263,7 @@
       w.U.clear(viewport);
       viewport.style.transform = 'translateY(' + (start * ROW_H) + 'px)';
       for (var i = start; i < end; i++) {
-        viewport.appendChild(makeRow(app, rows[i], fields, template, i));
+        viewport.appendChild(makeRow(app, rows[i], fields, template, i, hasClock));
       }
     }
 
@@ -342,6 +351,7 @@
     var meta = [rec.orgUnit, rec.expert].filter(Boolean).join(' • ');
     card.appendChild(el('div.card-foot', null, [
       w.UIWorklist.rail(rec, 'mini'),
+      w.UIWorklist.clock(rec),
       el('span.card-action', { text: action.label || '' }),
       action.days != null && action.key !== 'closed'
         ? el('span.card-days' + (action.overdue ? '.late' : ''), {
@@ -352,7 +362,7 @@
     return card;
   }
 
-  function makeRow(app, rec, fields, template, i) {
+  function makeRow(app, rec, fields, template, i, hasClock) {
     var action = w.Worklist.nextAction(rec);
     var urgency = '';
     if (action.key === 'closed') urgency = '.done-row';
@@ -384,6 +394,9 @@
     if (pick.checked) row.classList.add('picked');
     row.appendChild(el('div.td.td-pick', null, [pick]));
 
+    if (hasClock) {
+      row.appendChild(el('div.td.td-clock', null, [w.UIWorklist.clock(rec)]));
+    }
     row.appendChild(el('div.td.td-rail', null, [w.UIWorklist.rail(rec, 'mini')]));
     fields.forEach(function (f) {
       var text = cellText(rec, f);

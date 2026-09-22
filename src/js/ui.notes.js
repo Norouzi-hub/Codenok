@@ -107,11 +107,10 @@
 
     var chip = null;
     if (note.followUp) {
-      chip = el('span.note-due' + (note.done ? '.done' : (overdue ? '.late' : '')), {
-        text: (note.done ? '✓ انجام شد — ' : 'پیگیری ') +
-          J.format(note.followUp) +
-          (note.done ? '' : ' • ' + relativeDay(note.followUp))
-      });
+      chip = w.U.dots([
+        (note.done ? '✓ انجام شد — ' : 'پیگیری ') + J.format(note.followUp),
+        note.done ? '' : relativeDay(note.followUp)
+      ], '.note-due' + (note.done ? '.done' : (overdue ? '.late' : '')));
     }
 
     var actions = el('div.note-actions');

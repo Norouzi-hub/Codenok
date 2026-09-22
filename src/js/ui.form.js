@@ -670,21 +670,63 @@
 
     var panel = el('div.form-panel');
 
+    /*
+     * شمارش معکوس، چسبیده به خودِ فیلد مهلت.
+     *
+     * تاریخ که وارد شد، همان‌جا — بی‌آنکه لازم باشد ذخیره کنید یا صفحه
+     * عوض شود — می‌گوید چند روز مانده و چقدرش گذشته. این همان عددی است
+     * که بالای پرونده و در فهرست هم دیده می‌شود، از یک تابع.
+     */
+    function countdownChip() {
+      var box = el('div.cd-inline');
+      box.paint = function () {
+        w.U.clear(box);
+        box.className = 'cd-inline';
+        if (draft.defenseReceivedDate) {
+          box.appendChild(el('span.cd-inline-note', {
+            text: '✓ دفاعیه در ' + J.format(draft.defenseReceivedDate) +
+              ' رسید؛ شمارش تمام شد.'
+          }));
+          return;
+        }
+        var cd = w.Worklist.defenseWatch(draft);
+        if (!cd) {
+          box.appendChild(el('span.cd-inline-note.muted', {
+            text: 'تاریخ مهلت را بگذارید تا شمارش معکوس شروع شود.'
+          }));
+          return;
+        }
+        box.classList.add('is-' + cd.state);
+        var fill = el('span.cd-fill');
+        box.appendChild(el('b.cd-inline-n', { text: w.UIWorklist.cdText(cd) }));
+        box.appendChild(el('span.cd-line', null, [fill]));
+        setTimeout(function () { fill.style.width = cd.pct + '%'; }, 60);
+      };
+      box.paint();
+      return box;
+    }
+
     /** شبکهٔ فیلدها — همان چیدمانی که همه‌جای فرم است */
     function fieldGrid(fields) {
       var grid = el('div.field-grid');
       fields.forEach(function (f) {
-        var input = makeInput(f, draft[f.key] || '',
-          function (v) { setField(f.key, v); }, app);
+        var chip = null;
+        var input = makeInput(f, draft[f.key] || '', function (v) {
+          setField(f.key, v);
+          if (chip) chip.paint();
+        }, app);
         var label = el('span.field-label', {
           text: cleanLabel(f.label), title: f.label
         });
         var clip = letterClip(f);
-        grid.appendChild(el('label.field' + (f.type === 'textarea' ? '.wide' : ''),
+        if (f.key === 'defenseDueDate') chip = countdownChip();
+        grid.appendChild(el('label.field' +
+          (f.type === 'textarea' ? '.wide' : '') + (chip ? '.has-cd' : ''),
           { 'data-field': f.key }, [
             // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
             clip ? el('span.field-head', null, [label, clip]) : label,
-            input
+            input,
+            chip
           ]));
       });
       return grid;
@@ -990,7 +1032,7 @@
           el('div.case-next-text', null, [
             el('span.case-next-label', { text: action.label }),
             action.manual ? el('span.stage-manual-tag', { text: 'مرحلهٔ دستی' }) : null,
-            el('span.case-next-meta', { text: meta.join(' • ') }),
+            w.U.dots(meta, '.case-next-meta'),
             // وقتی دستی تنظیم شده، محاسبهٔ خودکار هم گفته می‌شود تا پنهان نماند
             action.manual && action.autoLabel && action.autoKey !== action.key
               ? el('span.case-next-auto', {
@@ -1104,11 +1146,24 @@
           }) : null
         ]);
       }
+      /* شمارش معکوسِ مهلت دفاعیه، بینِ «اقدام بعدی» و یادداشت.
+         پرونده‌ای که مهلتش دارد تمام می‌شود، نباید این را در تبِ دعوت
+         پنهان کند: جایش همان بالاست، کنار بقیهٔ هشدارها. */
+      var cdNode = w.UIWorklist.countdown(M.get(existing.id) || existing,
+        function () {
+          w.UIDocs.addFrom(existing, function () {
+            app.state.formTab = activeTab;
+            app.render();
+          }, { kind: 'نامهٔ پیگیری دفاعیات' });
+        },
+        function () { jumpToField('defenseReceivedDate'); });
+
       return el('div.case-rail', null, [
         w.UIWorklist.rail(existing, 'full', function (fieldKey) {
           jumpToField(fieldKey);
         }),
         transferNode || next,
+        cdNode,
         followNode
       ]);
     }

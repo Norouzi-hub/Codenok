@@ -214,8 +214,25 @@
     window.requestAnimationFrame(step);
   }
 
+  /**
+   * فهرستِ نقطه‌دار — «۸ روز پیش • ۲ روز تا پایان مهلت».
+   *
+   * چرا تابع لازم است و چرا join(' • ') غلط است: در چیدمان راست‌به‌چپ،
+   * نقطهٔ جداکننده به عددِ کنارش می‌چسبد و چون صفرِ فارسی خودش یک نقطه
+   * است («۰»)، «• ۴» روی صفحه «۴۰» خوانده می‌شود. کاربر این را یک بار
+   * در بایگانی دید و درست گفت. راهِ درست، رشته نیست: هر تکه یک span، و
+   * جداکننده از CSS می‌آید که دیگر جزء متن نباشد.
+   */
+  function dots(parts, cls) {
+    return el('span.dot-list' + (cls || ''), null,
+      parts.filter(Boolean).map(function (t) {
+        return typeof t === 'string' ? el('span', { text: t }) : t;
+      }));
+  }
+
   w.U = {
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
+    dots: dots,
     debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,
     modal: modal, confirmBox: confirmBox, download: download,
     safeName: safeName, uid: uid, countUp: countUp

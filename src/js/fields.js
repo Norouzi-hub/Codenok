@@ -390,6 +390,13 @@ window.FIELDS = [
     "col": 56
   },
   {
+    "key": "defenseDueDate",
+    "label": "مهلت حضور و ارائه دفاعیه",
+    "type": "date",
+    "group": "defense",
+    "col": null
+  },
+  {
     "key": "defenseReceivedDate",
     "label": "تاریخ اخذ دفاعیه (دریافت دفاعیات)",
     "type": "date",

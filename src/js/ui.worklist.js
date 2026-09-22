@@ -11,6 +11,108 @@
     return el('span.reg-no', { text: w.U.toLatinDigits(rec.caseNo || '—') });
   }
 
+  /* ================================================================
+     شمارش معکوسِ مهلت دفاعیه
+     ----------------------------------------------------------------
+     یک عدد، سه جا: کنار خودِ فیلد در فرم، به‌شکل یک نوارِ متحرک بالای
+     پرونده، و به‌شکل یک ساعتِ کوچک در فهرست پرونده‌ها. هر سه از یک
+     تابع می‌خوانند (Worklist.defenseWatch) تا سه جا سه حرف نزنند.
+     ================================================================ */
+
+  /** «۵ روز تا پایان مهلت» / «امروز آخرین روز» / «۳ روز از مهلت گذشته» */
+  function cdText(cd) {
+    if (!cd) return '';
+    if (cd.left > 0) return fa(cd.left) + ' روز تا پایان مهلت';
+    if (cd.left === 0) return 'امروز آخرین روز مهلت است';
+    return fa(-cd.left) + ' روز از مهلت گذشته';
+  }
+
+  /* کنارِ قرصِ ساعت جا برای جمله نیست: فقط عدد. «+» یعنی از مهلت گذشته.
+     جملهٔ کامل در تولتیپِ همان ساعت است. */
+  function cdShort(cd) {
+    if (!cd) return '';
+    if (cd.left > 0) return fa(cd.left);
+    if (cd.left === 0) return 'امروز';
+    return '+' + fa(-cd.left);
+  }
+
+  /**
+   * ساعتِ کوچکِ فهرست.
+   *
+   * در یک سطرِ جدول جا برای جمله نیست، و عددِ تنها هم نمی‌گوید «کم مانده»
+   * یا «زیاد». پس یک قرصِ ساعت: هرچه از مهلت گذشته، پُرتر می‌شود؛ عقربه
+   * همان‌جاست؛ و وقتی مهلت گذشته باشد قرص سرخ می‌شود و آرام نبض می‌زند.
+   */
+  function clock(rec) {
+    var cd = WL.defenseWatch(rec);
+    if (!cd) return null;
+    var R = 7, C = 2 * Math.PI * R;
+    var gone = C * (cd.pct / 100);
+    // عقربه، همان درصد را روی صفحهٔ ساعت نشان می‌دهد
+    var ang = (cd.pct / 100) * 2 * Math.PI - Math.PI / 2;
+    var hx = 9 + Math.cos(ang) * 4.6, hy = 9 + Math.sin(ang) * 4.6;
+    var svg = '<svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">' +
+      '<circle class="cl-bg" cx="9" cy="9" r="' + R + '"/>' +
+      '<circle class="cl-arc" cx="9" cy="9" r="' + R + '" ' +
+      'stroke-dasharray="' + gone.toFixed(2) + ' ' + C.toFixed(2) + '" />' +
+      '<line class="cl-hand" x1="9" y1="9" x2="' + hx.toFixed(2) + '" y2="' +
+      hy.toFixed(2) + '"/><circle class="cl-pin" cx="9" cy="9" r="1.3"/></svg>';
+    return el('span.cd-clock.is-' + cd.state, {
+      html: svg,
+      title: 'مهلت دفاعیه: ' + J.format(cd.due) + ' — ' + cdText(cd) +
+        (cd.chased ? '\nنامهٔ پیگیری رفته است.' : '')
+    }, [el('span.cd-clock-n', { text: cdShort(cd) })]);
+  }
+
+  /**
+   * نوارِ شمارش معکوس، بالای پرونده.
+   *
+   * خطِ متحرک از صفر تا درصدِ سپری‌شده کشیده می‌شود — حرکت، «در حال
+   * گذشتن» را می‌گوید، جوری که عدد نمی‌گوید. وقتی مهلت گذشته باشد خط
+   * سرخ می‌شود و نبض می‌زند، و دکمهٔ «نامهٔ پیگیری» کنارش می‌آید: هشدار
+   * بدون راهِ انجامِ کار، فقط مزاحمت است.
+   */
+  function countdown(rec, onChase, onReceive) {
+    var cd = WL.defenseWatch(rec);
+    if (!cd) return null;
+    var fill = el('span.cd-fill');
+    var node = el('div.case-next.countdown.is-' + cd.state, null, [
+      el('span.case-next-label', null, [
+        el('span.cd-icon', { html: w.Mobile.icon('clock') || '' }),
+        el('span', { text: 'مهلت دفاعیه' })
+      ]),
+      el('div.case-next-text', null, [
+        el('span.case-next-meta', null, [
+          el('b', { text: cdText(cd) }),
+          el('span', { text: ' — تا ' + J.format(cd.due, { long: true }) })
+        ]),
+        el('span.cd-line', null, [fill]),
+        el('span.case-next-auto', {
+          text: cd.state === 'late'
+            ? (cd.chased
+              ? 'نامهٔ پیگیری رفته است؛ اگر باز هم نیامد، پرونده بدون دفاعیه به کمیته می‌رود.'
+              : 'مهلت تمام شده و دفاعیه‌ای ثبت نشده — وقتِ نامهٔ پیگیری است.')
+            : 'از ' + fa(cd.total) + ' روز مهلت، ' + fa(cd.gone) + ' روز گذشته است.'
+        })
+      ]),
+      el('div.spacer'),
+      onReceive ? el('button.btn.small.ghost', {
+        type: 'button', text: 'دفاعیه رسید',
+        title: 'ثبت تاریخ اخذ دفاعیه',
+        onclick: onReceive
+      }) : null,
+      (cd.state === 'late' || cd.state === 'today') && onChase && !cd.chased
+        ? el('button.btn.small.primary', {
+          type: 'button', text: 'نامهٔ پیگیری',
+          title: 'بارگذاری نامهٔ پیگیری دفاعیات',
+          onclick: onChase
+        }) : null
+    ]);
+    // خط، بعد از نشستن در صفحه پر می‌شود؛ وگرنه حرکتی دیده نمی‌شود
+    setTimeout(function () { fill.style.width = cd.pct + '%'; }, 60);
+    return node;
+  }
+
   // ------------------------------------------------------------ ریل گردش‌کار
   /**
    * ریل گردش‌کار — نشانهٔ امضای برنامه.
@@ -244,11 +346,12 @@
       el('span.wl-person', { text: person || 'بدون نام' }),
       el('span.wl-unit', { text: rec.orgUnit || '' }),
       rail(rec, 'mini'),
+      /* ساعتِ مهلت دفاعیه، کنار روزشمار — همان قرصی که در فهرست
+         پرونده‌ها هم هست، تا دو جا یک زبان داشته باشند. */
       el('span.wl-wait' + (action.overdue ? '.late' : ''), {
-        text: wait,
         title: action.limit
           ? 'مهلت ' + fa(action.limit) + ' روز' : 'بدون مهلت تعریف‌شده'
-      }),
+      }, [clock(rec), el('span', { text: wait })]),
       el('span.wl-go', { text: '↵', 'aria-hidden': 'true' })
     ]);
     if (note) {
@@ -712,5 +815,6 @@
   }
 
   w.UIWorklist = { render: render, rail: rail, pipelineRail: pipelineRail,
-    caseNumber: caseNumber, weekStrip: weekStrip };
+    caseNumber: caseNumber, weekStrip: weekStrip,
+    countdown: countdown, clock: clock, cdText: cdText, cdShort: cdShort };
 })(window);

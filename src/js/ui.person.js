@@ -46,10 +46,10 @@
         p.aliases.length > 1 ? el('div.person-meta', {
           text: 'ثبت‌شده با: ' + p.aliases.join(' / ')
         }) : null,
-        el('div.person-meta', {
-          text: (p.openCount ? fa(p.openCount) + ' در جریان' : 'بدون پروندهٔ باز') +
-            (p.closedCount ? ' • ' + fa(p.closedCount) + ' مختومه' : '')
-        }),
+        el('div.person-meta', null, [w.U.dots([
+          p.openCount ? fa(p.openCount) + ' در جریان' : 'بدون پروندهٔ باز',
+          p.closedCount ? fa(p.closedCount) + ' مختومه' : ''
+        ])]),
         p.conflicts.length ? el('div.person-conflict', {
           text: '⚠ ناسازگاری در ' + p.conflicts.map(function (c) { return c.label; }).join('، ')
         }) : null

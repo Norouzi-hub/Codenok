@@ -181,6 +181,43 @@
     });
   }
 
+  /*
+   * شمارش معکوسِ مهلت دفاعیه.
+   *
+   * در نامهٔ دعوت به کارمند یک مهلت داده می‌شود: «تا فلان تاریخ حاضر شوید
+   * و دفاعیه‌تان را بدهید». تا امروز این مهلت فقط در ذهن کارشناس بود و
+   * برنامه از روی یک عددِ پیش‌فرض (مهلت دفاعیه در تنظیمات) حدسش می‌زد.
+   * حالا خودِ تاریخ ثبت می‌شود و همه‌جا — بالای پرونده، فهرست، تقویم و
+   * کارتابل — از همین یک عدد می‌خوانند.
+   *
+   * وقتی دفاعیه رسید یا پرونده بسته شد، شمارش معکوس تمام است و دیگر
+   * دیده نمی‌شود: مهلتی که گذشت و کارش انجام شد، هشدار نیست.
+   *
+   * خروجی: null یا
+   *   { due, left, total, gone, pct, state, chased }
+   *   left  — روزهای مانده (منفی یعنی گذشته)
+   *   pct   — چند درصدِ مهلت سپری شده (برای خطِ متحرک)
+   *   state — safe | soon | today | late
+   */
+  function defenseWatch(rec) {
+    if (!rec || !rec.defenseDueDate) return null;
+    if (rec.defenseReceivedDate || isDone(rec)) return null;
+    var left = J.diffDays(rec.defenseDueDate, J.today());
+    if (left == null) return null;
+    var from = rec.invitationLetterDate || '';
+    var total = from ? J.diffDays(rec.defenseDueDate, from) : 0;
+    if (!total || total < 1) total = sla().defense || 10;
+    var gone = total - left;
+    if (gone < 0) gone = 0;
+    return {
+      due: rec.defenseDueDate,
+      left: left, total: total, gone: gone,
+      pct: Math.max(0, Math.min(100, Math.round((gone / total) * 100))),
+      state: left < 0 ? 'late' : (left === 0 ? 'today' : (left <= 3 ? 'soon' : 'safe')),
+      chased: !!rec.defenseChaseLetterDate
+    };
+  }
+
   /**
    * مهلت پیش‌فرض هر اقدام، به روز. هر عدد یعنی «از تاریخ مرحلهٔ قبل، چند روز
    * فرصت هست». همه در تنظیمات قابل تغییرند، چون رویهٔ هر دبیرخانه فرق دارد.
@@ -363,8 +400,20 @@
         return make('chase', 'پیگیری دفاعیات (نامهٔ پیگیری رفته)', 'کارمند',
           rec.defenseChaseLetterDate, limits.chase);
       }
-      return make('defense', 'دریافت دفاعیات', 'کارمند',
-        rec.invitationLetterDate, limits.defense);
+      /* مهلتی که در نامهٔ دعوت نوشته شده، بر عددِ پیش‌فرضِ تنظیمات
+         می‌چربد — چون همان است که به کارمند گفته‌ایم. سررسیدِ کارتابل و
+         تقویم هم از همین درمی‌آید، نه از حدس. */
+      var span = limits.defense;
+      if (rec.defenseDueDate && rec.invitationLetterDate) {
+        var d = J.diffDays(rec.defenseDueDate, rec.invitationLetterDate);
+        if (d != null && d > 0) span = d;
+      }
+      var act = make('defense', 'دریافت دفاعیات', 'کارمند',
+        rec.invitationLetterDate, span);
+      /* بدون تاریخ دعوت، مبدأیی برای شمردن نیست؛ ولی مهلت که هست، پس
+         سررسید را مستقیم از خودش بگیر. */
+      if (rec.defenseDueDate && !act.due) act.due = rec.defenseDueDate;
+      return act;
     }
 
     // ۸) تکمیل مستندات
@@ -656,6 +705,7 @@
     stageByKey: stageByKey, overrideOf: overrideOf, MANUAL_LABEL: MANUAL_LABEL,
     isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
     isAcquitted: isAcquitted, needsSalaryResume: needsSalaryResume,
+    defenseWatch: defenseWatch,
     hasOutcome: hasOutcome,
     readyForCommittee: readyForCommittee, week: week
   };
