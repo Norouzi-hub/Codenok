@@ -179,6 +179,59 @@
     return found[0] || null;
   }
 
+  /*
+   * مشخصاتی که با شخص جابه‌جا می‌شوند.
+   *
+   * کارمندی که پروندهٔ دوم پیدا می‌کند، همان نام و نام پدر و کد پرسنلی و
+   * واحد سازمانی را دارد؛ دوباره تایپ کردنشان هم وقت می‌برد و هم غلط
+   * می‌آورد (یک بار «منطقه ۵»، یک بار «منطقهٔ پنج» — و بعد گزارش‌ها دو
+   * تا واحد می‌شمارند).
+   *
+   * ولی فقط همین‌ها: هر چیزی که مالِ *این پرونده* است — موضوع گزارش،
+   * نوع پرونده، سابقهٔ تخلف، تاریخ‌ها — هیچ‌وقت کپی نمی‌شود. پروندهٔ نو
+   * باید تخلفِ خودش را داشته باشد، نه تخلفِ دفعهٔ قبل را.
+   *
+   * «تاریخ آخرین حکم کارگزینی» هم استثناست: یک مرحله از گردش‌کار است و
+   * کپی کردنش یعنی تیک خوردنِ کاری که انجام نشده.
+   */
+  var NO_CARRY = { decreeDate: 1 };
+
+  function carryFields() {
+    return M.FIELDS.filter(function (f) {
+      return (f.group === 'person' || f.group === 'job') &&
+        !f.hidden && !NO_CARRY[f.key];
+    }).map(function (f) { return f.key; });
+  }
+
+  /**
+   * آنچه از پرونده‌های قبلیِ همین کد ملی می‌شود برداشت.
+   *
+   * هر فیلد از تازه‌ترین پرونده‌ای می‌آید که آن را پر داشته — نه فقط از
+   * آخرین پرونده. پروندهٔ آخر ممکن است نصفه باشد و آن‌وقت چیزی که سه سال
+   * پیش ثبت شده، بهتر از هیچ است.
+   *
+   * برمی‌گرداند: null یا { key, count, latest, values }
+   */
+  function carryOver(nationalId, skipId) {
+    var key = keyOf({ nationalId: nationalId });
+    if (!key) return null;
+    var p = get(key);
+    if (!p) return null;
+    var list = p.cases.filter(function (c) { return c.id !== skipId; });
+    if (!list.length) return null;
+    var values = {};
+    carryFields().forEach(function (k) {
+      for (var i = list.length - 1; i >= 0; i--) {
+        if (list[i][k]) { values[k] = list[i][k]; return; }
+      }
+    });
+    return {
+      key: key, count: list.length,
+      latest: list[list.length - 1],
+      values: values
+    };
+  }
+
   function forCase(rec) {
     if (!rec) return null;
     var k = keyOf(rec);
@@ -258,6 +311,7 @@
     dominant: dominant,
     keyOf: keyOf, fullName: fullName, all: all, get: get, forCase: forCase,
     otherCases: otherCases, timeline: timeline, intervals: intervals,
-    conflicts: conflicts, repeatStats: repeatStats, invalidate: invalidate
+    conflicts: conflicts, repeatStats: repeatStats, invalidate: invalidate,
+    carryFields: carryFields, carryOver: carryOver
   };
 })(window);

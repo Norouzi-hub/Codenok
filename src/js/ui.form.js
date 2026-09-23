@@ -4,11 +4,6 @@
 
   var el = w.U.el, J = w.J, M = w.Model;
 
-  var PERSON_COPY = ['nationalId', 'firstName', 'lastName', 'fatherName', 'idNumber',
-    'personnelCode', 'gender', 'maritalStatus', 'education', 'phone', 'postTitle',
-    'jobTitle', 'jobGrade', 'jobNature', 'payrollPlace', 'orgUnit', 'servicePlace',
-    'servicePlaceType', 'contractType', 'employmentStatus'];
-
   /* فیلدهایی که «شناسه»‌اند نه متن؛ با قلم داده خوانده و مقایسه می‌شوند */
   var REGISTER_FIELDS = {
     caseNo: 1, letterNo: 1, committeeRegNo: 1, noticeLetterNo: 1,
@@ -75,6 +70,13 @@
     }
     if (field.key === 'nationalId' && app) {
       input.addEventListener('change', function () { app.checkPerson(); });
+      /* منتظر بیرون رفتن از فیلد نمی‌مانیم: کد ملی ده رقم است و همان
+         لحظه‌ای که ده رقمش کامل شد، معلوم است چه کسی است. */
+      input.addEventListener('input', w.U.debounce(function () {
+        if (w.U.toLatinDigits(input.value).replace(/\D/g, '').length === 10) {
+          app.checkPerson();
+        }
+      }, 260));
     }
     if (field.key === 'caseNo' && app) {
       input.addEventListener('change', function () { app.checkDuplicate(); });
@@ -392,47 +394,145 @@
       if (name) headTitle.appendChild(document.createTextNode(' — ' + name));
     }
 
-    function warn(node) {
+    /* یک کادر هشدار، دو صاحب: «شمارهٔ تکراری» و «این کد ملی را می‌شناسم».
+       بدون نامِ صاحب، هرکدام دیگری را پاک می‌کرد — و هشدارِ شمارهٔ
+       تکراری با وارد کردن کد ملی از صفحه می‌رفت. */
+    var warnKind = '';
+
+    function warn(node, kind) {
       w.U.clear(warnBox);
       if (node) warnBox.appendChild(node);
       warnBox.style.display = node ? 'block' : 'none';
+      warnKind = node ? (kind || '') : '';
+    }
+
+    /** پاک کردن، فقط اگر کادر دست خودمان باشد */
+    function clearWarn(kind) {
+      if (warnKind === kind) warn(null);
     }
 
     app.checkDuplicate = function () {
       var dup = M.duplicateCaseNo(draft.caseNo, id);
-      if (!dup) { warn(null); return; }
+      if (!dup) { clearWarn('dup'); return; }
       warn(el('div.warn', null, [
         el('span', { text: 'شمارهٔ پرونده تکراری است؛ پروندهٔ دیگری با همین شماره ثبت شده. ' }),
         el('a', {
           href: '#', text: 'مشاهدهٔ آن پرونده',
           onclick: function (e) { e.preventDefault(); app.openCase(dup.id); }
         })
-      ]));
+      ]), 'dup');
     };
 
+    /*
+     * کد ملی که وارد شد، مشخصات خودش را می‌آورد.
+     *
+     * تا امروز این کار یک دکمه بود — و آن دکمه، روی پروندهٔ *جدید*،
+     * app.render() صدا می‌زد: یعنی فرم از نو ساخته می‌شد و هرچه تایپ شده
+     * بود (شمارهٔ پرونده، خودِ کد ملی) پاک می‌شد. حالا نه دکمه‌ای در کار
+     * است و نه رندرِ دوباره: فقط پنل از روی همان draft کشیده می‌شود.
+     *
+     * دو قاعده که نباید شکسته شوند:
+     *   ۱) فقط فیلدِ خالی پر می‌شود. دست‌نوشتهٔ کاربر هیچ‌وقت بازنویسی
+     *      نمی‌شود، حتی اگر با پروندهٔ قبلی نخواند.
+     *   ۲) فقط مشخصات فردی و شغلی. موضوع گزارش، نوع پرونده و سابقهٔ
+     *      تخلف مالِ همین پرونده‌اند و کپی نمی‌شوند.
+     */
+    var carried = [];        // کلیدهایی که خودکار پر شدند — برای «برگرداندن»
+    var flash = {};          // همان‌ها، فقط برای یک بار روشن شدن روی صفحه
+
+    function labelsOf(keys) {
+      return keys.map(function (k) { return labelOf(k); }).join('، ');
+    }
+
+    function personNotice(carry, undone) {
+      var who = [carry.latest.firstName, carry.latest.lastName]
+        .filter(Boolean).join(' ');
+      var head = el('div.warn.info.person-fill', null, [
+        el('div.person-fill-top', null, [
+          /* یک جملهٔ پیوسته، نه تکه‌های جداشده با «•»: نقطهٔ جداکننده
+             چسبیده به عدد، در راست‌به‌چپ صفرِ فارسی خوانده می‌شود. */
+          el('span', {
+            text: 'این کد ملی از قبل ثبت شده است' + (who ? ' — ' + who : '') +
+              '، ' + w.U.toFaDigits(carry.count) + ' پروندهٔ دیگر.'
+          }),
+          el('div.spacer'),
+          el('button.linkish.tiny', {
+            type: 'button', text: 'دیدن آن پرونده ←',
+            onclick: function () { app.openCase(carry.latest.id); }
+          })
+        ])
+      ]);
+      if (carried.length) {
+        head.appendChild(el('div.person-fill-body', null, [
+          el('b', {
+            text: w.U.toFaDigits(carried.length) +
+              ' فیلدِ مشخصات فردی و شغلی خودکار پر شد: '
+          }),
+          el('span', { text: labelsOf(carried) }),
+          el('span.person-fill-not', {
+            text: ' — گزارش و تخلفِ این پرونده پر نشد؛ آن را خودتان بنویسید.'
+          }),
+          el('button.linkish.tiny', {
+            type: 'button', text: 'برگرداندن',
+            title: 'همین فیلدهای خودکار دوباره خالی می‌شوند',
+            onclick: function () {
+              carried.forEach(function (k) {
+                delete draft[k];
+                delete edited[k];
+              });
+              carried = [];
+              repaint();
+              warn(personNotice(carry, true), 'person');
+            }
+          })
+        ]));
+      } else {
+        head.appendChild(el('div.person-fill-body', null, [
+          el('span.muted.tiny', {
+            text: undone
+              ? 'برگردانده شد؛ آن فیلدها دوباره خالی شدند. برای پر کردن ' +
+                'دوباره، کد ملی را دوباره وارد کنید.'
+              : 'مشخصاتِ این پرونده از قبل پر است؛ چیزی تغییر نکرد.'
+          })
+        ]));
+      }
+      return head;
+    }
+
+    /** رندر دوبارهٔ پنل، بدون از دست رفتن جایی که کاربر ایستاده */
+    function repaint() {
+      var at = document.activeElement;
+      var box = at && at.closest ? at.closest('[data-field]') : null;
+      var key = box ? box.dataset.field : '';
+      renderPanel();
+      if (!key) return;
+      var again = panel.querySelector('[data-field="' + key + '"] input');
+      if (!again) return;
+      again.focus({ preventScroll: true });
+      try { again.setSelectionRange(again.value.length, again.value.length); }
+      catch (e) { /* بعضی ورودی‌ها انتخاب متن ندارند */ }
+    }
+
     app.checkPerson = function () {
-      if (!draft.nationalId) return;
-      var prior = M.state.cases.filter(function (c) {
-        return c.id !== id && c.nationalId === draft.nationalId;
+      if (!draft.nationalId) { clearWarn('person'); return; }
+      var carry = w.Person.carryOver(draft.nationalId, id);
+      if (!carry) { clearWarn('person'); return; }
+      var added = [];
+      Object.keys(carry.values).forEach(function (k) {
+        if (k === 'nationalId' || draft[k]) return;   // دست‌نوشته مقدم است
+        draft[k] = carry.values[k];
+        edited[k] = true;
+        added.push(k);
       });
-      if (!prior.length) return;
-      var src = prior[prior.length - 1];
-      warn(el('div.warn.info', null, [
-        el('span', {
-          text: 'این کد ملی در ' + w.U.toFaDigits(prior.length) + ' پروندهٔ دیگر ثبت شده است. '
-        }),
-        el('button.btn.small', {
-          type: 'button', text: 'پر کردن مشخصات از پروندهٔ قبلی',
-          onclick: function () {
-            PERSON_COPY.forEach(function (k) {
-              if (!draft[k] && src[k]) draft[k] = src[k];
-            });
-            markDirty();
-            app.state.formTab = activeTab;
-            app.render();
-          }
-        })
-      ]));
+      if (added.length) {
+        carried = carried.concat(added);
+        flash = {};
+        added.forEach(function (k) { flash[k] = 1; });
+        markDirty();
+        repaint();
+        flash = {};            // یک بار روشن می‌شود، نه هر بار رندر
+      }
+      warn(personNotice(carry), 'person');
     };
 
     /*
@@ -760,7 +860,8 @@
         var clip = letterClip(f);
         if (CHIPS[f.key]) chip = CHIPS[f.key]();
         grid.appendChild(el('label.field' +
-          (f.type === 'textarea' ? '.wide' : '') + (chip ? '.has-cd' : ''),
+          (f.type === 'textarea' ? '.wide' : '') + (chip ? '.has-cd' : '') +
+          (flash[f.key] ? '.is-carried' : ''),
           { 'data-field': f.key }, [
             // گیرهٔ پیوست کنار برچسب می‌نشیند، نه زیرش
             clip ? el('span.field-head', null, [label, clip]) : label,

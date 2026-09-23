@@ -1194,6 +1194,31 @@ select.input { cursor: pointer; }
 }
 .warn.info { background: #EEEFF7; border-color: #D2D5E8; color: var(--ink-700); }
 
+/* --- «این کد ملی را می‌شناسم» ---
+   دو سطر: بالا چه کسی است و کجا، پایین چه چیزی خودکار پر شد. سطر دوم
+   عمداً صریح می‌گوید چه چیزی پر *نشده*، تا کسی گمان نکند پروندهٔ نو،
+   تخلفِ پروندهٔ قبلی را هم برداشته است. */
+.warn.person-fill { flex-direction: column; align-items: stretch; gap: 5px; }
+.person-fill-top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.person-fill-body {
+  font-size: 12px;
+  line-height: 1.85;
+  color: var(--ink-700);
+  border-top: 1px dashed #D2D5E8;
+  padding-top: 5px;
+  animation: fade-in var(--t-mid) var(--ease);
+}
+.person-fill-body b { color: var(--ink-900); }
+.person-fill-not { color: var(--muted); }
+.person-fill-body .linkish { margin-inline-start: 8px; }
+/* فیلدی که خودکار پر شده، یک لحظه روشن می‌شود تا معلوم باشد چه شد */
+.field.is-carried .input, .field.is-carried select.input {
+  animation: carried-in 1.6s var(--ease);
+}
+@keyframes carried-in {
+  0%, 55% { background: var(--brass-soft); border-color: var(--brass-line); }
+}
+
 /* ---------------------------------------------------------------- تاریخچه */
 .history-wrap { font-size: 13px; }
 .related {
