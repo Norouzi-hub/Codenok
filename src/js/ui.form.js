@@ -706,6 +706,45 @@
       return box;
     }
 
+    /*
+     * سابقهٔ کار، چسبیده به تاریخ استخدام.
+     *
+     * تا امروز «سابقهٔ کار در شهرداری» عددی بود که موقع ساختن هر فرم،
+     * دستی نوشته می‌شد — و چون دستی بود، سالِ بعد هم همان عدد می‌ماند.
+     * حالا تاریخ استخدام ثبت می‌شود و سابقه از خودِ تقویم شمسی شمرده
+     * می‌شود: همین‌جا، همان لحظه، و در فرم‌های اداری.
+     */
+    function serviceChip() {
+      var box = el('div.cd-inline.svc-inline');
+      box.paint = function () {
+        w.U.clear(box);
+        if (!draft.hireDate) {
+          box.appendChild(el('span.cd-inline-note.muted', {
+            text: 'تاریخ استخدام را بگذارید تا سابقه خودش حساب شود.'
+          }));
+          return;
+        }
+        var text = J.spanText(draft.hireDate);
+        if (!text) {
+          box.appendChild(el('span.cd-inline-note.muted', {
+            text: 'تاریخ استخدام از امروز جلوتر است؛ سابقه‌ای حساب نمی‌شود.'
+          }));
+          return;
+        }
+        box.appendChild(el('b.cd-inline-n', { text: 'سابقهٔ کار: ' + text }));
+        box.appendChild(el('span.cd-inline-note', {
+          text: ' تا ' + J.format(J.today()) + ' — در فرم‌های اداری هم همین می‌آید.'
+        }));
+      };
+      box.paint();
+      return box;
+    }
+
+    var CHIPS = {
+      defenseDueDate: function () { return countdownChip(); },
+      hireDate: function () { return serviceChip(); }
+    };
+
     /** شبکهٔ فیلدها — همان چیدمانی که همه‌جای فرم است */
     function fieldGrid(fields) {
       var grid = el('div.field-grid');
@@ -719,7 +758,7 @@
           text: cleanLabel(f.label), title: f.label
         });
         var clip = letterClip(f);
-        if (f.key === 'defenseDueDate') chip = countdownChip();
+        if (CHIPS[f.key]) chip = CHIPS[f.key]();
         grid.appendChild(el('label.field' +
           (f.type === 'textarea' ? '.wide' : '') + (chip ? '.has-cd' : ''),
           { 'data-field': f.key }, [

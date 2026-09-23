@@ -327,6 +327,13 @@ window.FIELDS = [
     "list": "Eshteghal"
   },
   {
+    "key": "hireDate",
+    "label": "تاریخ استخدام",
+    "type": "date",
+    "group": "job",
+    "col": null
+  },
+  {
     "key": "decreeDate",
     "label": "تاریخ آخرین حکم کارگزینی",
     "type": "date",

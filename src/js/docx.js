@@ -27,16 +27,31 @@
       .replace(/"/g, '&quot;');
   }
 
-  var FONT = 'Tahoma';
+  /*
+   * قلم فرم‌ها: «B Zar» — همان قلمی که نامه‌های اداری با آن تایپ می‌شوند.
+   *
+   * در ورد نمی‌شود فهرست قلمِ جایگزین داد (برخلاف CSS)؛ اگر B Zar روی آن
+   * رایانه نصب نباشد، خودِ ورد قلم دیگری می‌گذارد. روی ویندوزِ اداری
+   * معمولاً نصب است.
+   *
+   * اندازه: حرف‌های B Zar روی بدنهٔ قلم کوچک‌تر از تاهوما نشسته‌اند، پس
+   * اندازهٔ یکسان روی کاغذ ریزتر دیده می‌شود. اندازهٔ متنِ فارسی
+   * (szCs — که تقریباً همهٔ متنِ این فرم‌هاست) با همین ضریب جبران
+   * می‌شود؛ اندازهٔ لاتین دست نمی‌خورد تا چیدمانِ تنظیم‌شدهٔ فرم‌ها
+   * به‌هم نریزد.
+   */
+  var FONT = 'B Zar';
+  var CS_SCALE = 1.18;
 
   /** ویژگی‌های متن: درشتی، اندازه، و همیشه راست‌به‌چپ */
   function rPr(o) {
     o = o || {};
     var size = o.size || 22;            // نیم‌پوینت: ۲۲ یعنی ۱۱ پوینت
+    var csSize = Math.round(size * CS_SCALE);
     return '<w:rPr>' +
       '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
       (o.bold ? '<w:b/><w:bCs/>' : '') +
-      '<w:sz w:val="' + size + '"/><w:szCs w:val="' + size + '"/>' +
+      '<w:sz w:val="' + size + '"/><w:szCs w:val="' + csSize + '"/>' +
       '<w:rtl/>' +
       '</w:rPr>';
   }
@@ -165,7 +180,7 @@
     '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
     '<w:docDefaults><w:rPrDefault><w:rPr>' +
     '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
-    '<w:sz w:val="22"/><w:szCs w:val="22"/><w:rtl/>' +
+    '<w:sz w:val="22"/><w:szCs w:val="' + Math.round(22 * CS_SCALE) + '"/><w:rtl/>' +
     '</w:rPr></w:rPrDefault>' +
     '<w:pPrDefault><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr></w:pPrDefault>' +
     '</w:docDefaults>' +

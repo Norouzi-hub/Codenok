@@ -167,11 +167,51 @@
     return pack(b.jy, b.jm, b.jd);
   }
 
+  /**
+   * فاصلهٔ دو تاریخ به سال و ماه و روزِ شمسی.
+   *
+   * «سابقهٔ کار» را نمی‌شود با تقسیمِ روزها بر ۳۶۵ حساب کرد: سال شمسی
+   * ۳۶۵ یا ۳۶۶ روز است و ماه‌ها ۲۹ تا ۳۱ روز، و آن حساب چند روز خطا
+   * می‌دهد که در حکم کارگزینی معنا دارد. پس از خودِ تقویم شمسی شمرده
+   * می‌شود: سال منهای سال، ماه منهای ماه، و هر جا کم آمد، قرض.
+   *
+   * برمی‌گرداند: null یا { y, m, d, days }
+   */
+  function span(from, to) {
+    var a = unpack(from), b = unpack(to || today());
+    if (!a || !b) return null;
+    if (j2d(a.jy, a.jm, a.jd) > j2d(b.jy, b.jm, b.jd)) return null;
+    var y = b.jy - a.jy, m = b.jm - a.jm, d = b.jd - a.jd;
+    if (d < 0) {
+      m -= 1;
+      // روزهای ماهِ پیش از تاریخ دوم، نه ماهِ جاری
+      var pm = b.jm - 1, py = b.jy;
+      if (pm < 1) { pm = 12; py -= 1; }
+      d += monthLength(py, pm);
+    }
+    if (m < 0) { y -= 1; m += 12; }
+    return { y: y, m: m, d: d, days: diffDays(to || today(), from) };
+  }
+
+  /** «۱۲ سال و ۳ ماه» — همان چیزی که در فرم‌های اداری نوشته می‌شود */
+  function spanText(from, to) {
+    var s = span(from, to);
+    if (!s) return '';
+    var fa = w.U ? w.U.toFaDigits : function (x) { return String(x); };
+    var parts = [];
+    if (s.y) parts.push(fa(s.y) + ' سال');
+    if (s.m) parts.push(fa(s.m) + ' ماه');
+    // زیر یک ماه، روز گفته می‌شود؛ وگرنه روزِ خرد در سابقهٔ کار معنا ندارد
+    if (!s.y && !s.m) parts.push(fa(s.d) + ' روز');
+    return parts.join(' و ');
+  }
+
   w.J = {
     MONTHS: MONTHS, WEEKDAYS: WEEKDAYS, monthLength: monthLength, isLeap: isLeap,
     toJalali: toJalali, toGregorian: toGregorian, pack: pack, unpack: unpack,
     parse: parse, format: format, today: today, stamp: stamp, weekday: weekday,
     weekdayIndex: weekdayIndex,
-    diffDays: diffDays, addDays: addDays, pad2: pad2
+    diffDays: diffDays, addDays: addDays, pad2: pad2,
+    span: span, spanText: spanText
   };
 })(window);

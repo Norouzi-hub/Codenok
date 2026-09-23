@@ -172,7 +172,10 @@
             { label: 'واحد محل خدمت', value: val(rec.servicePlace || rec.orgUnit) },
             { label: 'نوع قرارداد', value: val(rec.contractType) },
             { label: 'عنوان شغلی', value: val(rec.jobTitle || rec.postTitle) },
-            { label: 'سابقهٔ کار در شهرداری', value: val(extra.service) },
+            {
+              label: 'سابقهٔ کار در شهرداری',
+              value: val(extra.service || (rec.hireDate ? J.spanText(rec.hireDate) : ''))
+            },
             { label: 'تحصیلات', value: val(rec.education) },
             { label: 'سابقهٔ تخلف', value: val(rec.priorRecord) },
             { label: 'مرجع گزارش‌دهنده', value: val(rec.reporterOrg) },
@@ -627,6 +630,14 @@
 
   /** چیزهایی که در پرونده نیستند، از خود پرونده یا آخرین بار حدس زده می‌شوند */
   function guess(rec, key) {
+    /* سابقهٔ کار دیگر «یادِ دفعهٔ قبل» نیست: اگر تاریخ استخدام ثبت شده
+       باشد، از خودِ تقویم حساب می‌شود. مقدارِ به‌یادمانده مالِ پروندهٔ
+       قبلی است و اینجا — که هر پرونده یک آدم است — غلط می‌شود. */
+    if (rec.hireDate) {
+      if (key === 'service') return J.spanText(rec.hireDate) || '';
+      if (key === 'serviceFrom') return J.format(rec.hireDate);
+      if (key === 'serviceTo') return J.format(J.today());
+    }
     if (key === 'company') return rec.contractType || '';
     if (key === 'verdictText') return rec.verdictFull || '';
     if (key === 'addresseeRole') return 'شهردار محترم ' + (rec.orgUnit || '');
@@ -673,8 +684,12 @@
     /** مقدارهای عمومی برای دفعهٔ بعد یادداشت می‌شوند */
     function remember() {
       var keep = {};
-      ['service', 'serviceFrom', 'serviceTo', 'addressee', 'addresseeRole']
-        .forEach(function (k) { if (extra[k]) keep[k] = extra[k]; });
+      /* وقتی سابقه از تاریخ استخدام درمی‌آید، به یاد سپردنش یعنی نشاندنِ
+         سابقهٔ این آدم روی پروندهٔ نفر بعدی. */
+      var general = rec.hireDate
+        ? ['addressee', 'addresseeRole']
+        : ['service', 'serviceFrom', 'serviceTo', 'addressee', 'addresseeRole'];
+      general.forEach(function (k) { if (extra[k]) keep[k] = extra[k]; });
       if (Object.keys(keep).length) {
         M.saveSettings({
           letterExtras: Object.assign({}, M.state.settings.letterExtras, keep)

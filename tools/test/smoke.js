@@ -56,8 +56,8 @@ async function openList(page) {
   }));
   const REMOVED = ['reportType', 'reportYear', 'verdict1', 'verdict2', 'verdict3',
     'verdict4', 'verdict5'];
-  // ۶۲ فیلد اکسل (پس از حذف هفت‌تا) + ۲۸ فیلد گردش‌کار، ارجاع، حقوق و اجرا
-  check('۹۰ فیلد تعریف شده', schema.count === 90, 'fields=' + schema.count);
+  // ۶۲ فیلد اکسل (پس از حذف هفت‌تا) + ۲۹ فیلد گردش‌کار، ارجاع، حقوق و اجرا
+  check('۹۱ فیلد تعریف شده', schema.count === 91, 'fields=' + schema.count);
   check('فیلدهای گردش‌کار به اسکیما اضافه شده‌اند',
     ['decreeDate', 'defectLetterDate', 'defenseReceivedDate', 'defenseChaseLetterDate',
       'docsCompleteDate', 'hearingLetterDate', 'verdictDate', 'verdictSignedDate',
@@ -239,7 +239,7 @@ async function openList(page) {
       sample: rows[1] ? rows[1][0] : null };
   }, fs.readFileSync(xlsxPath).toString('base64'));
   check('فایل اکسل دوباره خوانده می‌شود',
-    importResult.rows === 33 && importResult.cols === 90 &&
+    importResult.rows === 33 && importResult.cols === 91 &&
     importResult.firstHeader.includes('شماره پرونده'),
     JSON.stringify(importResult));
 
@@ -512,7 +512,7 @@ async function openList(page) {
       hasCaseNo: cols.map.caseNo != null };
   }, fs.readFileSync(xlsxPath).toString('base64'));
   check('همهٔ ستون‌های خروجی برنامه دوباره شناسایی می‌شوند',
-    mapping.matched === 90 && mapping.ignored === 0 && mapping.hasCaseNo,
+    mapping.matched === 91 && mapping.ignored === 0 && mapping.hasCaseNo,
     mapping.matched + ' ستون، ' + mapping.ignored + ' ناشناس');
 
   // پنجرهٔ ورود واقعاً باز شود (شمارهٔ پرونده ستون صفر است؛ بررسی نباید falsy باشد)

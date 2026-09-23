@@ -2977,7 +2977,19 @@ select.input { cursor: pointer; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
   .case-actions, .doc-pickbar, .letter-clip, .access-bar { display: none !important; }
-  #print-area { display: block; font-size: 11pt; color: #000; }
+  /* کاغذِ اداری با قلم اداری: «B Zar» همان قلمی است که نامه‌های دبیرخانه
+     با آن تایپ می‌شوند، و خروجی ورد هم همین را می‌گذارد تا چاپ و فایل
+     یک شکل باشند. اگر روی این رایانه نصب نباشد، فهرست پشتِ سرش می‌گیرد.
+     جهت هم صریح گفته می‌شود: کاغذ از صفحه ارث نمی‌برد، چاپ‌گیرِ بعضی
+     مرورگرها جهتِ ریشه را نادیده می‌گیرد. */
+  #print-area {
+    display: block;
+    font-size: 11pt;
+    color: #000;
+    direction: rtl;
+    text-align: right;
+    font-family: 'B Zar', 'B Nazanin', 'IRANSans', Vazirmatn, Tahoma, sans-serif;
+  }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
   .p-header h1 { font-size: 15pt; margin: 4px 0; }

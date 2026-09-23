@@ -2992,7 +2992,19 @@ select.input { cursor: pointer; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
   .case-actions, .doc-pickbar, .letter-clip, .access-bar { display: none !important; }
-  #print-area { display: block; font-size: 11pt; color: #000; }
+  /* کاغذِ اداری با قلم اداری: «B Zar» همان قلمی است که نامه‌های دبیرخانه
+     با آن تایپ می‌شوند، و خروجی ورد هم همین را می‌گذارد تا چاپ و فایل
+     یک شکل باشند. اگر روی این رایانه نصب نباشد، فهرست پشتِ سرش می‌گیرد.
+     جهت هم صریح گفته می‌شود: کاغذ از صفحه ارث نمی‌برد، چاپ‌گیرِ بعضی
+     مرورگرها جهتِ ریشه را نادیده می‌گیرد. */
+  #print-area {
+    display: block;
+    font-size: 11pt;
+    color: #000;
+    direction: rtl;
+    text-align: right;
+    font-family: 'B Zar', 'B Nazanin', 'IRANSans', Vazirmatn, Tahoma, sans-serif;
+  }
   .p-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
   .p-org { font-size: 10pt; }
   .p-header h1 { font-size: 15pt; margin: 4px 0; }
@@ -5403,6 +5415,13 @@ window.FIELDS = [
     "list": "Eshteghal"
   },
   {
+    "key": "hireDate",
+    "label": "تاریخ استخدام",
+    "type": "date",
+    "group": "job",
+    "col": null
+  },
+  {
     "key": "decreeDate",
     "label": "تاریخ آخرین حکم کارگزینی",
     "type": "date",
@@ -7432,12 +7451,52 @@ window.SEED_CASES = [
     return pack(b.jy, b.jm, b.jd);
   }
 
+  /**
+   * فاصلهٔ دو تاریخ به سال و ماه و روزِ شمسی.
+   *
+   * «سابقهٔ کار» را نمی‌شود با تقسیمِ روزها بر ۳۶۵ حساب کرد: سال شمسی
+   * ۳۶۵ یا ۳۶۶ روز است و ماه‌ها ۲۹ تا ۳۱ روز، و آن حساب چند روز خطا
+   * می‌دهد که در حکم کارگزینی معنا دارد. پس از خودِ تقویم شمسی شمرده
+   * می‌شود: سال منهای سال، ماه منهای ماه، و هر جا کم آمد، قرض.
+   *
+   * برمی‌گرداند: null یا { y, m, d, days }
+   */
+  function span(from, to) {
+    var a = unpack(from), b = unpack(to || today());
+    if (!a || !b) return null;
+    if (j2d(a.jy, a.jm, a.jd) > j2d(b.jy, b.jm, b.jd)) return null;
+    var y = b.jy - a.jy, m = b.jm - a.jm, d = b.jd - a.jd;
+    if (d < 0) {
+      m -= 1;
+      // روزهای ماهِ پیش از تاریخ دوم، نه ماهِ جاری
+      var pm = b.jm - 1, py = b.jy;
+      if (pm < 1) { pm = 12; py -= 1; }
+      d += monthLength(py, pm);
+    }
+    if (m < 0) { y -= 1; m += 12; }
+    return { y: y, m: m, d: d, days: diffDays(to || today(), from) };
+  }
+
+  /** «۱۲ سال و ۳ ماه» — همان چیزی که در فرم‌های اداری نوشته می‌شود */
+  function spanText(from, to) {
+    var s = span(from, to);
+    if (!s) return '';
+    var fa = w.U ? w.U.toFaDigits : function (x) { return String(x); };
+    var parts = [];
+    if (s.y) parts.push(fa(s.y) + ' سال');
+    if (s.m) parts.push(fa(s.m) + ' ماه');
+    // زیر یک ماه، روز گفته می‌شود؛ وگرنه روزِ خرد در سابقهٔ کار معنا ندارد
+    if (!s.y && !s.m) parts.push(fa(s.d) + ' روز');
+    return parts.join(' و ');
+  }
+
   w.J = {
     MONTHS: MONTHS, WEEKDAYS: WEEKDAYS, monthLength: monthLength, isLeap: isLeap,
     toJalali: toJalali, toGregorian: toGregorian, pack: pack, unpack: unpack,
     parse: parse, format: format, today: today, stamp: stamp, weekday: weekday,
     weekdayIndex: weekdayIndex,
-    diffDays: diffDays, addDays: addDays, pad2: pad2
+    diffDays: diffDays, addDays: addDays, pad2: pad2,
+    span: span, spanText: spanText
   };
 })(window);
 
@@ -9644,16 +9703,31 @@ window.SEED_CASES = [
       .replace(/"/g, '&quot;');
   }
 
-  var FONT = 'Tahoma';
+  /*
+   * قلم فرم‌ها: «B Zar» — همان قلمی که نامه‌های اداری با آن تایپ می‌شوند.
+   *
+   * در ورد نمی‌شود فهرست قلمِ جایگزین داد (برخلاف CSS)؛ اگر B Zar روی آن
+   * رایانه نصب نباشد، خودِ ورد قلم دیگری می‌گذارد. روی ویندوزِ اداری
+   * معمولاً نصب است.
+   *
+   * اندازه: حرف‌های B Zar روی بدنهٔ قلم کوچک‌تر از تاهوما نشسته‌اند، پس
+   * اندازهٔ یکسان روی کاغذ ریزتر دیده می‌شود. اندازهٔ متنِ فارسی
+   * (szCs — که تقریباً همهٔ متنِ این فرم‌هاست) با همین ضریب جبران
+   * می‌شود؛ اندازهٔ لاتین دست نمی‌خورد تا چیدمانِ تنظیم‌شدهٔ فرم‌ها
+   * به‌هم نریزد.
+   */
+  var FONT = 'B Zar';
+  var CS_SCALE = 1.18;
 
   /** ویژگی‌های متن: درشتی، اندازه، و همیشه راست‌به‌چپ */
   function rPr(o) {
     o = o || {};
     var size = o.size || 22;            // نیم‌پوینت: ۲۲ یعنی ۱۱ پوینت
+    var csSize = Math.round(size * CS_SCALE);
     return '<w:rPr>' +
       '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
       (o.bold ? '<w:b/><w:bCs/>' : '') +
-      '<w:sz w:val="' + size + '"/><w:szCs w:val="' + size + '"/>' +
+      '<w:sz w:val="' + size + '"/><w:szCs w:val="' + csSize + '"/>' +
       '<w:rtl/>' +
       '</w:rPr>';
   }
@@ -9782,7 +9856,7 @@ window.SEED_CASES = [
     '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
     '<w:docDefaults><w:rPrDefault><w:rPr>' +
     '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
-    '<w:sz w:val="22"/><w:szCs w:val="22"/><w:rtl/>' +
+    '<w:sz w:val="22"/><w:szCs w:val="' + Math.round(22 * CS_SCALE) + '"/><w:rtl/>' +
     '</w:rPr></w:rPrDefault>' +
     '<w:pPrDefault><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr></w:pPrDefault>' +
     '</w:docDefaults>' +
@@ -15630,7 +15704,10 @@ else if (typeof exports === 'object'){
             { label: 'واحد محل خدمت', value: val(rec.servicePlace || rec.orgUnit) },
             { label: 'نوع قرارداد', value: val(rec.contractType) },
             { label: 'عنوان شغلی', value: val(rec.jobTitle || rec.postTitle) },
-            { label: 'سابقهٔ کار در شهرداری', value: val(extra.service) },
+            {
+              label: 'سابقهٔ کار در شهرداری',
+              value: val(extra.service || (rec.hireDate ? J.spanText(rec.hireDate) : ''))
+            },
             { label: 'تحصیلات', value: val(rec.education) },
             { label: 'سابقهٔ تخلف', value: val(rec.priorRecord) },
             { label: 'مرجع گزارش‌دهنده', value: val(rec.reporterOrg) },
@@ -16085,6 +16162,14 @@ else if (typeof exports === 'object'){
 
   /** چیزهایی که در پرونده نیستند، از خود پرونده یا آخرین بار حدس زده می‌شوند */
   function guess(rec, key) {
+    /* سابقهٔ کار دیگر «یادِ دفعهٔ قبل» نیست: اگر تاریخ استخدام ثبت شده
+       باشد، از خودِ تقویم حساب می‌شود. مقدارِ به‌یادمانده مالِ پروندهٔ
+       قبلی است و اینجا — که هر پرونده یک آدم است — غلط می‌شود. */
+    if (rec.hireDate) {
+      if (key === 'service') return J.spanText(rec.hireDate) || '';
+      if (key === 'serviceFrom') return J.format(rec.hireDate);
+      if (key === 'serviceTo') return J.format(J.today());
+    }
     if (key === 'company') return rec.contractType || '';
     if (key === 'verdictText') return rec.verdictFull || '';
     if (key === 'addresseeRole') return 'شهردار محترم ' + (rec.orgUnit || '');
@@ -16131,8 +16216,12 @@ else if (typeof exports === 'object'){
     /** مقدارهای عمومی برای دفعهٔ بعد یادداشت می‌شوند */
     function remember() {
       var keep = {};
-      ['service', 'serviceFrom', 'serviceTo', 'addressee', 'addresseeRole']
-        .forEach(function (k) { if (extra[k]) keep[k] = extra[k]; });
+      /* وقتی سابقه از تاریخ استخدام درمی‌آید، به یاد سپردنش یعنی نشاندنِ
+         سابقهٔ این آدم روی پروندهٔ نفر بعدی. */
+      var general = rec.hireDate
+        ? ['addressee', 'addresseeRole']
+        : ['service', 'serviceFrom', 'serviceTo', 'addressee', 'addresseeRole'];
+      general.forEach(function (k) { if (extra[k]) keep[k] = extra[k]; });
       if (Object.keys(keep).length) {
         M.saveSettings({
           letterExtras: Object.assign({}, M.state.settings.letterExtras, keep)
@@ -17596,6 +17685,45 @@ else if (typeof exports === 'object'){
       return box;
     }
 
+    /*
+     * سابقهٔ کار، چسبیده به تاریخ استخدام.
+     *
+     * تا امروز «سابقهٔ کار در شهرداری» عددی بود که موقع ساختن هر فرم،
+     * دستی نوشته می‌شد — و چون دستی بود، سالِ بعد هم همان عدد می‌ماند.
+     * حالا تاریخ استخدام ثبت می‌شود و سابقه از خودِ تقویم شمسی شمرده
+     * می‌شود: همین‌جا، همان لحظه، و در فرم‌های اداری.
+     */
+    function serviceChip() {
+      var box = el('div.cd-inline.svc-inline');
+      box.paint = function () {
+        w.U.clear(box);
+        if (!draft.hireDate) {
+          box.appendChild(el('span.cd-inline-note.muted', {
+            text: 'تاریخ استخدام را بگذارید تا سابقه خودش حساب شود.'
+          }));
+          return;
+        }
+        var text = J.spanText(draft.hireDate);
+        if (!text) {
+          box.appendChild(el('span.cd-inline-note.muted', {
+            text: 'تاریخ استخدام از امروز جلوتر است؛ سابقه‌ای حساب نمی‌شود.'
+          }));
+          return;
+        }
+        box.appendChild(el('b.cd-inline-n', { text: 'سابقهٔ کار: ' + text }));
+        box.appendChild(el('span.cd-inline-note', {
+          text: ' تا ' + J.format(J.today()) + ' — در فرم‌های اداری هم همین می‌آید.'
+        }));
+      };
+      box.paint();
+      return box;
+    }
+
+    var CHIPS = {
+      defenseDueDate: function () { return countdownChip(); },
+      hireDate: function () { return serviceChip(); }
+    };
+
     /** شبکهٔ فیلدها — همان چیدمانی که همه‌جای فرم است */
     function fieldGrid(fields) {
       var grid = el('div.field-grid');
@@ -17609,7 +17737,7 @@ else if (typeof exports === 'object'){
           text: cleanLabel(f.label), title: f.label
         });
         var clip = letterClip(f);
-        if (f.key === 'defenseDueDate') chip = countdownChip();
+        if (CHIPS[f.key]) chip = CHIPS[f.key]();
         grid.appendChild(el('label.field' +
           (f.type === 'textarea' ? '.wide' : '') + (chip ? '.has-cd' : ''),
           { 'data-field': f.key }, [
