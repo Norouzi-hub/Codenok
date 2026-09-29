@@ -612,6 +612,194 @@
     return wrap;
   }
 
+  /* ================================================================
+     خروجی کارکرد روزانه
+     ----------------------------------------------------------------
+     این خروجی برای آدم نیست — کارنامه برای آدم است. این برای برنامهٔ
+     دیگری است که باید کارکرد را بخواند و وارد کند: روز به روز، با
+     کلیدهای ثابت، و با فهرستِ معنیِ آن کلیدها داخل خودِ فایل.
+
+     روزِ خالی هم یک سطر دارد. «آن روز کاری نکردم» خودش داده است؛ بدون
+     سطرش، برنامهٔ گیرنده نمی‌داند آن روز کاری نبوده یا داده‌اش نرسیده.
+     ================================================================ */
+  function activityBlock() {
+    var A = w.Activity;
+    var today = J.today();
+    var state = { from: w.Karnameh.monthStart(today), to: today, me: false, all: false };
+
+    var summary = el('div.act-summary');
+    var fromField = w.DatePicker.field(state.from, function (v) {
+      state.from = v || state.from; refresh();
+    });
+    var toField = w.DatePicker.field(state.to, function (v) {
+      state.to = v || state.to; refresh();
+    });
+
+    function pack() {
+      return A.bundle(state.from, state.to, {
+        user: state.me ? (M.state.settings.user || '') : '',
+        all: state.all
+      });
+    }
+
+    function refresh() {
+      var p = pack();
+      var t = p.totals;
+      w.U.clear(summary);
+      if (!t) {
+        summary.appendChild(el('span.muted.tiny', { text: 'بازه خالی است.' }));
+        return;
+      }
+      summary.appendChild(w.U.dots([
+        fa(t.days) + ' روز',
+        fa(t.workedDays) + ' روز کاری',
+        fa(t.idleDays) + ' روز بدون کار',
+        fa(p.weeks.length) + ' هفته',
+        fa(p.months.length) + ' ماه'
+      ], '.act-nums'));
+      /* چهار منبع، چهار عدد — و عمداً جمعشان را نمی‌گوییم: یک بارگذاری
+         هم رویداد است هم فایل، و جمعِ کور دو بار می‌شمارد. */
+      summary.appendChild(el('div.act-src', null, [w.U.dots([
+        'رویداد ثبت‌شده: ' + fa(t.bySource.history),
+        'تاریخِ پرونده: ' + fa(t.bySource['case']),
+        'فایل بایگانی: ' + fa(t.bySource.doc),
+        'کار بسته‌شده: ' + fa(t.bySource.task)
+      ])]));
+    }
+
+    function quick(label, from, to) {
+      return el('button.chip-btn', {
+        type: 'button', text: label,
+        onclick: function () {
+          state.from = from(); state.to = to();
+          fromField.setValue(state.from);
+          toField.setValue(state.to);
+          refresh();
+        }
+      });
+    }
+
+    /* «از اولین پرونده»: قدیمی‌ترین تاریخ ورودی که در برنامه هست. اگر
+       هیچ پرونده‌ای نبود، از اول همین ماه. */
+    function firstDate() {
+      var min = '';
+      M.state.cases.forEach(function (c) {
+        if (c.intakeDate && (!min || c.intakeDate < min)) min = c.intakeDate;
+      });
+      return min || w.Karnameh.monthStart(J.today());
+    }
+
+    var name = function (ext) {
+      return 'karkard-' + w.U.toLatinDigits(state.from) + '-' +
+        w.U.toLatinDigits(state.to) + '.' + ext;
+    };
+
+    var box = el('section.set-block', null, [
+      el('h4', { text: 'خروجی کارکرد روزانه' }),
+      el('p.set-note', {
+        text: 'همهٔ کارهایی که در برنامه انجام می‌شود — ثبت پرونده، نامه، ' +
+          'ویرایش، اسکن، کار انجام‌شده — روز به روز و با کلیدهای ثابت، ' +
+          'برای اینکه برنامهٔ دیگری بخواندش. روزی که کاری نشده هم سطر ' +
+          'خودش را دارد. معنیِ هر کلید داخل خودِ فایل است، پس برنامهٔ ' +
+          'گیرنده به راهنمای جداگانه نیاز ندارد.'
+      }),
+      el('div.act-quick', null, [
+        quick('این ماه', function () { return w.Karnameh.monthStart(J.today()); },
+          function () { return J.today(); }),
+        quick('ماه گذشته', function () {
+          return w.Karnameh.monthStart(J.addDays(w.Karnameh.monthStart(J.today()), -1));
+        }, function () {
+          return J.addDays(w.Karnameh.monthStart(J.today()), -1);
+        }),
+        quick('سه ماه اخیر', function () { return J.addDays(J.today(), -89); },
+          function () { return J.today(); }),
+        quick('یک سال اخیر', function () { return J.addDays(J.today(), -364); },
+          function () { return J.today(); }),
+        quick('از اولین پرونده', firstDate, function () { return J.today(); })
+      ]),
+      el('div.act-range', null, [
+        el('label.field', null, [
+          el('span.field-label', { text: 'از تاریخ' }), fromField
+        ]),
+        el('label.field', null, [
+          el('span.field-label', { text: 'تا تاریخ' }), toField
+        ])
+      ]),
+      el('div.act-opts', null, [
+        checkbox('فقط کارهای من (' + (M.state.settings.user || 'بدون نام') + ')',
+          function (on) { state.me = on; refresh(); }),
+        checkbox('همهٔ پرونده‌ها، حتی بیرون از دامنهٔ کار',
+          function (on) { state.all = on; refresh(); })
+      ]),
+      summary,
+      el('div.btn-row', null, [
+        el('button.btn.small.primary', {
+          type: 'button', text: 'خروجی JSON',
+          title: 'کامل‌ترین شکل؛ فهرست کنش‌ها و هفته و ماه هم داخلش است',
+          onclick: function () {
+            var blob = new Blob([JSON.stringify(pack(), null, 1)],
+              { type: 'application/json' });
+            w.U.download(name('json'), blob);
+            w.U.toast('خروجی کارکرد ساخته شد.', 'good');
+          }
+        }),
+        el('button.btn.small', {
+          type: 'button', text: 'خروجی CSV',
+          title: 'یک سطر برای هر روز، یک ستون برای هر کنش',
+          onclick: function () {
+            /* BOM لازم است وگرنه اکسل فارسی را جویده نشان می‌دهد */
+            var blob = new Blob(['\ufeff' + A.csv(pack())],
+              { type: 'text/csv;charset=utf-8' });
+            w.U.download(name('csv'), blob);
+            w.U.toast('خروجی CSV ساخته شد.', 'good');
+          }
+        }),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'کپی JSON',
+          title: 'برای چسباندن مستقیم در برنامهٔ دیگر',
+          onclick: function (e) {
+            copyText(JSON.stringify(pack()), e.target);
+          }
+        })
+      ])
+    ]);
+    refresh();
+    return box;
+  }
+
+  /** یک تیک ساده با برچسب */
+  function checkbox(label, onChange) {
+    var input = el('input', { type: 'checkbox' });
+    input.addEventListener('change', function () { onChange(input.checked); });
+    return el('label.act-check', null, [input, el('span', { text: label })]);
+  }
+
+  /** کپی در حافظه — با راه دوم، چون روی file:// اجازهٔ کلیپ‌بورد همیشه نیست */
+  function copyText(text, btn) {
+    function done(ok) {
+      w.U.toast(ok ? 'در حافظه کپی شد.'
+        : 'کپی نشد؛ از دکمهٔ «خروجی JSON» استفاده کنید.', ok ? 'good' : 'warn');
+    }
+    if (w.navigator.clipboard && w.navigator.clipboard.writeText) {
+      w.navigator.clipboard.writeText(text)
+        .then(function () { done(true); })
+        .catch(function () { done(fallbackCopy(text)); });
+      return;
+    }
+    done(fallbackCopy(text));
+  }
+
+  function fallbackCopy(text) {
+    var ta = el('textarea', { value: text });
+    ta.style.cssText = 'position:fixed;top:-2000px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+
   function settingsDialog(app) {
     var body = el('div.settings');
     var st = w.Store.status();
@@ -981,6 +1169,8 @@
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'لیست‌های کشویی' }), editor
     ]));
+
+    body.appendChild(activityBlock());
 
     body.appendChild(el('section.set-block.danger-zone', null, [
       el('h4', { text: 'داده‌ها' }),

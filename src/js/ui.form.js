@@ -94,7 +94,8 @@
     'task-cancel': 'کار لغو شد', 'task-remove': 'حذف کار',
     'doc-batch': 'دستهٔ اسکن', 'doc-attach': 'وصل سند به پرونده',
     'doc-sync': 'هم‌خوان‌سازی از سند', 'stage': 'تنظیم مرحله',
-    'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه'
+    'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه',
+    'form': 'فرم اداری', 'doc-edit': 'ویرایش مشخصات سند'
   };
 
   function kindLabel(kind) {

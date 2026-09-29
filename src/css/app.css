@@ -1219,6 +1219,26 @@ select.input { cursor: pointer; }
   0%, 55% { background: var(--brass-soft); border-color: var(--brass-line); }
 }
 
+/* --- خروجی کارکرد روزانه، در تنظیمات --- */
+.set-note { margin: 6px 0 2px; font-size: 12px; line-height: 1.9; color: var(--ink-700); }
+.act-quick { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 10px; }
+.act-range { display: flex; gap: 12px; flex-wrap: wrap; }
+.act-range .field { flex: 1 1 160px; }
+.act-opts { display: flex; flex-direction: column; gap: 5px; margin: 9px 0 4px; }
+.act-check { display: flex; align-items: center; gap: 7px; font-size: 12.5px; cursor: pointer; }
+.act-check input { width: 15px; height: 15px; accent-color: var(--brass); }
+.act-summary {
+  margin: 8px 0 11px;
+  padding: 9px 12px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--brass-ink);
+}
+.act-nums { font-weight: 600; }
+.act-src { margin-top: 4px; font-size: 11.5px; color: var(--ink-600, var(--ink-700)); }
+
 /* ---------------------------------------------------------------- تاریخچه */
 .history-wrap { font-size: 13px; }
 .related {
