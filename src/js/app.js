@@ -1001,8 +1001,111 @@
 
   app.refreshAccessBar = renderAccessBar;
 
+  /*
+   * صفحهٔ سفید، بدترین خطاست.
+   *
+   * برنامه سه جا نوارهای بالا و پایین را پنهان می‌کند: صفحهٔ قفل، صفحهٔ
+   * شروع، و لحظهٔ راه‌اندازی. اگر درست همان‌جا چیزی بشکند — و بدتر، اگر
+   * شکستن در یک promise رها شده باشد که کسی catch نکرده — کاربر با یک
+   * صفحهٔ کاملاً سفید تنها می‌ماند: نه پیامی، نه دکمه‌ای، نه راهی برای
+   * گفتن اینکه چه شد.
+   *
+   * این تابع همان حالت را می‌گیرد: نوارها برمی‌گردند (اگر قفل نباشد)،
+   * پیام خوانا نوشته می‌شود، متن فنیِ خطا برای فرستادن آمادهٔ کپی است،
+   * و دو راهِ بیرون آمدن هم هست.
+   */
+  var fatalShown = false;
+
+  function fatalBox(err, where) {
+    if (fatalShown) return;
+    fatalShown = true;
+    var text = (err && err.message) ? err.message : String(err || 'خطای ناشناخته');
+    var stack = (err && err.stack) ? String(err.stack) : '';
+    var detail = (where ? '[' + where + '] ' : '') + text +
+      (stack ? '\n' + stack.split('\n').slice(0, 6).join('\n') : '');
+
+    try {
+      if (w.UILock && w.UILock.isShowing && w.UILock.isShowing() &&
+        !(w.Store.isLocked && w.Store.isLocked())) {
+        w.UILock.hide();
+      }
+      // نوارها فقط وقتی برمی‌گردند که قفل باز باشد
+      if (!(w.Store.isLocked && w.Store.isLocked())) {
+        if (topBarNode && topBarNode.parentNode !== document.body) {
+          document.body.insertBefore(topBarNode, mount);
+        }
+        if (topBarNode) topBarNode.style.display = '';
+        if (tabBarNode) tabBarNode.style.display = '';
+      }
+    } catch (e) { /* حتی اگر این هم نشد، پیام باید دیده شود */ }
+
+    var pre = el('pre.fatal-detail', { text: detail });
+    w.U.clear(mount);
+    mount.appendChild(el('div.fatal', null, [
+      el('h2', { text: 'برنامه بالا نیامد' }),
+      el('p', {
+        text: 'یک خطا جلوی نمایش را گرفت. تا این لحظه چیزی روی فایل دادهٔ ' +
+          'شما نوشته نشده است، پس داده‌ها سر جایشان هستند.'
+      }),
+      el('p.muted.tiny', {
+        text: 'متن زیر را کپی کنید و بفرستید؛ دقیقاً می‌گوید کجا شکسته است.'
+      }),
+      pre,
+      el('div.btn-row', null, [
+        el('button.btn.small.primary', {
+          type: 'button', text: 'کپی متن خطا',
+          onclick: function () {
+            var ok = false;
+            try {
+              var ta = el('textarea', { value: detail });
+              ta.style.cssText = 'position:fixed;top:-2000px;opacity:0';
+              document.body.appendChild(ta);
+              ta.select();
+              ok = document.execCommand('copy');
+              ta.remove();
+            } catch (e) { ok = false; }
+            w.U.toast(ok ? 'کپی شد.' : 'کپی نشد؛ متن را دستی انتخاب کنید.',
+              ok ? 'good' : 'warn');
+          }
+        }),
+        el('button.btn.small', {
+          type: 'button', text: 'تلاش دوباره',
+          onclick: function () { w.location.reload(); }
+        }),
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'باز کردن دیتابیس دیگر',
+          onclick: function () {
+            fatalShown = false;
+            if (topBarNode) topBarNode.style.display = 'none';
+            if (tabBarNode) tabBarNode.style.display = 'none';
+            w.UIStart.show(function () { w.location.reload(); });
+          }
+        })
+      ])
+    ]));
+  }
+
+  app.fatal = fatalBox;
+
+  /* تورِ ایمنی: هر خطایی که تا اینجا رسیده و کسی نگرفته، اگر صفحه خالی
+     مانده باشد، به‌جای سفیدی نشان داده می‌شود. */
+  function safetyNet() {
+    function empty() {
+      return mount && !mount.firstChild &&
+        !(w.UILock && w.UILock.isShowing && w.UILock.isShowing()) &&
+        !(w.UIStart && w.UIStart.isShowing && w.UIStart.isShowing());
+    }
+    w.addEventListener('unhandledrejection', function (e) {
+      if (empty()) fatalBox(e.reason, 'promise');
+    });
+    w.addEventListener('error', function (e) {
+      if (empty()) fatalBox(e.error || e.message, 'error');
+    });
+  }
+
   function boot() {
     mount = $('#main');
+    safetyNet();
     topBarNode = topBar();
     document.body.insertBefore(topBarNode, mount);
     tabBarNode = tabBar();
@@ -1026,16 +1129,17 @@
       if (w.Store.isLocked()) {
         topBarNode.style.display = 'none';
         tabBarNode.style.display = 'none';
-        w.UILock.showLock(afterUnlock);
+        /* نتیجهٔ afterUnlock اینجا رها می‌شد: اگر بعد از باز شدن قفل چیزی
+           می‌شکست، صفحهٔ قفل رفته بود و نوارها هنوز پنهان — یعنی صفحهٔ
+           کاملاً سفید، بدون هیچ پیامی. */
+        w.UILock.showLock(function () {
+          var p = afterUnlock();
+          if (p && p.catch) p.catch(function (err) { fatalBox(err, 'unlock'); });
+        });
         return null;
       }
       return afterUnlock();
-    }).catch(function (err) {
-      mount.appendChild(el('div.fatal', null, [
-        el('h2', { text: 'راه‌اندازی ناموفق بود' }),
-        el('p', { text: err && err.message ? err.message : String(err) })
-      ]));
-    });
+    }).catch(function (err) { fatalBox(err, 'boot'); });
   }
 
   w.App = app;

@@ -1545,7 +1545,38 @@ select.input { cursor: pointer; }
 .toast.bad { background: #8F2C20; }
 .toast.warn { background: var(--brass-ink); }
 
-.fatal { padding: 40px; text-align: center; color: var(--bad); }
+/* صفحهٔ «بالا نیامد» — به‌جای سفیدیِ بی‌پیام.
+   متنِ فنی عمداً چپ‌به‌راست و تک‌فاصله است: قرار است کپی شود و فرستاده. */
+.fatal {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  padding: 34px 22px 48px;
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: start;
+}
+.fatal h2 { margin: 0 0 8px; font-size: 18px; color: var(--cinnabar); }
+.fatal p { margin: 0 0 8px; font-size: 13px; line-height: 1.95; color: var(--ink-800); }
+.fatal-detail {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow: auto;
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--cinnabar-line);
+  background: var(--cinnabar-soft);
+  border-radius: var(--radius);
+  color: var(--ink-900);
+}
 
 /* ------------------------------------------------------------- نمای گزارش */
 .report-view {

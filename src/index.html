@@ -11,6 +11,35 @@
 </head>
 <body>
 
+<!--
+  نگهبانِ فایلِ ناقص.
+
+  این برنامه یک فایل چندمگابایتی است و معمولاً دست‌به‌دست می‌شود — ایمیل،
+  پیام‌رسان، فلش. اگر انتقال نصفه بماند، مرورگر همان نصفه را باز می‌کند:
+  تگ‌های بالا هستند، ولی آخرین اسکریپت (که برنامه را راه می‌اندازد) نیست.
+  نتیجه یک صفحهٔ کاملاً سفید است، بدون هیچ پیامی.
+
+  این چند خط اولین چیزی است که اجرا می‌شود و آخرین خطِ فایل را می‌پاید.
+  اگر آن خط نرسیده باشد، به‌جای سفیدی می‌گوید چه شده.
+-->
+<script>
+window.addEventListener('load', function () {
+  if (window.__BUILD_COMPLETE) return;
+  var s = document.createElement('div');
+  s.setAttribute('style', 'max-width:560px;margin:60px auto;padding:22px 24px;' +
+    'font:14px/2 Tahoma,sans-serif;direction:rtl;text-align:right;color:#2B2B2B;' +
+    'border:1px solid #EFCCC5;background:#FCEFEC;border-radius:10px');
+  s.innerHTML = '<h2 style="margin:0 0 8px;font-size:17px;color:#B4482F">' +
+    'فایل برنامه ناقص است</h2>' +
+    '<p style="margin:0 0 6px">این فایل کامل منتقل نشده است، برای همین ' +
+    'برنامه بالا نمی‌آید و صفحه سفید می‌ماند.</p>' +
+    '<p style="margin:0">دوباره دانلودش کنید و صبر کنید تا دانلود ' +
+    '<b>تمام</b> شود؛ حجم فایل حدود ۲ مگابایت است. داده‌های شما در این ' +
+    'فایل نیستند و دست‌نخورده‌اند.</p>';
+  document.body.insertBefore(s, document.body.firstChild);
+});
+</script>
+
 <main id="main"></main>
 <div id="print-area"></div>
 <div id="toast" class="toast"></div>
@@ -76,6 +105,9 @@
 })();
 </script>
 <!-- /DEV-ONLY -->
+
+<!-- آخرین خطِ فایل: اگر این نرسیده باشد، یعنی فایل ناقص است -->
+<script>window.__BUILD_COMPLETE = 1;</script>
 
 </body>
 </html>
