@@ -228,6 +228,11 @@
     // خلاصهٔ پرونده، بالاتر از همه: اول «قصه چیست»، بعد «چه باید کرد»
     panel.appendChild(summaryBlock(rec, refresh));
 
+    /* چک‌لیستِ مرحله، پیش از کارهای آزاد: این‌ها کارهایی‌اند که خودِ
+       مرحله می‌آورد و نباید لای کارهای دستی گم شوند. */
+    var cl = w.UIChecklist.block(app, rec, refresh);
+    if (cl) panel.appendChild(cl);
+
     /* چک‌لیست کارهای همین پرونده — بعد از خلاصه، چون کارِ نکرده مهم‌تر از
        یادداشتِ نوشته‌شده است. */
     panel.appendChild(el('div.note-part', null, [

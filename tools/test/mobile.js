@@ -205,11 +205,16 @@ function overflow(page) {
   await page.evaluate(() =>
     document.querySelector('.note-form-row .btn.primary').click());
   await page.waitForTimeout(500);
-  const note = await page.evaluate(() => ({
-    count: window.Notes.all().length,
-    followUp: !!window.Notes.all()[0].followUp,
-    rendered: document.querySelectorAll('.note').length
-  }));
+  const note = await page.evaluate(() => {
+    /* انبارِ یادداشت‌ها حالا کارهای چک‌لیست را هم دارد، پس سراغ خودِ
+       یادداشتی می‌رویم که همین الان نوشته شد. */
+    const mine = window.Notes.all().filter(n => n.kind !== 'task');
+    return {
+      count: mine.length,
+      followUp: !!(mine[0] && mine[0].followUp),
+      rendered: document.querySelectorAll('.note').length
+    };
+  });
   check('یادداشت با میان‌بر تاریخ روی گوشی ثبت می‌شود',
     note.count === 1 && note.followUp && note.rendered === 1);
 
@@ -356,7 +361,7 @@ function overflow(page) {
     sessions: window.Model.state.cases.filter(c => c.session === '۹۹').length,
     name: window.Model.state.cases.some(
       c => JSON.stringify(c).indexOf('آزمون لمسی') >= 0),
-    notes: window.Notes.all().length
+    notes: window.Notes.all().filter(n => n.kind !== 'task').length
   }));
   check('کارهای انجام‌شده روی گوشی پس از رفرش می‌مانند',
     persistedTouch.sessions === 2 && persistedTouch.name && persistedTouch.notes === 1,

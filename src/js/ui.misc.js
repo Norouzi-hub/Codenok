@@ -613,6 +613,174 @@
   }
 
   /* ================================================================
+     ویرایشگر قالب‌های چک‌لیست
+     ----------------------------------------------------------------
+     قالب‌ها در برنامه پیش‌فرض دارند، ولی رویهٔ هر دبیرخانه فرق می‌کند و
+     «بسته به نوع پرونده یکی دو کار کم یا زیاد می‌شود». پس هر قالب
+     اینجا باز است: آیتم اضافه و کم می‌شود، جا‌به‌جا می‌شود، اختیاری
+     می‌شود، و می‌شود گفت فقط برای کدام نوع پرونده‌هاست.
+
+     آنچه عمداً اینجا نیست: افزودن قالبِ تازه با مرحلهٔ دلخواه. هر قالب
+     به یک مرحلهٔ ریل بسته است و مرحله‌ها هجده‌تای ثابت‌اند؛ قالبِ بدون
+     مرحله هیچ‌وقت ساخته نمی‌شود و فقط سردرگمی می‌آورد.
+     ================================================================ */
+  function checklistDialog(app) {
+    var C = w.Checklist;
+    // کپیِ کاری: تا «ذخیره» نخورد، چیزی عوض نمی‌شود
+    var data = JSON.parse(JSON.stringify(C.templates()));
+    var types = M.optionsFor(M.FIELD_BY_KEY.caseType) || [];
+    var body = el('div.cl-editor');
+    var m;
+
+    function draw() {
+      w.U.clear(body);
+      body.appendChild(el('p.set-note', {
+        text: 'هر قالب به یک مرحله از ریل گردش‌کار بسته است: پرونده که به ' +
+          'آن مرحله رسید، این کارها یک بار ساخته می‌شوند.'
+      }));
+      data.forEach(function (tpl, ti) {
+        body.appendChild(tplBox(tpl, ti));
+      });
+      body.appendChild(el('div.btn-row', null, [
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'بازگرداندن به پیش‌فرض',
+          onclick: function () {
+            w.U.confirmBox('بازگرداندن قالب‌ها',
+              'همهٔ قالب‌ها به حالت اولیه برمی‌گردند. چک‌لیست‌هایی که ' +
+              'تا حالا ساخته شده‌اند دست نمی‌خورند.',
+              'برگردان').then(function (ok) {
+                if (!ok) return;
+                data = JSON.parse(JSON.stringify(C.TEMPLATES));
+                draw();
+              });
+          }
+        })
+      ]));
+    }
+
+    function tplBox(tpl, ti) {
+      var stage = null;
+      w.Worklist.STAGES.forEach(function (s) { if (s.key === tpl.stage) stage = s; });
+      var rows = el('div.cl-ed-items');
+      (tpl.items || []).forEach(function (it, ii) {
+        rows.appendChild(itemRow(tpl, it, ii));
+      });
+      return el('section.cl-ed-tpl', null, [
+        el('div.cl-ed-head', null, [
+          el('b', { text: tpl.label }),
+          el('span.cl-ed-stage', {
+            text: 'مرحله: ' + (stage ? stage.label : tpl.stage)
+          }),
+          el('div.spacer'),
+          el('span.muted.tiny', {
+            text: w.U.toFaDigits((tpl.items || []).length) + ' کار'
+          })
+        ]),
+        rows,
+        el('button.btn.small.ghost', {
+          type: 'button', text: '＋ کار تازه به این قالب',
+          onclick: function () {
+            tpl.items = (tpl.items || []).concat([{
+              key: 'x' + Date.now(), title: '', optional: false
+            }]);
+            draw();
+          }
+        })
+      ]);
+    }
+
+    function itemRow(tpl, it, ii) {
+      var title = el('input.input.small', { type: 'text', value: it.title || '' });
+      title.addEventListener('input', function () { it.title = title.value; });
+
+      var opt = el('input', { type: 'checkbox', checked: !!it.optional });
+      opt.addEventListener('change', function () { it.optional = opt.checked; });
+
+      var typeChips = el('div.cl-ed-types', null, types.map(function (t) {
+        var on = (it.types || []).indexOf(t) >= 0;
+        return el('button.chip-btn.tiny' + (on ? '.on' : ''), {
+          type: 'button', text: t,
+          title: on ? 'فقط برای این نوع پرونده' : 'محدود کردن به این نوع پرونده',
+          onclick: function () {
+            var list = (it.types || []).slice();
+            if (on) list = list.filter(function (x) { return x !== t; });
+            else list.push(t);
+            it.types = list;
+            draw();
+          }
+        });
+      }));
+
+      function move(step) {
+        var to = ii + step;
+        if (to < 0 || to >= tpl.items.length) return;
+        var arr = tpl.items;
+        var tmp = arr[to]; arr[to] = arr[ii]; arr[ii] = tmp;
+        draw();
+      }
+
+      return el('div.cl-ed-item', null, [
+        el('span.cl-ed-n', { text: w.U.toFaDigits(ii + 1) }),
+        title,
+        el('label.act-check', null, [opt, el('span', { text: 'اختیاری' })]),
+        it.cta ? el('span.cl-ed-cta', {
+          text: ctaText(it.cta),
+          title: 'این کار، دکمهٔ انجامِ خودش را دارد'
+        }) : null,
+        el('div.spacer'),
+        typeChips,
+        el('button.icon-btn.tiny', {
+          type: 'button', text: '↑', title: 'بالاتر',
+          onclick: function () { move(-1); }
+        }),
+        el('button.icon-btn.tiny', {
+          type: 'button', text: '↓', title: 'پایین‌تر',
+          onclick: function () { move(1); }
+        }),
+        el('button.icon-btn.tiny.danger', {
+          type: 'button', html: w.Mobile.icon('trash'), title: 'حذف این کار',
+          onclick: function () {
+            tpl.items = tpl.items.filter(function (x) { return x !== it; });
+            draw();
+          }
+        })
+      ]);
+    }
+
+    function ctaText(c) {
+      if (c.type === 'upload') return 'دکمه: بارگذاری ' + (c.kind || '');
+      if (c.type === 'form') return 'دکمه: ساختن فرم';
+      if (c.type === 'field') return 'دکمه: رفتن سرِ فیلد';
+      return '';
+    }
+
+    draw();
+    m = w.U.modal('قالب‌های چک‌لیست', body, [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'ذخیرهٔ قالب‌ها',
+        onclick: function () {
+          // کارِ بی‌عنوان، کارِ نیست
+          data.forEach(function (t) {
+            t.items = (t.items || []).filter(function (i) {
+              return String(i.title || '').trim();
+            });
+          });
+          C.saveTemplates(data).then(function () {
+            m.close();
+            w.U.toast('قالب‌ها ذخیره شد. چک‌لیست‌های ساخته‌شده دست نخوردند.',
+              'good');
+            app.render();
+          });
+        }
+      })
+    ]);
+    m.root.classList.add('wide-modal');
+  }
+
+  /* ================================================================
      خروجی کارکرد روزانه
      ----------------------------------------------------------------
      این خروجی برای آدم نیست — کارنامه برای آدم است. این برای برنامهٔ
@@ -1170,6 +1338,21 @@
       el('h4', { text: 'لیست‌های کشویی' }), editor
     ]));
 
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'چک‌لیست مرحله‌ای' }),
+      el('p.set-note', {
+        text: 'کارهای تکراریِ هر مرحله. پرونده که به آن مرحله رسید، این ' +
+          'کارها یک بار ساخته می‌شوند و در تب «کارها و یادداشت‌ها»ی همان ' +
+          'پرونده و در صفحهٔ کارها دیده می‌شوند.'
+      }),
+      el('div.btn-row', null, [
+        el('button.btn.small', {
+          type: 'button', text: 'ویرایش قالب‌های چک‌لیست',
+          onclick: function () { m.close(); checklistDialog(app); }
+        })
+      ])
+    ]));
+
     body.appendChild(activityBlock());
 
     body.appendChild(el('section.set-block.danger-zone', null, [
@@ -1258,6 +1441,7 @@
     exportSqlite: exportSqlite, exportJson: exportJson, restoreJson: restoreJson,
     exportReportExcel: exportReportExcel,
     importExcel: importExcel, settingsDialog: settingsDialog, mapColumns: mapColumns,
-    importDialog: importDialog, wipeDialog: wipeDialog
+    importDialog: importDialog, wipeDialog: wipeDialog,
+    checklistDialog: checklistDialog
   };
 })(window);

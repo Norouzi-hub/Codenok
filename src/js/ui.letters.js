@@ -571,16 +571,17 @@
    * نبود، پس در کارنامه و خروجی کارکرد هم نبود. حالا ثبت می‌شود — کنار
    * بقیهٔ رویدادهای همان پرونده.
    */
-  function logForm(rec, doc, how) {
+  function logForm(rec, doc, how, kind) {
     if (!rec || !rec.id || !M.get || !M.get(rec.id)) return;
     M.addHistory('form', rec, [], doc.title + ' — ' + how);
+    if (w.Checklist) w.Checklist.hit(M.get(rec.id), 'form', kind);
   }
 
   function printForm(kind, rec, extra) {
     var doc = BUILDERS[kind](rec, extra || {});
     var node = area();
     node.appendChild(toHtml(doc));
-    logForm(rec, doc, 'چاپ');
+    logForm(rec, doc, 'چاپ', kind);
     run(doc.title);
     return doc;
   }
@@ -593,7 +594,7 @@
     var caseNo = w.U.toLatinDigits(rec.caseNo || '').replace(/[^\w.-]+/g, '-');
     var name = (doc.file || doc.key) + (caseNo ? '-' + caseNo : '') + '.docx';
     w.U.download(name, toDocx(doc));
-    logForm(rec, doc, 'خروجی ورد');
+    logForm(rec, doc, 'خروجی ورد', kind);
     return doc;
   }
 

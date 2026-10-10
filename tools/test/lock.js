@@ -277,7 +277,10 @@ async function openList(page) {
     locked: window.UILock.isShowing(),
     cases: window.Model.state.cases.length,
     encrypted: window.Store.status().encrypted,
-    history: window.Model.state.history.length
+    /* رویدادِ «ساخت چک‌لیست» هم از همان بالا آمدن ثبت می‌شود؛ آنچه
+       این سنجه می‌خواهد، ورودِ داده‌های نمونه است. */
+    history: window.Model.state.history
+      .filter(h => h.kind !== 'checklist').length
   }));
   check('پس از انتخاب «دادهٔ نمونه»، از صفر بالا می‌آید',
     !fresh.locked && !fresh.encrypted,

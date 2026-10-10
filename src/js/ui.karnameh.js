@@ -219,6 +219,31 @@
       ]));
     }
 
+    // -------------------------------------------------- چک‌لیست مرحله‌ها
+    var cl = data.checklist;
+    if (cl && (cl.done || cl.skipped || cl.open)) {
+      sections.push(el('section.krn-block', null, [
+        el('div.wl-section-head', null, [
+          el('h2', { text: 'چک‌لیست مرحله‌ها' }),
+          el('span.wl-count', { text: fa(cl.done) + ' انجام‌شده' }),
+          cl.skipped ? el('span.wl-count', {
+            text: fa(cl.skipped) + ' لازم نبود'
+          }) : null,
+          cl.open ? el('span.wl-count.late', { text: fa(cl.open) + ' مانده' }) : null,
+          el('p.wl-sub', {
+            text: 'کارهایی که خودِ مرحلهٔ پرونده می‌آوردشان — نه کارِ دستی.'
+          })
+        ]),
+        el('ul.krn-bars', null, cl.rows.map(function (r) {
+          /* مخرجِ هر نوار، کلِ همان چک‌لیست است نه بزرگ‌ترین عدد:
+             «۳۶ از ۴۰» معنا دارد، «۳۶ نسبت به بیشترین» ندارد. */
+          var all = r.done + r.skipped + r.open;
+          return barRow(r.label + ' — ' + fa(r.done) + ' از ' + fa(all),
+            r.done, all, null);
+        }))
+      ]));
+    }
+
     // ------------------------------------------------------------ کارها
     if (t.tasksDone || t.tasksCancelled) {
       sections.push(el('section.krn-block', null, [

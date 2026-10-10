@@ -138,8 +138,15 @@
    * و باید در یک نگاه بگوید «اینجا چه خبر است». قرارِ پیگیری مقدم است،
    * چون سررسید دارد؛ وگرنه آخرین یادداشت.
    */
+  /* آیتم‌های چک‌لیست از این دو بیرون‌اند: چک‌لیست چیپِ خودش را بالای
+     پرونده دارد و اگر اینجا هم بیاید، «آخرین خبرِ پرونده» می‌شود
+     «پوشه کردن پرونده» — که خبر نیست. */
+  function free(list) {
+    return list.filter(function (n) { return !n.tpl; });
+  }
+
   function headline(caseId) {
-    var open = forCase(caseId).filter(function (n) {
+    var open = free(forCase(caseId)).filter(function (n) {
       return !n.done && !n.archived;
     });
     if (!open.length) return null;
@@ -155,7 +162,7 @@
 
   /** چند یادداشت باز دارد */
   function openCount(caseId) {
-    return forCase(caseId).filter(function (n) {
+    return free(forCase(caseId)).filter(function (n) {
       return !n.done && !n.archived;
     }).length;
   }
@@ -212,6 +219,15 @@
       doneAt: o.done ? J.today() : '',
       batchId: o.batchId || '',
       docCount: o.docCount || 0,
+      /* سه فیلدِ چک‌لیست: از کدام قالب، چندمین گام، مالِ کدام مرحله.
+         آیتم چک‌لیست یک «کار» معمولی است و همین سه فیلد کافی است تا
+         بشود دوباره کنار هم چیدش. */
+      tpl: o.tpl || '',
+      step: o.step || 0,
+      stage: o.stage || '',
+      item: o.item || '',
+      optional: !!o.optional,
+      cta: o.cta || null,
       at: new Date().toISOString(),
       atJalali: J.stamp(),
       user: M.state.settings.user || 'کاربر'
@@ -219,7 +235,11 @@
     notes.push(item);
     index();
     return w.Store.put('notes', [item]).then(function () {
-      if (rec) {
+      /* چک‌لیست، پنج کار را با هم می‌سازد و خودش یک سطر تاریخچه دارد
+         («چک‌لیست تشکیل پرونده ساخته شد — ۵ کار»). پنج سطرِ «کار ثبت
+         شد» کنارش، تاریخچهٔ پرونده را پر می‌کند از چیزی که کاربر
+         انجامش نداده. */
+      if (rec && !o.quiet) {
         M.addHistory(kind === 'task' ? 'task-add' : 'note-add', rec, [],
           (kind === 'task' ? 'کار: ' + title : 'یادداشت: ' + preview(text)) +
           (item.done ? ' — انجام‌شده' : '') +
@@ -275,6 +295,28 @@
     }).then(function () {
       if (rec) {
         M.addHistory('task-cancel', rec, [], 'کار لغو شد: ' + (note.title || '') +
+          (why ? ' — ' + why : ''));
+      }
+      return note;
+    });
+  }
+
+  /*
+   * «لازم نبود» — حالت سومِ یک کار.
+   *
+   * با دو حالتِ انجام‌شد/نشد، آیتمی مثل «نامهٔ رفع نواقص» برای پرونده‌ای
+   * که نواقصی نداشته، تا ابد باز و قرمز می‌ماند. این نه «انجام شد» است
+   * و نه «لغو»: تصمیمی است که گرفته شده و در گزارش هم معنا دارد
+   * («۱۲ پرونده نواقص داشت، ۱۹ تا نداشت»).
+   */
+  function skipTask(note, why) {
+    var rec = note.caseId ? M.get(note.caseId) : null;
+    return update(note, {
+      done: true, status: 'skipped', doneAt: J.today(),
+      cancelReason: String(why || '').trim()
+    }).then(function () {
+      if (rec) {
+        M.addHistory('task-skip', rec, [], 'لازم نبود: ' + (note.title || '') +
           (why ? ' — ' + why : ''));
       }
       return note;
@@ -390,7 +432,7 @@
   function archiveClosed(olderThan) {
     var list = notes.filter(function (n) {
       if (!isTask(n) || n.archived) return false;
-      if (n.status !== 'done' && n.status !== 'cancelled') return false;
+      if (n.status === 'open') return false;
       if (olderThan && (n.doneAt || '') > olderThan) return false;
       return true;
     });
@@ -496,13 +538,25 @@
     });
     var byKey = {};
     out.forEach(function (b) { byKey[b.key] = b; });
-    tasks(q).forEach(function (t) { byKey[bucketOf(t)].items.push(t); });
+    freeTasks(q).forEach(function (t) { byKey[bucketOf(t)].items.push(t); });
     return out;
+  }
+
+  /*
+   * سطل‌ها، آمار و گزارشِ صفحهٔ کارها، فقط کارِ آزاد را می‌شمارند.
+   *
+   * آیتم‌های چک‌لیست سررسید ندارند و همه‌شان در سطلِ «یک روزی» تلنبار
+   * می‌شوند؛ و «۱۵ کار باز» گفتن وقتی صفحه سه چک‌لیست و هیچ کارِ آزادی
+   * نشان می‌دهد، حرفِ گیج‌کننده‌ای است. چک‌لیست بخشِ خودش را دارد، با
+   * شمارشِ خودش و مخرجِ خودش.
+   */
+  function freeTasks(f) {
+    return tasks(f).filter(function (n) { return !n.tpl; });
   }
 
   /** کارهای امروز و عقب‌افتاده — همان چیزی که صبح باید دید */
   function todayTasks() {
-    return tasks({ status: 'open' }).filter(function (t) {
+    return freeTasks({ status: 'open' }).filter(function (t) {
       var b = bucketOf(t);
       return b === 'overdue' || b === 'today';
     });
@@ -514,7 +568,7 @@
     var open = notes.filter(function (n) {
       return n.kind !== 'task' && n.followUp && !n.done;
     });
-    var openTasks = tasks({ status: 'open' });
+    var openTasks = freeTasks({ status: 'open' });
     var due = todayTasks();
     return {
       total: notes.length,
@@ -544,12 +598,14 @@
     var byCategory = {};
     function bump(map, key, field) {
       var k = key || '—';
-      var row = map[k] || (map[k] = { key: k, done: 0, cancelled: 0, open: 0, overdue: 0 });
+      var row = map[k] || (map[k] = {
+        key: k, done: 0, cancelled: 0, skipped: 0, open: 0, overdue: 0
+      });
       row[field]++;
     }
-    var done = 0, cancelled = 0, open = 0, overdue = 0;
+    var done = 0, cancelled = 0, skipped = 0, open = 0, overdue = 0;
     notes.forEach(function (n) {
-      if (!isTask(n)) return;
+      if (!isTask(n) || n.tpl) return;      // چک‌لیست، گزارشِ خودش را دارد
       if (n.caseId && !inWorkScope(n.caseId)) return;
       /* کارِ بایگانی‌شده که هنوز باز است، نه باز شمرده می‌شود نه
          عقب‌افتاده — بایگانی‌اش یعنی دیگر دنبالش نیستیم. ولی اگر
@@ -562,8 +618,11 @@
       } else {
         var when = n.doneAt || '';
         if (!when || when < from || when > to) return;
-        field = n.status === 'cancelled' ? 'cancelled' : 'done';
-        if (field === 'cancelled') cancelled++; else done++;
+        field = n.status === 'cancelled' ? 'cancelled'
+          : (n.status === 'skipped' ? 'skipped' : 'done');
+        if (field === 'cancelled') cancelled++;
+        else if (field === 'skipped') skipped++;
+        else done++;
       }
       bump(byFrom, n.from, field);
       bump(byCategory, n.category, field);
@@ -576,7 +635,8 @@
     }
     return {
       from: from, to: to,
-      done: done, cancelled: cancelled, open: open, overdue: overdue,
+      done: done, cancelled: cancelled, skipped: skipped,
+      open: open, overdue: overdue,
       byFrom: rows(byFrom), byCategory: rows(byCategory)
     };
   }
@@ -599,6 +659,7 @@
   w.Notes = {
     load: load, all: all, forCase: forCase, add: add, create: create,
     update: update, complete: complete, cancelTask: cancelTask,
+    skipTask: skipTask,
     reopen: reopen, remove: remove,
     openFollowUp: openFollowUp, dueFollowUps: dueFollowUps, stats: stats,
     headline: headline, openCount: openCount, textOf: textOf,

@@ -548,6 +548,9 @@
         M.addHistory('doc-add', rec, [],
           doc.kind + (doc.title ? ' («' + doc.title + '»)' : '') +
           ' — فایل: ' + doc.fileName);
+        /* اگر آیتمی از چک‌لیست منتظر همین نوع سند بود، همین‌جا تیک
+           می‌خورد — وگرنه کاربر باید یک کار را دو بار اعلام کند. */
+        if (w.Checklist) w.Checklist.hit(rec, 'upload', doc.kind);
         return doc;
       });
     });

@@ -895,6 +895,10 @@
     }).then(function () {
       return w.Notes.load();
     }).then(function () {
+      /* چک‌لیستِ مرحلهٔ هر پرونده، اگر هنوز ساخته نشده. یک بار، بی‌صدا،
+         و فقط برای مرحله‌ای که پرونده الان در آن است. */
+      return w.Checklist.ensureAll().catch(function () { return 0; });
+    }).then(function () {
       if (topBarNode.parentNode !== document.body) {
         document.body.insertBefore(topBarNode, mount);
       }

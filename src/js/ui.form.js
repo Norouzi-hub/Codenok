@@ -95,7 +95,8 @@
     'doc-batch': 'دستهٔ اسکن', 'doc-attach': 'وصل سند به پرونده',
     'doc-sync': 'هم‌خوان‌سازی از سند', 'stage': 'تنظیم مرحله',
     'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه',
-    'form': 'فرم اداری', 'doc-edit': 'ویرایش مشخصات سند'
+    'form': 'فرم اداری', 'doc-edit': 'ویرایش مشخصات سند',
+    'checklist': 'چک‌لیست مرحله', 'task-skip': 'کار لازم نبود'
   };
 
   function kindLabel(kind) {
@@ -664,6 +665,14 @@
     function persist(data) {
       var p = existing ? M.update(existing.id, data) : M.create(data);
       p.then(function (res) {
+        /* مرحله ممکن است با همین ذخیره عوض شده باشد: چک‌لیستِ مرحلهٔ
+           تازه ساخته می‌شود و آیتم‌هایی که فیلدشان پر شده، تیک
+           می‌خورند. هر دو بی‌صدا — کاربر ذخیره زده، نه چیز دیگر. */
+        var rec0 = res.record || res;
+        return w.Checklist.ensureFor(M.get(rec0.id))
+          .then(function () { return w.Checklist.sync(M.get(rec0.id)); })
+          .then(function () { return res; });
+      }).then(function (res) {
         dirty = false;
         app.setDirty(false);
         var rec = res.record || res;
@@ -679,6 +688,9 @@
     }
 
     app.saveCurrentForm = doSave;
+    /* دکمهٔ آیتم چک‌لیست ممکن است از صفحهٔ کارها زده شود: آن‌وقت اول
+       پرونده باز می‌شود و بعد باید سراغ همان فیلد رفت. */
+    app.jumpField = function (key) { jumpToField(key); };
 
     // ---------------------------------------------------------------- ساخت DOM
     headTitle = el('h2.case-title');
@@ -1299,12 +1311,20 @@
         },
         function () { jumpToField('defenseReceivedDate'); });
 
+      var fresh = M.get(existing.id) || existing;
       return el('div.case-rail', null, [
         w.UIWorklist.rail(existing, 'full', function (fieldKey) {
           jumpToField(fieldKey);
         }),
+        w.UIChecklist.chip(app, fresh),
         transferNode || next,
         cdNode,
+        /* هشدار، نه سد: کارِ الزامیِ ماندهٔ مرحله‌های قبل گفته می‌شود
+           ولی جلوی هیچ‌چیز را نمی‌گیرد. */
+        w.UIChecklist.warn(app, fresh, function () {
+          app.state.formTab = activeTab;
+          app.render();
+        }),
         followNode
       ]);
     }

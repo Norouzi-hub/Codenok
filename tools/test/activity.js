@@ -50,7 +50,8 @@ function check(name, ok, extra) {
       'doc-add', 'doc-version', 'doc-remove', 'doc-folder', 'doc-person',
       'doc-batch', 'doc-attach', 'doc-sync', 'doc-edit', 'note-add',
       'note-done', 'note-remove', 'task-add', 'task-remove', 'task-done',
-      'task-cancel', 'stage', 'bulk', 'session', 'form'];
+      'task-cancel', 'task-skip', 'checklist', 'stage', 'bulk', 'session',
+      'form'];
     /* یا از تاریخچه شمرده می‌شود، یا صریحاً گفته شده که جای دیگری
        شمرده می‌شود. حالت سومی — «نه اینجا نه آنجا» — نباید باشد. */
     const mapped = A.ACTIONS.filter(a => a.source === 'history')

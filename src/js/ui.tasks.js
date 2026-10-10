@@ -606,9 +606,14 @@
      چک‌لیست کارهای یک پرونده — داخل تب «کارها و یادداشت‌ها»
      ================================================================ */
   function casePanel(app, rec, refresh) {
-    var open = N.tasks({ caseId: rec.id, status: 'open' });
-    var done = N.tasks({ caseId: rec.id, status: 'done' })
-      .concat(N.tasks({ caseId: rec.id, status: 'cancelled' }));
+    /* آیتم‌های چک‌لیست بالاتر، در بلوک خودشان‌اند؛ اینجا فقط کارهای
+       آزادِ همین پرونده. */
+    function free(list) {
+      return list.filter(function (t) { return !t.tpl; });
+    }
+    var open = free(N.tasks({ caseId: rec.id, status: 'open' }));
+    var done = free(N.tasks({ caseId: rec.id, status: 'done' })
+      .concat(N.tasks({ caseId: rec.id, status: 'cancelled' })));
 
     var panel = el('div.task-case-panel');
 
@@ -743,6 +748,10 @@
     /* یک صافی، در یک جا: هر سه چیز (دامنه، دسته، بایگانی) به همین شکل
        می‌رسند تا شمارنده و فهرست هیچ‌وقت از هم جدا نیفتند. */
     function keep(t) {
+      /* آیتم‌های چک‌لیست در سطرِ جمع‌شدهٔ خودشان دیده می‌شوند، نه
+         یکی‌یکی: سی پرونده × پنج کار یعنی صد و پنجاه سطر و این صفحه
+         دیگر به درد نمی‌خورد. مگر اینکه صریحاً همان دسته را صافی کنید. */
+      if (t.tpl && st.taskCat !== w.Checklist.CATEGORY) return false;
       if (st.taskFilter === 'oncase' && !t.caseId) return false;
       if (st.taskFilter === 'urgent' && t.priority !== 'urgent') return false;
       if (st.taskCat != null && (t.category || '') !== st.taskCat) return false;
@@ -858,6 +867,33 @@
       ]));
 
     var body = el('div.task-buckets');
+
+    /* چک‌لیست‌های باز، پیش از کارهای آزاد: این‌ها کارِ مرحله‌اند و
+       ترتیبشان را خودِ پرونده تعیین می‌کند، نه سررسید. */
+    var cls = [];
+    if (!archived && st.taskCat !== w.Checklist.CATEGORY) {
+      cls = w.UIChecklist.openGroups();
+      if (cls.length) {
+        var left = cls.reduce(function (n, g) { return n + g.openRequired; }, 0);
+        body.appendChild(el('section.task-bucket.b-checklist', null, [
+          el('div.task-bucket-head', null, [
+            el('h2', { text: 'چک‌لیست مرحلهٔ پرونده‌ها' }),
+            el('span.wl-count' + (left ? '.late' : ''), {
+              text: fa(cls.length) + ' چک‌لیست'
+            }),
+            el('p.wl-sub', {
+              text: left
+                ? fa(left) + ' کارِ الزامی در این چک‌لیست‌ها مانده است.'
+                : 'فقط کارهای اختیاری مانده است.'
+            })
+          ]),
+          el('div.cl-lines', null, cls.map(function (g) {
+            return w.UIChecklist.line(app, g, refresh);
+          }))
+        ]));
+      }
+    }
+
     groups.forEach(function (b) {
       if (!b.items.length) return;
       body.appendChild(el('section.task-bucket.b-' + b.key, null, [
@@ -873,7 +909,8 @@
       ]));
     });
 
-    if (!total) {
+    /* «کاری ثبت نشده» وقتی سه چک‌لیست بالایش هست، حرفِ غلطی است */
+    if (!total && !cls.length) {
       body.appendChild(el('div.empty-state', null, [
         el('p', {
           text: archived ? 'بایگانی خالی است.'

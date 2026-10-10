@@ -274,7 +274,9 @@ async function seedScenario(page) {
         committeeDate: c.committeeDate || '', session: c.session || '',
         status: c.status || '', verdict: c.verdictFull || '',
         lastKind: last ? last.kind : '', lastNote: last ? last.note : '',
-        notes: window.Notes.forCase(c.id).length
+        // کارهای چک‌لیست هم اینجا می‌نشینند؛ یادداشتِ صورت‌جلسه را می‌خواهیم
+        notes: window.Notes.forCase(c.id)
+          .filter(function (n) { return n.kind !== 'task'; }).length
       };
     });
     return { rows: out, open: !!document.querySelector('.minutes') };

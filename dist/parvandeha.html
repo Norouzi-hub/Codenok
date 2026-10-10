@@ -1254,6 +1254,145 @@ select.input { cursor: pointer; }
 .act-nums { font-weight: 600; }
 .act-src { margin-top: 4px; font-size: 11.5px; color: var(--ink-600, var(--ink-700)); }
 
+/* ================================================================
+   چک‌لیست مرحله‌ای
+   ----------------------------------------------------------------
+   سه حالت، سه نشانه: تیکِ سبز (انجام شد)، خطِ خاکستری (لازم نبود)،
+   حلقهٔ خالی (مانده). و یک نوارِ نقطه‌ای که در یک نگاه می‌گوید چقدرش
+   مانده — همان چیزی که عدد به‌تنهایی نمی‌گوید.
+   ================================================================ */
+.cl-block { margin: 0 0 20px; }
+.cl-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.cl-group > summary { cursor: pointer; padding: 9px 12px; list-style: none; }
+.cl-group > summary::-webkit-details-marker { display: none; }
+.cl-group[open] > summary { border-bottom: 1px solid var(--line-soft); }
+.cl-group.is-complete { background: var(--paper); }
+.cl-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.cl-head h4 { margin: 0; font-size: 13px; font-weight: 700; }
+.cl-hint { margin: 8px 12px 0; font-size: 11.5px; color: var(--muted); }
+.cl-count { font-size: 11.5px; color: var(--ink-500); font-variant-numeric: tabular-nums; }
+.cl-left {
+  font-size: 11px;
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border: 1px solid var(--cinnabar-line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+.cl-done-tag {
+  font-size: 11px;
+  color: var(--moss);
+  background: var(--moss-soft);
+  border: 1px solid var(--moss-line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+
+/* نوار نقطه‌ای پیشرفت */
+.cl-dots { display: inline-flex; gap: 3px; align-items: center; }
+.cl-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: transparent;
+}
+.cl-dot.is-done { background: var(--moss); border-color: var(--moss); }
+.cl-dot.is-skip { background: var(--line); border-color: var(--line); }
+
+/* آیتم‌ها */
+.cl-list { list-style: none; margin: 0; padding: 4px 0; }
+.cl-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.cl-list > .cl-item:last-child { border-bottom: 0; }
+.cl-item:hover { background: var(--paper); }
+.cl-mark {
+  flex: 0 0 auto;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1;
+}
+.cl-mark.is-done { background: var(--moss); border-color: var(--moss); color: #fff; }
+.cl-mark.is-skipped, .cl-mark.is-cancelled {
+  border-color: var(--line); color: var(--muted); background: var(--paper-2);
+}
+.cl-body { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; min-width: 0; }
+.cl-title { font-size: 13px; color: var(--ink-900); }
+.cl-item.is-done .cl-title, .cl-item.is-skipped .cl-title,
+.cl-item.is-cancelled .cl-title { color: var(--muted); }
+.cl-item.is-skipped .cl-title, .cl-item.is-cancelled .cl-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--line);
+}
+.cl-opt {
+  font-size: 10.5px;
+  color: var(--ink-500);
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.cl-note { font-size: 11px; color: var(--muted); }
+.cl-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+
+/* سطرِ جمع‌شده در صفحهٔ کارها */
+.cl-lines { display: flex; flex-direction: column; gap: 6px; }
+.cl-line {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+}
+.cl-line > summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cl-line > summary::-webkit-details-marker { display: none; }
+.cl-line[open] > summary { border-bottom: 1px solid var(--line-soft); }
+.cl-line.is-complete { background: var(--paper); }
+.cl-line-label { font-size: 13px; font-weight: 600; }
+.b-checklist .task-bucket-head h2 { color: var(--brass-ink); }
+
+/* چیپِ کنار ریل */
+.cl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 5px 11px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  border-radius: 999px;
+  transition: background var(--t-fast) var(--ease);
+}
+.cl-chip:hover { background: var(--card); }
+.cl-chip.is-complete { border-color: var(--moss-line); background: var(--moss-soft); color: var(--moss); }
+
+/* هشدارِ ماندهٔ مرحلهٔ قبل */
+.case-next.cl-warn { border-color: var(--brass-line); background: var(--brass-soft); }
+.case-next.cl-warn .case-next-label { color: var(--brass-ink); }
+
 /* ---------------------------------------------------------------- تاریخچه */
 .history-wrap { font-size: 13px; }
 .related {
@@ -2568,6 +2707,56 @@ select.input { cursor: pointer; }
 }
 .letters-grid .field.wide { grid-column: 1 / -1; }
 .letters-modal { width: min(680px, 100%); }
+.wide-modal { width: min(820px, 100%); }
+
+/* --- ویرایشگر قالب‌های چک‌لیست --- */
+.cl-ed-tpl {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: var(--paper);
+}
+.cl-ed-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.cl-ed-stage {
+  font-size: 11px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+.cl-ed-items { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.cl-ed-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 6px 9px;
+}
+.cl-ed-item .input.small { flex: 1 1 200px; min-width: 150px; }
+.cl-ed-n {
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.cl-ed-cta { font-size: 10.5px; color: var(--ink-500); }
+.cl-ed-types { display: flex; gap: 4px; flex-wrap: wrap; }
+/* .icon-btn رنگش برای نوار تیره بالاست (سفیدِ نیمه‌شفاف)؛ روی کاغذِ
+   سفیدِ این پنجره نامرئی می‌شد. */
+.cl-ed-item .icon-btn {
+  width: 28px; height: 28px; line-height: 0;
+  color: var(--ink-400);
+  border-color: var(--line-soft);
+}
+.cl-ed-item .icon-btn:hover { background: var(--paper-2); color: var(--ink-800); }
+.cl-ed-item .icon-btn.danger:hover { background: var(--cinnabar-soft); color: var(--cinnabar); }
+.cl-ed-item .icon-btn svg { width: 15px; height: 15px; }
+.chip-btn.tiny { font-size: 10.5px; padding: 1px 8px; }
 
 /* ---------------------------------------------------------------- چاپ */
 #print-area { display: none; }
@@ -11648,8 +11837,15 @@ else if (typeof exports === 'object'){
    * و باید در یک نگاه بگوید «اینجا چه خبر است». قرارِ پیگیری مقدم است،
    * چون سررسید دارد؛ وگرنه آخرین یادداشت.
    */
+  /* آیتم‌های چک‌لیست از این دو بیرون‌اند: چک‌لیست چیپِ خودش را بالای
+     پرونده دارد و اگر اینجا هم بیاید، «آخرین خبرِ پرونده» می‌شود
+     «پوشه کردن پرونده» — که خبر نیست. */
+  function free(list) {
+    return list.filter(function (n) { return !n.tpl; });
+  }
+
   function headline(caseId) {
-    var open = forCase(caseId).filter(function (n) {
+    var open = free(forCase(caseId)).filter(function (n) {
       return !n.done && !n.archived;
     });
     if (!open.length) return null;
@@ -11665,7 +11861,7 @@ else if (typeof exports === 'object'){
 
   /** چند یادداشت باز دارد */
   function openCount(caseId) {
-    return forCase(caseId).filter(function (n) {
+    return free(forCase(caseId)).filter(function (n) {
       return !n.done && !n.archived;
     }).length;
   }
@@ -11722,6 +11918,15 @@ else if (typeof exports === 'object'){
       doneAt: o.done ? J.today() : '',
       batchId: o.batchId || '',
       docCount: o.docCount || 0,
+      /* سه فیلدِ چک‌لیست: از کدام قالب، چندمین گام، مالِ کدام مرحله.
+         آیتم چک‌لیست یک «کار» معمولی است و همین سه فیلد کافی است تا
+         بشود دوباره کنار هم چیدش. */
+      tpl: o.tpl || '',
+      step: o.step || 0,
+      stage: o.stage || '',
+      item: o.item || '',
+      optional: !!o.optional,
+      cta: o.cta || null,
       at: new Date().toISOString(),
       atJalali: J.stamp(),
       user: M.state.settings.user || 'کاربر'
@@ -11729,7 +11934,11 @@ else if (typeof exports === 'object'){
     notes.push(item);
     index();
     return w.Store.put('notes', [item]).then(function () {
-      if (rec) {
+      /* چک‌لیست، پنج کار را با هم می‌سازد و خودش یک سطر تاریخچه دارد
+         («چک‌لیست تشکیل پرونده ساخته شد — ۵ کار»). پنج سطرِ «کار ثبت
+         شد» کنارش، تاریخچهٔ پرونده را پر می‌کند از چیزی که کاربر
+         انجامش نداده. */
+      if (rec && !o.quiet) {
         M.addHistory(kind === 'task' ? 'task-add' : 'note-add', rec, [],
           (kind === 'task' ? 'کار: ' + title : 'یادداشت: ' + preview(text)) +
           (item.done ? ' — انجام‌شده' : '') +
@@ -11785,6 +11994,28 @@ else if (typeof exports === 'object'){
     }).then(function () {
       if (rec) {
         M.addHistory('task-cancel', rec, [], 'کار لغو شد: ' + (note.title || '') +
+          (why ? ' — ' + why : ''));
+      }
+      return note;
+    });
+  }
+
+  /*
+   * «لازم نبود» — حالت سومِ یک کار.
+   *
+   * با دو حالتِ انجام‌شد/نشد، آیتمی مثل «نامهٔ رفع نواقص» برای پرونده‌ای
+   * که نواقصی نداشته، تا ابد باز و قرمز می‌ماند. این نه «انجام شد» است
+   * و نه «لغو»: تصمیمی است که گرفته شده و در گزارش هم معنا دارد
+   * («۱۲ پرونده نواقص داشت، ۱۹ تا نداشت»).
+   */
+  function skipTask(note, why) {
+    var rec = note.caseId ? M.get(note.caseId) : null;
+    return update(note, {
+      done: true, status: 'skipped', doneAt: J.today(),
+      cancelReason: String(why || '').trim()
+    }).then(function () {
+      if (rec) {
+        M.addHistory('task-skip', rec, [], 'لازم نبود: ' + (note.title || '') +
           (why ? ' — ' + why : ''));
       }
       return note;
@@ -11900,7 +12131,7 @@ else if (typeof exports === 'object'){
   function archiveClosed(olderThan) {
     var list = notes.filter(function (n) {
       if (!isTask(n) || n.archived) return false;
-      if (n.status !== 'done' && n.status !== 'cancelled') return false;
+      if (n.status === 'open') return false;
       if (olderThan && (n.doneAt || '') > olderThan) return false;
       return true;
     });
@@ -12006,13 +12237,25 @@ else if (typeof exports === 'object'){
     });
     var byKey = {};
     out.forEach(function (b) { byKey[b.key] = b; });
-    tasks(q).forEach(function (t) { byKey[bucketOf(t)].items.push(t); });
+    freeTasks(q).forEach(function (t) { byKey[bucketOf(t)].items.push(t); });
     return out;
+  }
+
+  /*
+   * سطل‌ها، آمار و گزارشِ صفحهٔ کارها، فقط کارِ آزاد را می‌شمارند.
+   *
+   * آیتم‌های چک‌لیست سررسید ندارند و همه‌شان در سطلِ «یک روزی» تلنبار
+   * می‌شوند؛ و «۱۵ کار باز» گفتن وقتی صفحه سه چک‌لیست و هیچ کارِ آزادی
+   * نشان می‌دهد، حرفِ گیج‌کننده‌ای است. چک‌لیست بخشِ خودش را دارد، با
+   * شمارشِ خودش و مخرجِ خودش.
+   */
+  function freeTasks(f) {
+    return tasks(f).filter(function (n) { return !n.tpl; });
   }
 
   /** کارهای امروز و عقب‌افتاده — همان چیزی که صبح باید دید */
   function todayTasks() {
-    return tasks({ status: 'open' }).filter(function (t) {
+    return freeTasks({ status: 'open' }).filter(function (t) {
       var b = bucketOf(t);
       return b === 'overdue' || b === 'today';
     });
@@ -12024,7 +12267,7 @@ else if (typeof exports === 'object'){
     var open = notes.filter(function (n) {
       return n.kind !== 'task' && n.followUp && !n.done;
     });
-    var openTasks = tasks({ status: 'open' });
+    var openTasks = freeTasks({ status: 'open' });
     var due = todayTasks();
     return {
       total: notes.length,
@@ -12054,12 +12297,14 @@ else if (typeof exports === 'object'){
     var byCategory = {};
     function bump(map, key, field) {
       var k = key || '—';
-      var row = map[k] || (map[k] = { key: k, done: 0, cancelled: 0, open: 0, overdue: 0 });
+      var row = map[k] || (map[k] = {
+        key: k, done: 0, cancelled: 0, skipped: 0, open: 0, overdue: 0
+      });
       row[field]++;
     }
-    var done = 0, cancelled = 0, open = 0, overdue = 0;
+    var done = 0, cancelled = 0, skipped = 0, open = 0, overdue = 0;
     notes.forEach(function (n) {
-      if (!isTask(n)) return;
+      if (!isTask(n) || n.tpl) return;      // چک‌لیست، گزارشِ خودش را دارد
       if (n.caseId && !inWorkScope(n.caseId)) return;
       /* کارِ بایگانی‌شده که هنوز باز است، نه باز شمرده می‌شود نه
          عقب‌افتاده — بایگانی‌اش یعنی دیگر دنبالش نیستیم. ولی اگر
@@ -12072,8 +12317,11 @@ else if (typeof exports === 'object'){
       } else {
         var when = n.doneAt || '';
         if (!when || when < from || when > to) return;
-        field = n.status === 'cancelled' ? 'cancelled' : 'done';
-        if (field === 'cancelled') cancelled++; else done++;
+        field = n.status === 'cancelled' ? 'cancelled'
+          : (n.status === 'skipped' ? 'skipped' : 'done');
+        if (field === 'cancelled') cancelled++;
+        else if (field === 'skipped') skipped++;
+        else done++;
       }
       bump(byFrom, n.from, field);
       bump(byCategory, n.category, field);
@@ -12086,7 +12334,8 @@ else if (typeof exports === 'object'){
     }
     return {
       from: from, to: to,
-      done: done, cancelled: cancelled, open: open, overdue: overdue,
+      done: done, cancelled: cancelled, skipped: skipped,
+      open: open, overdue: overdue,
       byFrom: rows(byFrom), byCategory: rows(byCategory)
     };
   }
@@ -12109,6 +12358,7 @@ else if (typeof exports === 'object'){
   w.Notes = {
     load: load, all: all, forCase: forCase, add: add, create: create,
     update: update, complete: complete, cancelTask: cancelTask,
+    skipTask: skipTask,
     reopen: reopen, remove: remove,
     openFollowUp: openFollowUp, dueFollowUps: dueFollowUps, stats: stats,
     headline: headline, openCount: openCount, textOf: textOf,
@@ -12614,6 +12864,10 @@ else if (typeof exports === 'object'){
         batches: batchList.length,
         tasksDone: tasksDone.length,
         tasksCancelled: tasksCancelled.length,
+        /* چک‌لیست جدا شمرده می‌شود: «۳۶ کار انجام شد» حرفِ درستی است،
+           ولی «از ۴۰ کارِ چک‌لیست، ۳۶ تا» حرفِ بهتری است — چون مخرج
+           هم دارد و می‌گوید چقدر مانده. */
+        checklistDone: tasksDone.filter(function (t) { return t.tpl; }).length,
         events: events.length,
         touched: touchedList.length
       },
@@ -12621,6 +12875,7 @@ else if (typeof exports === 'object'){
       byKind: sortCount(byKind),
       docs: { list: docsIn, byKind: sortCount(docKinds), batches: batchList },
       tasks: { done: tasksDone, cancelled: tasksCancelled, byCat: sortCount(taskCats) },
+      checklist: (w.Checklist ? w.Checklist.stats(from, to) : null),
       cases: { created: created, closed: closed, touched: touchedList },
       rest: { open: openNow, overdue: overdueNow, openTasks: openTasks },
       events: events
@@ -12727,6 +12982,8 @@ else if (typeof exports === 'object'){
     { key: 'note.add', label: 'نوشتن یادداشت', group: 'task', source: 'history', from: 'note-add' },
     { key: 'note.done', label: 'بستن پیگیری یادداشت', group: 'task', source: 'history', from: 'note-done' },
     { key: 'note.remove', label: 'حذف یادداشت', group: 'task', source: 'history', from: 'note-remove' },
+    { key: 'task.skip', label: 'کاری که لازم نبود', group: 'task', source: 'history', from: 'task-skip' },
+    { key: 'checklist.make', label: 'ساخت چک‌لیست مرحله', group: 'task', source: 'history', from: 'checklist' },
 
     // ------------------------------------------------- فرم و صورت‌جلسه
     { key: 'form.make', label: 'ساختن فرم اداری (چاپ یا ورد)', group: 'letter', source: 'history', from: 'form' },
@@ -13739,6 +13996,347 @@ else if (typeof exports === 'object'){
 
 </script>
 <script>
+/* ==== js/checklist.js ==== */
+/*
+ * چک‌لیست مرحله‌ای — «وقتی پرونده به این مرحله رسید، این کارها باید بشود».
+ *
+ * ریل گردش‌کار می‌گوید پرونده *کجاست*؛ کارها می‌گوید *چه* مانده. چیزی که
+ * بین این دو جا خالی بود، همین است: کارِ تکراریِ هر مرحله، که هر بار از
+ * حفظ انجام می‌شد و هر بار یکی‌اش از قلم می‌افتاد.
+ *
+ * چهار تصمیم که این فایل را شکل داده‌اند:
+ *
+ *   ۱) آیتم‌های چک‌لیست، خودشان «کار»ند — نه موجودیتی تازه. آن‌وقت
+ *      کارتابل، تقویم، کارنامه، خروجی کارکرد، سررسید و بایگانی مجانی
+ *      کار می‌کنند. سه فیلد به کار اضافه شده و بس: tpl (از کدام قالب)،
+ *      step (ترتیب)، stage (مال کدام مرحله).
+ *
+ *   ۲) یک بار ساخته می‌شود، نه هر بار. پرونده در گردش‌کار عقب و جلو
+ *      می‌رود؛ اگر هر بار بسازیم، چک‌لیستِ تکراری می‌بارد. معیارِ
+ *      «ساخته شده»، خودِ وجودِ کارهاست — پس حذف هم به معنای «دوباره
+ *      نساز» است.
+ *
+ *   ۳) کارِ اختیاری سه حالت دارد: انجام شد / لازم نبود / مانده. با دو
+ *      حالت، «نامهٔ رفع نواقص» برای پرونده‌ای که نواقصی نداشته تا ابد
+ *      قرمز می‌ماند. و «لازم نبود» خودش داده است، نه پاک کردنِ کار.
+ *
+ *   ۴) هر آیتم می‌تواند کارش را هم انجام بدهد. «فرم خلاصهٔ پرونده» را
+ *      قبلاً ساخته‌ایم؛ آیتم باید همان را باز کند، نه فقط یادآوری‌اش.
+ *      و وقتی آن کار انجام شد، تیکش خودش بخورد.
+ */
+(function (w) {
+  'use strict';
+
+  var M = w.Model;
+
+  /*
+   * قالب‌های پیش‌فرض.
+   *
+   * هر قالب به یک مرحلهٔ ریل بسته است، نه به «وضعیت پرونده»: وضعیت را
+   * دست آدم می‌نویسد و گاهی عقب می‌ماند، ولی مرحله از تاریخ‌های واقعیِ
+   * پرونده درمی‌آید و دروغ نمی‌گوید.
+   *
+   * item.cta همان سه جنسِ دکمهٔ آلارم است که در برنامه هست:
+   *   upload — پنجرهٔ بارگذاری، با نوعِ از پیش انتخاب‌شده
+   *   form   — یکی از فرم‌های اداری
+   *   field  — پریدن سرِ همان فیلد در فرم پرونده
+   * و هر سه، وقتی کارشان انجام شد، تیکِ آیتم را خودشان می‌زنند.
+   */
+  var TEMPLATES = [
+    {
+      key: 'intake', stage: 'assign', label: 'تشکیل پرونده',
+      hint: 'از لحظه‌ای که پرونده ثبت می‌شود تا وقتی آمادهٔ مکاتبات است.',
+      items: [
+        { key: 'person', title: 'ثبت اطلاعات شخص',
+          cta: { type: 'field', field: 'nationalId' } },
+        { key: 'print', title: 'پرینت نامه‌ها و محتویات پرونده' },
+        { key: 'letters', title: 'انجام مکاتبات اداری' },
+        { key: 'defect', title: 'نامهٔ رفع نواقص', optional: true,
+          cta: { type: 'upload', kind: 'نامهٔ رفع نواقص' } },
+        { key: 'folder', title: 'پوشه کردن پرونده' }
+      ]
+    },
+    {
+      key: 'defense', stage: 'complete', label: 'پس از دریافت دفاعیه',
+      hint: 'دفاعیه که رسید، تا پرونده آمادهٔ طرح در کمیته شود.',
+      items: [
+        { key: 'summary', title: 'نوشتن خلاصهٔ دفاعیات',
+          cta: { type: 'field', field: 'defenseSummary' } },
+        { key: 'scan', title: 'اسکن و بایگانی دفاعیه', optional: true,
+          cta: { type: 'upload', kind: 'دفاعیهٔ کتبی' } }
+      ]
+    },
+    {
+      key: 'hearing', stage: 'hearing', label: 'دستور کار و جلسه',
+      hint: 'وقتی پرونده در دستور کار قرار می‌گیرد، تا تحویل به کارشناس مسئول.',
+      items: [
+        { key: 'form', title: 'آماده کردن فرم خلاصهٔ پرونده',
+          cta: { type: 'form', form: 'summary' } },
+        { key: 'invite', title: 'نامهٔ دعوت به جلسهٔ کمیته',
+          cta: { type: 'upload', kind: 'نامهٔ حضور در جلسهٔ دفاع' } },
+        { key: 'extra', title: 'پرینت نامه‌های تکمیلی' },
+        { key: 'label', title: 'لیبل زدن پرونده' },
+        { key: 'handover', title: 'تحویل پرونده به کارشناس مسئول' }
+      ]
+    }
+  ];
+
+  var CATEGORY = 'چک‌لیست مرحله';
+
+  /** قالب‌های جاری: آنچه کاربر ذخیره کرده، وگرنه پیش‌فرض‌ها */
+  function templates() {
+    var saved = (M.state.settings || {}).checklists;
+    return (saved && saved.length) ? saved : TEMPLATES;
+  }
+
+  function saveTemplates(list) {
+    return M.saveSettings({ checklists: list });
+  }
+
+  function byKey(key) {
+    var found = null;
+    templates().forEach(function (t) { if (t.key === key) found = t; });
+    return found;
+  }
+
+  /*
+   * آیتم‌های یک قالب برای یک پروندهٔ مشخص.
+   * «بسته به نوع پرونده یکی دو کار کم یا زیاد می‌شود» — هر آیتم می‌تواند
+   * بگوید فقط برای کدام نوع‌هاست؛ فهرست خالی یعنی برای همه.
+   */
+  function itemsFor(tpl, rec) {
+    return (tpl.items || []).filter(function (it) {
+      if (!it.types || !it.types.length) return true;
+      return it.types.indexOf(rec.caseType || '') >= 0;
+    });
+  }
+
+  /** قالبی که به مرحلهٔ جاری پرونده می‌خورد */
+  function dueTemplate(rec) {
+    var action = w.Worklist.nextAction(rec);
+    if (!action || action.key === 'closed' || action.key === 'transferred') return null;
+    var found = null;
+    templates().forEach(function (t) { if (t.stage === action.key) found = t; });
+    return found;
+  }
+
+  /** کارهای یک چک‌لیستِ ساخته‌شده (هر وضعیتی) */
+  function tasksOf(caseId, tplKey) {
+    return w.Notes.tasks({ caseId: caseId, status: null, archived: 'any' })
+      .filter(function (t) { return t.tpl === tplKey; })
+      .sort(function (a, b) { return (a.step || 0) - (b.step || 0); });
+  }
+
+  function exists(caseId, tplKey) { return tasksOf(caseId, tplKey).length > 0; }
+
+  /**
+   * ساختِ چک‌لیستِ مرحلهٔ جاری — اگر از قبل ساخته نشده باشد.
+   * برمی‌گرداند: شمارِ کارهای تازه‌ساخته‌شده.
+   */
+  function ensureFor(rec, tplKey) {
+    if (!rec || !rec.id) return Promise.resolve(0);
+    var tpl = tplKey ? byKey(tplKey) : dueTemplate(rec);
+    if (!tpl) return Promise.resolve(0);
+    if (exists(rec.id, tpl.key)) return Promise.resolve(0);
+    var items = itemsFor(tpl, rec);
+    if (!items.length) return Promise.resolve(0);
+
+    var chain = Promise.resolve();
+    items.forEach(function (it, i) {
+      chain = chain.then(function () {
+        return w.Notes.create({
+          /* «ارجاع‌دهنده» عمداً خالی است: این کار را کسی ارجاع نداده،
+             خودِ مرحله آورده. پر کردنش یعنی «تشکیل پرونده» در فهرستِ
+             ارجاع‌دهنده‌ها کنار «رئیس کمیته» بنشیند. */
+          kind: 'task', caseId: rec.id, title: it.title,
+          category: CATEGORY,
+          tpl: tpl.key, step: i + 1, stage: tpl.stage,
+          optional: !!it.optional, item: it.key,
+          cta: it.cta || null,
+          // یک سطر تاریخچه برای کل چک‌لیست، نه یکی به ازای هر کار
+          quiet: true
+        });
+      });
+    });
+    return chain.then(function () {
+      M.addHistory('checklist', rec, [],
+        'چک‌لیست «' + tpl.label + '» ساخته شد — ' +
+        w.U.toFaDigits(items.length) + ' کار');
+      return items.length;
+    });
+  }
+
+  /** همان کار، برای همهٔ پرونده‌های دامنهٔ کار — یک بار موقع بالا آمدن */
+  function ensureAll() {
+    var list = M.scoped();
+    var chain = Promise.resolve();
+    var made = 0;
+    list.forEach(function (rec) {
+      chain = chain.then(function () {
+        return ensureFor(rec).then(function (n) { made += n; });
+      });
+    });
+    return chain.then(function () { return made; });
+  }
+
+  /*
+   * تیکِ خودکار.
+   *
+   * آیتمی که به یک فیلد وصل است، وقتی آن فیلد پر شد دیگر کار ندارد. اگر
+   * منتظر بمانیم کاربر خودش تیک بزند، چک‌لیست از واقعیتِ پرونده عقب
+   * می‌افتد — و چک‌لیستی که عقب است، بدتر از نداشتنش است.
+   */
+  function sync(rec) {
+    if (!rec || !rec.id) return Promise.resolve(0);
+    var open = w.Notes.tasks({ caseId: rec.id, status: 'open', archived: 'any' })
+      .filter(function (t) {
+        return t.tpl && t.cta && t.cta.type === 'field' && t.cta.field &&
+          String(rec[t.cta.field] || '').trim();
+      });
+    if (!open.length) return Promise.resolve(0);
+    var chain = Promise.resolve();
+    open.forEach(function (t) {
+      chain = chain.then(function () { return w.Notes.complete(t); });
+    });
+    return chain.then(function () { return open.length; });
+  }
+
+  /**
+   * «این کار انجام شد» — از بیرون.
+   * فرمی که ساخته شد یا سندی که بارگذاری شد، تیکِ آیتمِ متناظرش را
+   * می‌زند؛ وگرنه کاربر باید یک کار را دو بار اعلام کند.
+   */
+  function hit(rec, type, value) {
+    if (!rec || !rec.id || !type) return Promise.resolve(0);
+    var open = w.Notes.tasks({ caseId: rec.id, status: 'open', archived: 'any' })
+      .filter(function (t) {
+        if (!t.tpl || !t.cta || t.cta.type !== type) return false;
+        if (type === 'form') return t.cta.form === value;
+        if (type === 'upload') return t.cta.kind === value;
+        return false;
+      });
+    if (!open.length) return Promise.resolve(0);
+    var chain = Promise.resolve();
+    open.forEach(function (t) {
+      chain = chain.then(function () { return w.Notes.complete(t); });
+    });
+    return chain.then(function () { return open.length; });
+  }
+
+  /** چک‌لیست‌های یک پرونده، با پیشرفتشان */
+  function groups(caseId) {
+    var rec = M.get(caseId);
+    if (!rec) return [];
+    var out = [];
+    templates().forEach(function (tpl) {
+      var list = tasksOf(caseId, tpl.key);
+      if (!list.length) return;
+      out.push(wrap(tpl, list, rec));
+    });
+    return out;
+  }
+
+  function wrap(tpl, list, rec) {
+    var done = 0, skipped = 0, open = 0, openRequired = 0;
+    list.forEach(function (t) {
+      if (t.status === 'done') done++;
+      else if (t.status === 'skipped') skipped++;
+      else if (t.status === 'cancelled') skipped++;
+      else {
+        open++;
+        if (!t.optional) openRequired++;
+      }
+    });
+    var settled = done + skipped;
+    return {
+      key: tpl.key, label: tpl.label, hint: tpl.hint, stage: tpl.stage,
+      tasks: list, rec: rec,
+      done: done, skipped: skipped, open: open, openRequired: openRequired,
+      total: list.length, settled: settled,
+      complete: open === 0,
+      pct: list.length ? Math.round((settled / list.length) * 100) : 0
+    };
+  }
+
+  /** پیشرفتِ چک‌لیستِ مرحلهٔ جاری — برای نشان دادن روی ریل */
+  function current(rec) {
+    if (!rec) return null;
+    var tpl = dueTemplate(rec);
+    if (!tpl) return null;
+    var list = tasksOf(rec.id, tpl.key);
+    if (!list.length) return null;
+    return wrap(tpl, list, rec);
+  }
+
+  /**
+   * کارهای الزامیِ مانده — هشدار، نه سد.
+   * کارِ اداری همیشه مرتب جلو نمی‌رود و سدِ سفت باعث می‌شود دورش بزنند.
+   * پس فقط می‌گوییم چه مانده، و راه را نمی‌بندیم.
+   */
+  function pending(rec) {
+    if (!rec) return [];
+    var cur = dueTemplate(rec);
+    var curKey = cur ? cur.key : '';
+    var out = [];
+    groups(rec.id).forEach(function (g) {
+      if (g.key === curKey) return;        // مرحلهٔ جاری، هنوز وقت دارد
+      g.tasks.forEach(function (t) {
+        if (t.status === 'open' && !t.optional) out.push({ group: g, task: t });
+      });
+    });
+    return out;
+  }
+
+  /** کلِ چک‌لیست را کنار بگذار — بدون اینکه دوباره ساخته شود */
+  function dismiss(group) {
+    var chain = Promise.resolve();
+    group.tasks.forEach(function (t) {
+      if (t.status !== 'open') return;
+      chain = chain.then(function () {
+        return w.Notes.skipTask(t, 'کل چک‌لیست کنار گذاشته شد');
+      });
+    });
+    return chain;
+  }
+
+  function labelOf(tplKey) {
+    var t = byKey(tplKey);
+    return t ? t.label : tplKey;
+  }
+
+  /** آمارِ چک‌لیست‌ها در یک بازه — برای کارنامه و گزارش مدیر */
+  function stats(from, to) {
+    var byTpl = {};
+    var done = 0, skipped = 0, open = 0;
+    w.Notes.tasks({ status: null, archived: 'any' }).forEach(function (t) {
+      if (!t.tpl) return;
+      var row = byTpl[t.tpl] || (byTpl[t.tpl] = {
+        key: t.tpl, label: labelOf(t.tpl), done: 0, skipped: 0, open: 0
+      });
+      if (t.status === 'open') { row.open++; open++; return; }
+      var when = t.doneAt || '';
+      if (from && (!when || when < from || when > to)) return;
+      if (t.status === 'done') { row.done++; done++; }
+      else { row.skipped++; skipped++; }
+    });
+    return {
+      done: done, skipped: skipped, open: open,
+      rows: Object.keys(byTpl).map(function (k) { return byTpl[k]; })
+    };
+  }
+
+  w.Checklist = {
+    TEMPLATES: TEMPLATES, CATEGORY: CATEGORY,
+    templates: templates, saveTemplates: saveTemplates, byKey: byKey,
+    itemsFor: itemsFor, dueTemplate: dueTemplate,
+    ensureFor: ensureFor, ensureAll: ensureAll, sync: sync, hit: hit,
+    groups: groups, current: current, pending: pending,
+    tasksOf: tasksOf, dismiss: dismiss, stats: stats
+  };
+})(window);
+
+</script>
+<script>
 /* ==== js/person.js ==== */
 /*
  * لایهٔ «شخص»: یک کارمند ممکن است چند پرونده داشته باشد.
@@ -14611,6 +15209,9 @@ else if (typeof exports === 'object'){
         M.addHistory('doc-add', rec, [],
           doc.kind + (doc.title ? ' («' + doc.title + '»)' : '') +
           ' — فایل: ' + doc.fileName);
+        /* اگر آیتمی از چک‌لیست منتظر همین نوع سند بود، همین‌جا تیک
+           می‌خورد — وگرنه کاربر باید یک کار را دو بار اعلام کند. */
+        if (w.Checklist) w.Checklist.hit(rec, 'upload', doc.kind);
         return doc;
       });
     });
@@ -16633,16 +17234,17 @@ else if (typeof exports === 'object'){
    * نبود، پس در کارنامه و خروجی کارکرد هم نبود. حالا ثبت می‌شود — کنار
    * بقیهٔ رویدادهای همان پرونده.
    */
-  function logForm(rec, doc, how) {
+  function logForm(rec, doc, how, kind) {
     if (!rec || !rec.id || !M.get || !M.get(rec.id)) return;
     M.addHistory('form', rec, [], doc.title + ' — ' + how);
+    if (w.Checklist) w.Checklist.hit(M.get(rec.id), 'form', kind);
   }
 
   function printForm(kind, rec, extra) {
     var doc = BUILDERS[kind](rec, extra || {});
     var node = area();
     node.appendChild(toHtml(doc));
-    logForm(rec, doc, 'چاپ');
+    logForm(rec, doc, 'چاپ', kind);
     run(doc.title);
     return doc;
   }
@@ -16655,7 +17257,7 @@ else if (typeof exports === 'object'){
     var caseNo = w.U.toLatinDigits(rec.caseNo || '').replace(/[^\w.-]+/g, '-');
     var name = (doc.file || doc.key) + (caseNo ? '-' + caseNo : '') + '.docx';
     w.U.download(name, toDocx(doc));
-    logForm(rec, doc, 'خروجی ورد');
+    logForm(rec, doc, 'خروجی ورد', kind);
     return doc;
   }
 
@@ -17618,7 +18220,8 @@ else if (typeof exports === 'object'){
     'doc-batch': 'دستهٔ اسکن', 'doc-attach': 'وصل سند به پرونده',
     'doc-sync': 'هم‌خوان‌سازی از سند', 'stage': 'تنظیم مرحله',
     'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه',
-    'form': 'فرم اداری', 'doc-edit': 'ویرایش مشخصات سند'
+    'form': 'فرم اداری', 'doc-edit': 'ویرایش مشخصات سند',
+    'checklist': 'چک‌لیست مرحله', 'task-skip': 'کار لازم نبود'
   };
 
   function kindLabel(kind) {
@@ -18187,6 +18790,14 @@ else if (typeof exports === 'object'){
     function persist(data) {
       var p = existing ? M.update(existing.id, data) : M.create(data);
       p.then(function (res) {
+        /* مرحله ممکن است با همین ذخیره عوض شده باشد: چک‌لیستِ مرحلهٔ
+           تازه ساخته می‌شود و آیتم‌هایی که فیلدشان پر شده، تیک
+           می‌خورند. هر دو بی‌صدا — کاربر ذخیره زده، نه چیز دیگر. */
+        var rec0 = res.record || res;
+        return w.Checklist.ensureFor(M.get(rec0.id))
+          .then(function () { return w.Checklist.sync(M.get(rec0.id)); })
+          .then(function () { return res; });
+      }).then(function (res) {
         dirty = false;
         app.setDirty(false);
         var rec = res.record || res;
@@ -18202,6 +18813,9 @@ else if (typeof exports === 'object'){
     }
 
     app.saveCurrentForm = doSave;
+    /* دکمهٔ آیتم چک‌لیست ممکن است از صفحهٔ کارها زده شود: آن‌وقت اول
+       پرونده باز می‌شود و بعد باید سراغ همان فیلد رفت. */
+    app.jumpField = function (key) { jumpToField(key); };
 
     // ---------------------------------------------------------------- ساخت DOM
     headTitle = el('h2.case-title');
@@ -18822,12 +19436,20 @@ else if (typeof exports === 'object'){
         },
         function () { jumpToField('defenseReceivedDate'); });
 
+      var fresh = M.get(existing.id) || existing;
       return el('div.case-rail', null, [
         w.UIWorklist.rail(existing, 'full', function (fieldKey) {
           jumpToField(fieldKey);
         }),
+        w.UIChecklist.chip(app, fresh),
         transferNode || next,
         cdNode,
+        /* هشدار، نه سد: کارِ الزامیِ ماندهٔ مرحله‌های قبل گفته می‌شود
+           ولی جلوی هیچ‌چیز را نمی‌گیرد. */
+        w.UIChecklist.warn(app, fresh, function () {
+          app.state.formTab = activeTab;
+          app.render();
+        }),
         followNode
       ]);
     }
@@ -20246,6 +20868,174 @@ else if (typeof exports === 'object'){
   }
 
   /* ================================================================
+     ویرایشگر قالب‌های چک‌لیست
+     ----------------------------------------------------------------
+     قالب‌ها در برنامه پیش‌فرض دارند، ولی رویهٔ هر دبیرخانه فرق می‌کند و
+     «بسته به نوع پرونده یکی دو کار کم یا زیاد می‌شود». پس هر قالب
+     اینجا باز است: آیتم اضافه و کم می‌شود، جا‌به‌جا می‌شود، اختیاری
+     می‌شود، و می‌شود گفت فقط برای کدام نوع پرونده‌هاست.
+
+     آنچه عمداً اینجا نیست: افزودن قالبِ تازه با مرحلهٔ دلخواه. هر قالب
+     به یک مرحلهٔ ریل بسته است و مرحله‌ها هجده‌تای ثابت‌اند؛ قالبِ بدون
+     مرحله هیچ‌وقت ساخته نمی‌شود و فقط سردرگمی می‌آورد.
+     ================================================================ */
+  function checklistDialog(app) {
+    var C = w.Checklist;
+    // کپیِ کاری: تا «ذخیره» نخورد، چیزی عوض نمی‌شود
+    var data = JSON.parse(JSON.stringify(C.templates()));
+    var types = M.optionsFor(M.FIELD_BY_KEY.caseType) || [];
+    var body = el('div.cl-editor');
+    var m;
+
+    function draw() {
+      w.U.clear(body);
+      body.appendChild(el('p.set-note', {
+        text: 'هر قالب به یک مرحله از ریل گردش‌کار بسته است: پرونده که به ' +
+          'آن مرحله رسید، این کارها یک بار ساخته می‌شوند.'
+      }));
+      data.forEach(function (tpl, ti) {
+        body.appendChild(tplBox(tpl, ti));
+      });
+      body.appendChild(el('div.btn-row', null, [
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'بازگرداندن به پیش‌فرض',
+          onclick: function () {
+            w.U.confirmBox('بازگرداندن قالب‌ها',
+              'همهٔ قالب‌ها به حالت اولیه برمی‌گردند. چک‌لیست‌هایی که ' +
+              'تا حالا ساخته شده‌اند دست نمی‌خورند.',
+              'برگردان').then(function (ok) {
+                if (!ok) return;
+                data = JSON.parse(JSON.stringify(C.TEMPLATES));
+                draw();
+              });
+          }
+        })
+      ]));
+    }
+
+    function tplBox(tpl, ti) {
+      var stage = null;
+      w.Worklist.STAGES.forEach(function (s) { if (s.key === tpl.stage) stage = s; });
+      var rows = el('div.cl-ed-items');
+      (tpl.items || []).forEach(function (it, ii) {
+        rows.appendChild(itemRow(tpl, it, ii));
+      });
+      return el('section.cl-ed-tpl', null, [
+        el('div.cl-ed-head', null, [
+          el('b', { text: tpl.label }),
+          el('span.cl-ed-stage', {
+            text: 'مرحله: ' + (stage ? stage.label : tpl.stage)
+          }),
+          el('div.spacer'),
+          el('span.muted.tiny', {
+            text: w.U.toFaDigits((tpl.items || []).length) + ' کار'
+          })
+        ]),
+        rows,
+        el('button.btn.small.ghost', {
+          type: 'button', text: '＋ کار تازه به این قالب',
+          onclick: function () {
+            tpl.items = (tpl.items || []).concat([{
+              key: 'x' + Date.now(), title: '', optional: false
+            }]);
+            draw();
+          }
+        })
+      ]);
+    }
+
+    function itemRow(tpl, it, ii) {
+      var title = el('input.input.small', { type: 'text', value: it.title || '' });
+      title.addEventListener('input', function () { it.title = title.value; });
+
+      var opt = el('input', { type: 'checkbox', checked: !!it.optional });
+      opt.addEventListener('change', function () { it.optional = opt.checked; });
+
+      var typeChips = el('div.cl-ed-types', null, types.map(function (t) {
+        var on = (it.types || []).indexOf(t) >= 0;
+        return el('button.chip-btn.tiny' + (on ? '.on' : ''), {
+          type: 'button', text: t,
+          title: on ? 'فقط برای این نوع پرونده' : 'محدود کردن به این نوع پرونده',
+          onclick: function () {
+            var list = (it.types || []).slice();
+            if (on) list = list.filter(function (x) { return x !== t; });
+            else list.push(t);
+            it.types = list;
+            draw();
+          }
+        });
+      }));
+
+      function move(step) {
+        var to = ii + step;
+        if (to < 0 || to >= tpl.items.length) return;
+        var arr = tpl.items;
+        var tmp = arr[to]; arr[to] = arr[ii]; arr[ii] = tmp;
+        draw();
+      }
+
+      return el('div.cl-ed-item', null, [
+        el('span.cl-ed-n', { text: w.U.toFaDigits(ii + 1) }),
+        title,
+        el('label.act-check', null, [opt, el('span', { text: 'اختیاری' })]),
+        it.cta ? el('span.cl-ed-cta', {
+          text: ctaText(it.cta),
+          title: 'این کار، دکمهٔ انجامِ خودش را دارد'
+        }) : null,
+        el('div.spacer'),
+        typeChips,
+        el('button.icon-btn.tiny', {
+          type: 'button', text: '↑', title: 'بالاتر',
+          onclick: function () { move(-1); }
+        }),
+        el('button.icon-btn.tiny', {
+          type: 'button', text: '↓', title: 'پایین‌تر',
+          onclick: function () { move(1); }
+        }),
+        el('button.icon-btn.tiny.danger', {
+          type: 'button', html: w.Mobile.icon('trash'), title: 'حذف این کار',
+          onclick: function () {
+            tpl.items = tpl.items.filter(function (x) { return x !== it; });
+            draw();
+          }
+        })
+      ]);
+    }
+
+    function ctaText(c) {
+      if (c.type === 'upload') return 'دکمه: بارگذاری ' + (c.kind || '');
+      if (c.type === 'form') return 'دکمه: ساختن فرم';
+      if (c.type === 'field') return 'دکمه: رفتن سرِ فیلد';
+      return '';
+    }
+
+    draw();
+    m = w.U.modal('قالب‌های چک‌لیست', body, [
+      el('button.btn.ghost', {
+        type: 'button', text: 'انصراف', onclick: function () { m.close(); }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'ذخیرهٔ قالب‌ها',
+        onclick: function () {
+          // کارِ بی‌عنوان، کارِ نیست
+          data.forEach(function (t) {
+            t.items = (t.items || []).filter(function (i) {
+              return String(i.title || '').trim();
+            });
+          });
+          C.saveTemplates(data).then(function () {
+            m.close();
+            w.U.toast('قالب‌ها ذخیره شد. چک‌لیست‌های ساخته‌شده دست نخوردند.',
+              'good');
+            app.render();
+          });
+        }
+      })
+    ]);
+    m.root.classList.add('wide-modal');
+  }
+
+  /* ================================================================
      خروجی کارکرد روزانه
      ----------------------------------------------------------------
      این خروجی برای آدم نیست — کارنامه برای آدم است. این برای برنامهٔ
@@ -20803,6 +21593,21 @@ else if (typeof exports === 'object'){
       el('h4', { text: 'لیست‌های کشویی' }), editor
     ]));
 
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'چک‌لیست مرحله‌ای' }),
+      el('p.set-note', {
+        text: 'کارهای تکراریِ هر مرحله. پرونده که به آن مرحله رسید، این ' +
+          'کارها یک بار ساخته می‌شوند و در تب «کارها و یادداشت‌ها»ی همان ' +
+          'پرونده و در صفحهٔ کارها دیده می‌شوند.'
+      }),
+      el('div.btn-row', null, [
+        el('button.btn.small', {
+          type: 'button', text: 'ویرایش قالب‌های چک‌لیست',
+          onclick: function () { m.close(); checklistDialog(app); }
+        })
+      ])
+    ]));
+
     body.appendChild(activityBlock());
 
     body.appendChild(el('section.set-block.danger-zone', null, [
@@ -20891,7 +21696,8 @@ else if (typeof exports === 'object'){
     exportSqlite: exportSqlite, exportJson: exportJson, restoreJson: restoreJson,
     exportReportExcel: exportReportExcel,
     importExcel: importExcel, settingsDialog: settingsDialog, mapColumns: mapColumns,
-    importDialog: importDialog, wipeDialog: wipeDialog
+    importDialog: importDialog, wipeDialog: wipeDialog,
+    checklistDialog: checklistDialog
   };
 })(window);
 
@@ -23145,6 +23951,308 @@ else if (typeof exports === 'object'){
 
 </script>
 <script>
+/* ==== js/ui.checklist.js ==== */
+/*
+ * نمای چک‌لیست مرحله‌ای.
+ *
+ * یک موتور، چهار نما — و هر چهار از یک جا می‌خوانند:
+ *
+ *   block   — چک‌لیستِ کامل، بالای تب «کارها» در صفحهٔ پرونده
+ *   line    — همان چک‌لیست، جمع‌شده در یک سطر، برای صفحهٔ کارها
+ *   chip    — «۳ از ۵» کنار ریل گردش‌کار
+ *   warn    — هشدارِ کارِ الزامیِ مانده از مرحلهٔ قبل
+ *
+ * چرا «یک سطر» در صفحهٔ کارها: سی پرونده × پنج کار یعنی صد و پنجاه سطر،
+ * و آن صفحه دیگر به درد نمی‌خورد. چک‌لیست یک چیز است، پس یک سطر است؛ باز
+ * که کنی، کارهایش داخلش‌اند.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, M = w.Model, C = w.Checklist;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+
+  /* ------------------------------------------------------------ اقدام */
+  /*
+   * دکمهٔ هر آیتم، همان سه جنسِ دکمهٔ آلارم است. تفاوتش این است که از
+   * صفحهٔ کارها هم زده می‌شود، جایی که فرم پرونده باز نیست — پس برای
+   * «رفتن سرِ فیلد» اول باید پرونده باز شود.
+   */
+  var CTA_LABEL = {
+    upload: 'بارگذاری', form: 'ساختن فرم', field: 'تکمیل'
+  };
+
+  function ctaButton(app, rec, task, refresh) {
+    var c = task.cta;
+    if (!c || !c.type || task.status !== 'open') return null;
+    var label = CTA_LABEL[c.type] || '';
+    if (c.type === 'upload' && c.kind) label = 'بارگذاری ' + c.kind;
+    if (c.type === 'form') label = 'ساختن فرم';
+    return el('button.btn.small.ghost.cl-do', {
+      type: 'button', text: label,
+      title: 'همین‌جا انجامش بدهید؛ تیکش خودش می‌خورد',
+      onclick: function (e) {
+        e.stopPropagation();
+        runCta(app, rec, task, refresh);
+      }
+    });
+  }
+
+  function runCta(app, rec, task, refresh) {
+    var c = task.cta || {};
+    if (c.type === 'upload') {
+      w.UIDocs.addFrom(rec, function () {
+        C.hit(rec, 'upload', c.kind).then(refresh);
+      }, { kind: c.kind });
+      return;
+    }
+    if (c.type === 'form') {
+      var form = null;
+      w.UILetters.FORMS.forEach(function (f) { if (f.key === c.form) form = f; });
+      if (form) w.UILetters.formDialog(app, rec, form);
+      return;
+    }
+    if (c.type === 'field') {
+      /* ممکن است از صفحهٔ کارها زده شده باشد؛ آن‌وقت اول باید پرونده
+         باز شود و بعد سراغ فیلد رفت. */
+      if (app.state.view === 'case' && app.state.caseId === rec.id && app.jumpField) {
+        app.jumpField(c.field);
+        return;
+      }
+      app.state.formTab = 'case';
+      app.openCase(rec.id);
+      setTimeout(function () {
+        if (app.jumpField) app.jumpField(c.field);
+      }, 420);
+    }
+  }
+
+  /* ----------------------------------------------------------- یک آیتم */
+  function taskRow(app, group, task, refresh) {
+    var rec = group.rec;
+    var state = task.status === 'open' ? 'open' : task.status;
+    var mark = el('span.cl-mark.is-' + state, {
+      text: state === 'done' ? '✓' : (state === 'open' ? '' : '–'),
+      'aria-hidden': 'true'
+    });
+
+    var actions = el('div.cl-actions');
+    if (state === 'open') {
+      // هر آیتمی دکمهٔ اقدام ندارد («پوشه کردن پرونده» کارِ دست است)
+      var cta = ctaButton(app, rec, task, refresh);
+      if (cta) actions.appendChild(cta);
+      actions.appendChild(el('button.btn.small.cl-tick', {
+        type: 'button', text: 'انجام شد',
+        onclick: function (e) {
+          e.stopPropagation();
+          w.Notes.complete(task).then(refresh);
+        }
+      }));
+      actions.appendChild(el('button.linkish.tiny', {
+        type: 'button', text: 'لازم نبود',
+        title: 'این کار برای این پرونده پیش نیامد — بسته می‌شود ولی ' +
+          '«انجام‌شده» شمرده نمی‌شود',
+        onclick: function (e) {
+          e.stopPropagation();
+          w.Notes.skipTask(task, '').then(refresh);
+        }
+      }));
+    } else {
+      actions.appendChild(el('button.linkish.tiny', {
+        type: 'button', text: 'برگرداندن',
+        onclick: function (e) {
+          e.stopPropagation();
+          w.Notes.reopen(task).then(refresh);
+        }
+      }));
+    }
+
+    return el('li.cl-item.is-' + state, null, [
+      mark,
+      el('div.cl-body', null, [
+        el('span.cl-title', { text: task.title }),
+        task.optional ? el('span.cl-opt', { text: 'اختیاری' }) : null,
+        state === 'skipped' ? el('span.cl-note', {
+          text: task.cancelReason ? 'لازم نبود — ' + task.cancelReason : 'لازم نبود'
+        }) : null,
+        state === 'done' && task.doneAt ? el('span.cl-note', {
+          text: 'انجام شد — ' + w.J.format(task.doneAt)
+        }) : null
+      ]),
+      el('div.spacer'),
+      actions
+    ]);
+  }
+
+  /* ------------------------------------------------------- نوار پیشرفت */
+  function dots(group) {
+    var box = el('span.cl-dots', { title: fa(group.settled) + ' از ' + fa(group.total) });
+    group.tasks.forEach(function (t) {
+      box.appendChild(el('span.cl-dot.is-' +
+        (t.status === 'open' ? 'open' : (t.status === 'done' ? 'done' : 'skip'))));
+    });
+    return box;
+  }
+
+  function countText(group) {
+    return fa(group.settled) + ' از ' + fa(group.total);
+  }
+
+  /* ------------------------------------------- چک‌لیست کامل (صفحهٔ پرونده) */
+  function groupBox(app, group, refresh, opts) {
+    opts = opts || {};
+    var open = !group.complete || opts.open;
+    var list = el('ul.cl-list', null, group.tasks.map(function (t) {
+      return taskRow(app, group, t, refresh);
+    }));
+
+    var head = el('div.cl-head', null, [
+      el('h4', { text: group.label }),
+      dots(group),
+      el('span.cl-count', { text: countText(group) }),
+      group.complete ? el('span.cl-done-tag', { text: 'تمام شد' }) : null,
+      el('div.spacer'),
+      group.open ? el('button.linkish.tiny', {
+        type: 'button', text: 'لازم نبود (کل چک‌لیست)',
+        title: 'همهٔ کارهای ماندهٔ این چک‌لیست کنار گذاشته می‌شوند',
+        onclick: function () {
+          w.U.confirmBox('کنار گذاشتن چک‌لیست',
+            'همهٔ ' + fa(group.open) + ' کارِ ماندهٔ «' + group.label +
+            '» کنار گذاشته شود؟ دوباره هم ساخته نمی‌شود.',
+            'کنار بگذار').then(function (ok) {
+              if (ok) C.dismiss(group).then(refresh);
+            });
+        }
+      }) : null
+    ]);
+
+    var box = el('details.cl-group' + (group.complete ? '.is-complete' : ''),
+      { open: open });
+    box.appendChild(el('summary', null, [head]));
+    if (group.hint) box.appendChild(el('p.cl-hint', { text: group.hint }));
+    box.appendChild(list);
+    return box;
+  }
+
+  /** همهٔ چک‌لیست‌های یک پرونده — بالای تب «کارها و یادداشت‌ها» */
+  function block(app, rec, refresh) {
+    if (!rec || !rec.id) return null;
+    var list = C.groups(rec.id);
+    if (!list.length) return null;
+    var cur = C.dueTemplate(rec);
+    var wrap = el('section.cl-block');
+    wrap.appendChild(el('h3.note-part-head', { text: 'چک‌لیست مرحله' }));
+    list.forEach(function (g) {
+      wrap.appendChild(groupBox(app, g, refresh, {
+        open: cur && g.key === cur.key
+      }));
+    });
+    return wrap;
+  }
+
+  /* ------------------------------------------------ یک سطر (صفحهٔ کارها) */
+  function line(app, group, refresh) {
+    var rec = group.rec;
+    var box = el('details.cl-line' + (group.complete ? '.is-complete' : ''));
+    box.appendChild(el('summary.cl-line-head', null, [
+      el('span.reg-no', { text: w.U.toLatinDigits(rec.caseNo || '—') }),
+      el('span.cl-line-label', { text: group.label }),
+      dots(group),
+      el('span.cl-count', { text: countText(group) }),
+      group.openRequired
+        ? el('span.cl-left', { text: fa(group.openRequired) + ' مانده' })
+        : (group.complete ? el('span.cl-done-tag', { text: 'تمام شد' }) : null),
+      el('div.spacer'),
+      el('button.linkish.tiny', {
+        type: 'button', text: 'پرونده ←',
+        onclick: function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          app.state.formTab = '__notes';
+          app.openCase(rec.id);
+        }
+      })
+    ]));
+    box.appendChild(el('ul.cl-list', null, group.tasks.map(function (t) {
+      return taskRow(app, group, t, refresh);
+    })));
+    return box;
+  }
+
+  /* ------------------------------------------------- چیپِ کنار ریل */
+  function chip(app, rec) {
+    var g = C.current(rec);
+    if (!g) return null;
+    return el('button.cl-chip' + (g.complete ? '.is-complete' : ''), {
+      type: 'button',
+      title: 'چک‌لیست «' + g.label + '» — ' + countText(g),
+      onclick: function () {
+        app.state.formTab = '__notes';
+        app.openCase(rec.id);
+      }
+    }, [
+      el('span', { text: g.label }),
+      dots(g),
+      el('span.cl-count', { text: countText(g) })
+    ]);
+  }
+
+  /* ------------------------------------------------------ هشدار، نه سد */
+  /*
+   * کارِ الزامیِ ماندهٔ مرحله‌های قبل. عمداً فقط هشدار است: کار اداری
+   * همیشه مرتب جلو نمی‌رود و سدِ سفت باعث می‌شود کاربر دورش بزند.
+   */
+  function warn(app, rec, refresh) {
+    var left = C.pending(rec);
+    if (!left.length) return null;
+    var names = left.slice(0, 3).map(function (p) { return p.task.title; });
+    return el('div.case-next.cl-warn', null, [
+      el('span.case-next-label', { text: 'از مرحلهٔ قبل مانده' }),
+      el('div.case-next-text', null, [
+        el('span.case-next-meta', {
+          text: fa(left.length) + ' کارِ الزامی: ' + names.join('، ') +
+            (left.length > names.length ? ' و…' : '')
+        }),
+        el('span.case-next-auto', {
+          text: 'جلوی کار را نمی‌گیرد؛ فقط یادآوری است که از قلم نیفتد.'
+        })
+      ]),
+      el('div.spacer'),
+      el('button.btn.small.ghost', {
+        type: 'button', text: 'دیدن چک‌لیست',
+        onclick: function () {
+          app.state.formTab = '__notes';
+          app.openCase(rec.id);
+        }
+      })
+    ]);
+  }
+
+  /** همهٔ چک‌لیست‌های بازِ دامنهٔ کار — برای صفحهٔ کارها */
+  function openGroups() {
+    var out = [];
+    M.scoped().forEach(function (rec) {
+      C.groups(rec.id).forEach(function (g) {
+        if (!g.complete) out.push(g);
+      });
+    });
+    out.sort(function (a, b) {
+      if (!!a.openRequired !== !!b.openRequired) return a.openRequired ? -1 : 1;
+      return b.open - a.open;
+    });
+    return out;
+  }
+
+  w.UIChecklist = {
+    block: block, line: line, chip: chip, warn: warn,
+    groupBox: groupBox, taskRow: taskRow, dots: dots,
+    openGroups: openGroups, runCta: runCta
+  };
+})(window);
+
+</script>
+<script>
 /* ==== js/ui.notes.js ==== */
 /*
  * تب «کارها و یادداشت‌ها» — پنل داخل صفحهٔ پرونده.
@@ -23375,6 +24483,11 @@ else if (typeof exports === 'object'){
 
     // خلاصهٔ پرونده، بالاتر از همه: اول «قصه چیست»، بعد «چه باید کرد»
     panel.appendChild(summaryBlock(rec, refresh));
+
+    /* چک‌لیستِ مرحله، پیش از کارهای آزاد: این‌ها کارهایی‌اند که خودِ
+       مرحله می‌آورد و نباید لای کارهای دستی گم شوند. */
+    var cl = w.UIChecklist.block(app, rec, refresh);
+    if (cl) panel.appendChild(cl);
 
     /* چک‌لیست کارهای همین پرونده — بعد از خلاصه، چون کارِ نکرده مهم‌تر از
        یادداشتِ نوشته‌شده است. */
@@ -24097,9 +25210,14 @@ else if (typeof exports === 'object'){
      چک‌لیست کارهای یک پرونده — داخل تب «کارها و یادداشت‌ها»
      ================================================================ */
   function casePanel(app, rec, refresh) {
-    var open = N.tasks({ caseId: rec.id, status: 'open' });
-    var done = N.tasks({ caseId: rec.id, status: 'done' })
-      .concat(N.tasks({ caseId: rec.id, status: 'cancelled' }));
+    /* آیتم‌های چک‌لیست بالاتر، در بلوک خودشان‌اند؛ اینجا فقط کارهای
+       آزادِ همین پرونده. */
+    function free(list) {
+      return list.filter(function (t) { return !t.tpl; });
+    }
+    var open = free(N.tasks({ caseId: rec.id, status: 'open' }));
+    var done = free(N.tasks({ caseId: rec.id, status: 'done' })
+      .concat(N.tasks({ caseId: rec.id, status: 'cancelled' })));
 
     var panel = el('div.task-case-panel');
 
@@ -24234,6 +25352,10 @@ else if (typeof exports === 'object'){
     /* یک صافی، در یک جا: هر سه چیز (دامنه، دسته، بایگانی) به همین شکل
        می‌رسند تا شمارنده و فهرست هیچ‌وقت از هم جدا نیفتند. */
     function keep(t) {
+      /* آیتم‌های چک‌لیست در سطرِ جمع‌شدهٔ خودشان دیده می‌شوند، نه
+         یکی‌یکی: سی پرونده × پنج کار یعنی صد و پنجاه سطر و این صفحه
+         دیگر به درد نمی‌خورد. مگر اینکه صریحاً همان دسته را صافی کنید. */
+      if (t.tpl && st.taskCat !== w.Checklist.CATEGORY) return false;
       if (st.taskFilter === 'oncase' && !t.caseId) return false;
       if (st.taskFilter === 'urgent' && t.priority !== 'urgent') return false;
       if (st.taskCat != null && (t.category || '') !== st.taskCat) return false;
@@ -24349,6 +25471,33 @@ else if (typeof exports === 'object'){
       ]));
 
     var body = el('div.task-buckets');
+
+    /* چک‌لیست‌های باز، پیش از کارهای آزاد: این‌ها کارِ مرحله‌اند و
+       ترتیبشان را خودِ پرونده تعیین می‌کند، نه سررسید. */
+    var cls = [];
+    if (!archived && st.taskCat !== w.Checklist.CATEGORY) {
+      cls = w.UIChecklist.openGroups();
+      if (cls.length) {
+        var left = cls.reduce(function (n, g) { return n + g.openRequired; }, 0);
+        body.appendChild(el('section.task-bucket.b-checklist', null, [
+          el('div.task-bucket-head', null, [
+            el('h2', { text: 'چک‌لیست مرحلهٔ پرونده‌ها' }),
+            el('span.wl-count' + (left ? '.late' : ''), {
+              text: fa(cls.length) + ' چک‌لیست'
+            }),
+            el('p.wl-sub', {
+              text: left
+                ? fa(left) + ' کارِ الزامی در این چک‌لیست‌ها مانده است.'
+                : 'فقط کارهای اختیاری مانده است.'
+            })
+          ]),
+          el('div.cl-lines', null, cls.map(function (g) {
+            return w.UIChecklist.line(app, g, refresh);
+          }))
+        ]));
+      }
+    }
+
     groups.forEach(function (b) {
       if (!b.items.length) return;
       body.appendChild(el('section.task-bucket.b-' + b.key, null, [
@@ -24364,7 +25513,8 @@ else if (typeof exports === 'object'){
       ]));
     });
 
-    if (!total) {
+    /* «کاری ثبت نشده» وقتی سه چک‌لیست بالایش هست، حرفِ غلطی است */
+    if (!total && !cls.length) {
       body.appendChild(el('div.empty-state', null, [
         el('p', {
           text: archived ? 'بایگانی خالی است.'
@@ -26804,6 +27954,31 @@ else if (typeof exports === 'object'){
       ]));
     }
 
+    // -------------------------------------------------- چک‌لیست مرحله‌ها
+    var cl = data.checklist;
+    if (cl && (cl.done || cl.skipped || cl.open)) {
+      sections.push(el('section.krn-block', null, [
+        el('div.wl-section-head', null, [
+          el('h2', { text: 'چک‌لیست مرحله‌ها' }),
+          el('span.wl-count', { text: fa(cl.done) + ' انجام‌شده' }),
+          cl.skipped ? el('span.wl-count', {
+            text: fa(cl.skipped) + ' لازم نبود'
+          }) : null,
+          cl.open ? el('span.wl-count.late', { text: fa(cl.open) + ' مانده' }) : null,
+          el('p.wl-sub', {
+            text: 'کارهایی که خودِ مرحلهٔ پرونده می‌آوردشان — نه کارِ دستی.'
+          })
+        ]),
+        el('ul.krn-bars', null, cl.rows.map(function (r) {
+          /* مخرجِ هر نوار، کلِ همان چک‌لیست است نه بزرگ‌ترین عدد:
+             «۳۶ از ۴۰» معنا دارد، «۳۶ نسبت به بیشترین» ندارد. */
+          var all = r.done + r.skipped + r.open;
+          return barRow(r.label + ' — ' + fa(r.done) + ' از ' + fa(all),
+            r.done, all, null);
+        }))
+      ]));
+    }
+
     // ------------------------------------------------------------ کارها
     if (t.tasksDone || t.tasksCancelled) {
       sections.push(el('section.krn-block', null, [
@@ -28582,6 +29757,10 @@ else if (typeof exports === 'object'){
       return w.Docs.load();
     }).then(function () {
       return w.Notes.load();
+    }).then(function () {
+      /* چک‌لیستِ مرحلهٔ هر پرونده، اگر هنوز ساخته نشده. یک بار، بی‌صدا،
+         و فقط برای مرحله‌ای که پرونده الان در آن است. */
+      return w.Checklist.ensureAll().catch(function () { return 0; });
     }).then(function () {
       if (topBarNode.parentNode !== document.body) {
         document.body.insertBefore(topBarNode, mount);

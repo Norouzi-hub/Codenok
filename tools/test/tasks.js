@@ -50,10 +50,12 @@ function check(name, ok, extra) {
       followUp: J.addDays(J.today(), 4), priority: 'urgent' });
     await N.create({ kind: 'task', title: 'بایگانی پرونده‌های سال قبل' });
     await N.create({ kind: 'note', caseId: caseId, text: 'تلفنی تماس گرفته شد.' });
+    const free = (f) => N.tasks(f).filter(t => !t.tpl);
     return {
-      tasks: N.tasks({ status: 'open' }).length,
+      // چک‌لیست مرحله‌ای کنار گذاشته می‌شود: اینجا کارِ آزاد را می‌سنجیم
+      tasks: free({ status: 'open' }).length,
       standalone: N.standalone().length,
-      onCase: N.tasks({ caseId: caseId, status: 'open' }).length
+      onCase: free({ caseId: caseId, status: 'open' }).length
     };
   });
   check('کار روی پرونده و کار بیرون از پرونده، هر دو ثبت می‌شوند',
@@ -105,10 +107,11 @@ function check(name, ok, extra) {
     await N.complete(a);
     await N.cancelTask(b, 'جلسه لغو شد');
     const r = N.report();
+    const free = (f) => N.tasks(f).filter(t => !t.tpl);
     return {
-      done: N.tasks({ status: 'done' }).length,
-      cancelled: N.tasks({ status: 'cancelled' }).length,
-      open: N.tasks({ status: 'open' }).length,
+      done: free({ status: 'done' }).length,
+      cancelled: free({ status: 'cancelled' }).length,
+      open: free({ status: 'open' }).length,
       rDone: r.done, rCancelled: r.cancelled, rOverdue: r.overdue,
       byFrom: r.byFrom.map(x => x.key)
     };

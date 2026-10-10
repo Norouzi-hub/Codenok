@@ -55,7 +55,10 @@ async function openList(page) {
       stats: window.Notes.stats(),
       ids: { past: past.id, today: today.id, future: future.id, plain: plain.id },
       // تازه‌ترین یادداشت بالای فهرست پرونده می‌آید
-      newestFirst: window.Notes.forCase(cs[0].id)[0].id === plain.id
+      newestFirst: window.Notes.forCase(cs[0].id)[0].id === plain.id,
+      /* چک‌لیست مرحله‌ای هم «کار» است و در همین انبار می‌نشیند؛ اینجا
+         فقط یادداشت‌های دست‌نویس شمرده می‌شوند. */
+      written: window.Notes.all().filter(n => n.kind !== 'task').length
     };
   });
   check('یادداشت روی پرونده ثبت می‌شود',
@@ -64,8 +67,8 @@ async function openList(page) {
     added.dueNow === 2 && added.all === 3,
     added.dueNow + ' سررسیدشده از ' + added.all);
   check('یادداشت بدون قرار، پیگیری حساب نمی‌شود',
-    added.stats.openFollowUps === 3 && added.stats.total === 4,
-    JSON.stringify(added.stats));
+    added.stats.openFollowUps === 3 && added.written === 4,
+    JSON.stringify(added.stats) + ' — ' + added.written + ' یادداشت'),
   check('تازه‌ترین یادداشت بالای فهرست است', added.newestFirst);
 
   const searchable = await page.evaluate(() =>
@@ -227,7 +230,7 @@ async function openList(page) {
   await page.reload();
   await openList(page);
   const persisted = await page.evaluate(() => ({
-    notes: window.Notes.all().length,
+    notes: window.Notes.all().filter(n => n.kind !== 'task').length,
     open: window.Notes.stats().openFollowUps,
     selectionCleared: window.App.selectedIds().length
   }));
@@ -259,7 +262,7 @@ async function openList(page) {
     });
   });
   check('یادداشت‌ها هم رمزنگاری می‌شوند',
-    encrypted.sealed === encrypted.count && encrypted.count === 4 &&
+    encrypted.sealed === encrypted.count && encrypted.count >= 4 &&
     encrypted.blob.indexOf('دعوت‌نامه') < 0,
     encrypted.sealed + ' از ' + encrypted.count);
 

@@ -252,7 +252,9 @@ function check(name, ok, extra) {
         docs: window.Docs.visibleDocs().length,
         batchDocs: (window.Docs.batches()[0] || { docs: [] }).docs.length,
         search: window.Docs.searchDocs('').length,
-        tasks: window.Notes.tasks({ archived: 'any' }).length,
+        // چک‌لیست مرحله‌ای خودکار ساخته می‌شود؛ اینجا کارِ آزاد مبناست
+        tasks: window.Notes.tasks({ archived: 'any' })
+          .filter(function (t) { return !t.tpl; }).length,
         doneBetween: window.Notes.doneBetween(today, today).length,
         calDoc: window.Calendar.collect(today, today, ['doc']).length,
         calTask: window.Calendar.collect(today, today, ['task']).length,
@@ -290,7 +292,8 @@ function check(name, ok, extra) {
     const N = window.Notes, J = window.J, today = J.today();
     function snap() {
       return {
-        tasks: N.tasks({}).length,
+        // چک‌لیست مرحله‌ای خودکار ساخته می‌شود؛ اینجا کارِ آزاد مبناست
+        tasks: N.tasks({}).filter(function (t) { return !t.tpl; }).length,
         cal: window.Calendar.collect(today, today, ['task']).length,
         karnameh: window.Karnameh.build(today, today, {}).totals.tasksDone
       };

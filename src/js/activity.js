@@ -72,6 +72,8 @@
     { key: 'note.add', label: 'نوشتن یادداشت', group: 'task', source: 'history', from: 'note-add' },
     { key: 'note.done', label: 'بستن پیگیری یادداشت', group: 'task', source: 'history', from: 'note-done' },
     { key: 'note.remove', label: 'حذف یادداشت', group: 'task', source: 'history', from: 'note-remove' },
+    { key: 'task.skip', label: 'کاری که لازم نبود', group: 'task', source: 'history', from: 'task-skip' },
+    { key: 'checklist.make', label: 'ساخت چک‌لیست مرحله', group: 'task', source: 'history', from: 'checklist' },
 
     // ------------------------------------------------- فرم و صورت‌جلسه
     { key: 'form.make', label: 'ساختن فرم اداری (چاپ یا ورد)', group: 'letter', source: 'history', from: 'form' },

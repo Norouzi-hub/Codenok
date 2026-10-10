@@ -1239,6 +1239,145 @@ select.input { cursor: pointer; }
 .act-nums { font-weight: 600; }
 .act-src { margin-top: 4px; font-size: 11.5px; color: var(--ink-600, var(--ink-700)); }
 
+/* ================================================================
+   چک‌لیست مرحله‌ای
+   ----------------------------------------------------------------
+   سه حالت، سه نشانه: تیکِ سبز (انجام شد)، خطِ خاکستری (لازم نبود)،
+   حلقهٔ خالی (مانده). و یک نوارِ نقطه‌ای که در یک نگاه می‌گوید چقدرش
+   مانده — همان چیزی که عدد به‌تنهایی نمی‌گوید.
+   ================================================================ */
+.cl-block { margin: 0 0 20px; }
+.cl-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.cl-group > summary { cursor: pointer; padding: 9px 12px; list-style: none; }
+.cl-group > summary::-webkit-details-marker { display: none; }
+.cl-group[open] > summary { border-bottom: 1px solid var(--line-soft); }
+.cl-group.is-complete { background: var(--paper); }
+.cl-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.cl-head h4 { margin: 0; font-size: 13px; font-weight: 700; }
+.cl-hint { margin: 8px 12px 0; font-size: 11.5px; color: var(--muted); }
+.cl-count { font-size: 11.5px; color: var(--ink-500); font-variant-numeric: tabular-nums; }
+.cl-left {
+  font-size: 11px;
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border: 1px solid var(--cinnabar-line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+.cl-done-tag {
+  font-size: 11px;
+  color: var(--moss);
+  background: var(--moss-soft);
+  border: 1px solid var(--moss-line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+
+/* نوار نقطه‌ای پیشرفت */
+.cl-dots { display: inline-flex; gap: 3px; align-items: center; }
+.cl-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: transparent;
+}
+.cl-dot.is-done { background: var(--moss); border-color: var(--moss); }
+.cl-dot.is-skip { background: var(--line); border-color: var(--line); }
+
+/* آیتم‌ها */
+.cl-list { list-style: none; margin: 0; padding: 4px 0; }
+.cl-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.cl-list > .cl-item:last-child { border-bottom: 0; }
+.cl-item:hover { background: var(--paper); }
+.cl-mark {
+  flex: 0 0 auto;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1;
+}
+.cl-mark.is-done { background: var(--moss); border-color: var(--moss); color: #fff; }
+.cl-mark.is-skipped, .cl-mark.is-cancelled {
+  border-color: var(--line); color: var(--muted); background: var(--paper-2);
+}
+.cl-body { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; min-width: 0; }
+.cl-title { font-size: 13px; color: var(--ink-900); }
+.cl-item.is-done .cl-title, .cl-item.is-skipped .cl-title,
+.cl-item.is-cancelled .cl-title { color: var(--muted); }
+.cl-item.is-skipped .cl-title, .cl-item.is-cancelled .cl-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--line);
+}
+.cl-opt {
+  font-size: 10.5px;
+  color: var(--ink-500);
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.cl-note { font-size: 11px; color: var(--muted); }
+.cl-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+
+/* سطرِ جمع‌شده در صفحهٔ کارها */
+.cl-lines { display: flex; flex-direction: column; gap: 6px; }
+.cl-line {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+}
+.cl-line > summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cl-line > summary::-webkit-details-marker { display: none; }
+.cl-line[open] > summary { border-bottom: 1px solid var(--line-soft); }
+.cl-line.is-complete { background: var(--paper); }
+.cl-line-label { font-size: 13px; font-weight: 600; }
+.b-checklist .task-bucket-head h2 { color: var(--brass-ink); }
+
+/* چیپِ کنار ریل */
+.cl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 5px 11px;
+  border: 1px solid var(--brass-line);
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  border-radius: 999px;
+  transition: background var(--t-fast) var(--ease);
+}
+.cl-chip:hover { background: var(--card); }
+.cl-chip.is-complete { border-color: var(--moss-line); background: var(--moss-soft); color: var(--moss); }
+
+/* هشدارِ ماندهٔ مرحلهٔ قبل */
+.case-next.cl-warn { border-color: var(--brass-line); background: var(--brass-soft); }
+.case-next.cl-warn .case-next-label { color: var(--brass-ink); }
+
 /* ---------------------------------------------------------------- تاریخچه */
 .history-wrap { font-size: 13px; }
 .related {
@@ -2553,6 +2692,56 @@ select.input { cursor: pointer; }
 }
 .letters-grid .field.wide { grid-column: 1 / -1; }
 .letters-modal { width: min(680px, 100%); }
+.wide-modal { width: min(820px, 100%); }
+
+/* --- ویرایشگر قالب‌های چک‌لیست --- */
+.cl-ed-tpl {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: var(--paper);
+}
+.cl-ed-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.cl-ed-stage {
+  font-size: 11px;
+  color: var(--brass-ink);
+  background: var(--brass-soft);
+  border: 1px solid var(--brass-line);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+.cl-ed-items { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.cl-ed-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 6px 9px;
+}
+.cl-ed-item .input.small { flex: 1 1 200px; min-width: 150px; }
+.cl-ed-n {
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.cl-ed-cta { font-size: 10.5px; color: var(--ink-500); }
+.cl-ed-types { display: flex; gap: 4px; flex-wrap: wrap; }
+/* .icon-btn رنگش برای نوار تیره بالاست (سفیدِ نیمه‌شفاف)؛ روی کاغذِ
+   سفیدِ این پنجره نامرئی می‌شد. */
+.cl-ed-item .icon-btn {
+  width: 28px; height: 28px; line-height: 0;
+  color: var(--ink-400);
+  border-color: var(--line-soft);
+}
+.cl-ed-item .icon-btn:hover { background: var(--paper-2); color: var(--ink-800); }
+.cl-ed-item .icon-btn.danger:hover { background: var(--cinnabar-soft); color: var(--cinnabar); }
+.cl-ed-item .icon-btn svg { width: 15px; height: 15px; }
+.chip-btn.tiny { font-size: 10.5px; padding: 1px 8px; }
 
 /* ---------------------------------------------------------------- چاپ */
 #print-area { display: none; }

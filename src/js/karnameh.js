@@ -213,6 +213,10 @@
         batches: batchList.length,
         tasksDone: tasksDone.length,
         tasksCancelled: tasksCancelled.length,
+        /* چک‌لیست جدا شمرده می‌شود: «۳۶ کار انجام شد» حرفِ درستی است،
+           ولی «از ۴۰ کارِ چک‌لیست، ۳۶ تا» حرفِ بهتری است — چون مخرج
+           هم دارد و می‌گوید چقدر مانده. */
+        checklistDone: tasksDone.filter(function (t) { return t.tpl; }).length,
         events: events.length,
         touched: touchedList.length
       },
@@ -220,6 +224,7 @@
       byKind: sortCount(byKind),
       docs: { list: docsIn, byKind: sortCount(docKinds), batches: batchList },
       tasks: { done: tasksDone, cancelled: tasksCancelled, byCat: sortCount(taskCats) },
+      checklist: (w.Checklist ? w.Checklist.stats(from, to) : null),
       cases: { created: created, closed: closed, touched: touchedList },
       rest: { open: openNow, overdue: overdueNow, openTasks: openTasks },
       events: events

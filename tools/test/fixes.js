@@ -81,7 +81,9 @@ function check(name, ok, extra) {
   const single = await page.evaluate(() => ({
     batches: window.Docs.batches().length,
     docs: window.Docs.all().length,
-    tasks: window.Notes.tasks({ archived: 'any' }).length
+    // چک‌لیست مرحله‌ای خودکار ساخته می‌شود؛ اینجا کارِ آزاد مبناست
+    tasks: window.Notes.tasks({ archived: 'any' })
+      .filter(t => !t.tpl).length
   }));
   check('یک فایل تنها، نه دسته می‌سازد نه کار',
     single.batches === 0 && single.docs === 1 && single.tasks === 0,
@@ -125,9 +127,12 @@ function check(name, ok, extra) {
   // ============ ۳) کارِ خودکار در پرونده نمی‌نشیند
   console.log('\n— کارِ خودکار در تب پرونده نمی‌نشیند —');
   const clean = await page.evaluate((id) => ({
-    caseTasks: window.Notes.tasks({ caseId: id, archived: 'any' }).length,
-    caseNotes: window.Notes.forCase(id).length,
+    // چک‌لیست مرحله‌ای، کارِ خودکارِ موردِ بحثِ این سنجه نیست
+    caseTasks: window.Notes.tasks({ caseId: id, archived: 'any' })
+      .filter(t => !t.tpl).length,
+    caseNotes: window.Notes.forCase(id).filter(n => !n.tpl).length,
     allTasks: window.Notes.tasks({ archived: 'any' })
+      .filter(t => !t.tpl)
       .map(t => ({ title: t.title, onCase: !!t.caseId })),
     history: window.Model.historyFor(id)
       .filter(h => h.kind === 'doc-batch').length
@@ -305,7 +310,8 @@ function check(name, ok, extra) {
       found: !!t, status: t && t.status, docCount: t && t.docCount,
       hasBatch: !!(t && t.batchId), onCase: !!(t && t.caseId === id),
       caseDocs: window.Docs.current(id).length,
-      totalTasks: window.Notes.tasks({ archived: 'any' }).length
+      totalTasks: window.Notes.tasks({ archived: 'any' })
+        .filter(t => !t.tpl).length
     };
   }, taskCase);
   check('سندها به پروندهٔ همان کار می‌روند',
