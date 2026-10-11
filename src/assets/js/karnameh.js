@@ -207,6 +207,8 @@
         created: created.length,
         closed: closed.length,
         letters: letters,
+        // مینوت: پیش‌نویسی که در اتوماسیون می‌نشیند — کارِ واقعیِ نامه‌نویسی
+        minutes: byKind.minute || 0,
         sessions: steps.committeeDate || 0,
         verdicts: steps.verdictDate || 0,
         docs: docsIn.length,
@@ -236,6 +238,7 @@
     var t = k.totals;
     var bits = [];
     if (t.letters) bits.push(w.U.toFaDigits(t.letters) + ' نامه صادر شد');
+    if (t.minutes) bits.push(w.U.toFaDigits(t.minutes) + ' مینوت نامه نوشته شد');
     if (t.sessions) bits.push(w.U.toFaDigits(t.sessions) + ' پرونده در کمیته طرح شد');
     if (t.docs) bits.push(w.U.toFaDigits(t.docs) + ' سند بایگانی شد');
     if (t.tasksDone) bits.push(w.U.toFaDigits(t.tasksDone) + ' کار انجام شد');

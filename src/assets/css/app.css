@@ -5563,3 +5563,107 @@ button.tag-chip.ro { cursor: pointer; }
 /* روی گوشی نوار پایین جای پانویس است؛ «دربارهٔ نوکمان» از تنظیمات باز می‌شود */
 @media (max-width: 720px) { .app-footer { display: none; } }
 @media print { .app-footer { display: none !important; } }
+
+/* ============================================================ مینوت نامه
+   راست: کلیدها. چپ: کاغذِ آماده، با سربرگ کوچکِ اتوماسیون بالایش.
+   ui.minute.js
+   ============================================================ */
+.minute-modal { width: min(1120px, 100%); }
+.mn-dialog {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) 1fr;
+  gap: 18px;
+  align-items: start;
+}
+.mn-controls { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.mn-types { display: flex; flex-wrap: wrap; gap: 6px; }
+.mn-type {
+  font: inherit; font-size: 12.5px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.mn-type:hover { border-color: var(--brass-line); }
+.mn-type.on { background: var(--ink-800); border-color: var(--ink-800); color: #fff; }
+.mn-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mn-field .input { width: 100%; }
+.mn-hint { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.mn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+.mn-grid .mn-field:has(.mn-docs) { grid-column: 1 / -1; }
+.mn-sub { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-800); padding-top: 8px; border-top: 1px solid var(--line-soft); }
+.mn-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.mn-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+.mn-docs { display: flex; flex-direction: column; gap: 4px; }
+.mn-people { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.mn-person {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--brass-soft); border: 1px solid var(--brass-line);
+  font-size: 12.5px; color: var(--brass-ink);
+}
+.mn-person .reg-no { font-size: 11px; color: var(--muted); }
+.mn-x { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0 2px; font-size: 11px; }
+.mn-x:hover { color: var(--cinnabar); }
+
+.mn-paper {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 16px;
+  position: sticky; top: 0;
+}
+.mn-head {
+  display: flex; flex-direction: column; gap: 4px;
+  padding-bottom: 10px; margin-bottom: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+.mn-hl { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
+.mn-hk { flex: 0 0 64px; color: var(--muted); }
+.mn-hv { flex: 1; color: var(--ink-800); font-weight: 600; min-width: 0; }
+.mn-copy1 {
+  font: inherit; font-size: 11px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--paper); color: var(--ink-500); padding: 1px 8px; cursor: pointer;
+  opacity: 0; transition: opacity var(--t-fast);
+}
+.mn-hl:hover .mn-copy1, .mn-copy1:focus-visible { opacity: 1; }
+.mn-body-wrap { position: relative; }
+.mn-body {
+  width: 100%; min-height: 300px; resize: vertical;
+  font-family: 'B Zar', 'B Nazanin', var(--font-ui);
+  font-size: 15px; line-height: 2.1; text-align: justify;
+  background: var(--paper); border-color: var(--line-soft);
+}
+.mn-rebuild { display: inline-block; margin-top: 4px; }
+.mn-warn { margin: 8px 0 0; font-size: 12px; color: var(--brass-ink); }
+.mn-reg {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 12px; padding: 10px 12px;
+  border-radius: var(--radius); background: var(--moss-soft); border: 1px solid var(--moss-line);
+  font-size: 12.5px;
+}
+.mn-reg b { color: var(--moss); }
+.mn-reg > .input { width: 170px; }
+.mn-reg .date-field, .mn-reg .dp-wrap { width: 170px; }
+
+.mn-conf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 14px; margin: 10px 0; }
+
+/* تنظیمات: جدول گیرنده‌ها */
+.mn-rcp {
+  display: grid;
+  grid-template-columns: minmax(200px, 2.4fr) 1.3fr 1fr 1fr 1.2fr auto;
+  gap: 6px; align-items: center; margin-bottom: 6px;
+}
+.mn-rcp-head span { font-size: 11px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .mn-dialog { grid-template-columns: 1fr; }
+  .mn-paper { position: static; }
+  .mn-rcp { grid-template-columns: 1fr 1fr; }
+  .mn-rcp-head { display: none; }
+}

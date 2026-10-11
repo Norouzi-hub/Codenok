@@ -238,9 +238,11 @@ function check(name, ok, extra) {
   await page.waitForTimeout(300);
   const forms = await page.evaluate(() =>
     [...document.querySelectorAll('.sheet-item .sheet-text b')].map(b => b.textContent));
-  check('هر چهار فرم در فهرست هستند',
-    forms.length === 4 && forms.indexOf('خلاصهٔ پرونده') >= 0 &&
-    forms.indexOf('رأی صادره') >= 0 && forms.indexOf('ابلاغ رأی') >= 0,
+  // «نامه و فرم»: اول چهار مینوت نامه، بعد چهار فرم
+  check('هر چهار فرم در فهرست هستند، بعد از چهار مینوت',
+    forms.length === 8 && forms.indexOf('فرم خلاصهٔ پرونده') >= 0 &&
+    forms.indexOf('فرم رأی صادره') >= 0 && forms.indexOf('فرم ابلاغ رأی') >= 0 &&
+    forms.slice(0, 4).every(f => /^مینوت /.test(f)),
     forms.join(' | '));
   await page.evaluate(() => document.querySelector('.sheet-close').click());
   await page.waitForTimeout(200);

@@ -152,6 +152,8 @@
       tally([
         { value: t.letters, label: 'نامهٔ صادره',
           hint: 'نامه‌هایی که تاریخشان در این بازه ثبت شده' },
+        { value: t.minutes, label: 'مینوت نامه',
+          hint: 'مینوت‌هایی که کپی، چاپ یا ورد شدند' },
         { value: t.sessions, label: 'طرح در کمیته' },
         { value: t.verdicts, label: 'رأی صادره' },
         { value: t.docs, label: 'سند بایگانی‌شده',
@@ -391,6 +393,7 @@
     section('خلاصه');
     twoCol([
       ['نامهٔ صادره', fa(t.letters)],
+      ['مینوت نامه', fa(t.minutes || 0)],
       ['پروندهٔ طرح‌شده در کمیته', fa(t.sessions)],
       ['رأی صادره', fa(t.verdicts)],
       ['سند بایگانی‌شده',

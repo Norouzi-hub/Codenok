@@ -598,6 +598,18 @@
     return doc;
   }
 
+  /** چاپ و وردِ یک سندِ آماده (مثلاً مینوت نامه)، بی‌ثبت در تاریخچه —
+      ثبتش کارِ خودِ سازنده است */
+  function printDoc(doc) {
+    area().appendChild(toHtml(doc));
+    run(doc.title);
+    return doc;
+  }
+  function wordDoc(doc, name) {
+    w.U.download(name || ((doc.file || doc.key) + '.docx'), toDocx(doc));
+    return doc;
+  }
+
   // نام‌های قبلی، برای سازگاری
   function printSummary(rec, extra) { return printForm('summary', rec, extra); }
   function printDefense(rec, extra) { return printForm('defense', rec, extra); }
@@ -747,21 +759,30 @@
       w.U.toast('اول پرونده را ذخیره کنید.', 'warn');
       return null;
     }
-    return w.Mobile.sheet('فرم‌های پروندهٔ ' + w.U.toLatinDigits(rec.caseNo || ''),
-      FORMS.map(function (form) {
+    // اول مینوت‌ها (متنی که در اتوماسیون می‌نشیند)، بعد فرم‌های چاپی
+    var minutes = w.UIMinute ? w.Minute.TYPES.map(function (t) {
+      return {
+        icon: 'fileText', label: 'مینوت ' + t.label,
+        hint: 'متن نامه برای اتوماسیون — گیرنده، عطف/پیرو و فعل خودکار',
+        onclick: function () { w.UIMinute.open(app, [rec], { type: t.key }); }
+      };
+    }).concat([{ sep: true }]) : [];
+    return w.Mobile.sheet('نامه و فرمِ پروندهٔ ' + w.U.toLatinDigits(rec.caseNo || ''),
+      minutes.concat(FORMS.map(function (form) {
         return {
           icon: form.paper === 'سربرگ' ? 'fileText' : 'file',
-          label: form.label,
+          label: 'فرم ' + form.label,
           hint: form.paper + ' — ' + form.hint,
           onclick: function () { formDialog(app, rec, form); }
         };
-      }));
+      })));
   }
 
   w.UILetters = {
     chooser: chooser, formDialog: formDialog, FORMS: FORMS,
     conf: conf, saveConf: saveConf, DEFAULTS: DEFAULTS,
     printForm: printForm, wordForm: wordForm, toHtml: toHtml, toDocx: toDocx,
+    printDoc: printDoc, wordDoc: wordDoc,
     build: function (kind, rec, extra) { return BUILDERS[kind](rec, extra || {}); },
     printSummary: printSummary, printDefense: printDefense,
     printVerdict: printVerdict, printNotice: printNotice

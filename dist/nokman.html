@@ -5592,6 +5592,110 @@ button.tag-chip.ro { cursor: pointer; }
 @media (max-width: 720px) { .app-footer { display: none; } }
 @media print { .app-footer { display: none !important; } }
 
+/* ============================================================ مینوت نامه
+   راست: کلیدها. چپ: کاغذِ آماده، با سربرگ کوچکِ اتوماسیون بالایش.
+   ui.minute.js
+   ============================================================ */
+.minute-modal { width: min(1120px, 100%); }
+.mn-dialog {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) 1fr;
+  gap: 18px;
+  align-items: start;
+}
+.mn-controls { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.mn-types { display: flex; flex-wrap: wrap; gap: 6px; }
+.mn-type {
+  font: inherit; font-size: 12.5px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.mn-type:hover { border-color: var(--brass-line); }
+.mn-type.on { background: var(--ink-800); border-color: var(--ink-800); color: #fff; }
+.mn-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mn-field .input { width: 100%; }
+.mn-hint { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.mn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+.mn-grid .mn-field:has(.mn-docs) { grid-column: 1 / -1; }
+.mn-sub { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-800); padding-top: 8px; border-top: 1px solid var(--line-soft); }
+.mn-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.mn-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+.mn-docs { display: flex; flex-direction: column; gap: 4px; }
+.mn-people { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.mn-person {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--brass-soft); border: 1px solid var(--brass-line);
+  font-size: 12.5px; color: var(--brass-ink);
+}
+.mn-person .reg-no { font-size: 11px; color: var(--muted); }
+.mn-x { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0 2px; font-size: 11px; }
+.mn-x:hover { color: var(--cinnabar); }
+
+.mn-paper {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 16px;
+  position: sticky; top: 0;
+}
+.mn-head {
+  display: flex; flex-direction: column; gap: 4px;
+  padding-bottom: 10px; margin-bottom: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+.mn-hl { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
+.mn-hk { flex: 0 0 64px; color: var(--muted); }
+.mn-hv { flex: 1; color: var(--ink-800); font-weight: 600; min-width: 0; }
+.mn-copy1 {
+  font: inherit; font-size: 11px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--paper); color: var(--ink-500); padding: 1px 8px; cursor: pointer;
+  opacity: 0; transition: opacity var(--t-fast);
+}
+.mn-hl:hover .mn-copy1, .mn-copy1:focus-visible { opacity: 1; }
+.mn-body-wrap { position: relative; }
+.mn-body {
+  width: 100%; min-height: 300px; resize: vertical;
+  font-family: 'B Zar', 'B Nazanin', var(--font-ui);
+  font-size: 15px; line-height: 2.1; text-align: justify;
+  background: var(--paper); border-color: var(--line-soft);
+}
+.mn-rebuild { display: inline-block; margin-top: 4px; }
+.mn-warn { margin: 8px 0 0; font-size: 12px; color: var(--brass-ink); }
+.mn-reg {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 12px; padding: 10px 12px;
+  border-radius: var(--radius); background: var(--moss-soft); border: 1px solid var(--moss-line);
+  font-size: 12.5px;
+}
+.mn-reg b { color: var(--moss); }
+.mn-reg > .input { width: 170px; }
+.mn-reg .date-field, .mn-reg .dp-wrap { width: 170px; }
+
+.mn-conf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 14px; margin: 10px 0; }
+
+/* تنظیمات: جدول گیرنده‌ها */
+.mn-rcp {
+  display: grid;
+  grid-template-columns: minmax(200px, 2.4fr) 1.3fr 1fr 1fr 1.2fr auto;
+  gap: 6px; align-items: center; margin-bottom: 6px;
+}
+.mn-rcp-head span { font-size: 11px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .mn-dialog { grid-template-columns: 1fr; }
+  .mn-paper { position: static; }
+  .mn-rcp { grid-template-columns: 1fr 1fr; }
+  .mn-rcp-head { display: none; }
+}
+
 </style>
 </head>
 <body>
@@ -13294,6 +13398,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         created: created.length,
         closed: closed.length,
         letters: letters,
+        // مینوت: پیش‌نویسی که در اتوماسیون می‌نشیند — کارِ واقعیِ نامه‌نویسی
+        minutes: byKind.minute || 0,
         sessions: steps.committeeDate || 0,
         verdicts: steps.verdictDate || 0,
         docs: docsIn.length,
@@ -13323,6 +13429,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     var t = k.totals;
     var bits = [];
     if (t.letters) bits.push(w.U.toFaDigits(t.letters) + ' نامه صادر شد');
+    if (t.minutes) bits.push(w.U.toFaDigits(t.minutes) + ' مینوت نامه نوشته شد');
     if (t.sessions) bits.push(w.U.toFaDigits(t.sessions) + ' پرونده در کمیته طرح شد');
     if (t.docs) bits.push(w.U.toFaDigits(t.docs) + ' سند بایگانی شد');
     if (t.tasksDone) bits.push(w.U.toFaDigits(t.tasksDone) + ' کار انجام شد');
@@ -13423,6 +13530,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
 
     // ------------------------------------------------- فرم و صورت‌جلسه
     { key: 'form.make', label: 'ساختن فرم اداری (چاپ یا ورد)', group: 'letter', source: 'history', from: 'form' },
+    { key: 'letter.minute', label: 'نوشتن مینوت نامه (کپی، چاپ یا ورد)', group: 'letter', source: 'history', from: 'minute' },
     { key: 'committee.minutes', label: 'ثبت صورت‌جلسهٔ کمیته', group: 'committee', source: 'history', from: 'session' },
 
     // ------------------- کارِ واقعیِ ثبت‌شده در خودِ پرونده (تاریخ‌ها)
@@ -15519,6 +15627,435 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
   w.Paste = {
     parse: parse, looksLikeProfile: looksLikeProfile,
     splitName: splitName, labelAt: labelAt, squash: squash
+  };
+})(window);
+
+</script>
+<script>
+/* ==== assets/js/minute.js ==== */
+/*
+ * مینوت نامه — متنی که در اتوماسیون اداری تایپ می‌شد، حالا از خودِ پرونده.
+ *
+ * نامه‌های دبیرخانه پنج تکه دارند و فقط یکی‌شان مالِ نوعِ نامه است:
+ *
+ *   با سلام و احترام؛
+ *   ① جملهٔ ارجاع   — بازگشت به / پیرو / با عنایت به … (محرمانه: هیچ)
+ *   ② فعل درخواست   — مقتضی / شایسته / خواهشمند است دستور فرمایید
+ *   ③ معرفی کارمند  — آقای/خانم … از کارکنان … شاغل در آن …
+ *   ④ متنِ خاصِ نامه — مهلت، ساعت و محل جلسه، فهرست مدارک، قطع پرداخت
+ *   ⑤ بندهای ثابت    — «بدیهی است…»، «شایان ذکر است…»، تبصرهٔ ۳۰ مادهٔ ۳۶
+ *
+ * قاعده‌ها (از خودِ دبیرخانه):
+ *   - فعل از رتبهٔ گیرنده: پایین‌دست «مقتضی است»، همتراز «شایسته است»،
+ *     بالادست «خواهشمند است».
+ *   - ارجاع از جنسِ نامهٔ قبلی: نامهٔ خودِ گیرنده «بازگشت به» (عطف)، نامهٔ
+ *     خودمان «پیرو» (پیرو)، هر نامهٔ دیگر «با عنایت به» (در ارتباط).
+ *   - نامه شماره دارد (از اتوماسیون آمده)؟ شماره نوشته می‌شود؛ ندارد؟ فقط
+ *     تاریخ.
+ *   - محرمانه: بی‌ارجاع، مستقیم سرِ درخواست.
+ *
+ * این فایل فقط متن می‌سازد؛ پنجره و ثبتش در ui.minute.js است.
+ */
+(function (w) {
+  'use strict';
+
+  var J = w.J, M = w.Model, U = w.U;
+
+  /* جای خالی: شش نقطه، مثل فرم‌های چاپی. «...» نیست، چون خودِ متنِ ثابت
+     («استعفاء و ...») سه نقطه دارد و هشدارِ «جای خالی» را گیج می‌کرد. */
+  var BLANK = '......';
+
+  function fa(s) { return U.toFaDigits(String(s == null ? '' : s).trim()); }
+  function date(v) { return v && J.unpack(v) ? J.format(v) : ''; }
+  function norm(s) { return U.normalize(s || '').replace(/\s+/g, ''); }
+
+  /* ------------------------------------------------------------ رتبه */
+  var RANKS = [
+    { key: 'low', label: 'پایین‌دست', verb: 'مقتضی است' },
+    { key: 'peer', label: 'همتراز', verb: 'شایسته است' },
+    { key: 'high', label: 'بالادست', verb: 'خواهشمند است' }
+  ];
+  function verbOf(rank) {
+    var r = RANKS.filter(function (x) { return x.key === rank; })[0];
+    return (r || RANKS[1]).verb;
+  }
+
+  /* ------------------------------------------------------- نوع ارتباط */
+  var RELATIONS = [
+    { key: 'atf', label: 'عطف', lead: 'بازگشت به', line: 'عطف به' },
+    { key: 'peyro', label: 'پیرو', lead: 'پیرو', line: 'پیرو' },
+    { key: 'related', label: 'در ارتباط', lead: 'با عنایت به', line: 'در ارتباط با' }
+  ];
+  function relOf(key) {
+    return RELATIONS.filter(function (r) { return r.key === key; })[0] || RELATIONS[2];
+  }
+
+  /* ------------------------------------------------------- گیرنده‌ها */
+  /*
+   * kind:
+   *   employer  — کارفرمای قرارداد (شرکت، موسسه): «از کارکنان قراردادی آن شرکت»
+   *   workplace — جایی که کارمند کار می‌کند: «… شاغل در آن منطقه»
+   * match: اگر «نوع قرارداد» پرونده این باشد، همین گیرنده پیشنهاد می‌شود.
+   * {منطقه} و {محل خدمت} از خودِ پرونده پر می‌شوند.
+   */
+  var DEFAULT_RECIPIENTS = [
+    { id: 'khadamat', title: 'مدیرعامل محترم شرکت خدمات اداری شهر', rank: 'low',
+      kind: 'employer', unit: 'شرکت', match: 'شرکت خدمات اداری شهر' },
+    { id: 'hadian', title: 'مدیرعامل محترم موسسهٔ هادیان شهر', rank: 'low',
+      kind: 'employer', unit: 'موسسه', match: 'موسسه هادیان شهر' },
+    { id: 'region', title: 'معاون محترم مالی و اداری شهرداری {منطقه}', rank: 'peer',
+      kind: 'workplace', unit: 'منطقه', match: '' },
+    { id: 'mayor', title: 'شهردار محترم {منطقه}', rank: 'high',
+      kind: 'workplace', unit: 'منطقه', match: '' },
+    { id: 'deputy', title: 'معاون محترم شهردار تهران', rank: 'high',
+      kind: 'workplace', unit: 'معاونت', match: '' }
+  ];
+
+  var DEFAULT_DOCS = [
+    'فرم اعلام تخلف شمارهٔ ۱',
+    'صورتجلسهٔ شورای عملیاتی تحول اداری',
+    'پرینت تردد ایام غیبت'
+  ];
+
+  var DEFAULTS = {
+    recipients: DEFAULT_RECIPIENTS,
+    rulesNo: '1091348',
+    rulesDate: '14020925',
+    hearingTime: '14:00',
+    hearingPlace: 'شهرداری منطقهٔ یک',
+    docs: DEFAULT_DOCS
+  };
+
+  function conf() {
+    var saved = (M.state.settings || {}).minutes || {};
+    var out = {};
+    Object.keys(DEFAULTS).forEach(function (k) {
+      var v = saved[k];
+      out[k] = (v != null && v !== '' && !(Array.isArray(v) && !v.length)) ? v : DEFAULTS[k];
+    });
+    return out;
+  }
+
+  function saveConf(patch) {
+    return M.saveSettings({ minutes: Object.assign({}, conf(), patch) });
+  }
+
+  /** «شهرداری منطقه پنج» → «منطقه پنج» */
+  function regionOf(rec) {
+    var s = String((rec && rec.servicePlace) || '').trim();
+    return s.replace(/^شهرداری\s+/, '') || BLANK;
+  }
+
+  function titleFor(recipient, rec) {
+    return String(recipient.title || '')
+      .replace(/\{منطقه\}/g, regionOf(rec))
+      .replace(/\{محل خدمت\}/g, (rec && rec.servicePlace) || BLANK);
+  }
+
+  /** گیرندهٔ پیشنهادی: کارفرمای قرارداد، وگرنه محل خدمت (همتراز) */
+  function suggestRecipient(rec) {
+    var list = conf().recipients;
+    var ct = norm(rec && rec.contractType);
+    var hit = ct && list.filter(function (r) { return r.match && norm(r.match) === ct; })[0];
+    if (hit) return hit;
+    return list.filter(function (r) { return r.kind === 'workplace' && r.rank === 'peer'; })[0] ||
+      list[0];
+  }
+
+  /* ---------------------------------------------------- معرفی کارمند */
+  var COMPANY = { 'شرکتخدماتاداریشهر': 'شرکت', 'موسسههادیانشهر': 'موسسه' };
+
+  function honor(rec) { return rec.gender === 'زن' ? 'خانم' : 'آقای'; }
+  function nameOf(rec) {
+    return [rec.firstName, rec.lastName].filter(Boolean).join(' ').trim() || BLANK;
+  }
+
+  /** «آقای … و خانم …» / «آقایان … و …» */
+  function people(recs) {
+    if (recs.length === 1) return honor(recs[0]) + ' ' + nameOf(recs[0]);
+    var men = recs.every(function (r) { return r.gender !== 'زن'; });
+    var women = recs.every(function (r) { return r.gender === 'زن'; });
+    var names = recs.map(nameOf);
+    var joined = names.slice(0, -1).join('، ') + ' و ' + names[names.length - 1];
+    if (men) return 'آقایان ' + joined;
+    if (women) return 'خانم‌ها ' + joined;
+    return recs.map(function (r) { return honor(r) + ' ' + nameOf(r); }).slice(0, -1).join('، ') +
+      ' و ' + honor(recs[recs.length - 1]) + ' ' + nameOf(recs[recs.length - 1]);
+  }
+
+  /** «از کارکنان …» — بسته به اینکه نامه به کارفرما می‌رود یا به محل خدمت */
+  function staffOf(rec, recipient) {
+    var ct = String(rec.contractType || '').trim();
+    var company = COMPANY[norm(ct)];
+    var unit = recipient.unit || 'مجموعه';
+    if (company) {
+      return recipient.kind === 'employer'
+        ? 'از کارکنان قراردادی آن ' + company
+        : 'از کارکنان طرف قرارداد ' + ct + ' شاغل در آن ' + unit;
+    }
+    if (/مدت معین/.test(ct)) return 'از کارکنان قرارداد مدت معین آن ' + unit;
+    if (/دائم/.test(ct)) return 'از کارکنان قرارداد دائم آن ' + unit;
+    if (/رسمی/.test(ct)) return 'از کارکنان رسمی (کارگری) شاغل در آن ' + unit;
+    return 'از کارکنان شاغل در آن ' + unit;
+  }
+
+  function intro(recs, recipient, withNid) {
+    var who = people(recs);
+    if (withNid && recs.length === 1 && recs[0].nationalId) {
+      who += ' (کد ملی: ' + fa(recs[0].nationalId) + ')';
+    }
+    return who + ' ' + staffOf(recs[0], recipient);
+  }
+
+  /* ---------------------------------------------------------- ارجاع */
+  /*
+   * ref: { source, no, date, from, relation, copy }
+   *   source: 'case' (نامهٔ گزارش پرونده) | 'ours:<کلید>' | 'custom' | 'none'
+   *   relation: 'auto' | 'atf' | 'peyro' | 'related'
+   */
+  var OUR_LETTERS = [
+    { key: 'invitation', label: 'نامهٔ دعوت به کمیته', no: 'invitationLetterNo', date: 'invitationLetterDate' },
+    { key: 'defect', label: 'نامهٔ تکمیل مستندات', no: 'defectLetterNo', date: 'defectLetterDate' },
+    { key: 'salaryStop', label: 'نامهٔ بستن حقوق', no: 'salaryStopLetterNo', date: 'salaryStopLetterDate' },
+    { key: 'hearing', label: 'نامهٔ دعوت به جلسه', no: 'hearingLetterNo', date: 'hearingLetterDate' },
+    { key: 'securityOut', label: 'استعلام حراست', no: 'securityOutLetterNo', date: 'securityOutLetterDate' }
+  ];
+
+  /** نامهٔ مرجع، از روی منبعش */
+  function refLetter(rec, ref) {
+    ref = ref || {};
+    var src = ref.source || 'case';
+    if (src === 'none') return null;
+    if (src === 'custom') {
+      return { no: ref.no || '', date: J.parse(ref.date || ''), from: ref.from || '', ours: !!ref.ours };
+    }
+    if (src.indexOf('ours:') === 0) {
+      var l = OUR_LETTERS.filter(function (x) { return 'ours:' + x.key === src; })[0];
+      if (!l) return null;
+      return { no: rec[l.no] || '', date: rec[l.date] || '', from: '', ours: true, label: l.label };
+    }
+    return { no: rec.letterNo || '', date: rec.letterDate || '', from: rec.reporterOrg || '', ours: false };
+  }
+
+  /** عطف، پیرو یا در ارتباط — اگر کاربر خودش نگفته باشد */
+  function relationFor(letter, recipient, rec, ref) {
+    if (ref && ref.relation && ref.relation !== 'auto') return ref.relation;
+    if (!letter) return '';
+    if (letter.ours) return 'peyro';
+    if (ref && ref.copy) return 'related';
+    var from = norm(letter.from);
+    var to = norm(titleFor(recipient, rec)) + norm(recipient.match);
+    if (from && (to.indexOf(from) >= 0 || (norm(recipient.match) && from.indexOf(norm(recipient.match)) >= 0))) {
+      return 'atf';
+    }
+    return 'related';
+  }
+
+  /** «نامهٔ شمارهٔ … مورخ …» — بی‌شماره، فقط تاریخ */
+  function letterPhrase(letter) {
+    var bits = [];
+    if (letter.no) bits.push('شمارهٔ ' + fa(letter.no));
+    if (letter.date) bits.push('مورخ ' + date(letter.date));
+    return 'نامهٔ ' + (bits.join(' ') || BLANK);
+  }
+
+  function refClause(letter, relation, ref, recipient) {
+    if (!letter) return '';
+    var rel = relOf(relation);
+    var phrase = (ref && ref.copy ? 'رونوشت ' : '') + letterPhrase(letter);
+    // «با عنایت به نامهٔ … نهاد …» — فرستنده فقط وقتی گیرنده نیست، گفته می‌شود
+    if (relation === 'related' && letter.from && !letter.ours) phrase += ' ' + letter.from;
+    return rel.lead + ' ' + phrase;
+  }
+
+  /* -------------------------------------------------- بندهای ثابت */
+  function pron(recs) { return recs.length > 1 ? 'نامبردگان' : 'نامبرده'; }
+
+  function noExit(recs) {
+    return 'بدیهی است هرگونه خروج از خدمت ' + pron(recs) + ' (بازنشستگی، بازخرید، ' +
+      'استعفاء و ...) تا صدور رأی کمیتهٔ انضباط کار امکان‌پذیر نمی‌باشد.';
+  }
+  var VERDICT_LATER = 'شایان ذکر است رأی کمیتهٔ انضباط کار متعاقباً ارسال خواهد شد.';
+  var NOTE_30 = '((شایان ذکر است برابر تبصرهٔ ۳۰ مادهٔ ۳۶ آیین‌نامهٔ انضباط کار، هرگونه ' +
+    'خودداری یا جلوگیری از ابلاغ یا اجرای تصمیمات کمیته ممنوع بوده و با متخلفان طبق ' +
+    'تخلف مندرج در مادهٔ ۱۴ طبقهٔ ۲ ردیف ۳۵ مقررات آیین‌نامهٔ مذکور رفتار خواهد شد)).';
+
+  function appear(due) {
+    return 'حداکثر تا تاریخ ' + (date(due) || BLANK) + ' به دبیرخانهٔ کمیتهٔ انضباط کار مستقر ' +
+      'در این اداره کل مراجعه و ضمن تکمیل فرم دعوت به کمیتهٔ انضباط کار (به پیوست)، نتیجه ' +
+      'را به همراه مستندات لازم به این اداره کل ارسال نمایند.';
+  }
+
+  /** روز کاریِ پیش از جلسه، برای مهلتِ تصویر پیامک (جمعه و پنج‌شنبه نه) */
+  function dayBefore(d) {
+    var x = J.addDays(d, -1);
+    for (var i = 0; i < 3 && x; i++) {
+      var p = J.unpack(x);
+      var wd = J.weekdayIndex(p.jy, p.jm, p.jd);
+      if (wd !== 5 && wd !== 6) break;
+      x = J.addDays(x, -1);
+    }
+    return x;
+  }
+  function weekdayOf(d) {
+    var p = J.unpack(d);
+    return p ? J.weekday(p.jy, p.jm, p.jd) : BLANK;
+  }
+
+  /* ---------------------------------------------------- نوع‌های نامه */
+  /*
+   * هر نوع: opts پیش‌فرض از خودِ پرونده، و body که پاراگراف‌ها را می‌سازد.
+   * caseNo / caseDate: فیلدهای پرونده که شمارهٔ نامهٔ صادره در آن ثبت می‌شود.
+   */
+  var TYPES = [
+    {
+      key: 'invite', label: 'دعوت به کمیته', subject: 'دعوت به کمیتهٔ انضباط کار',
+      attach: 'فرم دعوت به کمیتهٔ انضباط کار',
+      caseNo: 'invitationLetterNo', caseDate: 'invitationLetterDate',
+      defaults: function (rec) {
+        return { due: rec.defenseDueDate || '', about: '' };
+      },
+      body: function (x) {
+        var s = x.lead + 'دستور فرمایید به ' + x.intro + '، ابلاغ گردد ' +
+          (x.opts.about ? 'جهت ادای توضیح در ارتباط با ' + x.opts.about + '، ' : '') +
+          appear(x.opts.due);
+        return [s + ' ' + noExit(x.recs) + ' ' + VERDICT_LATER];
+      }
+    },
+    {
+      key: 'hearing', label: 'دعوت به جلسهٔ کمیته', subject: 'دعوت به جلسهٔ کمیتهٔ انضباط کار',
+      attach: 'فرم دعوت به جلسه',
+      caseNo: 'hearingLetterNo', caseDate: 'hearingLetterDate',
+      defaults: function (rec, c) {
+        var d = rec.committeeDate || '';
+        return {
+          meetDate: d, time: c.hearingTime, place: c.hearingPlace,
+          proofDate: d ? dayBefore(d) : ''
+        };
+      },
+      body: function (x) {
+        var o = x.opts;
+        var many = x.recs.length > 1;
+        return [
+          x.lead + 'دستور فرمایید ' + x.intro + '، راس ساعت ' + fa(o.time || BLANK) + ' روز ' +
+            weekdayOf(o.meetDate) + ' مورخ ' + (date(o.meetDate) || BLANK) +
+            ' در جلسهٔ کمیتهٔ انضباط کار، که در ' + (o.place || BLANK) +
+            ' برگزار می‌شود، حضور به عمل رسانند. ضمناً نسبت به تکمیل و ارسال فرم دعوت به ' +
+            'جلسهٔ ' + pron(x.recs) + ' و مستندات لازم مندرج در فرم پیوست اقدام لازم به عمل آورند.',
+          'بدیهی است در صورت عدم حضور ' + pron(x.recs) + ' در واحد محل خدمتی، مراتب به صورت ' +
+            'تماس تلفنی و ارسال پیامک دعوت به جلسه، به شمارهٔ همراه ' + (many ? 'ایشان' : 'وی') +
+            ' ارسال و تصویر آن را حداکثر تا پایان وقت اداری روز ' + weekdayOf(o.proofDate) +
+            ' مورخ ' + (date(o.proofDate) || BLANK) + ' به این اداره کل ارسال نمایند.',
+          NOTE_30
+        ];
+      }
+    },
+    {
+      key: 'defect', label: 'تکمیل مستندات', subject: 'تکمیل مستندات پرونده',
+      caseNo: 'defectLetterNo', caseDate: 'defectLetterDate',
+      defaults: function (rec, c) {
+        return {
+          about: rec.caseType === 'غیبت' ? 'اعلام غیبت' : 'اعلام تخلف',
+          docs: c.docs.slice(), withInvite: false, due: rec.defenseDueDate || '',
+          withNid: true
+        };
+      },
+      attachOf: function (o) { return o.withInvite ? 'فرم شمارهٔ ۴ دعوت به کمیتهٔ انضباط کار' : ''; },
+      body: function (x) {
+        var o = x.opts, c = x.conf;
+        var about = 'در خصوص ' + o.about + ' ' + intro(x.recs, x.recipient, o.withNid);
+        var rules = 'با عنایت به ابلاغ آیین‌نامهٔ کمیتهٔ انضباط کار به شمارهٔ ' + fa(c.rulesNo) +
+          ' مورخ ' + date(c.rulesDate);
+        var docs = (o.docs || []).filter(Boolean);
+        var ask = 'نسبت به ارسال مدارک و مستندات' +
+          (docs.length ? ' (' + docs.join('، ') + ')' : ' لازم') + '، اقدام لازم معمول نمایند.';
+        var s = x.ref
+          ? x.ref + ' ' + about + ' و ' + rules + '، ' + x.verb + ' دستور فرمایید ' + ask
+          : rules + '، ' + x.verb + ' دستور فرمایید ' + about + ' ' + ask;
+        if (o.withInvite) {
+          s += ' همچنین ضمن تکمیل فرم شمارهٔ ۴ دعوت به کمیتهٔ انضباط کار (به پیوست) به ' +
+            pron(x.recs) + ' ابلاغ گردد حداکثر تا تاریخ ' + (date(o.due) || BLANK) +
+            ' به کمیتهٔ انضباط کار، مستقر در این اداره کل مراجعه نمایند.';
+        }
+        return [s, 'بدیهی است در صورت عدم وصول مستندات لازم، اقدامی جهت طرح و رسیدگی در ' +
+          'کمیتهٔ انضباط کار میسر نمی‌باشد.'];
+      }
+    },
+    {
+      key: 'salaryStop', label: 'بستن حقوق', subject: 'خودداری از پرداخت وجه',
+      caseNo: 'salaryStopLetterNo', caseDate: 'salaryStopLetterDate',
+      defaults: function (rec) {
+        return {
+          about: rec.caseType === 'غیبت' ? 'اعلام غیبت' : 'اعلام تخلف',
+          withInvite: true, due: rec.defenseDueDate || ''
+        };
+      },
+      attachOf: function (o) { return o.withInvite ? 'تصویر فرم دعوت به کمیتهٔ انضباط کار' : ''; },
+      body: function (x) {
+        var o = x.opts;
+        var about = 'در خصوص ' + o.about + ' ' + intro(x.recs, x.recipient, false);
+        var head = (x.ref ? x.ref + ' ' + about + '، ' + x.verb + ' دستور فرمایید'
+          : x.verb + ' دستور فرمایید در خصوص ' + o.about + ' ' + intro(x.recs, x.recipient, false) + '،');
+        var s = o.withInvite
+          ? head + ' ضمن خودداری از پرداخت هرگونه وجه، به ' + pron(x.recs) + ' ابلاغ گردد ' +
+            appear(o.due).replace('(به پیوست)', '(تصویر پیوست)')
+          : head + ' از پرداخت هرگونه وجه به ' + pron(x.recs) + ' خودداری نمایند.';
+        return [s + ' ' + noExit(x.recs) + ' ' + VERDICT_LATER];
+      }
+    }
+  ];
+
+  function typeOf(key) { return TYPES.filter(function (t) { return t.key === key; })[0] || TYPES[0]; }
+
+  /**
+   * ساختن یک مینوت.
+   *   type      — کلید نوع نامه
+   *   recs      — یک یا چند پرونده (اولی مبنای گیرنده و نامهٔ مرجع است)
+   *   o.recipient, o.ref, o.confidential, o.opts (گزینه‌های خاصِ نوع)
+   * برمی‌گرداند: { type, to, subject, relation, relationText, attach,
+   *               paragraphs, text, full }
+   */
+  function build(typeKey, recs, o) {
+    o = o || {};
+    var t = typeOf(typeKey);
+    var c = conf();
+    var rec = recs[0] || {};
+    var recipient = o.recipient || suggestRecipient(rec);
+    var opts = Object.assign({}, t.defaults(rec, c), o.opts || {});
+    var conf_ = !!o.confidential;
+    var letter = conf_ ? null : refLetter(rec, o.ref);
+    if (letter && !letter.no && !letter.date) letter = null;
+    var relation = letter ? relationFor(letter, recipient, rec, o.ref) : '';
+    var ref = letter ? refClause(letter, relation, o.ref, recipient) : '';
+    var verb = verbOf(recipient.rank);
+    var x = {
+      recs: recs, recipient: recipient, opts: opts, conf: c, ref: ref, verb: verb,
+      intro: intro(recs, recipient, false),
+      // «بازگشت به …، شایسته است » — ارجاع و فعل، با ویرگولِ میانشان
+      lead: (ref ? ref + '، ' : '') + verb + ' '
+    };
+    var paragraphs = ['با سلام و احترام؛'].concat(t.body(x));
+    var relationText = conf_ ? 'محرمانه — بدون ارجاع'
+      : (letter ? relOf(relation).line + ' ' + letterPhrase(letter) : 'بدون ارجاع');
+    var attach = t.attachOf ? t.attachOf(opts) : (t.attach || '');
+    var to = titleFor(recipient, rec);
+    var subject = t.subject + ' — ' + people(recs);
+    var text = paragraphs.join('\n');
+    var full = ['گیرنده: ' + to, 'موضوع: ' + subject, relationText,
+      attach ? 'پیوست: ' + attach : ''].filter(Boolean).join('\n') + '\n\n' + text;
+    return {
+      type: t, to: to, subject: subject, relation: relation, relationText: relationText,
+      attach: attach, letter: letter, recipient: recipient, opts: opts,
+      paragraphs: paragraphs, text: text, full: full, confidential: conf_
+    };
+  }
+
+  w.Minute = {
+    BLANK: BLANK, TYPES: TYPES, RANKS: RANKS, RELATIONS: RELATIONS, OUR_LETTERS: OUR_LETTERS,
+    DEFAULTS: DEFAULTS, conf: conf, saveConf: saveConf, typeOf: typeOf,
+    suggestRecipient: suggestRecipient, titleFor: titleFor, verbOf: verbOf,
+    refLetter: refLetter, relationFor: relationFor, people: people, staffOf: staffOf,
+    dayBefore: dayBefore, build: build
   };
 })(window);
 
@@ -18127,6 +18664,18 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     return doc;
   }
 
+  /** چاپ و وردِ یک سندِ آماده (مثلاً مینوت نامه)، بی‌ثبت در تاریخچه —
+      ثبتش کارِ خودِ سازنده است */
+  function printDoc(doc) {
+    area().appendChild(toHtml(doc));
+    run(doc.title);
+    return doc;
+  }
+  function wordDoc(doc, name) {
+    w.U.download(name || ((doc.file || doc.key) + '.docx'), toDocx(doc));
+    return doc;
+  }
+
   // نام‌های قبلی، برای سازگاری
   function printSummary(rec, extra) { return printForm('summary', rec, extra); }
   function printDefense(rec, extra) { return printForm('defense', rec, extra); }
@@ -18276,25 +18825,597 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       w.U.toast('اول پرونده را ذخیره کنید.', 'warn');
       return null;
     }
-    return w.Mobile.sheet('فرم‌های پروندهٔ ' + w.U.toLatinDigits(rec.caseNo || ''),
-      FORMS.map(function (form) {
+    // اول مینوت‌ها (متنی که در اتوماسیون می‌نشیند)، بعد فرم‌های چاپی
+    var minutes = w.UIMinute ? w.Minute.TYPES.map(function (t) {
+      return {
+        icon: 'fileText', label: 'مینوت ' + t.label,
+        hint: 'متن نامه برای اتوماسیون — گیرنده، عطف/پیرو و فعل خودکار',
+        onclick: function () { w.UIMinute.open(app, [rec], { type: t.key }); }
+      };
+    }).concat([{ sep: true }]) : [];
+    return w.Mobile.sheet('نامه و فرمِ پروندهٔ ' + w.U.toLatinDigits(rec.caseNo || ''),
+      minutes.concat(FORMS.map(function (form) {
         return {
           icon: form.paper === 'سربرگ' ? 'fileText' : 'file',
-          label: form.label,
+          label: 'فرم ' + form.label,
           hint: form.paper + ' — ' + form.hint,
           onclick: function () { formDialog(app, rec, form); }
         };
-      }));
+      })));
   }
 
   w.UILetters = {
     chooser: chooser, formDialog: formDialog, FORMS: FORMS,
     conf: conf, saveConf: saveConf, DEFAULTS: DEFAULTS,
     printForm: printForm, wordForm: wordForm, toHtml: toHtml, toDocx: toDocx,
+    printDoc: printDoc, wordDoc: wordDoc,
     build: function (kind, rec, extra) { return BUILDERS[kind](rec, extra || {}); },
     printSummary: printSummary, printDefense: printDefense,
     printVerdict: printVerdict, printNotice: printNotice
   };
+})(window);
+
+</script>
+<script>
+/* ==== assets/js/ui.minute.js ==== */
+/*
+ * پنجرهٔ «مینوت نامه».
+ *
+ * سمتِ راست، کلیدها: نوع نامه، گیرنده، نامهٔ مرجع، و چند گزینهٔ خاصِ همان
+ * نوع. سمتِ چپ، متنِ آماده — که با هر کلید همان لحظه از نو ساخته می‌شود.
+ *
+ * متن ویرایش‌پذیر است. ولی اگر دستش بزنید، دیگر خودکار بازسازی نمی‌شود
+ * (وگرنه با زدن یک کلید، نوشتهٔ شما می‌پرید)؛ دکمهٔ «ساختن دوباره» برش
+ * می‌گرداند.
+ *
+ * مینوت جزو کارهاست: اولین کپی، چاپ یا ورد در تاریخچهٔ پرونده ثبت می‌شود
+ * و از آنجا به کارنامه و خروجی کارکرد روزانه می‌رسد. شمارهٔ نامه که در
+ * اتوماسیون گرفته شد، همین‌جا در پرونده می‌نشیند و گردش‌کار جلو می‌رود.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, M = w.Model, J = w.J, MN = w.Minute;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+  function fmt(d) { return d && J.unpack(d) ? J.format(d) : ''; }
+
+  function copy(text, okMsg) {
+    function done(ok) {
+      w.U.toast(ok ? okMsg : 'کپی نشد؛ متن را انتخاب و با Ctrl+C کپی کنید.', ok ? 'good' : 'warn');
+    }
+    function fallback() {
+      var ta = el('textarea', { value: text });
+      ta.style.cssText = 'position:fixed;top:-2000px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+      return ok;
+    }
+    if (w.navigator.clipboard && w.navigator.clipboard.writeText) {
+      w.navigator.clipboard.writeText(text).then(function () { done(true); },
+        function () { done(fallback()); });
+      return;
+    }
+    done(fallback());
+  }
+
+  function check(label, on, onChange, title) {
+    var box = el('input', { type: 'checkbox' });
+    box.checked = !!on;
+    box.addEventListener('change', function () { onChange(box.checked); });
+    return el('label.mn-check', { title: title || '' }, [box, el('span', { text: label })]);
+  }
+
+  function row(label, node, hint) {
+    return el('label.field.mn-field', null, [
+      el('span.field-label', { text: label }), node,
+      hint ? el('span.mn-hint', { text: hint }) : null
+    ]);
+  }
+
+  function text(value, onInput, ph) {
+    var i = el('input.input.small', { type: 'text', value: value || '', placeholder: ph || '' });
+    i.addEventListener('input', function () { onInput(i.value); });
+    return i;
+  }
+
+  function dateIn(value, onChange) {
+    return w.DatePicker.field(value || '', onChange);
+  }
+
+  /* --------------------------------------------------------- پنجره */
+  /**
+   * open(app, recs, opts)
+   *   recs: یک یا چند پرونده (نامه معمولاً یک نفر است؛ گاهی چند نفر)
+   *   opts.type: نوع پیش‌فرض
+   */
+  function open(app, recs, startOpts) {
+    recs = (recs || []).filter(Boolean);
+    if (!recs.length) { w.U.toast('اول پرونده را ذخیره کنید.', 'warn'); return null; }
+    startOpts = startOpts || {};
+
+    var st = {
+      type: startOpts.type || 'invite',
+      recs: recs.slice(),
+      recipientId: MN.suggestRecipient(recs[0]).id,
+      ref: { source: 'case', relation: 'auto', copy: false },
+      confidential: false,
+      opts: {},
+      edited: false,
+      logged: {}
+    };
+    var result = null;
+
+    var controls = el('div.mn-controls');
+    var paper = el('div.mn-paper');
+    var headBox = el('div.mn-head');
+    var bodyArea = el('textarea.input.mn-body', { rows: 14, dir: 'rtl', spellcheck: false });
+    var rebuildBtn = el('button.linkish.tiny.mn-rebuild', {
+      type: 'button', text: 'ساختن دوباره از روی تنظیمات',
+      onclick: function () { st.edited = false; render(); }
+    });
+    rebuildBtn.style.display = 'none';
+    bodyArea.addEventListener('input', function () {
+      st.edited = true;
+      rebuildBtn.style.display = '';
+      var missing = bodyArea.value.indexOf(MN.BLANK) >= 0;
+      warnLine.style.display = missing ? '' : 'none';
+    });
+
+    function recipient() {
+      var list = MN.conf().recipients;
+      return list.filter(function (r) { return r.id === st.recipientId; })[0] || list[0];
+    }
+
+    function current() {
+      return MN.build(st.type, st.recs, {
+        recipient: recipient(), ref: st.ref, confidential: st.confidential, opts: st.opts
+      });
+    }
+
+    /** گزینه‌های خاصِ نوع، از پیش‌فرض‌های همان نوع برای پرونده */
+    function resetOpts() {
+      st.opts = MN.typeOf(st.type).defaults(st.recs[0], MN.conf());
+      st.edited = false;
+    }
+
+    /* ------------------------------------------------------ کلیدها */
+    function drawControls() {
+      w.U.clear(controls);
+
+      // نوع نامه
+      controls.appendChild(el('div.mn-types', { role: 'tablist' }, MN.TYPES.map(function (t) {
+        return el('button.mn-type' + (t.key === st.type ? '.on' : ''), {
+          type: 'button', text: t.label, role: 'tab',
+          onclick: function () {
+            if (t.key === st.type) return;
+            function go() { st.type = t.key; resetOpts(); drawControls(); render(); }
+            // نوعِ دیگر یعنی نامهٔ دیگر؛ ولی دست‌نوشته بی‌پرسش دور ریخته نمی‌شود
+            if (!st.edited) { go(); return; }
+            w.U.confirmBox('نوع نامه عوض شود؟',
+              'متنی که دستی تغییر داده‌اید کنار گذاشته می‌شود و متنِ ' + t.label +
+              ' از نو ساخته می‌شود.', 'عوض کن').then(function (ok) { if (ok) go(); });
+          }
+        });
+      })));
+
+      // افراد
+      var ppl = el('div.mn-people');
+      st.recs.forEach(function (r, i) {
+        ppl.appendChild(el('span.mn-person', null, [
+          el('span', { text: [r.firstName, r.lastName].filter(Boolean).join(' ') || '—' }),
+          el('span.reg-no', { text: w.U.toLatinDigits(r.caseNo || '') }),
+          st.recs.length > 1 ? el('button.mn-x', {
+            type: 'button', text: '✕', title: 'برداشتن از نامه',
+            onclick: function () { st.recs.splice(i, 1); drawControls(); render(); }
+          }) : null
+        ]));
+      });
+      var listId = 'mn-cases-' + Math.random().toString(36).slice(2, 7);
+      var add = el('input.input.small.mn-add', {
+        type: 'text', list: listId, placeholder: '＋ نفر دیگر (شماره یا نام)'
+      });
+      var opts = {};
+      var dl = el('datalist', { id: listId });
+      M.scoped().forEach(function (c) {
+        if (st.recs.some(function (r) { return r.id === c.id; })) return;
+        var label = w.U.toLatinDigits(c.caseNo || '') + ' — ' +
+          [c.firstName, c.lastName].filter(Boolean).join(' ');
+        opts[label] = c;
+        dl.appendChild(el('option', { value: label }));
+      });
+      add.addEventListener('change', function () {
+        var c = opts[add.value];
+        if (!c) return;
+        st.recs.push(c);
+        drawControls();
+        render();
+      });
+      controls.appendChild(row('کارمند' + (st.recs.length > 1 ? 'ان' : ''),
+        el('div', null, [ppl, add, dl]),
+        'معمولاً یک نفر؛ اگر نامه چند نفر را در بر می‌گیرد، اضافه کنید.'));
+
+      // گیرنده
+      var rsel = el('select.input.small');
+      MN.conf().recipients.forEach(function (r) {
+        var rank = MN.RANKS.filter(function (k) { return k.key === r.rank; })[0];
+        rsel.appendChild(el('option', {
+          value: r.id, text: MN.titleFor(r, st.recs[0]) + ' — ' + (rank ? rank.label : '')
+        }));
+      });
+      rsel.value = st.recipientId;
+      rsel.addEventListener('change', function () {
+        st.recipientId = rsel.value; drawControls(); render();
+      });
+      var rk = recipient();
+      controls.appendChild(row('گیرنده', rsel,
+        (MN.RANKS.filter(function (k) { return k.key === rk.rank; })[0] || {}).label +
+        ' ← «' + MN.verbOf(rk.rank) + '». فهرست و رتبه‌ها در تنظیمات.'));
+
+      // نامهٔ مرجع
+      var rec = st.recs[0];
+      var src = el('select.input.small');
+      var hasCase = rec.letterNo || rec.letterDate;
+      src.appendChild(el('option', {
+        value: 'case',
+        text: 'نامهٔ گزارش پرونده' + (hasCase
+          ? ' (' + [rec.letterNo ? 'ش ' + fa(rec.letterNo) : '', fmt(rec.letterDate)]
+            .filter(Boolean).join(' — ') + (rec.reporterOrg ? '، ' + rec.reporterOrg : '') + ')'
+          : ' — ثبت نشده')
+      }));
+      MN.OUR_LETTERS.forEach(function (l) {
+        if (!rec[l.no] && !rec[l.date]) return;
+        src.appendChild(el('option', {
+          value: 'ours:' + l.key,
+          text: 'نامهٔ خودمان: ' + l.label + ' (' + [rec[l.no] ? 'ش ' + fa(rec[l.no]) : '',
+            fmt(rec[l.date])].filter(Boolean).join(' — ') + ')'
+        }));
+      });
+      src.appendChild(el('option', { value: 'custom', text: 'نامهٔ دیگر…' }));
+      src.appendChild(el('option', { value: 'none', text: 'بدون ارجاع' }));
+      src.value = st.ref.source;
+      src.disabled = st.confidential;
+      src.addEventListener('change', function () {
+        st.ref.source = src.value; drawControls(); render();
+      });
+      controls.appendChild(row('نامهٔ مرجع', src));
+
+      if (st.ref.source === 'custom' && !st.confidential) {
+        controls.appendChild(el('div.mn-grid', null, [
+          row('شمارهٔ نامه', text(st.ref.no, function (v) { st.ref.no = v; render(); },
+            'اگر از اتوماسیون آمده')),
+          row('تاریخ نامه', dateIn(st.ref.date, function (v) { st.ref.date = v; render(); })),
+          row('از طرفِ', text(st.ref.from, function (v) { st.ref.from = v; render(); },
+            'مثلاً نهاد راهبردی …')),
+          el('div.mn-field', null, [check('نامهٔ خودمان است (پیرو)', st.ref.ours, function (v) {
+            st.ref.ours = v; render();
+          })])
+        ]));
+      }
+
+      // نوع ارتباط
+      var built = current();
+      var rel = el('select.input.small');
+      rel.appendChild(el('option', {
+        value: 'auto',
+        text: 'خودکار' + (built.relation ? ': ' + (MN.RELATIONS.filter(function (r) {
+          return r.key === built.relation;
+        })[0] || {}).label : '')
+      }));
+      MN.RELATIONS.forEach(function (r) {
+        rel.appendChild(el('option', { value: r.key, text: r.label + ' — «' + r.lead + '»' }));
+      });
+      rel.value = st.ref.relation;
+      rel.disabled = st.confidential || st.ref.source === 'none';
+      rel.addEventListener('change', function () { st.ref.relation = rel.value; render(); });
+      controls.appendChild(row('نوع ارتباط', rel,
+        'نامهٔ خودِ گیرنده: عطف. نامهٔ خودمان: پیرو. بقیه: در ارتباط.'));
+
+      controls.appendChild(el('div.mn-checks', null, [
+        check('رونوشت نامه به ما رسیده', st.ref.copy, function (v) {
+          st.ref.copy = v; drawControls(); render();
+        }, '«با عنایت به رونوشت نامهٔ …»'),
+        check('محرمانه (بدون ارجاع)', st.confidential, function (v) {
+          st.confidential = v; drawControls(); render();
+        }, 'نامهٔ محرمانه پیوست و ارجاع ندارد؛ مستقیم سرِ درخواست می‌رود')
+      ]));
+
+      controls.appendChild(el('h5.mn-sub', { text: 'جزئیاتِ ' + MN.typeOf(st.type).label }));
+      controls.appendChild(typeControls());
+    }
+
+    function typeControls() {
+      var o = st.opts, box = el('div.mn-grid');
+      var set = function (k) { return function (v) { o[k] = v; render(); }; };
+      if (st.type === 'invite') {
+        box.appendChild(row('مهلت مراجعه', dateIn(o.due, set('due')),
+          st.recs[0].defenseDueDate ? 'از «مهلت حضور و ارائه دفاعیه»' : ''));
+        box.appendChild(row('در ارتباط با (اختیاری)', text(o.about, set('about'),
+          'مثلاً قرارداد شمارهٔ …')));
+      } else if (st.type === 'hearing') {
+        box.appendChild(row('تاریخ جلسه', dateIn(o.meetDate, function (v) {
+          o.meetDate = v;
+          o.proofDate = v ? MN.dayBefore(v) : '';
+          drawControls(); render();
+        })));
+        box.appendChild(row('ساعت', text(o.time, set('time'))));
+        box.appendChild(row('محل برگزاری', text(o.place, set('place'))));
+        box.appendChild(row('مهلت تصویر پیامک', dateIn(o.proofDate, set('proofDate')),
+          'روز کاریِ پیش از جلسه'));
+      } else if (st.type === 'defect') {
+        box.appendChild(row('در خصوص', text(o.about, set('about'))));
+        var docs = el('div.mn-docs');
+        var all = MN.conf().docs.concat((o.docs || []).filter(function (d) {
+          return MN.conf().docs.indexOf(d) < 0;
+        }));
+        all.forEach(function (d) {
+          docs.appendChild(check(d, (o.docs || []).indexOf(d) >= 0, function (on) {
+            o.docs = (o.docs || []).filter(function (x) { return x !== d; });
+            if (on) o.docs.push(d);
+            render();
+          }));
+        });
+        var more = el('input.input.small', { type: 'text', placeholder: '＋ مدرک دیگر و Enter' });
+        more.addEventListener('keydown', function (e) {
+          if (e.key !== 'Enter' || !more.value.trim()) return;
+          e.preventDefault();
+          o.docs = (o.docs || []).concat([more.value.trim()]);
+          drawControls(); render();
+        });
+        docs.appendChild(more);
+        box.appendChild(row('مدارک خواسته‌شده', docs));
+        box.appendChild(el('div.mn-field', null, [
+          check('کد ملی در متن', o.withNid, function (v) { o.withNid = v; render(); }),
+          check('همراه با دعوت به کمیته', o.withInvite, function (v) {
+            o.withInvite = v; drawControls(); render();
+          })
+        ]));
+        if (o.withInvite) box.appendChild(row('مهلت مراجعه', dateIn(o.due, set('due'))));
+      } else if (st.type === 'salaryStop') {
+        box.appendChild(row('در خصوص', text(o.about, set('about'))));
+        box.appendChild(el('div.mn-field', null, [
+          check('همراه با دعوت به کمیته', o.withInvite, function (v) {
+            o.withInvite = v; drawControls(); render();
+          }, 'بی‌تیک: فقط «از پرداخت هرگونه وجه خودداری نمایند»')
+        ]));
+        if (o.withInvite) box.appendChild(row('مهلت مراجعه', dateIn(o.due, set('due'))));
+      }
+      return box;
+    }
+
+    /* -------------------------------------------------------- کاغذ */
+    function headLine(label, value) {
+      return el('div.mn-hl', null, [
+        el('span.mn-hk', { text: label }),
+        el('span.mn-hv', { text: value }),
+        el('button.mn-copy1', {
+          type: 'button', text: 'کپی', title: 'کپی همین سطر',
+          onclick: function () { copy(value, 'کپی شد.'); }
+        })
+      ]);
+    }
+
+    function render() {
+      result = current();
+      w.U.clear(headBox);
+      headBox.appendChild(headLine('گیرنده', result.to));
+      headBox.appendChild(headLine('موضوع', result.subject));
+      headBox.appendChild(headLine(result.confidential ? 'محرمانه' : 'ارتباط', result.relationText));
+      if (result.attach) headBox.appendChild(headLine('پیوست', result.attach));
+      if (!st.edited) {
+        bodyArea.value = result.text;
+        rebuildBtn.style.display = 'none';
+      }
+      var missing = bodyArea.value.indexOf(MN.BLANK) >= 0;
+      warnLine.textContent = missing
+        ? 'جاهای «' + MN.BLANK + '» هنوز خالی‌اند — از کلیدهای سمت راست یا خودِ پرونده پرشان کنید.' : '';
+      warnLine.style.display = missing ? '' : 'none';
+      fillReg();
+    }
+
+    var warnLine = el('p.mn-warn');
+
+    /* ------------------------------------------------ ثبت در کارها */
+    /** اولین خروجیِ هر نوع، در تاریخچهٔ هر پرونده ثبت می‌شود */
+    function log(how) {
+      if (st.logged[st.type]) return;
+      st.logged[st.type] = true;
+      st.recs.forEach(function (r) {
+        M.addHistory('minute', r, [], 'مینوت ' + result.type.label + ' — ' + result.to +
+          ' (' + how + ')');
+      });
+    }
+
+    function bodyText() { return bodyArea.value; }
+
+    function asDoc() {
+      return {
+        key: 'minute', paper: 'letterhead', title: 'مینوت ' + result.type.label,
+        file: 'minute-' + result.type.key,
+        blocks: [
+          { t: 'to', lines: [result.to, 'موضوع: ' + result.subject] },
+          { t: 'small', text: result.relationText + (result.attach ? ' — پیوست: ' + result.attach : '') }
+        ].concat(bodyText().split('\n').filter(function (l) { return l.trim(); }).map(function (p, i) {
+          return { t: 'p', justify: i > 0, text: p };
+        }))
+      };
+    }
+
+    /* ---------------------------------------- شمارهٔ نامهٔ صادره */
+    var regNo = el('input.input.small', { type: 'text', placeholder: 'شمارهٔ نامه در اتوماسیون' });
+    var regDate = J.today();
+    var regDateNode = dateIn(regDate, function (v) { regDate = v; });
+    var regNote = el('span.mn-hint');
+    function fillReg() {
+      var t = result.type;
+      var f = M.FIELD_BY_KEY[t.caseNo];
+      regNote.textContent = f ? 'در «' + String(f.label).replace(/\(\d[^)]*\)/g, '') + '»' +
+        (st.recs.length > 1 ? ' هر ' + fa(st.recs.length) + ' پرونده' : '') + ' می‌نشیند.' : '';
+    }
+    var regBtn = el('button.btn.small', {
+      type: 'button', text: 'ثبت در پرونده',
+      onclick: function () {
+        var t = result.type, o = result.opts;
+        if (!regNo.value.trim()) { w.U.toast('شمارهٔ نامه را بنویسید.', 'warn'); regNo.focus(); return; }
+        var list = st.recs.map(function (r) {
+          var p = {};
+          p[t.caseNo] = regNo.value.trim();
+          p[t.caseDate] = regDate || J.today();
+          // مهلت و تاریخ جلسه، اگر پرونده هنوز نداشت، از همین نامه
+          if ((t.key === 'invite' || o.withInvite) && o.due && !r.defenseDueDate) p.defenseDueDate = o.due;
+          if (t.key === 'salaryStop' && o.withInvite && !r.invitationLetterNo) {
+            p.invitationLetterNo = p[t.caseNo];
+            p.invitationLetterDate = p[t.caseDate];
+          }
+          if (t.key === 'hearing' && o.meetDate && !r.committeeDate) p.committeeDate = o.meetDate;
+          return { id: r.id, patch: p, note: 'شمارهٔ نامهٔ صادره از مینوت ' + t.label };
+        });
+        M.applyPatches(list, { kind: 'update', note: 'ثبت شمارهٔ نامهٔ صادره' }).then(function (res) {
+          if (w.Checklist) st.recs.forEach(function (r) { w.Checklist.sync(M.get(r.id)); });
+          w.U.toast('شمارهٔ نامه در ' + fa(res.changed) + ' پرونده ثبت شد.', 'good');
+          if (app && app.render) app.render();
+        });
+      }
+    });
+
+    /* -------------------------------------------------------- چیدمان */
+    paper.appendChild(headBox);
+    paper.appendChild(el('div.mn-body-wrap', null, [bodyArea, rebuildBtn]));
+    paper.appendChild(warnLine);
+    paper.appendChild(el('div.mn-reg', null, [
+      el('b', { text: 'شمارهٔ نامه را گرفتید؟' }),
+      regNo, regDateNode, regBtn, regNote
+    ]));
+
+    var body = el('div.mn-dialog', null, [controls, paper]);
+    resetOpts();
+    if (startOpts.opts) Object.assign(st.opts, startOpts.opts);
+    drawControls();
+    render();
+
+    var m = w.U.modal('مینوت نامه', body, [
+      el('button.btn.ghost', { type: 'button', text: 'بستن', onclick: function () { m.close(); } }),
+      el('button.btn', {
+        type: 'button', text: 'چاپ',
+        onclick: function () { log('چاپ'); m.close(); w.UILetters.printDoc(asDoc()); }
+      }),
+      el('button.btn', {
+        type: 'button', text: 'ورد',
+        onclick: function () {
+          log('ورد');
+          var caseNo = w.U.toLatinDigits(st.recs[0].caseNo || '').replace(/[^\w.-]+/g, '-');
+          w.UILetters.wordDoc(asDoc(), 'minute-' + result.type.key + (caseNo ? '-' + caseNo : '') + '.docx');
+        }
+      }),
+      el('button.btn', {
+        type: 'button', text: 'کپی با سربرگ',
+        title: 'گیرنده، موضوع، ارتباط و پیوست، و بعد متن',
+        onclick: function () {
+          log('کپی');
+          var r = result;
+          copy(['گیرنده: ' + r.to, 'موضوع: ' + r.subject, r.relationText,
+            r.attach ? 'پیوست: ' + r.attach : ''].filter(Boolean).join('\n') + '\n\n' + bodyText(),
+          'مینوت با سربرگ کپی شد.');
+        }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'کپی برای اتوماسیون',
+        onclick: function () { log('کپی'); copy(bodyText(), 'متن نامه کپی شد؛ در اتوماسیون بچسبانید.'); }
+      })
+    ]);
+    m.root.classList.add('minute-modal');
+    m.state = st;
+    m.result = function () { return result; };
+    return m;
+  }
+
+  /* ------------------------------------------------- بخش تنظیمات */
+  function settingsBlock() {
+    var c = MN.conf();
+    var data = JSON.parse(JSON.stringify(c.recipients));
+    var list = el('div.mn-rcp-list');
+    function draw() {
+      w.U.clear(list);
+      data.forEach(function (r, i) {
+        var title = el('input.input.small', { type: 'text', value: r.title });
+        title.addEventListener('input', function () { r.title = title.value; });
+        var rank = el('select.input.small');
+        MN.RANKS.forEach(function (k) {
+          rank.appendChild(el('option', { value: k.key, text: k.label + ' — ' + k.verb }));
+        });
+        rank.value = r.rank;
+        rank.addEventListener('change', function () { r.rank = rank.value; });
+        var kind = el('select.input.small');
+        [['employer', 'کارفرمای قرارداد'], ['workplace', 'محل خدمت'], ['other', 'سایر']]
+          .forEach(function (k) { kind.appendChild(el('option', { value: k[0], text: k[1] })); });
+        kind.value = r.kind || 'workplace';
+        kind.addEventListener('change', function () { r.kind = kind.value; });
+        var unit = el('input.input.small', { type: 'text', value: r.unit || '', placeholder: 'منطقه / سازمان / شرکت' });
+        unit.addEventListener('input', function () { r.unit = unit.value; });
+        var match = el('input.input.small', { type: 'text', value: r.match || '', placeholder: 'نوع قرارداد (اختیاری)' });
+        match.addEventListener('input', function () { r.match = match.value; });
+        list.appendChild(el('div.mn-rcp', null, [
+          title, rank, kind, unit, match,
+          el('button.btn.small.ghost', {
+            type: 'button', text: 'حذف',
+            onclick: function () { data.splice(i, 1); draw(); }
+          })
+        ]));
+      });
+    }
+    draw();
+    var rulesNo = el('input.input.small', { type: 'text', value: c.rulesNo });
+    var rulesDate = c.rulesDate;
+    var time = el('input.input.small', { type: 'text', value: c.hearingTime });
+    var place = el('input.input.small', { type: 'text', value: c.hearingPlace });
+    var docs = el('textarea.input.area', { rows: 3, value: c.docs.join('\n') });
+
+    return el('section.set-block.mn-settings', null, [
+      el('h4', { text: 'مینوت نامه' }),
+      el('p.set-note', {
+        text: 'رتبهٔ گیرنده فعلِ نامه را تعیین می‌کند: پایین‌دست «مقتضی است»، همتراز ' +
+          '«شایسته است»، بالادست «خواهشمند است». در عنوان، {منطقه} و {محل خدمت} از ' +
+          'خودِ پرونده پر می‌شوند. «نوع قرارداد» که بخورد، همان گیرنده پیشنهاد می‌شود.'
+      }),
+      el('div.mn-rcp.mn-rcp-head', null, ['عنوان گیرنده', 'رتبه', 'جنس', 'واحد («آن …»)',
+        'نوع قرارداد', ''].map(function (t) { return el('span', { text: t }); })),
+      list,
+      el('div.btn-row', null, [
+        el('button.btn.small.ghost', {
+          type: 'button', text: '＋ گیرندهٔ تازه',
+          onclick: function () {
+            data.push({ id: w.U.uid(), title: '', rank: 'peer', kind: 'workplace', unit: 'منطقه', match: '' });
+            draw();
+          }
+        })
+      ]),
+      el('div.mn-conf-grid', null, [
+        row('شمارهٔ ابلاغ آیین‌نامه', rulesNo),
+        row('تاریخ ابلاغ آیین‌نامه', dateIn(rulesDate, function (v) { rulesDate = v; })),
+        row('ساعت پیش‌فرض جلسه', time),
+        row('محل پیش‌فرض جلسه', place)
+      ]),
+      row('مدارک پیش‌فرض «تکمیل مستندات» — هر سطر یکی', docs),
+      el('div.btn-row', null, [
+        el('button.btn.small.primary', {
+          type: 'button', text: 'ذخیرهٔ تنظیمات مینوت',
+          onclick: function () {
+            MN.saveConf({
+              recipients: data.filter(function (r) { return String(r.title).trim(); }),
+              rulesNo: rulesNo.value.trim(), rulesDate: rulesDate,
+              hearingTime: time.value.trim(), hearingPlace: place.value.trim(),
+              docs: docs.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean)
+            }).then(function () { w.U.toast('تنظیمات مینوت ذخیره شد.', 'good'); });
+          }
+        })
+      ])
+    ]);
+  }
+
+  w.UIMinute = { open: open, settingsBlock: settingsBlock };
 })(window);
 
 </script>
@@ -18951,6 +20072,13 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         onclick: function () { app.clearSelection(); app.render(); }
       }));
       selBar.appendChild(el('button.btn.small.ghost', {
+        type: 'button', text: 'مینوت نامه',
+        title: 'یک نامه برای همهٔ انتخاب‌شده‌ها (آقایان … و …)',
+        onclick: function () {
+          w.UIMinute.open(app, ids.map(function (id) { return M.get(id); }));
+        }
+      }));
+      selBar.appendChild(el('button.btn.small.ghost', {
         type: 'button', text: 'ارجاع به کارشناس دیگر',
         title: 'این پرونده‌ها از کارتابل شما بیرون می‌روند',
         onclick: function () {
@@ -19263,7 +20391,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     'doc-sync': 'هم‌خوان‌سازی از سند', 'stage': 'تنظیم مرحله',
     'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه',
     'form': 'فرم اداری', 'doc-edit': 'ویرایش مشخصات سند',
-    'checklist': 'چک‌لیست مرحله', 'task-skip': 'کار لازم نبود'
+    'checklist': 'چک‌لیست مرحله', 'task-skip': 'کار لازم نبود',
+    'minute': 'مینوت نامه'
   };
 
   function kindLabel(kind) {
@@ -20341,8 +21470,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       onclick: function () {
         w.Mobile.sheet('پروندهٔ ' + w.U.toLatinDigits(existing.caseNo || ''), [
           {
-            icon: 'fileText', label: 'فرم‌های اداری',
-            hint: 'خلاصهٔ پرونده، تفهیم اتهام، رأی، ابلاغ رأی',
+            icon: 'fileText', label: 'نامه و فرم',
+            hint: 'مینوت نامه (دعوت، جلسه، تکمیل مستندات، بستن حقوق) و فرم‌های اداری',
             onclick: function () { w.UILetters.chooser(app, existing); }
           },
           {
@@ -20374,9 +21503,11 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       }
     }) : null;
 
+    /* نوار اقدام‌ها کوتاه می‌ماند: مینوت نامه و فرم‌های اداری یک دکمه‌اند،
+       که فهرستش اول چهار مینوت را دارد و بعد فرم‌ها را. */
     var formsBtn = existing ? el('button.btn.ghost.case-forms', {
-      type: 'button', text: 'فرم‌ها',
-      title: 'خلاصهٔ پرونده، تفهیم اتهام، رأی و ابلاغ رأی',
+      type: 'button', text: 'نامه و فرم',
+      title: 'مینوت نامه (دعوت، جلسه، تکمیل مستندات، بستن حقوق) و فرم‌های اداری',
       onclick: function () { w.UILetters.chooser(app, existing); }
     }) : null;
 
@@ -22726,6 +23857,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         ccInput
       ])
     ]));
+
+    body.appendChild(w.UIMinute.settingsBlock());
 
     var editor = listsEditor();
     body.appendChild(el('section.set-block', null, [
@@ -29026,6 +30159,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       tally([
         { value: t.letters, label: 'نامهٔ صادره',
           hint: 'نامه‌هایی که تاریخشان در این بازه ثبت شده' },
+        { value: t.minutes, label: 'مینوت نامه',
+          hint: 'مینوت‌هایی که کپی، چاپ یا ورد شدند' },
         { value: t.sessions, label: 'طرح در کمیته' },
         { value: t.verdicts, label: 'رأی صادره' },
         { value: t.docs, label: 'سند بایگانی‌شده',
@@ -29265,6 +30400,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     section('خلاصه');
     twoCol([
       ['نامهٔ صادره', fa(t.letters)],
+      ['مینوت نامه', fa(t.minutes || 0)],
       ['پروندهٔ طرح‌شده در کمیته', fa(t.sessions)],
       ['رأی صادره', fa(t.verdicts)],
       ['سند بایگانی‌شده',

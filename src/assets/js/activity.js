@@ -77,6 +77,7 @@
 
     // ------------------------------------------------- فرم و صورت‌جلسه
     { key: 'form.make', label: 'ساختن فرم اداری (چاپ یا ورد)', group: 'letter', source: 'history', from: 'form' },
+    { key: 'letter.minute', label: 'نوشتن مینوت نامه (کپی، چاپ یا ورد)', group: 'letter', source: 'history', from: 'minute' },
     { key: 'committee.minutes', label: 'ثبت صورت‌جلسهٔ کمیته', group: 'committee', source: 'history', from: 'session' },
 
     // ------------------- کارِ واقعیِ ثبت‌شده در خودِ پرونده (تاریخ‌ها)

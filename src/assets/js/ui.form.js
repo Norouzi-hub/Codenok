@@ -96,7 +96,8 @@
     'doc-sync': 'هم‌خوان‌سازی از سند', 'stage': 'تنظیم مرحله',
     'bulk': 'اقدام دسته‌ای', 'session': 'صورت‌جلسه',
     'form': 'فرم اداری', 'doc-edit': 'ویرایش مشخصات سند',
-    'checklist': 'چک‌لیست مرحله', 'task-skip': 'کار لازم نبود'
+    'checklist': 'چک‌لیست مرحله', 'task-skip': 'کار لازم نبود',
+    'minute': 'مینوت نامه'
   };
 
   function kindLabel(kind) {
@@ -1174,8 +1175,8 @@
       onclick: function () {
         w.Mobile.sheet('پروندهٔ ' + w.U.toLatinDigits(existing.caseNo || ''), [
           {
-            icon: 'fileText', label: 'فرم‌های اداری',
-            hint: 'خلاصهٔ پرونده، تفهیم اتهام، رأی، ابلاغ رأی',
+            icon: 'fileText', label: 'نامه و فرم',
+            hint: 'مینوت نامه (دعوت، جلسه، تکمیل مستندات، بستن حقوق) و فرم‌های اداری',
             onclick: function () { w.UILetters.chooser(app, existing); }
           },
           {
@@ -1207,9 +1208,11 @@
       }
     }) : null;
 
+    /* نوار اقدام‌ها کوتاه می‌ماند: مینوت نامه و فرم‌های اداری یک دکمه‌اند،
+       که فهرستش اول چهار مینوت را دارد و بعد فرم‌ها را. */
     var formsBtn = existing ? el('button.btn.ghost.case-forms', {
-      type: 'button', text: 'فرم‌ها',
-      title: 'خلاصهٔ پرونده، تفهیم اتهام، رأی و ابلاغ رأی',
+      type: 'button', text: 'نامه و فرم',
+      title: 'مینوت نامه (دعوت، جلسه، تکمیل مستندات، بستن حقوق) و فرم‌های اداری',
       onclick: function () { w.UILetters.chooser(app, existing); }
     }) : null;
 

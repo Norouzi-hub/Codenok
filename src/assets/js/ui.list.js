@@ -649,6 +649,13 @@
         onclick: function () { app.clearSelection(); app.render(); }
       }));
       selBar.appendChild(el('button.btn.small.ghost', {
+        type: 'button', text: 'مینوت نامه',
+        title: 'یک نامه برای همهٔ انتخاب‌شده‌ها (آقایان … و …)',
+        onclick: function () {
+          w.UIMinute.open(app, ids.map(function (id) { return M.get(id); }));
+        }
+      }));
+      selBar.appendChild(el('button.btn.small.ghost', {
         type: 'button', text: 'ارجاع به کارشناس دیگر',
         title: 'این پرونده‌ها از کارتابل شما بیرون می‌روند',
         onclick: function () {
