@@ -17,13 +17,12 @@
   function engine() {
     if (enginePromise) return enginePromise;
     enginePromise = new Promise(function (resolve, reject) {
-      var holder = document.getElementById('sqljs-wasm');
-      if (typeof w.initSqlJs !== 'function' || !holder) {
+      if (!available()) {
         return reject(new Error('موتور SQLite در این نسخه جاسازی نشده است'));
       }
       var binary;
       try {
-        binary = base64ToBytes(holder.textContent.replace(/\s+/g, ''));
+        binary = base64ToBytes(String(w.SQLJS_WASM_B64).replace(/\s+/g, ''));
       } catch (e) {
         return reject(new Error('خواندن موتور SQLite ناموفق بود'));
       }
@@ -83,7 +82,7 @@
   }
 
   function available() {
-    return typeof w.initSqlJs === 'function' && !!document.getElementById('sqljs-wasm');
+    return typeof w.initSqlJs === 'function' && !!w.SQLJS_WASM_B64;
   }
 
   w.SQLiteOut = { build: build, available: available };

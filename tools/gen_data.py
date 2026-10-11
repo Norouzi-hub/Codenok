@@ -181,7 +181,12 @@ GROUPS = [
 # «سال رسیدگی» به درخواست کاربر از تب پرونده برداشته شد: از تاریخ ورود
 # خودش درمی‌آید و جای تکراری می‌گرفت. گزارش‌ها همچنان با آن فیلتر می‌کنند
 # و اگر خالی باشد، سالِ تاریخ ورود مبنا می‌شود.
-HIDE_FROM_FORM = {'year', 'caseSummary'}
+HIDE_FROM_FORM = {'year', 'caseSummary', 'postTitle'}
+
+# پنهان، مگر پرونده‌ای که از قبل مقدار دارد: «نام پست» به درخواست کاربر از
+# فرم رفت (همان «نام شغل» را تکرار می‌کرد)، ولی آنچه قبلاً نوشته شده نباید
+# بی‌صدا ناپدید شود.
+LEGACY_FIELDS = {'postTitle'}
 
 # فیلدهایی که به‌صورت پیش‌فرض در جدول فهرست دیده می‌شوند
 DEFAULT_COLUMNS = [
@@ -307,6 +312,8 @@ def main(xlsx_path):
             f['list'] = SELECT_LISTS[key]
         if key in HIDE_FROM_FORM:
             f['hidden'] = True
+        if key in LEGACY_FIELDS:
+            f['legacy'] = True
         fields.append(f)
     # فیلدهای گردش‌کار، بعد از فیلدهای اکسل و در گروه خودشان
     for key, label, kind, group in EXTRA_FIELDS:

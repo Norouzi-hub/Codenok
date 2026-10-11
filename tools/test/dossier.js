@@ -11,7 +11,7 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const { chromium } = require(process.env.PW || 'playwright');
 
-const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const APP = 'file://' + path.resolve(__dirname, '../../dist/nokman/index.html');
 const bootApp = require('./boot');
 const MOCK_FS = require('./mockfs');
 const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'dossier-'));
@@ -578,7 +578,9 @@ function fakeFile(name, text, type) {
   // «سال رسیدگی» هم به درخواست کاربر از فرم برداشته شد
   // «خلاصهٔ پرونده» هم فیلدِ واقعی است ولی جایش تب «کارها و یادداشت‌ها»ست
   check('فیلدهای پنهان در فرم نمی‌آیند',
-    kept.hidden.length === 5 && kept.hidden.indexOf('year') >= 0 &&
+    // «نام پست» هم از فرم رفت (فقط پروندهٔ قدیمیِ دارای مقدار نشانش می‌دهد)
+    kept.hidden.length === 6 && kept.hidden.indexOf('year') >= 0 &&
+    kept.hidden.indexOf('postTitle') >= 0 &&
     kept.hidden.indexOf('caseSummary') >= 0 &&
     !clips.some(c => /stageOverride/.test(c.field)), kept.hidden.join(','));
   const noYear = await page.evaluate(() =>

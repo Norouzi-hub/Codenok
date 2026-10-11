@@ -18,7 +18,7 @@
   ];
 
   /** فیلدهایی که با آخرین پرونده به‌روز می‌شوند (شغلی/سازمانی) */
-  var PROFILE_FIELDS = ['postTitle', 'jobTitle', 'jobGrade', 'jobNature',
+  var PROFILE_FIELDS = ['jobTitle', 'jobGrade', 'jobNature',
     'payrollPlace', 'orgUnit', 'servicePlace', 'servicePlaceType',
     'contractType', 'employmentStatus', 'education', 'maritalStatus', 'phone'];
 

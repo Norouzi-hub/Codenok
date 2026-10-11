@@ -1,21 +1,66 @@
 # -*- coding: utf-8 -*-
-"""ساخت نسخهٔ تک‌فایلی برنامه در dist/parvandeha.html"""
+"""
+ساخت نسخهٔ قابل‌تحویلِ نوکمان از روی src/
+
+سه خروجی، از یک منبع:
+
+  dist/nokman/        پروژهٔ استاندارد: index.html و پوشهٔ assets کنارش
+                      (css، js، fonts، vendor، img) — همان ساختار src/
+  dist/nokman.zip     همان پوشه، فشرده، برای تحویل
+  dist/nokman.html    نسخهٔ تک‌فایلی: همه‌چیز درون یک فایل، برای وقتی که
+                      فقط یک فایل می‌شود جابه‌جا کرد
+
+هیچ‌کدام سرور یا اینترنت نمی‌خواهد؛ index.html را در کروم یا اج باز کنید.
+"""
+import base64
 import io
 import os
 import re
+import shutil
+import urllib.parse
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, 'src')
 DIST = os.path.join(ROOT, 'dist')
+NAME = 'nokman'
+
+GUIDE = """نوکمان — سامانهٔ پرونده‌های کمیتهٔ انضباطی
+================================================
+
+اجرا
+----
+۱) این زیپ را کامل باز کنید (راست‌کلیک ← Extract All).
+   از داخلِ خودِ زیپ اجرا نکنید؛ آن‌وقت پوشهٔ assets پیدا نمی‌شود.
+۲) فایل index.html را در کروم یا اج باز کنید.
+
+پوشهٔ assets باید همیشه کنار index.html بماند.
+
+ساختار
+------
+index.html          صفحهٔ برنامه (فقط ساختار؛ بدون اسکریپت و استایلِ درون‌خطی)
+assets/css/         استایل‌ها (app.css، fonts.css)
+assets/js/          اسکریپت‌های برنامه
+assets/fonts/       قلم وزیرمتن
+assets/vendor/      موتور SQLite (sql.js)
+assets/img/         نماد برنامه
+
+داده‌ها
+-------
+داده‌ها در این پوشه نیستند: در حافظهٔ مرورگر و (اگر وصل کرده باشید) در
+فایل دیتابیس روی دیسک‌اند. جایگزین کردنِ این پوشه با نسخهٔ تازه داده‌ای
+را پاک نمی‌کند. پیش از به‌روزرسانی، از «تنظیمات» نسخهٔ پشتیبان بگیرید.
+"""
 
 BANNER = """<!--
-  سامانهٔ مدیریت پرونده‌های کمیتهٔ انضباطی
-  ساخته‌شده به‌صورت یک فایل مستقل: بدون نصب، بدون سرور، بدون اینترنت.
-  کافی است این فایل را در کروم، اج یا فایرفاکس باز کنید.
+  نوکمان — سامانهٔ پرونده‌های کمیتهٔ انضباطی
+  نسخهٔ تک‌فایلی: بدون نصب، بدون سرور، بدون اینترنت.
   منبع کد: پوشهٔ src/ — ساخت دوباره: python3 tools/build.py
 -->
 """
+
+SKIP = {'.DS_Store', 'Thumbs.db'}
 
 
 def read(path):
@@ -23,51 +68,98 @@ def read(path):
         return fh.read()
 
 
-def main():
+def src_path(rel):
+    return os.path.join(SRC, *rel.split('/'))
+
+
+def refs(html):
+    """همهٔ نشانی‌های محلیِ صفحه — باید همه وجود داشته باشند"""
+    return [r for r in re.findall(r'(?:src|href)="([^"]+)"', html)
+            if not r.startswith(('data:', 'http:', 'https:', '#'))]
+
+
+def build_folder():
+    out = os.path.join(DIST, NAME)
+    if os.path.isdir(out):
+        shutil.rmtree(out)
+    shutil.copytree(SRC, out, ignore=shutil.ignore_patterns(*SKIP))
+    with io.open(os.path.join(out, 'README.txt'), 'w', encoding='utf-8-sig',
+                 newline='\r\n') as fh:
+        fh.write(GUIDE)
+    return out
+
+
+def build_zip(folder):
+    path = os.path.join(DIST, NAME + '.zip')
+    if os.path.exists(path):
+        os.remove(path)
+    with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+        for base, dirs, files in os.walk(folder):
+            dirs.sort()
+            for f in sorted(files):
+                full = os.path.join(base, f)
+                rel = os.path.relpath(full, DIST).replace(os.sep, '/')
+                z.write(full, rel)
+    return path
+
+
+def build_single():
     html = read(os.path.join(SRC, 'index.html'))
 
-    # حذف بخش‌های مخصوص حالت توسعه
-    html = re.sub(r'<!-- DEV-ONLY:.*?<!-- /DEV-ONLY -->', '', html, flags=re.S)
-    html = re.sub(r'<!-- DEV-FONT -->.*?<!-- /DEV-FONT -->', '', html, flags=re.S)
+    font = base64.b64encode(open(src_path('assets/fonts/vazirmatn.woff2'), 'rb').read())
+    font_uri = 'data:font/woff2;base64,' + font.decode('ascii')
 
-    # درج CSS
-    css = read(os.path.join(SRC, 'css', 'app.css'))
-    html = html.replace('<link rel="stylesheet" href="css/app.css">',
-                        '<style>\n' + css + '\n</style>')
+    def style(match):
+        rel = match.group(1)
+        css = read(src_path(rel))
+        css = css.replace('url("../fonts/vazirmatn.woff2")', 'url(' + font_uri + ')')
+        if 'url("../' in css:
+            raise SystemExit('نشانی نسبیِ جاسازی‌نشده در %s' % rel)
+        return '<style>\n/* ==== ' + rel + ' ==== */\n' + css + '\n</style>'
 
-    # درج فونت وزیرمتن به‌صورت data URI
-    font_b64 = read(os.path.join(SRC, 'vendor', 'vazirmatn.woff2.b64')).strip()
-    html = html.replace('/*FONT_DATA_URI*/',
-                        'url(data:font/woff2;base64,' + font_b64 + ') format("woff2")')
+    html = re.sub(r'<link rel="stylesheet" href="([^"]+)">', style, html)
 
-    # درج باینری SQLite
-    wasm_b64 = read(os.path.join(SRC, 'vendor', 'sql-wasm.wasm.b64')).strip()
-    html = html.replace('<script id="sqljs-wasm" type="text/plain"></script>',
-                        '<script id="sqljs-wasm" type="text/plain">' + wasm_b64 + '</script>')
+    icon = read(src_path('assets/img/icon.svg')).strip()
+    html = html.replace('href="assets/img/icon.svg"',
+                        'href="data:image/svg+xml,' + urllib.parse.quote(icon) + '"')
 
-    # درج اسکریپت‌ها به همان ترتیب
     def inline(match):
-        src = match.group(1)
-        code = read(os.path.join(SRC, *src.split('/')))
+        rel = match.group(1)
+        code = read(src_path(rel))
         if '</script' in code:
-            raise SystemExit('فایل %s شامل تگ بستهٔ script است' % src)
-        return '<script>\n/* ==== ' + src + ' ==== */\n' + code + '\n</script>'
+            raise SystemExit('فایل %s شامل تگ بستهٔ script است' % rel)
+        return '<script>\n/* ==== ' + rel + ' ==== */\n' + code + '\n</script>'
 
     html = re.sub(r'<script src="([^"]+)"></script>', inline, html)
 
+    left = refs(html)
+    if left:
+        raise SystemExit('ارجاع بیرونی در نسخهٔ تک‌فایلی مانده: %s' % left)
+    path = os.path.join(DIST, NAME + '.html')
+    with io.open(path, 'w', encoding='utf-8') as fh:
+        fh.write(BANNER + html)
+    return path
+
+
+def main():
+    page = read(os.path.join(SRC, 'index.html'))
+    if re.search(r'<script>(?!\s*</script>)|<style>', page):
+        raise SystemExit('index.html اسکریپت یا استایلِ درون‌خطی دارد؛ جایش assets است')
+    gone = [r for r in refs(page) if not os.path.exists(src_path(r))]
+    if gone:
+        raise SystemExit('فایل‌های گم‌شده: %s' % gone)
+
     if not os.path.isdir(DIST):
         os.makedirs(DIST)
-    out = os.path.join(DIST, 'parvandeha.html')
-    with io.open(out, 'w', encoding='utf-8') as fh:
-        fh.write(BANNER + html)
+    folder = build_folder()
+    zpath = build_zip(folder)
+    single = build_single()
 
-    size = os.path.getsize(out)
-    remaining = re.findall(r'(?:src|href)="(?!data:)([^"]+)"', html)
-    print('ساخته شد: %s (%.1f مگابایت)' % (out, size / 1048576.0))
-    if remaining:
-        print('هشدار — ارجاع بیرونی باقی مانده:', remaining)
-    else:
-        print('هیچ ارجاع بیرونی باقی نمانده — فایل کاملاً مستقل است.')
+    mb = lambda p: os.path.getsize(p) / 1048576.0
+    n = sum(len(f) for _, _, f in os.walk(folder))
+    print('پوشه:     %s (%d فایل)' % (folder, n))
+    print('زیپ:      %s (%.1f مگابایت)' % (zpath, mb(zpath)))
+    print('تک‌فایلی: %s (%.1f مگابایت)' % (single, mb(single)))
 
 
 if __name__ == '__main__':

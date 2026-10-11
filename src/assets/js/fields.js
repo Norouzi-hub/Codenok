@@ -271,7 +271,9 @@ window.FIELDS = [
     "label": "نام پست(1)",
     "type": "text",
     "group": "job",
-    "col": 17
+    "col": 17,
+    "hidden": true,
+    "legacy": true
   },
   {
     "key": "jobTitle",

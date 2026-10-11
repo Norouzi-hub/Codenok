@@ -5,7 +5,7 @@
 const path = require('path');
 const { chromium } = require(process.env.PW || 'playwright');
 
-const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const APP = 'file://' + path.resolve(__dirname, '../../dist/nokman/index.html');
 const bootApp = require('./boot');
 const PW = 'Komite@1405';
 

@@ -14,7 +14,7 @@
 const path = require('path');
 const { chromium } = require(process.env.PW || 'playwright');
 
-const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const APP = 'file://' + path.resolve(__dirname, '../../dist/nokman/index.html');
 const bootApp = require('./boot');
 
 let failures = 0;
@@ -83,7 +83,9 @@ const SET = `(key, value, blur) => {
       values: carry.values,
       // هر فیلد از تازه‌ترین پرونده‌ای که پرش داشته
       fromNewer: carry.values.orgUnit,
-      fromOlder: carry.values.postTitle,
+      fromOlder: carry.values.payrollPlace,
+      // «نام پست» از فرم رفت؛ به پروندهٔ تازه هم نمی‌رود
+      legacy: carry.values.postTitle,
       none: P.carryOver('9999999999'),
       empty: P.carryOver('')
     };
@@ -99,7 +101,8 @@ const SET = `(key, value, blur) => {
     layer.fields.indexOf('decreeDate') < 0 &&
     layer.values.decreeDate === undefined);
   check('هر فیلد از تازه‌ترین پرونده‌ای می‌آید که پرش داشته',
-    layer.fromNewer === 'منطقه ۵' && layer.fromOlder === 'کارشناس مسئول',
+    layer.fromNewer === 'منطقه ۵' && layer.fromOlder === 'ستاد' &&
+    layer.legacy === undefined,
     layer.fromNewer + ' / ' + layer.fromOlder);
   check('دو پروندهٔ قبلی شمرده می‌شوند', layer.count === 2);
   check('کد ملیِ ناشناس یا خالی، چیزی نمی‌آورد',
@@ -152,7 +155,7 @@ const SET = `(key, value, blur) => {
     filled.person.education === 'لیسانس', JSON.stringify(filled.person));
   check('اطلاعات شغلی هم همین‌طور',
     filled.job.jobTitle === 'کارشناس' && filled.job.orgUnit === 'منطقه ۵' &&
-    filled.job.contractType === 'رسمی' && filled.job.postTitle === 'کارشناس مسئول' &&
+    filled.job.contractType === 'رسمی' && filled.job.postTitle === null &&
     /1385/.test(filled.job.hireDate || ''), JSON.stringify(filled.job));
   check('هیچ‌چیزی از گزارش و تخلفِ پروندهٔ قبلی کپی نمی‌شود',
     Object.keys(filled.caseFields).every(k => !filled.caseFields[k]),
@@ -162,7 +165,7 @@ const SET = `(key, value, blur) => {
     /گزارش و تخلفِ این پرونده پر نشد/.test(filled.notice) &&
     /مریم کاظمی/.test(filled.notice),
     filled.notice.slice(0, 90));
-  check('فیلدهای پرشده یک لحظه روشن می‌شوند', filled.flashed === 15,
+  check('فیلدهای پرشده یک لحظه روشن می‌شوند', filled.flashed === 14,
     filled.flashed + ' فیلد');
   check('فرم «ذخیره‌نشده» علامت می‌خورد', filled.dirty);
   check('سابقهٔ کار هم از تاریخ استخدامِ همان شخص درمی‌آید',

@@ -534,7 +534,7 @@
       }, [
         el('span.logo', { text: '📁' }),
         el('span.brand-text', null, [
-          el('b', { text: 'سامانهٔ پرونده‌ها' }),
+          el('b', { text: 'نوکمان' }),
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),

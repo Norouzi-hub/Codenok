@@ -64,7 +64,7 @@
     overlay = el('div.lock-screen', null, [
       el('div.lock-box', null, [
         el('div.lock-logo', { text: '🔒' }),
-        el('h1', { text: 'سامانهٔ پرونده‌ها' }),
+        el('h1', { text: 'نوکمان' }),
         el('p.muted', { text: 'برای دیدن اطلاعات، رمز عبور را وارد کنید.' }),
         input, msg, btn,
         el('p.lock-note', null, [

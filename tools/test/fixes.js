@@ -11,7 +11,7 @@ const fs = require('fs');
 const os = require('os');
 const { chromium } = require(process.env.PW || 'playwright');
 
-const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const APP = 'file://' + path.resolve(__dirname, '../../dist/nokman/index.html');
 const bootApp = require('./boot');
 const MOCK_FS = require('./mockfs');
 
@@ -216,14 +216,17 @@ function check(name, ok, extra) {
     viewer.download);
 
   /* همان قاعده در همهٔ جاهای دیگر که سند نشان می‌دهند */
-  const noOpenDoc = await page.evaluate(() => {
-    const src = document.documentElement.innerHTML;
+  // اسکریپت‌ها حالا فایل‌های جدای assets/js‌اند، نه درون صفحه
+  const JS = path.resolve(__dirname, '../../src/assets/js');
+  const allSrc = fs.readdirSync(JS).filter(f => f.endsWith('.js'))
+    .map(f => fs.readFileSync(path.join(JS, f), 'utf8')).join('\n');
+  const noOpenDoc = await page.evaluate((src) => {
     return {
       viewerUsed: /UIViewer\.open/.test(src),
       // openDoc فقط باید داخل خودِ نمایشگر مانده باشد
       openDocCalls: (src.match(/Docs\.openDoc\(|D\.openDoc\(/g) || []).length
     };
-  });
+  }, allSrc);
   check('در کل برنامه، «باز کردن بیرونی» فقط داخل نمایشگر مانده',
     noOpenDoc.viewerUsed && noOpenDoc.openDocCalls <= 2,
     noOpenDoc.openDocCalls + ' فراخوانی');

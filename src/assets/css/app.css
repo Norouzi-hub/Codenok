@@ -1,5 +1,5 @@
 /* ================================================================
-   سامانهٔ پرونده‌ها — نظام بصری
+   نوکمان — نظام بصری
    ----------------------------------------------------------------
    جهان این برنامه، جهان دبیرخانه است: دفتر اندیکاتور، مُهر، و
    پرونده‌ای که مرحله‌به‌مرحله جلو می‌رود. رنگ‌ها از همان‌جا می‌آیند:
@@ -7,13 +7,11 @@
    می‌نشیند که باید کاری انجام شود. شنگرف تنها برای دیرکرد.
    ================================================================ */
 
-@font-face {
-  font-family: 'Vazirmatn';
-  src: /*FONT_DATA_URI*/;
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
+/* قلم در fonts.css تعریف شده است. */
+
+/* پیامِ «پوشهٔ assets پیدا نشد» در index.html: همین که این استایل رسیده، یعنی
+   پوشه هست. */
+.boot-missing { display: none; }
 
 :root {
   /* جوهر — سطح‌های تیره و متن */
@@ -158,11 +156,20 @@ a { color: var(--ink-700); }
   border-radius: 4px;
 }
 
+/* حرکت: پیش‌فرض روشن است، حتی وقتی ویندوز «کاهش حرکت» خواسته باشد (روی
+   رایانه‌های اداری و Remote Desktop تقریباً همیشه این‌طور است). کاربر در
+   تنظیمات می‌تواند «طبق ویندوز» یا «خاموش» را انتخاب کند. util.js */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  html[data-motion="system"] *, html[data-motion="system"] *::before,
+  html[data-motion="system"] *::after {
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;
   }
+}
+html[data-motion="off"] *, html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation-duration: .01ms !important;
+  transition-duration: .01ms !important;
 }
 
 /* ---------------------------------------------------------------- دکمه‌ها */
@@ -4443,9 +4450,13 @@ select.input { cursor: pointer; }
 .card-foot .cd-clock { margin-inline-start: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .cd-fill { transition: none; }
-  .cd-clock .cl-arc, .cd-clock.is-late svg, .is-late .cd-fill { animation: none; }
+  html[data-motion="system"] .cd-fill { transition: none; }
+  html[data-motion="system"] .cd-clock .cl-arc, html[data-motion="system"] .cd-clock.is-late svg,
+  html[data-motion="system"] .is-late .cd-fill { animation: none; }
 }
+html[data-motion="off"] .cd-fill { transition: none; }
+html[data-motion="off"] .cd-clock .cl-arc, html[data-motion="off"] .cd-clock.is-late svg,
+html[data-motion="off"] .is-late .cd-fill { animation: none; }
 
 /* ------------------------------------------------ بخش‌های اختیاری پرونده
    هر پرونده استعلام یا ارجاع ندارد. بخشی که داده دارد باز و پررنگ است؛

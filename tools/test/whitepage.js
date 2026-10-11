@@ -7,8 +7,9 @@
  * گفتن اینکه چه شد.
  *
  * دو نگهبان می‌سنجیم:
- *   ۱) فایلِ ناقص — این برنامه یک فایل دومگابایتی است و دست‌به‌دست
- *      می‌شود؛ انتقالِ نصفه یعنی صفحهٔ سفید.
+ *   ۱) فایلِ ناقص — نسخهٔ تک‌فایلی دست‌به‌دست می‌شود و انتقالِ نصفه یعنی
+ *      صفحهٔ سفید؛ در نسخهٔ پوشه‌ای، index.html بی پوشهٔ assets (زیپی که
+ *      باز نشده) یا یک فایلِ جاافتاده همان نتیجه را دارد.
  *   ۲) خطای راه‌اندازی — چه در مسیر معمولی، چه در promiseی که رها شده.
  *
  * اجرا:  node tools/test/whitepage.js
@@ -18,7 +19,8 @@ const fs = require('fs');
 const os = require('os');
 const { chromium } = require(process.env.PW || 'playwright');
 
-const DIST = path.resolve(__dirname, '../../dist/parvandeha.html');
+const DIST = path.resolve(__dirname, '../../dist/nokman/index.html');
+const SINGLE = path.resolve(__dirname, '../../dist/nokman.html');
 const APP = 'file://' + DIST;
 
 let failures = 0;
@@ -51,7 +53,7 @@ function breakAt(layer, fn) {
 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wp-'));
   const cut = path.join(dir, 'nesfe.html');
-  const whole = fs.readFileSync(DIST);
+  const whole = fs.readFileSync(SINGLE);
   fs.writeFileSync(cut, whole.slice(0, Math.floor(whole.length * 0.7)));
 
   let page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
@@ -67,6 +69,28 @@ function breakAt(layer, fn) {
   check('و می‌گوید چه باید کرد',
     /دوباره دانلود/.test(trunc.text) && /مگابایت/.test(trunc.text));
   check('نشانهٔ پایانِ فایل در نسخهٔ ناقص نیست', trunc.marker === false);
+  await page.close();
+
+  // -------------------------------- index.html تنها، بی پوشهٔ assets
+  const alone = fs.mkdtempSync(path.join(os.tmpdir(), 'wp-a-'));
+  fs.copyFileSync(DIST, path.join(alone, 'index.html'));
+  page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto('file://' + path.join(alone, 'index.html'));
+  await page.waitForTimeout(1500);
+  const lone = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').trim());
+  check('index.html بی assets: می‌گوید زیپ را کامل باز کنید',
+    /پیدا نشد/.test(lone) && /Extract/.test(lone) && /assets/.test(lone), lone.slice(0, 80));
+  await page.close();
+
+  // ---------------------------------------- یک اسکریپتِ جاافتاده
+  const holey = fs.mkdtempSync(path.join(os.tmpdir(), 'wp-h-'));
+  fs.cpSync(path.dirname(DIST), holey, { recursive: true });
+  fs.rmSync(path.join(holey, 'assets', 'js', 'ui.tasks.js'));
+  page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto('file://' + path.join(holey, 'index.html'));
+  await page.waitForTimeout(1500);
+  const hole = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').trim());
+  check('یک فایلِ گم‌شده با نامش گفته می‌شود', /ui\.tasks\.js/.test(hole), hole.slice(0, 120));
   await page.close();
 
   // -------------------------------------------- فایل کامل، سالم

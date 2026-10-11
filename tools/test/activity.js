@@ -12,7 +12,7 @@ const fs = require('fs');
 const os = require('os');
 const { chromium } = require(process.env.PW || 'playwright');
 
-const APP = 'file://' + path.resolve(__dirname, '../../dist/parvandeha.html');
+const APP = 'file://' + path.resolve(__dirname, '../../dist/nokman/index.html');
 const bootApp = require('./boot');
 
 let failures = 0;

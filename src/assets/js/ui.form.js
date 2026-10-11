@@ -727,7 +727,7 @@
 
     FORM_TABS.forEach(function (t) {
       makeTab(t.key, t.label, M.FIELDS.filter(function (f) {
-        return t.groups.indexOf(f.group) >= 0 && !f.hidden && draft[f.key];
+        return t.groups.indexOf(f.group) >= 0 && shown(f) && draft[f.key];
       }).length);
     });
     makeTab('__notes', 'کارها و یادداشت‌ها',
@@ -791,6 +791,12 @@
     }
 
     var panel = el('div.form-panel');
+
+    /* فیلدِ پنهان در فرم نمی‌آید؛ مگر فیلدِ کنارگذاشته‌ای (legacy) که همین
+       پرونده از قبل مقدار دارد — آن مقدار نباید بی‌صدا ناپدید شود. */
+    function shown(f) {
+      return !f.hidden || !!(f.legacy && existing && existing[f.key]);
+    }
 
     /*
      * چسباندن پروفایل از سامانهٔ کارگزینی. همان دو قاعدهٔ پر کردنِ
@@ -1037,7 +1043,7 @@
       tab.groups.forEach(function (gk) {
         // فیلدهای پنهان (مثل مرحلهٔ دستی) جایشان بالای پرونده است، نه در فرم
         var all = M.FIELDS.filter(function (f) {
-          return f.group === gk && !f.hidden;
+          return f.group === gk && shown(f);
         });
         var mine = tabBlocks.filter(function (b) { return b.group === gk; });
         var blocks = mine.filter(function (b) { return !b.place; });

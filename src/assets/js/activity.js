@@ -319,7 +319,7 @@
     var all = rows.length ? fold(rows, 'all', 'کل بازه') : null;
     return {
       meta: {
-        app: 'سامانهٔ پرونده‌های کمیتهٔ انضباطی',
+        app: 'نوکمان — کمیتهٔ انضباطی',
         schema: SCHEMA,
         generatedAt: new Date().toISOString(),
         generatedAtJalali: J.stamp(),

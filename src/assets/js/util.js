@@ -194,9 +194,7 @@
    */
   function countUp(node, value, ms) {
     var target = Number(value) || 0;
-    var reduce = window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce || target < 2 || !window.requestAnimationFrame) {
+    if (reducedMotion() || target < 2 || !window.requestAnimationFrame) {
       node.textContent = toFaDigits(target);
       return;
     }
@@ -230,7 +228,52 @@
       }));
   }
 
+  /*
+   * حرکت و انیمیشن.
+   *
+   * ویندوز وقتی «Animation effects» خاموش است (تنظیمات ← دسترس‌پذیری ←
+   * جلوه‌های بصری، یا «Adjust for best performance»، و تقریباً همیشه در
+   * Remote Desktop) به مرورگر می‌گوید «حرکت را کم کن». تا امروز برنامه
+   * همین را بی‌چون‌وچرا اجرا می‌کرد و همهٔ انیمیشن‌ها — خط شمارش معکوس،
+   * ساعتِ فهرست، روشن شدنِ فیلدها — روی رایانه‌های اداری خاموش بودند،
+   * بی‌آنکه کسی بداند چرا.
+   *
+   * حالا خودِ برنامه تصمیم می‌گیرد: «روشن» (پیش‌فرض)، «طبق ویندوز»، یا
+   * «خاموش». ترجیحِ نمایشیِ همین مرورگر است، پس در localStorage می‌ماند.
+   */
+  var MOTION_KEY = 'parvandeha:motion';
+  var MOTION_MODES = ['on', 'system', 'off'];
+
+  function systemReduce() {
+    return !!(window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function motionMode() {
+    var m = '';
+    try { m = window.localStorage.getItem(MOTION_KEY) || ''; } catch (e) { /* در دسترس نیست */ }
+    return MOTION_MODES.indexOf(m) >= 0 ? m : 'on';
+  }
+
+  function applyMotion() {
+    document.documentElement.setAttribute('data-motion', motionMode());
+  }
+
+  function setMotion(mode) {
+    try { window.localStorage.setItem(MOTION_KEY, mode); } catch (e) { /* فقط همین بار */ }
+    document.documentElement.setAttribute('data-motion', mode);
+  }
+
+  function reducedMotion() {
+    var m = document.documentElement.getAttribute('data-motion') || motionMode();
+    return m === 'off' || (m === 'system' && systemReduce());
+  }
+
+  applyMotion();
+
   w.U = {
+    motionMode: motionMode, setMotion: setMotion, reducedMotion: reducedMotion,
+    systemReduce: systemReduce,
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     dots: dots,
     debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,

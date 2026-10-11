@@ -1129,6 +1129,33 @@
       el('h4', { text: 'ذخیره‌سازی' }), storageInfo
     ]));
 
+    // حرکت و انیمیشن
+    var motionSel = el('select.input.small');
+    [['on', 'روشن (پیش‌فرض)'], ['system', 'طبق تنظیم ویندوز'], ['off', 'خاموش']]
+      .forEach(function (o) {
+        motionSel.appendChild(el('option', { value: o[0], text: o[1] }));
+      });
+    motionSel.value = w.U.motionMode();
+    motionSel.addEventListener('change', function () {
+      w.U.setMotion(motionSel.value);
+      w.U.toast(motionSel.value === 'off' ? 'انیمیشن‌ها خاموش شدند.'
+        : 'تنظیم انیمیشن ذخیره شد.', 'good');
+    });
+    body.appendChild(el('section.set-block.motion-block', null, [
+      el('h4', { text: 'انیمیشن‌ها' }),
+      el('div.btn-row', null, [motionSel]),
+      el('p.set-note', {
+        text: 'خط شمارش معکوس، ساعتِ فهرست، روشن شدنِ فیلدهای پرشده و ورودِ ' +
+          'پنجره‌ها. «طبق تنظیم ویندوز» یعنی اگر در ویندوز «Animation effects» ' +
+          'خاموش باشد، این‌جا هم خاموش‌اند.'
+      }),
+      w.U.systemReduce() ? el('p.muted.tiny', {
+        text: 'ویندوزِ این رایانه الان «کاهش حرکت» خواسته است (Animation ' +
+          'effects خاموش است). برای همین تا پیش از این نسخه، انیمیشن‌ها ' +
+          'دیده نمی‌شدند.'
+      }) : null
+    ]));
+
     // امنیت
     var secInfo = el('div.storage-info');
     function refreshSec() {
