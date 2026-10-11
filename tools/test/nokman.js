@@ -100,6 +100,40 @@ function check(name, ok, extra) {
   check('تنظیمات بخش «انیمیشن‌ها» دارد و می‌گوید چرا خاموش بودند',
     set && set.value === 'on' && /کاهش حرکت/.test(set.text), set && set.text.slice(0, 50));
 
+  // ===================================================== پانویس
+  console.log('\n— پانویس و «دربارهٔ نوکمان» —');
+  const foot = await page.evaluate(async () => {
+    const f = document.querySelector('.app-footer');
+    if (!f) return null;
+    const B = window.BRAND;
+    const tel = f.querySelector('a.ft-phone'), site = f.querySelector('a.ft-site');
+    const r = f.getBoundingClientRect();
+    const out = {
+      text: f.textContent, owner: B.owner,
+      tel: tel && tel.getAttribute('href'), site: site && site.getAttribute('href'),
+      blank: site && site.target === '_blank' && /noopener/.test(site.rel),
+      atBottom: Math.abs(r.bottom - window.innerHeight) < 1, h: r.height
+    };
+    f.querySelector('.ft-seal').click();
+    await new Promise(r => setTimeout(r, 600));
+    const card = document.querySelector('.about-card');
+    out.about = card && card.textContent;
+    out.ring = card && card.querySelector('.sl-ring').getComputedTextLength();
+    document.querySelectorAll('.overlay').forEach(o => o.remove());
+    return out;
+  });
+  check('پانویس هست، باریک، و ته صفحه', foot && foot.atBottom && foot.h <= 44,
+    foot && (foot.h + 'px'));
+  check('کپی‌رایت، نام برنامه و نام سازنده', foot && /©/.test(foot.text) &&
+    /نوکمان/.test(foot.text) && foot.text.indexOf(foot.owner) >= 0 &&
+    /حقوق محفوظ/.test(foot.text));
+  check('شمارهٔ موبایل پیوندِ tel: است، با ارقام لاتین',
+    foot && /^tel:\+?\d{7,}$/.test(foot.tel), foot && foot.tel);
+  check('سایت در پنجرهٔ تازه باز می‌شود', foot && /^https?:\/\//.test(foot.site) && foot.blank,
+    foot && foot.site);
+  check('مُهر «دربارهٔ نوکمان» را باز می‌کند، با نوشتهٔ دورِ مُهر',
+    foot && /نوکمان/.test(foot.about || '') && foot.ring > 150, foot && Math.round(foot.ring));
+
   // ================================================== «نام پست»
   console.log('\n— «نام پست» —');
   const post = await page.evaluate(async () => {

@@ -1114,6 +1114,7 @@
     document.body.insertBefore(topBarNode, mount);
     tabBarNode = tabBar();
     document.body.appendChild(tabBarNode);
+    w.UIFooter.mount(app);
 
     // با چرخاندن گوشی یا تغییر اندازه، نما باید دوباره ساخته شود:
     // فهرست روی موبایل کارت است و روی دسکتاپ جدول.

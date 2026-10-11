@@ -163,12 +163,14 @@ a { color: var(--ink-700); }
   html[data-motion="system"] *, html[data-motion="system"] *::before,
   html[data-motion="system"] *::after {
     animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
 }
 html[data-motion="off"] *, html[data-motion="off"] *::before,
 html[data-motion="off"] *::after {
   animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;   /* حلقه‌های بی‌پایان هم بایستند */
   transition-duration: .01ms !important;
 }
 
@@ -5360,3 +5362,204 @@ button.tag-chip.ro { cursor: pointer; }
   .form-section-head { flex-wrap: wrap; }
   .paste-table th[scope="row"] { white-space: normal; }
 }
+
+/* ================================================================ پانویس
+   نواری باریک به رنگ نوار بالا، تا قاب صفحه بسته شود. سه حرکت آرام:
+   مُهری که دورش می‌چرخد، شعاعی از برنج که روی لبهٔ بالا می‌گذرد، و برقی
+   که گاه‌به‌گاه از روی نام سازنده رد می‌شود. ui.footer.js
+   ================================================================ */
+:root { --brass-glow: #E3B65E; --ft-h: 40px; }
+
+.app-footer {
+  position: relative;
+  flex: 0 0 auto;
+  height: var(--ft-h);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  background:
+    radial-gradient(120% 220% at 100% 0%, rgba(166, 116, 27, .16), transparent 46%),
+    var(--ink-900);
+  color: rgba(255, 255, 255, .7);
+  font-size: 12px;
+  line-height: 1;
+  overflow: hidden;
+  z-index: 15;
+  animation: ft-in .7s var(--ease) both;
+}
+/* لبهٔ بالا: مویی از برنج که از میانه پررنگ‌تر است */
+.app-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(227, 182, 94, .55) 50%, transparent);
+}
+/* شعاعی که روی همان لبه می‌گذرد؛ بیشترِ زمان بیرونِ قاب است */
+.ft-comet {
+  position: absolute;
+  top: 0;
+  right: -160px;
+  width: 160px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brass-glow), transparent);
+  filter: drop-shadow(0 0 6px var(--brass-glow));
+  animation: ft-comet 9s cubic-bezier(.5, 0, .3, 1) 1.2s infinite;
+  pointer-events: none;
+}
+@keyframes ft-comet {
+  0% { transform: translateX(0); opacity: 0; }
+  4% { opacity: 1; }
+  38% { opacity: 1; }
+  42%, 100% { transform: translateX(calc(-100vw - 160px)); opacity: 0; }
+}
+@keyframes ft-in { from { transform: translateY(100%); opacity: 0; } }
+
+/* --- مُهر --- */
+.ft-seal {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform .4s var(--ease);
+}
+.ft-seal:hover { transform: rotate(-18deg) scale(1.12); }
+.ft-seal:focus-visible { outline: 2px solid var(--brass-glow); outline-offset: 2px; }
+
+.seal .sl-halo { fill: none; stroke: rgba(227, 182, 94, .22); stroke-width: 1.5; }
+.seal .sl-dash {
+  fill: none; stroke: var(--brass-glow); stroke-width: 3;
+  stroke-dasharray: 4 6.7; stroke-linecap: round;
+  transform-origin: 50px 50px;
+  animation: sl-spin 18s linear infinite;
+}
+.seal .sl-core { fill: var(--brass); stroke: rgba(255, 255, 255, .22); stroke-width: 1; }
+.seal .sl-mark {
+  fill: #fff; font-family: var(--font-ui); font-weight: 800; font-size: 34px;
+}
+.seal .sl-orbit { transform-origin: 50px 50px; animation: sl-spin 6s linear infinite reverse; }
+.seal .sl-sat { fill: #fff; filter: drop-shadow(0 0 2px var(--brass-glow)); }
+@keyframes sl-spin { to { transform: rotate(360deg); } }
+
+/* --- کپی‌رایت --- */
+.ft-copy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+  animation: ft-rise .6s var(--ease) .25s both;
+}
+.ft-c { color: var(--brass-glow); font-size: 13px; }
+.ft-year { font-variant-numeric: tabular-nums; }
+.ft-app { color: #fff; font-weight: 700; letter-spacing: .2px; }
+.ft-sep { width: 4px; height: 4px; border-radius: 50%; background: rgba(227, 182, 94, .7); margin: 0 4px; }
+.ft-by { color: rgba(255, 255, 255, .5); }
+/* نام سازنده: برقی از برنج هر چند ثانیه یک بار از رویش رد می‌شود */
+.ft-owner {
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: linear-gradient(100deg, #fff 0%, #fff 42%, var(--brass-glow) 50%, #fff 58%, #fff 100%);
+  background-size: 260% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ft-shine 7s ease-in-out 1.6s infinite;
+}
+.ft-owner:hover { text-decoration: underline; text-decoration-color: var(--brass-glow); text-underline-offset: 4px; }
+@keyframes ft-shine {
+  0% { background-position: 100% 0; }
+  30%, 100% { background-position: 0 0; }
+}
+.ft-rights { color: rgba(255, 255, 255, .42); margin-inline-start: 4px; }
+@keyframes ft-rise { from { opacity: 0; transform: translateY(8px); } }
+
+/* --- تماس و سایت --- */
+.ft-links { display: flex; align-items: center; gap: 8px; }
+.ft-links .ft-chip { animation: ft-rise .6s var(--ease) both; }
+.ft-links .ft-chip:nth-child(1) { animation-delay: .4s; }
+.ft-links .ft-chip:nth-child(2) { animation-delay: .52s; }
+.ft-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, .04);
+  transition: transform .25s var(--ease), border-color .25s, background .25s, box-shadow .25s;
+}
+.ft-chip:hover {
+  transform: translateY(-2px);
+  border-color: rgba(227, 182, 94, .7);
+  background: rgba(166, 116, 27, .22);
+  box-shadow: 0 6px 16px -8px rgba(227, 182, 94, .8);
+}
+.ft-chip:focus-visible { outline: 2px solid var(--brass-glow); outline-offset: 2px; }
+.ft-ico { width: 14px; height: 14px; color: var(--brass-glow); flex: 0 0 auto; }
+.ft-chip:hover .ft-ico-phone { animation: ft-ring .6s ease-in-out 2; }
+.ft-chip:hover .ft-ico-globe { animation: sl-spin 1.2s var(--ease); }
+@keyframes ft-ring {
+  0%, 100% { transform: rotate(0); }
+  20%, 60% { transform: rotate(-14deg); }
+  40%, 80% { transform: rotate(14deg); }
+}
+
+/* --- دربارهٔ نوکمان --- */
+.about-modal { width: min(440px, 100%); }
+.about-card { text-align: center; padding: 6px 4px 2px; }
+.about-seal { display: grid; place-items: center; margin: 4px 0 10px; }
+.about-seal .seal { animation: about-pop .8s cubic-bezier(.2, .9, .3, 1.25) both; }
+.seal-big .sl-halo { stroke: var(--brass-line); }
+.seal-big .sl-dash { stroke: var(--brass); stroke-width: 1.4; stroke-dasharray: 2 4; }
+.seal-big .sl-core { fill: var(--ink-900); stroke: var(--brass); stroke-width: 1.4; }
+.seal-big .sl-mark { font-size: 30px; fill: var(--brass-glow); }
+.seal-big .sl-sat { fill: var(--brass); }
+.seal-big .sl-ring {
+  font-family: var(--font-ui); font-size: 5.7px; font-weight: 600;
+  fill: var(--ink-700); letter-spacing: 0;
+}
+.seal-big .sl-spin { transform-origin: 50px 50px; animation: sl-spin 40s linear infinite; }
+@keyframes about-pop { from { opacity: 0; transform: scale(.6) rotate(-40deg); } }
+.about-app {
+  margin: 0; font-size: 26px; font-weight: 800; color: var(--ink-900);
+  animation: ft-rise .6s var(--ease) .25s both;
+}
+.about-tag { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; animation: ft-rise .6s var(--ease) .32s both; }
+.about-rule {
+  width: 120px; height: 2px; margin: 16px auto 14px;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  transform-origin: center;
+  animation: rule-draw .8s var(--ease) .4s both;
+}
+.about-role { margin: 0; color: var(--muted); font-size: 12px; animation: ft-rise .6s var(--ease) .45s both; }
+.about-owner {
+  margin: 2px 0 14px; font-size: 18px; font-weight: 700; color: var(--brass-ink);
+  animation: ft-rise .6s var(--ease) .5s both;
+}
+.about-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; animation: ft-rise .6s var(--ease) .58s both; }
+.about-links .ft-chip { color: var(--ink-800); border-color: var(--line); background: var(--paper); height: 32px; padding: 0 14px; font-size: 13px; }
+.about-links .ft-chip:hover { border-color: var(--brass); background: var(--brass-soft); box-shadow: 0 8px 18px -10px rgba(166, 116, 27, .6); }
+.about-links .ft-ico { color: var(--brass); width: 15px; height: 15px; }
+.about-copy { margin: 18px 0 0; font-size: 11.5px; color: var(--muted); animation: ft-rise .6s var(--ease) .66s both; }
+
+/* جای تنگ: اول «تمام حقوق…»، بعد نقش، بعد متنِ تماس‌ها می‌روند */
+@media (max-width: 1100px) { .ft-rights { display: none; } }
+@media (max-width: 900px) { .ft-by, .ft-sep { display: none; } .ft-chip-t { display: none; } .ft-chip { padding: 0 7px; } }
+/* روی گوشی نوار پایین جای پانویس است؛ «دربارهٔ نوکمان» از تنظیمات باز می‌شود */
+@media (max-width: 720px) { .app-footer { display: none; } }
+@media print { .app-footer { display: none !important; } }

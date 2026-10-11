@@ -1156,6 +1156,16 @@
       }) : null
     ]));
 
+    body.appendChild(el('section.set-block', null, [
+      el('h4', { text: 'دربارهٔ نوکمان' }),
+      el('div.btn-row', null, [
+        el('button.btn.small.ghost', {
+          type: 'button', text: 'سازنده، تماس و حق نشر',
+          onclick: function () { w.UIFooter.about(app); }
+        })
+      ])
+    ]));
+
     // امنیت
     var secInfo = el('div.storage-info');
     function refreshSec() {
