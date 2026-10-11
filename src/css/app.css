@@ -5321,3 +5321,31 @@ button.tag-chip.ro { cursor: pointer; }
   animation: rise var(--t-fast) var(--ease) both;
 }
 .arc-batch-docs .arc-doc { background: var(--card); }
+
+/* ---------------------------------------------- چسباندن از سامانهٔ کارگزینی */
+.form-section-head .paste-btn {
+  align-self: center;
+  border: 1px solid var(--brass-line); background: var(--brass-soft); color: var(--brass-ink);
+}
+.form-section-head .paste-btn:hover { border-color: var(--brass); }
+.paste-dialog .paste-area {
+  width: 100%; min-height: 120px; font-size: 12.5px; line-height: 1.7;
+  font-family: inherit; resize: vertical;
+}
+.paste-preview { margin-top: 12px; max-height: 52vh; overflow: auto; }
+.paste-table th[scope="row"] { width: 1%; padding-left: 18px; white-space: nowrap; font-weight: 600; color: var(--ink-800); font-size: 12px; }
+.paste-table td, .paste-table th { vertical-align: top; }
+.paste-table td.paste-pick { width: 26px; text-align: center; }
+.paste-table .paste-val { width: 100%; min-width: 0; padding: 4px 8px; font-size: 12.5px; }
+.paste-table tr.is-same { opacity: .55; }
+.paste-table tr.is-diff th { color: var(--brass-ink); }
+.paste-notes { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; font-size: 11px; }
+.paste-diff { color: var(--brass-ink); }
+.paste-same { color: var(--moss); }
+.paste-guess, .paste-note { color: var(--muted); }
+.paste-note { color: var(--cinnabar); }
+.paste-skip { margin: 10px 0 0; font-size: 12px; }
+@media (max-width: 640px) {
+  .form-section-head { flex-wrap: wrap; }
+  .paste-table th[scope="row"] { white-space: normal; }
+}

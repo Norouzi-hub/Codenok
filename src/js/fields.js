@@ -253,6 +253,20 @@ window.FIELDS = [
     "col": 16
   },
   {
+    "key": "birthDate",
+    "label": "تاریخ تولد",
+    "type": "date",
+    "group": "person",
+    "col": null
+  },
+  {
+    "key": "fieldOfStudy",
+    "label": "رشته تحصیلی",
+    "type": "text",
+    "group": "person",
+    "col": null
+  },
+  {
     "key": "postTitle",
     "label": "نام پست(1)",
     "type": "text",
@@ -337,6 +351,41 @@ window.FIELDS = [
     "key": "decreeDate",
     "label": "تاریخ آخرین حکم کارگزینی",
     "type": "date",
+    "group": "job",
+    "col": null
+  },
+  {
+    "key": "employType",
+    "label": "نوع استخدام",
+    "type": "text",
+    "group": "job",
+    "col": null
+  },
+  {
+    "key": "decreeType",
+    "label": "نوع آخرین حکم",
+    "type": "text",
+    "group": "job",
+    "col": null
+  },
+  {
+    "key": "decreeStart",
+    "label": "تاریخ آغاز اعتبار حکم",
+    "type": "date",
+    "group": "job",
+    "col": null
+  },
+  {
+    "key": "decreeEnd",
+    "label": "تاریخ پایان اعتبار حکم",
+    "type": "date",
+    "group": "job",
+    "col": null
+  },
+  {
+    "key": "veteran",
+    "label": "وضعیت ایثارگری",
+    "type": "text",
     "group": "job",
     "col": null
   },

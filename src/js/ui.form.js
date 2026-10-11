@@ -185,6 +185,15 @@
         'transferLetterNo', 'transferReason']
     },
     {
+      /* آنچه پروفایل کارمند در سامانهٔ کارگزینی دارد و پرونده تا امروز
+         جایی برایش نداشت. معمولاً با «چسباندن از سامانهٔ کارگزینی» پر
+         می‌شود، نه با دست. */
+      key: 'decree', group: 'job', label: 'حکم کارگزینی و ایثارگری',
+      ask: 'مشخصات حکم و ایثارگری را دارم',
+      hint: 'نوع استخدام، نوع و اعتبار آخرین حکم، وضعیت ایثارگری.',
+      fields: ['employType', 'decreeType', 'decreeStart', 'decreeEnd', 'veteran']
+    },
+    {
       key: 'defect', group: 'defense', label: 'نامهٔ رفع نواقص',
       ask: 'برای این پرونده نامهٔ رفع نواقص رفته',
       hint: 'شماره و تاریخ نامه‌ای که برای تکمیل مدارک صادر شده.',
@@ -784,6 +793,45 @@
     var panel = el('div.form-panel');
 
     /*
+     * چسباندن پروفایل از سامانهٔ کارگزینی. همان دو قاعدهٔ پر کردنِ
+     * خودکار: چیزی ذخیره نمی‌شود تا کاربر «ذخیره» بزند، و فقط آنچه در
+     * پیش‌نمایش تیک خورده در فرم می‌نشیند.
+     */
+    function pasteCtx() {
+      return {
+        current: function (k) { return draft[k] || ''; },
+        apply: function (vals) {
+          var keys = Object.keys(vals);
+          flash = {};
+          keys.forEach(function (k) {
+            draft[k] = vals[k];
+            edited[k] = true;
+            flash[k] = 1;
+          });
+          markDirty();
+          updateTitle();
+          repaint();
+          flash = {};
+          w.U.toast(w.U.toFaDigits(keys.length) +
+            ' فیلد از متنِ کارگزینی پر شد؛ برای ثبت، «ذخیره» را بزنید.', 'good');
+          // کد ملیِ آشنا؟ باقیِ فیلدهای خالی از پروندهٔ قبلی می‌آیند
+          if (vals.nationalId) app.checkPerson();
+        }
+      };
+    }
+    app.pasteProfile = function (text) { w.UIPaste.open(app, pasteCtx(), text); };
+
+    /* متنِ چندسطریِ پروفایل که مستقیم در یکی از خانه‌ها چسبانده شود، یک
+       مقدار نیست — پنجرهٔ چسباندن با همان متن باز می‌شود. */
+    panel.addEventListener('paste', function (e) {
+      if (activeTab !== 'case') return;
+      var t = e.clipboardData && e.clipboardData.getData('text/plain');
+      if (!t || !w.Paste.looksLikeProfile(t)) return;
+      e.preventDefault();
+      app.pasteProfile(t);
+    });
+
+    /*
      * شمارش معکوس، چسبیده به خودِ فیلد مهلت.
      *
      * تاریخ که وارد شد، همان‌جا — بی‌آنکه لازم باشد ذخیره کنید یا صفحه
@@ -1006,7 +1054,13 @@
             el('h4', { text: GROUP_LABEL[gk] || gk }),
             el('span.form-section-count', {
               text: w.U.toFaDigits(filled) + ' از ' + w.U.toFaDigits(all.length) + ' پرشده'
-            })
+            }),
+            gk === 'person' ? el('div.spacer') : null,
+            gk === 'person' ? el('button.btn.small.ghost.paste-btn', {
+              type: 'button', text: 'چسباندن از سامانهٔ کارگزینی',
+              title: 'متنِ صفحهٔ مشخصات کارمند را بچسبانید؛ هر مقدار در فیلد خودش می‌نشیند',
+              onclick: function () { app.pasteProfile(); }
+            }) : null
           ]));
         }
         if (fields.length) panel.appendChild(fieldGrid(fields));

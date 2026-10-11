@@ -194,7 +194,9 @@
    * «تاریخ آخرین حکم کارگزینی» هم استثناست: یک مرحله از گردش‌کار است و
    * کپی کردنش یعنی تیک خوردنِ کاری که انجام نشده.
    */
-  var NO_CARRY = { decreeDate: 1 };
+  /* اعتبارِ حکم سال‌به‌سال عوض می‌شود؛ حکمِ پروندهٔ دو سال پیش، حکمِ
+     امروز نیست و بردنش به پروندهٔ تازه گمراه می‌کند. */
+  var NO_CARRY = { decreeDate: 1, decreeType: 1, decreeStart: 1, decreeEnd: 1 };
 
   function carryFields() {
     return M.FIELDS.filter(function (f) {
