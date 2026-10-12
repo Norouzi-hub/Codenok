@@ -91,8 +91,9 @@
       function () { restore(ready, fail); }));
 
     var body = el('div.start-box', null, [
-      el('div.start-logo', { text: '🗂' }),
-      el('h1', { text: 'دیتابیسی باز نیست' }),
+      el('div.start-logo', { 'aria-hidden': 'true' }, [el('span.start-drawer'), el('span.start-drawer'),
+        el('span.start-drawer')]),
+      el('h2.start-h', { text: 'دیتابیسی باز نیست' }),
       el('p.start-lead', {
         text: 'این برنامه داده‌هایش را در یک فایل روی دیسک شما نگه می‌دارد. ' +
           'بگویید آن فایل کجاست تا بالا بیاید.'
@@ -116,7 +117,9 @@
       }
     }));
 
-    overlay = el('div.start-screen', null, [body]);
+    overlay = w.UIGate
+      ? w.UIGate.shell(body, { cls: 'start-screen', kicker: 'آغاز کار' })
+      : el('div.start-screen', null, [body]);
     document.body.appendChild(overlay);
     return overlay;
   }

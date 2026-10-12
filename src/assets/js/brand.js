@@ -11,9 +11,9 @@
 window.BRAND = {
   app: 'نوکمان',
   tagline: 'سامانهٔ پرونده‌های کمیتهٔ انضباطی',
-  owner: 'نام سازنده',
+  owner: 'حسین نوروزی',
   role: 'طراحی و توسعه',
-  phone: '09120000000',
-  site: 'www.example.ir',
+  phone: '09121144559',
+  site: 'https://hosseinnorouzi.com/',
   since: 1404
 };

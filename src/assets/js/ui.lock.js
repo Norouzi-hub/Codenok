@@ -46,6 +46,7 @@
         msg.className = 'lock-msg bad';
         input.value = '';
         input.focus();
+        if (w.UIGate) w.UIGate.shake(box);
       }).catch(function (e) {
         busy = false;
         btn.textContent = 'ورود';
@@ -61,12 +62,24 @@
       if (e.key === 'Enter') { e.preventDefault(); attempt(); }
     });
 
-    overlay = el('div.lock-screen', null, [
-      el('div.lock-box', null, [
-        el('div.lock-logo', { text: '🔒' }),
-        el('h1', { text: 'نوکمان' }),
-        el('p.muted', { text: 'برای دیدن اطلاعات، رمز عبور را وارد کنید.' }),
-        input, msg, btn,
+    // نمایشِ رمز: چشمی که باز و بسته می‌شود
+    var eye = el('button.lock-eye', {
+      type: 'button', title: 'نمایش رمز', 'aria-label': 'نمایش رمز',
+      onclick: function () {
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        eye.classList.toggle('on', show);
+        eye.title = show ? 'پنهان کردن رمز' : 'نمایش رمز';
+        input.focus();
+      }
+    }, [el('span.lock-eye-i', { 'aria-hidden': 'true' })]);
+
+    var box = el('div.lock-box', null, [
+        el('div.lock-logo', { 'aria-hidden': 'true' }, [el('span.lock-shackle'), el('span.lock-body')]),
+        el('h2.lock-h', { text: 'خوش آمدید' }),
+        el('p.muted', { text: 'برای دیدن پرونده‌ها، رمز عبور را وارد کنید.' }),
+        el('div.lock-field', null, [input, eye]),
+        msg, btn,
         el('p.lock-note', null, [
           el('span', {
             text: 'اطلاعات با همین رمز رمزنگاری شده‌اند. اگر رمز را فراموش کنید ' +
@@ -77,8 +90,10 @@
             onclick: function () { w.UIMisc.wipeDialog(null, null); }
           })
         ])
-      ])
-    ]);
+      ]);
+    overlay = w.UIGate
+      ? w.UIGate.shell(box, { cls: 'lock-screen', kicker: 'ورود امن' })
+      : el('div.lock-screen', null, [box]);
     document.body.appendChild(overlay);
     setTimeout(function () { input.focus(); }, 50);
   }

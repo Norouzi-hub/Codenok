@@ -18,6 +18,11 @@ const APP = 'file://' + DIST;
 const bootApp = require('./boot');
 
 let failures = 0;
+// نام سازنده از خودِ brand.js
+function window_owner() {
+  const src = fs.readFileSync(path.resolve(__dirname, '../../src/assets/js/brand.js'), 'utf8');
+  return (src.match(/owner:\s*'([^']*)'/) || [])[1];
+}
 function check(name, ok, extra) {
   console.log((ok ? '  ✓ ' : '  ✗ ') + name + (extra ? '  — ' + extra : ''));
   if (!ok) failures++;
@@ -133,6 +138,60 @@ function check(name, ok, extra) {
     foot && foot.site);
   check('مُهر «دربارهٔ نوکمان» را باز می‌کند، با نوشتهٔ دورِ مُهر',
     foot && /نوکمان/.test(foot.about || '') && foot.ring > 150, foot && Math.round(foot.ring));
+
+  // ============================================ دروازه: صفحهٔ شروع و قفل
+  console.log('\n— صفحه‌های ورود —');
+  const os = require('os');
+  const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'nk-gate-'));
+  const pc = await chromium.launchPersistentContext(prof, {
+    executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    args: ['--no-sandbox'], viewport: { width: 1360, height: 860 }
+  });
+  const gp = pc.pages()[0] || await pc.newPage();
+  await gp.goto(APP);
+  await gp.waitForSelector('.start-screen');
+  const startG = await gp.evaluate(() => {
+    const s = document.querySelector('.start-screen');
+    return {
+      gate: s.classList.contains('gate'),
+      owner: (s.querySelector('.gate-footer .ft-owner') || {}).textContent,
+      tel: (s.querySelector('.gate-footer a.ft-phone') || {}).href,
+      ring: s.querySelector('.gate-seal .sl-ring') ? s.querySelector('.gate-seal .sl-ring').getComputedTextLength() : 0,
+      title: (s.querySelector('.gate-title') || {}).textContent,
+      opts: s.querySelectorAll('.start-opt').length, demo: !!s.querySelector('.start-demo')
+    };
+  });
+  check('صفحهٔ شروع در دروازه: مُهر، نام و پانویسِ سازنده', startG.gate && startG.title === 'نوکمان' &&
+    startG.ring > 150 && startG.owner === window_owner() && /^tel:/.test(startG.tel || ''),
+    JSON.stringify(startG));
+  check('گزینه‌های دیتابیس سرِ جایشان‌اند', startG.opts >= 1 && startG.demo);
+  await gp.evaluate(() => document.querySelector('.start-demo').click());
+  await gp.waitForTimeout(2500);
+  await gp.evaluate(async () => { await window.Store.setPassword('1234'); });
+  await gp.waitForTimeout(600);
+  await gp.reload();
+  await gp.waitForSelector('.lock-screen');
+  const lockG = await gp.evaluate(async () => {
+    const s = document.querySelector('.lock-screen');
+    const input = s.querySelector('.lock-input');
+    s.querySelector('.lock-eye').click();
+    const shown = input.type;
+    s.querySelector('.lock-eye').click();
+    return { gate: s.classList.contains('gate'), shown, hidden: input.type,
+      footer: !!s.querySelector('.gate-footer'), h: (s.querySelector('.lock-h') || {}).textContent };
+  });
+  check('صفحهٔ قفل در دروازه، با پانویس', lockG.gate && lockG.footer && lockG.h === 'خوش آمدید');
+  check('چشمِ رمز: نمایش و پنهان', lockG.shown === 'text' && lockG.hidden === 'password');
+  await gp.fill('.lock-input', '9999');
+  await gp.keyboard.press('Enter');
+  await gp.waitForSelector('.lock-msg.bad', { timeout: 20000 });
+  const shook = await gp.evaluate(() => document.querySelector('.lock-box').classList.contains('is-shake'));
+  check('رمزِ نادرست: کارت می‌لرزد', shook);
+  await gp.fill('.lock-input', '1234');
+  await gp.keyboard.press('Enter');
+  await gp.waitForFunction(() => !document.querySelector('.lock-screen'), null, { timeout: 20000 });
+  check('رمزِ درست: دروازه باز می‌شود', true);
+  await pc.close();
 
   // ================================================== «نام پست»
   console.log('\n— «نام پست» —');

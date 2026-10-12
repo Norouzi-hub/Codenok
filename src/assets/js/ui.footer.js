@@ -167,5 +167,9 @@
     return m;
   }
 
-  w.UIFooter = { mount: mount, about: about, years: years };
+  w.UIFooter = {
+    mount: mount, about: about, years: years, seal: seal,
+    /** همان نوار، برای صفحه‌های ورود (بی‌نیاز به app) */
+    strip: function () { var n = build(null); n.classList.add('gate-footer'); return n; }
+  };
 })(window);
