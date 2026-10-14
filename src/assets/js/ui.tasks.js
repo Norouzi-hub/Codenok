@@ -790,6 +790,7 @@
       });
     }
 
+    if (st.taskCat === w.Checklist.CATEGORY) groups = [];
     var total = groups.reduce(function (n, b) { return n + b.items.length; }, 0);
     var s = N.stats();
     var nArchived = N.tasks({ archived: true }).length;
@@ -870,8 +871,14 @@
 
     /* چک‌لیست‌های باز، پیش از کارهای آزاد: این‌ها کارِ مرحله‌اند و
        ترتیبشان را خودِ پرونده تعیین می‌کند، نه سررسید. */
+    /* چک‌لیست مالِ پرونده است: در «همه» و «روی پرونده» می‌آید، و وقتی
+       دستهٔ «چک‌لیست مرحله» انتخاب شده، تنها چیزی است که می‌آید — نه
+       آیتم‌های تک‌تک و بی‌پرونده، و نه صفحهٔ خالی. */
+    var clOnly = st.taskCat === w.Checklist.CATEGORY;
+    var showCls = !archived && (st.taskCat == null || clOnly) &&
+      (st.taskFilter === 'all' || st.taskFilter === 'oncase');
     var cls = [];
-    if (!archived && st.taskCat !== w.Checklist.CATEGORY) {
+    if (showCls) {
       cls = w.UIChecklist.openGroups();
       if (cls.length) {
         var left = cls.reduce(function (n, g) { return n + g.openRequired; }, 0);

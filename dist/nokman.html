@@ -1388,7 +1388,15 @@ select.input { cursor: pointer; }
 .cl-line > summary::-webkit-details-marker { display: none; }
 .cl-line[open] > summary { border-bottom: 1px solid var(--line-soft); }
 .cl-line.is-complete { background: var(--paper); }
-.cl-line-label { font-size: 13px; font-weight: 600; }
+/* سطرِ چک‌لیست در صفحهٔ کارها: کدام پرونده، کدام کارمند، کدام چک‌لیست */
+.cl-line-case { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
+.cl-line-who { font-size: 13.5px; font-weight: 700; color: var(--ink-900); white-space: nowrap; }
+.cl-line-unit { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.cl-line-label {
+  font-size: 11.5px; font-weight: 600; color: var(--brass-ink);
+  padding: 2px 9px; border-radius: 999px;
+  background: var(--brass-soft); border: 1px solid var(--brass-line);
+}
 .b-checklist .task-bucket-head h2 { color: var(--brass-ink); }
 
 /* چیپِ کنار ریل */
@@ -27016,8 +27024,16 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
   function line(app, group, refresh) {
     var rec = group.rec;
     var box = el('details.cl-line' + (group.complete ? '.is-complete' : ''));
+    /* از همین سطر باید معلوم باشد چک‌لیستِ کدام پرونده است — شماره، نام
+       کارمند و واحد — بی‌آنکه لازم باشد بازش کنید یا به پرونده بروید. */
+    var who = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
+    var unit = rec.orgUnit || rec.servicePlace || '';
     box.appendChild(el('summary.cl-line-head', null, [
       el('span.reg-no', { text: w.U.toLatinDigits(rec.caseNo || '—') }),
+      el('span.cl-line-case', null, [
+        el('b.cl-line-who', { text: who || 'بی‌نام' }),
+        unit ? el('span.cl-line-unit', { text: unit }) : null
+      ]),
       el('span.cl-line-label', { text: group.label }),
       dots(group),
       el('span.cl-count', { text: countText(group) }),
@@ -28255,6 +28271,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       });
     }
 
+    if (st.taskCat === w.Checklist.CATEGORY) groups = [];
     var total = groups.reduce(function (n, b) { return n + b.items.length; }, 0);
     var s = N.stats();
     var nArchived = N.tasks({ archived: true }).length;
@@ -28335,8 +28352,14 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
 
     /* چک‌لیست‌های باز، پیش از کارهای آزاد: این‌ها کارِ مرحله‌اند و
        ترتیبشان را خودِ پرونده تعیین می‌کند، نه سررسید. */
+    /* چک‌لیست مالِ پرونده است: در «همه» و «روی پرونده» می‌آید، و وقتی
+       دستهٔ «چک‌لیست مرحله» انتخاب شده، تنها چیزی است که می‌آید — نه
+       آیتم‌های تک‌تک و بی‌پرونده، و نه صفحهٔ خالی. */
+    var clOnly = st.taskCat === w.Checklist.CATEGORY;
+    var showCls = !archived && (st.taskCat == null || clOnly) &&
+      (st.taskFilter === 'all' || st.taskFilter === 'oncase');
     var cls = [];
-    if (!archived && st.taskCat !== w.Checklist.CATEGORY) {
+    if (showCls) {
       cls = w.UIChecklist.openGroups();
       if (cls.length) {
         var left = cls.reduce(function (n, g) { return n + g.openRequired; }, 0);

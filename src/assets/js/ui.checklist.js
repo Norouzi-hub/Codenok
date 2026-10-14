@@ -201,8 +201,16 @@
   function line(app, group, refresh) {
     var rec = group.rec;
     var box = el('details.cl-line' + (group.complete ? '.is-complete' : ''));
+    /* از همین سطر باید معلوم باشد چک‌لیستِ کدام پرونده است — شماره، نام
+       کارمند و واحد — بی‌آنکه لازم باشد بازش کنید یا به پرونده بروید. */
+    var who = [rec.firstName, rec.lastName].filter(Boolean).join(' ');
+    var unit = rec.orgUnit || rec.servicePlace || '';
     box.appendChild(el('summary.cl-line-head', null, [
       el('span.reg-no', { text: w.U.toLatinDigits(rec.caseNo || '—') }),
+      el('span.cl-line-case', null, [
+        el('b.cl-line-who', { text: who || 'بی‌نام' }),
+        unit ? el('span.cl-line-unit', { text: unit }) : null
+      ]),
       el('span.cl-line-label', { text: group.label }),
       dots(group),
       el('span.cl-count', { text: countText(group) }),

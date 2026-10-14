@@ -245,6 +245,46 @@ function check(name, ok, extra) {
   check('باز که شود، کارهایش داخلش‌اند',
     expand.items > 0 && expand.visible, expand.items + ' کار');
 
+  // از خودِ سطر معلوم است چک‌لیستِ کدام پرونده و کدام کارمند است
+  const whose = await page.evaluate(() => {
+    return [...document.querySelectorAll('.cl-line')].map(l => {
+      const no = l.querySelector('.reg-no').textContent;
+      const rec = window.Model.state.cases.find(c => window.U.toLatinDigits(c.caseNo || '') === no);
+      return {
+        no, who: (l.querySelector('.cl-line-who') || {}).textContent,
+        want: rec ? [rec.firstName, rec.lastName].filter(Boolean).join(' ') : null,
+        label: (l.querySelector('.cl-line-label') || {}).textContent
+      };
+    });
+  });
+  check('هر سطر شماره و نام کارمند و نام چک‌لیست را دارد',
+    whose.length && whose.every(x => x.label && x.who === (x.want || 'بی‌نام')),
+    whose.map(x => x.no + ' ' + x.who + '/' + x.want + ' — ' + x.label).join(' | '));
+
+  // دستهٔ «چک‌لیست مرحله»: خودِ چک‌لیست‌ها، نه صفحهٔ خالی
+  const onlyCl = await page.evaluate(async () => {
+    window.App.state.taskCat = window.Checklist.CATEGORY;
+    window.App.render();
+    await new Promise(r => setTimeout(r, 500));
+    const out = {
+      lines: document.querySelectorAll('.cl-line').length,
+      empty: !!document.querySelector('.task-buckets .empty-state'),
+      loose: document.querySelectorAll('.task-bucket:not(.b-checklist) .task-list li').length
+    };
+    window.App.state.taskFilter = 'standalone';
+    window.App.render();
+    await new Promise(r => setTimeout(r, 300));
+    out.standalone = document.querySelectorAll('.cl-line').length;
+    window.App.state.taskCat = null;
+    window.App.state.taskFilter = 'all';
+    window.App.render();
+    await new Promise(r => setTimeout(r, 300));
+    return out;
+  });
+  check('دستهٔ «چک‌لیست مرحله» چک‌لیست‌ها را نشان می‌دهد، نه «کاری پیدا نشد»',
+    onlyCl.lines >= 2 && !onlyCl.empty && onlyCl.loose === 0, JSON.stringify(onlyCl));
+  check('«بیرون از پرونده» چک‌لیست ندارد', onlyCl.standalone === 0);
+
   // ==================================================== هشدار، نه سد
   console.log('\n— کارِ ماندهٔ مرحلهٔ قبل: هشدار، نه سد —');
 

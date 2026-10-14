@@ -1360,7 +1360,15 @@ select.input { cursor: pointer; }
 .cl-line > summary::-webkit-details-marker { display: none; }
 .cl-line[open] > summary { border-bottom: 1px solid var(--line-soft); }
 .cl-line.is-complete { background: var(--paper); }
-.cl-line-label { font-size: 13px; font-weight: 600; }
+/* سطرِ چک‌لیست در صفحهٔ کارها: کدام پرونده، کدام کارمند، کدام چک‌لیست */
+.cl-line-case { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
+.cl-line-who { font-size: 13.5px; font-weight: 700; color: var(--ink-900); white-space: nowrap; }
+.cl-line-unit { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.cl-line-label {
+  font-size: 11.5px; font-weight: 600; color: var(--brass-ink);
+  padding: 2px 9px; border-radius: 999px;
+  background: var(--brass-soft); border: 1px solid var(--brass-line);
+}
 .b-checklist .task-bucket-head h2 { color: var(--brass-ink); }
 
 /* چیپِ کنار ریل */
