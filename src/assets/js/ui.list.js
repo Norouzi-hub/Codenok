@@ -225,8 +225,10 @@
     header.appendChild(el('div.th', { text: 'گردش‌کار', title: 'مرحله‌ای که پرونده در آن است' }));
     fields.forEach(function (f) {
       var active = app.state.sortKey === f.key;
-      header.appendChild(el('div.th' + (active ? '.sorted' : ''), {
-        title: f.label,
+      var th = el('div.th.th-field' + (active ? '.sorted' : ''), {
+        title: f.label + ' — کلیک: مرتب‌سازی، کشیدن: جابه‌جایی ستون',
+        draggable: 'true',
+        'data-key': f.key,
         onclick: function () {
           if (app.state.sortKey === f.key) {
             app.state.sortDir = app.state.sortDir === 'asc' ? 'desc' : 'asc';
@@ -234,12 +236,16 @@
             app.state.sortKey = f.key;
             app.state.sortDir = 'asc';
           }
+          saveSort(app);
           app.refresh();
         }
       }, [
+        el('span.th-grip', { 'aria-hidden': 'true' }),
         el('span', { text: f.label.replace(/[*]/g, '').replace(/\(\d[^)]*\)/g, '').trim() }),
         active ? el('span.sort-arrow', { text: app.state.sortDir === 'asc' ? '▲' : '▼' }) : null
-      ]));
+      ]);
+      dragColumn(app, th, f.key, header);
+      header.appendChild(th);
     });
 
     var viewport = el('div.tbody-viewport');
@@ -515,8 +521,144 @@
     ]);
   }
 
+  /* ----------------------------------------------------- ترتیب و ستون‌ها */
+  /*
+   * مرتب‌سازی و ترتیب ستون‌ها، «حرفِ کاربر»اند و باید بمانند: نه با
+   * رفرش صفحه به «شمارهٔ پرونده» برگردند، نه با نسخهٔ تازهٔ برنامه. هر دو
+   * در تنظیماتِ خودِ دیتابیس ذخیره می‌شوند، پس با فایل دیتابیس هم سفر
+   * می‌کنند.
+   */
+  function loadSort(app) {
+    if (app.state.sortLoaded) return;
+    app.state.sortLoaded = true;
+    var ls = (M.state.settings || {}).listSort;
+    if (ls && ls.key && (ls.key === 'caseNo' || M.FIELD_BY_KEY[ls.key])) {
+      app.state.sortKey = ls.key;
+      app.state.sortDir = ls.dir === 'asc' ? 'asc' : 'desc';
+    }
+  }
+
+  function saveSort(app) {
+    M.saveSettings({ listSort: { key: app.state.sortKey, dir: app.state.sortDir } });
+  }
+
+  /** کشیدن سرستون روی سرستونِ دیگر = جابه‌جایی ستون، و ذخیره‌اش */
+  function dragColumn(app, th, key, header) {
+    th.addEventListener('dragstart', function (e) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', key);
+      th.classList.add('is-dragging');
+    });
+    th.addEventListener('dragend', function () {
+      th.classList.remove('is-dragging');
+      w.U.$$('.th.drop-before, .th.drop-after', header).forEach(function (n) {
+        n.classList.remove('drop-before', 'drop-after');
+      });
+    });
+    th.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      var r = th.getBoundingClientRect();
+      // در راست‌به‌چپ، نیمهٔ راستِ ستون «پیش از» آن است
+      var before = e.clientX > r.left + r.width / 2;
+      th.classList.toggle('drop-before', before);
+      th.classList.toggle('drop-after', !before);
+    });
+    th.addEventListener('dragleave', function () {
+      th.classList.remove('drop-before', 'drop-after');
+    });
+    th.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var from = e.dataTransfer.getData('text/plain');
+      var before = th.classList.contains('drop-before');
+      th.classList.remove('drop-before', 'drop-after');
+      if (!from || from === key) return;
+      moveColumn(app, from, key, before);
+    });
+  }
+
+  function moveColumn(app, from, to, before) {
+    var cols = M.state.columns.filter(function (k) { return k !== from; });
+    var at = cols.indexOf(to);
+    if (at < 0) return;
+    cols.splice(before ? at : at + 1, 0, from);
+    M.saveColumns(cols).then(function () { app.refresh(); });
+  }
+
+  /* --------------------------------------------------- کشوی فیلترها */
+  /*
+   * فیلترها دیگر همیشه یک ستون از صفحه را نمی‌گیرند: کشویی است که از کنار
+   * باز می‌شود و پیش‌فرض بسته است. هر تیکِ فیلتر فهرست را از نو می‌سازد،
+   * پس باز بودنِ کشو و جای اسکرولش در وضعیتِ همین نشست می‌ماند — وگرنه
+   * با هر تیک بسته می‌شد. نشستِ بعدی دوباره بسته شروع می‌شود.
+   */
+  function filterToggle(app) {
+    var n = activeFilterCount(app) +
+      (app.state.filters._from || app.state.filters._to ? 1 : 0);
+    return el('button.btn.small.filter-toggle' + (n ? '.has' : ''), {
+      type: 'button', title: 'فیلترها (F)',
+      'aria-expanded': app.state.filterOpen ? 'true' : 'false',
+      onclick: function () { app.toggleFilters(); }
+    }, [
+      el('span.ft-funnel', { 'aria-hidden': 'true' }),
+      el('span', { text: 'فیلترها' }),
+      n ? el('span.badge', { text: w.U.toFaDigits(n) }) : null
+    ]);
+  }
+
+  function filterDrawer(app) {
+    var open = !!app.state.filterOpen;
+    var body = el('div.fdrawer-body', null, [renderFilters(app), w.UIMisc.statsPanel(app)]);
+    body.addEventListener('scroll', function () { app.state.filterScroll = body.scrollTop; });
+    var drawer = el('aside.fdrawer' + (open ? '.is-open.no-anim' : ''), {
+      role: 'dialog', 'aria-label': 'فیلترها', 'aria-hidden': open ? 'false' : 'true'
+    }, [
+      el('div.fdrawer-head', null, [
+        el('span.ft-funnel', { 'aria-hidden': 'true' }),
+        el('h3', { text: 'فیلترها' }),
+        el('div.spacer'),
+        el('button.fdrawer-x', {
+          type: 'button', text: '✕', title: 'بستن (Esc)', 'aria-label': 'بستن فیلترها',
+          onclick: function () { app.toggleFilters(false); }
+        })
+      ]),
+      body
+    ]);
+    var scrim = el('div.fdrawer-scrim' + (open ? '.is-open' : ''), {
+      onclick: function () { app.toggleFilters(false); }
+    });
+    return {
+      nodes: [scrim, drawer],
+      restore: function () {
+        if (open) body.scrollTop = app.state.filterScroll || 0;
+        setTimeout(function () { drawer.classList.remove('no-anim'); }, 50);
+      }
+    };
+  }
+
+  /** باز و بسته کردن کشو، بی‌آنکه فهرست از نو ساخته شود */
+  function toggleFilters(app, want) {
+    var open = want == null ? !app.state.filterOpen : !!want;
+    app.state.filterOpen = open;
+    if (!open) app.state.filterScroll = 0;
+    var d = document.querySelector('.fdrawer'), s = document.querySelector('.fdrawer-scrim');
+    if (!d) return;
+    d.classList.remove('no-anim');
+    d.classList.toggle('is-open', open);
+    d.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (s) s.classList.toggle('is-open', open);
+    var b = document.querySelector('.filter-toggle');
+    if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      var first = d.querySelector('summary, input, button.fdrawer-x');
+      if (first) setTimeout(function () { first.focus({ preventScroll: true }); }, 280);
+    }
+  }
+
   // ------------------------------------------------------------------ صفحه
   function render(app, mount) {
+    loadSort(app);
+    if (!app.toggleFilters) app.toggleFilters = function (v) { toggleFilters(app, v); };
     var rows = M.query({
       q: app.state.q, filters: app.state.filters,
       sortKey: app.state.sortKey, sortDir: app.state.sortDir
@@ -547,6 +689,7 @@
         })
       ])
       : el('div.result-bar', null, [
+        filterToggle(app),
         countNode,
         el('div.spacer'),
         el('button.btn.small.ghost', {
@@ -677,16 +820,31 @@
     };
 
     w.U.clear(mount);
+    var drawer = phone ? null : filterDrawer(app);
     mount.appendChild(el('div.list-layout' + (phone ? '.phone' : ''), null, [
-      phone ? null
-        : el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
       el('section.list-main', null,
-        [w.UIScope.banner(app), note, summary, body, selBar])
-    ]));
+        [w.UIScope.banner(app), note, summary,
+          phone ? null : activeChips(app), body, selBar])
+    ].concat(drawer ? drawer.nodes : [])));
+    if (drawer) drawer.restore();
     app.refreshSelectionBar();
   }
 
+  /* Esc کشو را می‌بندد؛ F بازش می‌کند — هر دو فقط در فهرست و وقتی پنجره‌ای باز نیست */
+  document.addEventListener('keydown', function (e) {
+    var app = w.App;
+    if (!app || app.state.view !== 'list' || document.querySelector('.overlay')) return;
+    if (e.key === 'Escape' && app.state.filterOpen) { app.toggleFilters(false); return; }
+    var t = e.target, typing = t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
+    if (!typing && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'f' || e.key === 'F' || e.key === 'ب') &&
+        app.toggleFilters) {
+      e.preventDefault();
+      app.toggleFilters();
+    }
+  });
+
   w.UIList = {
-    render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth
+    render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth,
+    moveColumn: moveColumn
   };
 })(window);

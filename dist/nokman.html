@@ -5929,6 +5929,110 @@ button.tag-chip.ro { cursor: pointer; }
 }
 @media print { .gate { display: none !important; } }
 
+/* ================================================== کشوی فیلترهای فهرست
+   پیش‌فرض بسته؛ از کنار باز می‌شود و روی فهرست می‌نشیند، بی‌آنکه جدول
+   جابه‌جا شود. ui.list.js
+   ================================================== */
+.list-layout { position: relative; overflow: hidden; }
+.fdrawer {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: min(320px, 88%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-inline-start: 1px solid var(--line);
+  box-shadow: 18px 0 48px -24px rgba(23, 26, 46, .45);
+  transform: translateX(-104%);
+  visibility: hidden;
+  transition: transform .34s cubic-bezier(.2, .8, .3, 1), visibility 0s linear .34s;
+}
+.fdrawer.is-open {
+  transform: none;
+  visibility: visible;
+  transition: transform .34s cubic-bezier(.2, .8, .3, 1), visibility 0s;
+}
+.fdrawer.no-anim { transition: none; }
+.fdrawer-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper), var(--card));
+}
+.fdrawer-head h3 { margin: 0; font-size: 14px; color: var(--ink-800); }
+.fdrawer-x {
+  width: 30px; height: 30px; border: 0; border-radius: 8px;
+  background: none; color: var(--muted); cursor: pointer; font-size: 13px;
+}
+.fdrawer-x:hover { background: var(--paper-2); color: var(--ink-800); }
+.fdrawer-body { flex: 1; overflow-y: auto; padding: 14px 16px 18px; }
+/* عنوانِ «فیلترها» در خودِ سرِ کشو آمده؛ تکرارش لازم نیست */
+.fdrawer .filters-head h3 { display: none; }
+.fdrawer-scrim {
+  position: absolute; inset: 0; z-index: 29;
+  background: rgba(23, 26, 46, .10);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+}
+.fdrawer-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+/* دکمهٔ فیلترها، با نماد قیف */
+.filter-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.filter-toggle.has { border-color: var(--brass); background: var(--brass-soft); color: var(--brass-ink); }
+.filter-toggle[aria-expanded="true"] { background: var(--ink-800); border-color: var(--ink-800); color: #fff; }
+.ft-funnel {
+  display: inline-block; width: 12px; height: 11px; flex: 0 0 auto;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 0, 62% 48%, 62% 100%, 38% 84%, 38% 48%);
+}
+.fdrawer-head .ft-funnel { color: var(--brass); }
+.list-main > .filter-chips { margin: 0 0 8px; }
+
+/* سرستون: کشیدن برای جابه‌جایی */
+.th.th-field { cursor: pointer; position: relative; }
+.th-grip {
+  width: 6px; height: 12px; flex: 0 0 auto; margin-inline-end: 4px; opacity: 0;
+  background: radial-gradient(circle, var(--ink-400) 1px, transparent 1.4px) 0 0 / 3px 3px;
+  transition: opacity .15s;
+}
+.th.th-field:hover .th-grip { opacity: .9; cursor: grab; }
+.th.is-dragging { opacity: .45; }
+.th.drop-before { box-shadow: inset -3px 0 0 var(--brass); }
+.th.drop-after { box-shadow: inset 3px 0 0 var(--brass); }
+
+/* پنجرهٔ ستون‌ها: انتخاب + ترتیب */
+.cols-modal { width: min(1040px, 100%); }
+.cols-layout { display: grid; grid-template-columns: 1fr 280px; gap: 18px; align-items: start; }
+.cols-side {
+  position: sticky; top: 0;
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--paper); padding: 12px;
+}
+.cols-side h4 { margin: 0 0 4px; }
+.cols-order { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 52vh; overflow-y: auto; }
+.cols-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); font-size: 12.5px; cursor: grab;
+  transition: border-color .15s, box-shadow .15s;
+}
+.cols-item:hover { border-color: var(--brass-line); }
+.cols-item.is-dragging { opacity: .45; }
+.cols-item.drop { border-color: var(--brass); box-shadow: 0 -2px 0 var(--brass); }
+.cols-grip { color: var(--ink-400); font-size: 10px; letter-spacing: -2px; }
+.cols-n { width: 18px; text-align: center; color: var(--muted); font-size: 11px; }
+.cols-name { flex: 1; min-width: 0; }
+.cols-mv {
+  width: 24px; height: 24px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--paper); cursor: pointer; font-size: 12px; color: var(--ink-700); padding: 0;
+}
+.cols-mv:disabled { opacity: .35; cursor: default; }
+.cols-mv:not(:disabled):hover { border-color: var(--brass); color: var(--brass-ink); }
+.cols-rm:hover { border-color: var(--cinnabar) !important; color: var(--cinnabar) !important; }
+.cols-empty { color: var(--muted); font-size: 12px; padding: 8px; }
+@media (max-width: 860px) { .cols-layout { grid-template-columns: 1fr; } .cols-side { position: static; } }
+
 </style>
 </head>
 <body>
@@ -19881,8 +19985,10 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     header.appendChild(el('div.th', { text: 'گردش‌کار', title: 'مرحله‌ای که پرونده در آن است' }));
     fields.forEach(function (f) {
       var active = app.state.sortKey === f.key;
-      header.appendChild(el('div.th' + (active ? '.sorted' : ''), {
-        title: f.label,
+      var th = el('div.th.th-field' + (active ? '.sorted' : ''), {
+        title: f.label + ' — کلیک: مرتب‌سازی، کشیدن: جابه‌جایی ستون',
+        draggable: 'true',
+        'data-key': f.key,
         onclick: function () {
           if (app.state.sortKey === f.key) {
             app.state.sortDir = app.state.sortDir === 'asc' ? 'desc' : 'asc';
@@ -19890,12 +19996,16 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
             app.state.sortKey = f.key;
             app.state.sortDir = 'asc';
           }
+          saveSort(app);
           app.refresh();
         }
       }, [
+        el('span.th-grip', { 'aria-hidden': 'true' }),
         el('span', { text: f.label.replace(/[*]/g, '').replace(/\(\d[^)]*\)/g, '').trim() }),
         active ? el('span.sort-arrow', { text: app.state.sortDir === 'asc' ? '▲' : '▼' }) : null
-      ]));
+      ]);
+      dragColumn(app, th, f.key, header);
+      header.appendChild(th);
     });
 
     var viewport = el('div.tbody-viewport');
@@ -20171,8 +20281,144 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     ]);
   }
 
+  /* ----------------------------------------------------- ترتیب و ستون‌ها */
+  /*
+   * مرتب‌سازی و ترتیب ستون‌ها، «حرفِ کاربر»اند و باید بمانند: نه با
+   * رفرش صفحه به «شمارهٔ پرونده» برگردند، نه با نسخهٔ تازهٔ برنامه. هر دو
+   * در تنظیماتِ خودِ دیتابیس ذخیره می‌شوند، پس با فایل دیتابیس هم سفر
+   * می‌کنند.
+   */
+  function loadSort(app) {
+    if (app.state.sortLoaded) return;
+    app.state.sortLoaded = true;
+    var ls = (M.state.settings || {}).listSort;
+    if (ls && ls.key && (ls.key === 'caseNo' || M.FIELD_BY_KEY[ls.key])) {
+      app.state.sortKey = ls.key;
+      app.state.sortDir = ls.dir === 'asc' ? 'asc' : 'desc';
+    }
+  }
+
+  function saveSort(app) {
+    M.saveSettings({ listSort: { key: app.state.sortKey, dir: app.state.sortDir } });
+  }
+
+  /** کشیدن سرستون روی سرستونِ دیگر = جابه‌جایی ستون، و ذخیره‌اش */
+  function dragColumn(app, th, key, header) {
+    th.addEventListener('dragstart', function (e) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', key);
+      th.classList.add('is-dragging');
+    });
+    th.addEventListener('dragend', function () {
+      th.classList.remove('is-dragging');
+      w.U.$$('.th.drop-before, .th.drop-after', header).forEach(function (n) {
+        n.classList.remove('drop-before', 'drop-after');
+      });
+    });
+    th.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      var r = th.getBoundingClientRect();
+      // در راست‌به‌چپ، نیمهٔ راستِ ستون «پیش از» آن است
+      var before = e.clientX > r.left + r.width / 2;
+      th.classList.toggle('drop-before', before);
+      th.classList.toggle('drop-after', !before);
+    });
+    th.addEventListener('dragleave', function () {
+      th.classList.remove('drop-before', 'drop-after');
+    });
+    th.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var from = e.dataTransfer.getData('text/plain');
+      var before = th.classList.contains('drop-before');
+      th.classList.remove('drop-before', 'drop-after');
+      if (!from || from === key) return;
+      moveColumn(app, from, key, before);
+    });
+  }
+
+  function moveColumn(app, from, to, before) {
+    var cols = M.state.columns.filter(function (k) { return k !== from; });
+    var at = cols.indexOf(to);
+    if (at < 0) return;
+    cols.splice(before ? at : at + 1, 0, from);
+    M.saveColumns(cols).then(function () { app.refresh(); });
+  }
+
+  /* --------------------------------------------------- کشوی فیلترها */
+  /*
+   * فیلترها دیگر همیشه یک ستون از صفحه را نمی‌گیرند: کشویی است که از کنار
+   * باز می‌شود و پیش‌فرض بسته است. هر تیکِ فیلتر فهرست را از نو می‌سازد،
+   * پس باز بودنِ کشو و جای اسکرولش در وضعیتِ همین نشست می‌ماند — وگرنه
+   * با هر تیک بسته می‌شد. نشستِ بعدی دوباره بسته شروع می‌شود.
+   */
+  function filterToggle(app) {
+    var n = activeFilterCount(app) +
+      (app.state.filters._from || app.state.filters._to ? 1 : 0);
+    return el('button.btn.small.filter-toggle' + (n ? '.has' : ''), {
+      type: 'button', title: 'فیلترها (F)',
+      'aria-expanded': app.state.filterOpen ? 'true' : 'false',
+      onclick: function () { app.toggleFilters(); }
+    }, [
+      el('span.ft-funnel', { 'aria-hidden': 'true' }),
+      el('span', { text: 'فیلترها' }),
+      n ? el('span.badge', { text: w.U.toFaDigits(n) }) : null
+    ]);
+  }
+
+  function filterDrawer(app) {
+    var open = !!app.state.filterOpen;
+    var body = el('div.fdrawer-body', null, [renderFilters(app), w.UIMisc.statsPanel(app)]);
+    body.addEventListener('scroll', function () { app.state.filterScroll = body.scrollTop; });
+    var drawer = el('aside.fdrawer' + (open ? '.is-open.no-anim' : ''), {
+      role: 'dialog', 'aria-label': 'فیلترها', 'aria-hidden': open ? 'false' : 'true'
+    }, [
+      el('div.fdrawer-head', null, [
+        el('span.ft-funnel', { 'aria-hidden': 'true' }),
+        el('h3', { text: 'فیلترها' }),
+        el('div.spacer'),
+        el('button.fdrawer-x', {
+          type: 'button', text: '✕', title: 'بستن (Esc)', 'aria-label': 'بستن فیلترها',
+          onclick: function () { app.toggleFilters(false); }
+        })
+      ]),
+      body
+    ]);
+    var scrim = el('div.fdrawer-scrim' + (open ? '.is-open' : ''), {
+      onclick: function () { app.toggleFilters(false); }
+    });
+    return {
+      nodes: [scrim, drawer],
+      restore: function () {
+        if (open) body.scrollTop = app.state.filterScroll || 0;
+        setTimeout(function () { drawer.classList.remove('no-anim'); }, 50);
+      }
+    };
+  }
+
+  /** باز و بسته کردن کشو، بی‌آنکه فهرست از نو ساخته شود */
+  function toggleFilters(app, want) {
+    var open = want == null ? !app.state.filterOpen : !!want;
+    app.state.filterOpen = open;
+    if (!open) app.state.filterScroll = 0;
+    var d = document.querySelector('.fdrawer'), s = document.querySelector('.fdrawer-scrim');
+    if (!d) return;
+    d.classList.remove('no-anim');
+    d.classList.toggle('is-open', open);
+    d.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (s) s.classList.toggle('is-open', open);
+    var b = document.querySelector('.filter-toggle');
+    if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      var first = d.querySelector('summary, input, button.fdrawer-x');
+      if (first) setTimeout(function () { first.focus({ preventScroll: true }); }, 280);
+    }
+  }
+
   // ------------------------------------------------------------------ صفحه
   function render(app, mount) {
+    loadSort(app);
+    if (!app.toggleFilters) app.toggleFilters = function (v) { toggleFilters(app, v); };
     var rows = M.query({
       q: app.state.q, filters: app.state.filters,
       sortKey: app.state.sortKey, sortDir: app.state.sortDir
@@ -20203,6 +20449,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         })
       ])
       : el('div.result-bar', null, [
+        filterToggle(app),
         countNode,
         el('div.spacer'),
         el('button.btn.small.ghost', {
@@ -20333,17 +20580,32 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     };
 
     w.U.clear(mount);
+    var drawer = phone ? null : filterDrawer(app);
     mount.appendChild(el('div.list-layout' + (phone ? '.phone' : ''), null, [
-      phone ? null
-        : el('aside.sidebar', null, [renderFilters(app), w.UIMisc.statsPanel(app)]),
       el('section.list-main', null,
-        [w.UIScope.banner(app), note, summary, body, selBar])
-    ]));
+        [w.UIScope.banner(app), note, summary,
+          phone ? null : activeChips(app), body, selBar])
+    ].concat(drawer ? drawer.nodes : [])));
+    if (drawer) drawer.restore();
     app.refreshSelectionBar();
   }
 
+  /* Esc کشو را می‌بندد؛ F بازش می‌کند — هر دو فقط در فهرست و وقتی پنجره‌ای باز نیست */
+  document.addEventListener('keydown', function (e) {
+    var app = w.App;
+    if (!app || app.state.view !== 'list' || document.querySelector('.overlay')) return;
+    if (e.key === 'Escape' && app.state.filterOpen) { app.toggleFilters(false); return; }
+    var t = e.target, typing = t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
+    if (!typing && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'f' || e.key === 'F' || e.key === 'ب') &&
+        app.toggleFilters) {
+      e.preventDefault();
+      app.toggleFilters();
+    }
+  });
+
   w.UIList = {
-    render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth
+    render: render, statusClass: statusClass, cellText: cellText, colWidth: colWidth,
+    moveColumn: moveColumn
   };
 })(window);
 
@@ -22799,27 +23061,104 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
   }
 
   // ---------------------------------------------------------- انتخاب ستون‌ها
+  /*
+   * ستون‌های جدول، به ترتیبی که خودتان می‌خواهید.
+   *
+   * تا امروز هر ستونی که تیک می‌خورد به ترتیبِ فایل فیلدها چیده می‌شد و
+   * راهی برای جابه‌جایی نبود. حالا سمت چپ، ستون‌های انتخاب‌شده به ترتیبِ
+   * نمایش‌اند: با ↑ و ↓ یا کشیدن جابه‌جا می‌شوند؛ ستونِ تازه ته فهرست می‌آید.
+   * همین ترتیب در دیتابیس ذخیره می‌شود و با نسخهٔ تازهٔ برنامه عوض نمی‌شود.
+   */
   function columnsDialog(app) {
-    var chosen = M.state.columns.slice();
+    var chosen = M.state.columns.filter(function (k) { return M.FIELD_BY_KEY[k]; });
     var body = el('div.cols-dialog');
-    body.appendChild(el('p.muted', { text: 'ستون‌هایی که در جدول فهرست دیده می‌شوند:' }));
+    var order = el('ol.cols-order');
+    var boxes = {};
+
+    function label(k) { return w.UIForm.cleanLabel(M.FIELD_BY_KEY[k].label); }
+
+    function drawOrder() {
+      w.U.clear(order);
+      chosen.forEach(function (k, i) {
+        var li = el('li.cols-item', { draggable: 'true', 'data-key': k }, [
+          el('span.cols-grip', { 'aria-hidden': 'true', text: '⋮⋮' }),
+          el('span.cols-n', { text: fa(i + 1) }),
+          el('span.cols-name', { text: label(k) }),
+          el('button.cols-mv', {
+            type: 'button', text: '↑', title: 'یکی بالاتر', disabled: i === 0,
+            onclick: function () { move(i, i - 1); }
+          }),
+          el('button.cols-mv', {
+            type: 'button', text: '↓', title: 'یکی پایین‌تر', disabled: i === chosen.length - 1,
+            onclick: function () { move(i, i + 1); }
+          }),
+          el('button.cols-mv.cols-rm', {
+            type: 'button', text: '✕', title: 'برداشتن این ستون',
+            onclick: function () { toggle(k, false); }
+          })
+        ]);
+        li.addEventListener('dragstart', function (e) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', k);
+          li.classList.add('is-dragging');
+        });
+        li.addEventListener('dragend', function () { li.classList.remove('is-dragging'); });
+        li.addEventListener('dragover', function (e) { e.preventDefault(); li.classList.add('drop'); });
+        li.addEventListener('dragleave', function () { li.classList.remove('drop'); });
+        li.addEventListener('drop', function (e) {
+          e.preventDefault();
+          li.classList.remove('drop');
+          var from = chosen.indexOf(e.dataTransfer.getData('text/plain'));
+          if (from >= 0) move(from, i);
+        });
+        order.appendChild(li);
+      });
+      if (!chosen.length) order.appendChild(el('li.cols-empty', { text: 'ستونی انتخاب نشده.' }));
+    }
+
+    function move(from, to) {
+      if (to < 0 || to >= chosen.length || from === to) return;
+      var k = chosen.splice(from, 1)[0];
+      chosen.splice(to, 0, k);
+      drawOrder();
+    }
+
+    function toggle(k, on) {
+      chosen = chosen.filter(function (x) { return x !== k; });
+      if (on) chosen.push(k);           // ستونِ تازه، ته فهرست
+      if (boxes[k]) boxes[k].checked = on;
+      drawOrder();
+    }
+
     var grid = el('div.cols-grid');
     w.GROUPS.forEach(function (g) {
       var col = el('div.cols-group', null, [el('h4', { text: g.label })]);
-      M.FIELDS.filter(function (f) { return f.group === g.key; }).forEach(function (f) {
-        var cb = el('input', {
-          type: 'checkbox', checked: chosen.indexOf(f.key) >= 0,
-          onchange: function () {
-            if (this.checked) { if (chosen.indexOf(f.key) < 0) chosen.push(f.key); }
-            else chosen = chosen.filter(function (k) { return k !== f.key; });
-          }
-        });
+      M.FIELDS.filter(function (f) {
+        return f.group === g.key && (!f.hidden || chosen.indexOf(f.key) >= 0);
+      }).forEach(function (f) {
+        var cb = el('input', { type: 'checkbox', checked: chosen.indexOf(f.key) >= 0 });
+        cb.addEventListener('change', function () { toggle(f.key, cb.checked); });
+        boxes[f.key] = cb;
         col.appendChild(el('label.col-opt', null, [cb,
           el('span', { text: w.UIForm.cleanLabel(f.label) })]));
       });
       grid.appendChild(col);
     });
-    body.appendChild(grid);
+
+    body.appendChild(el('div.cols-layout', null, [
+      el('section.cols-pick', null, [
+        el('p.muted', { text: 'ستون‌هایی که در جدول فهرست دیده می‌شوند:' }), grid
+      ]),
+      el('section.cols-side', null, [
+        el('h4', { text: 'ترتیب نمایش' }),
+        el('p.muted.tiny', {
+          text: 'از راست به چپِ جدول. با ↑ ↓ یا کشیدن جابه‌جا کنید. در خودِ جدول هم ' +
+            'می‌شود سرستون‌ها را کشید.'
+        }),
+        order
+      ])
+    ]));
+    drawOrder();
 
     var m = w.U.modal('ستون‌های جدول', body, [
       el('button.btn.ghost', {
@@ -22834,13 +23173,12 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         type: 'button', text: 'اعمال',
         onclick: function () {
           if (!chosen.length) { w.U.toast('حداقل یک ستون انتخاب کنید.', 'bad'); return; }
-          // ترتیب را بر اساس ترتیب فیلدها نگه می‌داریم
-          var ordered = M.FIELDS.map(function (f) { return f.key; })
-            .filter(function (k) { return chosen.indexOf(k) >= 0; });
-          M.saveColumns(ordered).then(function () { m.close(); app.refresh(); });
+          M.saveColumns(chosen.slice()).then(function () { m.close(); app.refresh(); });
         }
       })
     ]);
+    m.root.classList.add('cols-modal');
+    return m;
   }
 
   // ------------------------------------------------------------- خروجی اکسل

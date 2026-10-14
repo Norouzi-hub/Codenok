@@ -5900,3 +5900,107 @@ button.tag-chip.ro { cursor: pointer; }
   .gate-lines { background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 34px); }
 }
 @media print { .gate { display: none !important; } }
+
+/* ================================================== کشوی فیلترهای فهرست
+   پیش‌فرض بسته؛ از کنار باز می‌شود و روی فهرست می‌نشیند، بی‌آنکه جدول
+   جابه‌جا شود. ui.list.js
+   ================================================== */
+.list-layout { position: relative; overflow: hidden; }
+.fdrawer {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: min(320px, 88%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-inline-start: 1px solid var(--line);
+  box-shadow: 18px 0 48px -24px rgba(23, 26, 46, .45);
+  transform: translateX(-104%);
+  visibility: hidden;
+  transition: transform .34s cubic-bezier(.2, .8, .3, 1), visibility 0s linear .34s;
+}
+.fdrawer.is-open {
+  transform: none;
+  visibility: visible;
+  transition: transform .34s cubic-bezier(.2, .8, .3, 1), visibility 0s;
+}
+.fdrawer.no-anim { transition: none; }
+.fdrawer-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--paper), var(--card));
+}
+.fdrawer-head h3 { margin: 0; font-size: 14px; color: var(--ink-800); }
+.fdrawer-x {
+  width: 30px; height: 30px; border: 0; border-radius: 8px;
+  background: none; color: var(--muted); cursor: pointer; font-size: 13px;
+}
+.fdrawer-x:hover { background: var(--paper-2); color: var(--ink-800); }
+.fdrawer-body { flex: 1; overflow-y: auto; padding: 14px 16px 18px; }
+/* عنوانِ «فیلترها» در خودِ سرِ کشو آمده؛ تکرارش لازم نیست */
+.fdrawer .filters-head h3 { display: none; }
+.fdrawer-scrim {
+  position: absolute; inset: 0; z-index: 29;
+  background: rgba(23, 26, 46, .10);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+}
+.fdrawer-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+/* دکمهٔ فیلترها، با نماد قیف */
+.filter-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.filter-toggle.has { border-color: var(--brass); background: var(--brass-soft); color: var(--brass-ink); }
+.filter-toggle[aria-expanded="true"] { background: var(--ink-800); border-color: var(--ink-800); color: #fff; }
+.ft-funnel {
+  display: inline-block; width: 12px; height: 11px; flex: 0 0 auto;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 0, 62% 48%, 62% 100%, 38% 84%, 38% 48%);
+}
+.fdrawer-head .ft-funnel { color: var(--brass); }
+.list-main > .filter-chips { margin: 0 0 8px; }
+
+/* سرستون: کشیدن برای جابه‌جایی */
+.th.th-field { cursor: pointer; position: relative; }
+.th-grip {
+  width: 6px; height: 12px; flex: 0 0 auto; margin-inline-end: 4px; opacity: 0;
+  background: radial-gradient(circle, var(--ink-400) 1px, transparent 1.4px) 0 0 / 3px 3px;
+  transition: opacity .15s;
+}
+.th.th-field:hover .th-grip { opacity: .9; cursor: grab; }
+.th.is-dragging { opacity: .45; }
+.th.drop-before { box-shadow: inset -3px 0 0 var(--brass); }
+.th.drop-after { box-shadow: inset 3px 0 0 var(--brass); }
+
+/* پنجرهٔ ستون‌ها: انتخاب + ترتیب */
+.cols-modal { width: min(1040px, 100%); }
+.cols-layout { display: grid; grid-template-columns: 1fr 280px; gap: 18px; align-items: start; }
+.cols-side {
+  position: sticky; top: 0;
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--paper); padding: 12px;
+}
+.cols-side h4 { margin: 0 0 4px; }
+.cols-order { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 52vh; overflow-y: auto; }
+.cols-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); font-size: 12.5px; cursor: grab;
+  transition: border-color .15s, box-shadow .15s;
+}
+.cols-item:hover { border-color: var(--brass-line); }
+.cols-item.is-dragging { opacity: .45; }
+.cols-item.drop { border-color: var(--brass); box-shadow: 0 -2px 0 var(--brass); }
+.cols-grip { color: var(--ink-400); font-size: 10px; letter-spacing: -2px; }
+.cols-n { width: 18px; text-align: center; color: var(--muted); font-size: 11px; }
+.cols-name { flex: 1; min-width: 0; }
+.cols-mv {
+  width: 24px; height: 24px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--paper); cursor: pointer; font-size: 12px; color: var(--ink-700); padding: 0;
+}
+.cols-mv:disabled { opacity: .35; cursor: default; }
+.cols-mv:not(:disabled):hover { border-color: var(--brass); color: var(--brass-ink); }
+.cols-rm:hover { border-color: var(--cinnabar) !important; color: var(--cinnabar) !important; }
+.cols-empty { color: var(--muted); font-size: 12px; padding: 8px; }
+@media (max-width: 860px) { .cols-layout { grid-template-columns: 1fr; } .cols-side { position: static; } }

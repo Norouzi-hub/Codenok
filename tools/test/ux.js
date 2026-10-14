@@ -306,7 +306,10 @@ function check(name, ok, extra) {
 
   console.log('\n— فیلترها باز و بسته می‌شوند —');
   await page.evaluate(() => window.App.goList());
-  await page.waitForSelector('.filter-group');
+  // فیلترها حالا در کشویی‌اند که پیش‌فرض بسته است
+  await page.waitForSelector('.filter-toggle');
+  await page.click('.filter-toggle');
+  await page.waitForSelector('.fdrawer.is-open .filter-group');
   const caret = await page.evaluate(() => {
     const sum = document.querySelector('.filter-group summary');
     return getComputedStyle(sum, '::after').content;

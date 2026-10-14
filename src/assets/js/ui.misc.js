@@ -63,27 +63,104 @@
   }
 
   // ---------------------------------------------------------- انتخاب ستون‌ها
+  /*
+   * ستون‌های جدول، به ترتیبی که خودتان می‌خواهید.
+   *
+   * تا امروز هر ستونی که تیک می‌خورد به ترتیبِ فایل فیلدها چیده می‌شد و
+   * راهی برای جابه‌جایی نبود. حالا سمت چپ، ستون‌های انتخاب‌شده به ترتیبِ
+   * نمایش‌اند: با ↑ و ↓ یا کشیدن جابه‌جا می‌شوند؛ ستونِ تازه ته فهرست می‌آید.
+   * همین ترتیب در دیتابیس ذخیره می‌شود و با نسخهٔ تازهٔ برنامه عوض نمی‌شود.
+   */
   function columnsDialog(app) {
-    var chosen = M.state.columns.slice();
+    var chosen = M.state.columns.filter(function (k) { return M.FIELD_BY_KEY[k]; });
     var body = el('div.cols-dialog');
-    body.appendChild(el('p.muted', { text: 'ستون‌هایی که در جدول فهرست دیده می‌شوند:' }));
+    var order = el('ol.cols-order');
+    var boxes = {};
+
+    function label(k) { return w.UIForm.cleanLabel(M.FIELD_BY_KEY[k].label); }
+
+    function drawOrder() {
+      w.U.clear(order);
+      chosen.forEach(function (k, i) {
+        var li = el('li.cols-item', { draggable: 'true', 'data-key': k }, [
+          el('span.cols-grip', { 'aria-hidden': 'true', text: '⋮⋮' }),
+          el('span.cols-n', { text: fa(i + 1) }),
+          el('span.cols-name', { text: label(k) }),
+          el('button.cols-mv', {
+            type: 'button', text: '↑', title: 'یکی بالاتر', disabled: i === 0,
+            onclick: function () { move(i, i - 1); }
+          }),
+          el('button.cols-mv', {
+            type: 'button', text: '↓', title: 'یکی پایین‌تر', disabled: i === chosen.length - 1,
+            onclick: function () { move(i, i + 1); }
+          }),
+          el('button.cols-mv.cols-rm', {
+            type: 'button', text: '✕', title: 'برداشتن این ستون',
+            onclick: function () { toggle(k, false); }
+          })
+        ]);
+        li.addEventListener('dragstart', function (e) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', k);
+          li.classList.add('is-dragging');
+        });
+        li.addEventListener('dragend', function () { li.classList.remove('is-dragging'); });
+        li.addEventListener('dragover', function (e) { e.preventDefault(); li.classList.add('drop'); });
+        li.addEventListener('dragleave', function () { li.classList.remove('drop'); });
+        li.addEventListener('drop', function (e) {
+          e.preventDefault();
+          li.classList.remove('drop');
+          var from = chosen.indexOf(e.dataTransfer.getData('text/plain'));
+          if (from >= 0) move(from, i);
+        });
+        order.appendChild(li);
+      });
+      if (!chosen.length) order.appendChild(el('li.cols-empty', { text: 'ستونی انتخاب نشده.' }));
+    }
+
+    function move(from, to) {
+      if (to < 0 || to >= chosen.length || from === to) return;
+      var k = chosen.splice(from, 1)[0];
+      chosen.splice(to, 0, k);
+      drawOrder();
+    }
+
+    function toggle(k, on) {
+      chosen = chosen.filter(function (x) { return x !== k; });
+      if (on) chosen.push(k);           // ستونِ تازه، ته فهرست
+      if (boxes[k]) boxes[k].checked = on;
+      drawOrder();
+    }
+
     var grid = el('div.cols-grid');
     w.GROUPS.forEach(function (g) {
       var col = el('div.cols-group', null, [el('h4', { text: g.label })]);
-      M.FIELDS.filter(function (f) { return f.group === g.key; }).forEach(function (f) {
-        var cb = el('input', {
-          type: 'checkbox', checked: chosen.indexOf(f.key) >= 0,
-          onchange: function () {
-            if (this.checked) { if (chosen.indexOf(f.key) < 0) chosen.push(f.key); }
-            else chosen = chosen.filter(function (k) { return k !== f.key; });
-          }
-        });
+      M.FIELDS.filter(function (f) {
+        return f.group === g.key && (!f.hidden || chosen.indexOf(f.key) >= 0);
+      }).forEach(function (f) {
+        var cb = el('input', { type: 'checkbox', checked: chosen.indexOf(f.key) >= 0 });
+        cb.addEventListener('change', function () { toggle(f.key, cb.checked); });
+        boxes[f.key] = cb;
         col.appendChild(el('label.col-opt', null, [cb,
           el('span', { text: w.UIForm.cleanLabel(f.label) })]));
       });
       grid.appendChild(col);
     });
-    body.appendChild(grid);
+
+    body.appendChild(el('div.cols-layout', null, [
+      el('section.cols-pick', null, [
+        el('p.muted', { text: 'ستون‌هایی که در جدول فهرست دیده می‌شوند:' }), grid
+      ]),
+      el('section.cols-side', null, [
+        el('h4', { text: 'ترتیب نمایش' }),
+        el('p.muted.tiny', {
+          text: 'از راست به چپِ جدول. با ↑ ↓ یا کشیدن جابه‌جا کنید. در خودِ جدول هم ' +
+            'می‌شود سرستون‌ها را کشید.'
+        }),
+        order
+      ])
+    ]));
+    drawOrder();
 
     var m = w.U.modal('ستون‌های جدول', body, [
       el('button.btn.ghost', {
@@ -98,13 +175,12 @@
         type: 'button', text: 'اعمال',
         onclick: function () {
           if (!chosen.length) { w.U.toast('حداقل یک ستون انتخاب کنید.', 'bad'); return; }
-          // ترتیب را بر اساس ترتیب فیلدها نگه می‌داریم
-          var ordered = M.FIELDS.map(function (f) { return f.key; })
-            .filter(function (k) { return chosen.indexOf(k) >= 0; });
-          M.saveColumns(ordered).then(function () { m.close(); app.refresh(); });
+          M.saveColumns(chosen.slice()).then(function () { m.close(); app.refresh(); });
         }
       })
     ]);
+    m.root.classList.add('cols-modal');
+    return m;
   }
 
   // ------------------------------------------------------------- خروجی اکسل
