@@ -6271,7 +6271,8 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
 .wl-card.is-collapsed { padding-bottom: 4px; }
 .wl-card.is-collapsed > :not(.wl-section-head) { display: none !important; }
 .wl-card.is-collapsed > .wl-section-head { border-bottom: 0; margin-bottom: 0; }
-.wl-card.is-collapsed .wl-sub { display: none; }
+.wl-card.is-collapsed .wl-sub, .wl-card.is-collapsed .wl-moved { display: none; }
+.wl-moved { flex-basis: 100%; text-align: start; margin-top: 2px; color: var(--muted); }
 .wl-card.is-dragging { opacity: .45; }
 
 /* --- آکاردئون: کلِ سرتیتر دکمه است --- */

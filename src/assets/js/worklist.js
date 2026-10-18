@@ -85,7 +85,32 @@
     return !!(rec.enforceOutcome || rec.dismissalDate || rec.undertakingDate);
   }
 
+  /*
+   * آخرین حکم کارگزینی.
+   *
+   * حکم مدرکِ شخص است، نه پرونده: یک بار برای کارمند بارگذاری می‌شود و
+   * همهٔ پرونده‌هایش آن را دارند. قبلاً فقط «تاریخ حکم» در خودِ پرونده
+   * شمرده می‌شد؛ حکمی که به‌عنوان مدرک شخص آمده بود، در آمار «نیامده»
+   * حساب می‌شد و پرونده سرِ مرحلهٔ «حکم» می‌ماند.
+   */
+  var DECREE_KIND = 'حکم کارگزینی';
+  function personDecree(rec) {
+    var D = w.Docs, P = w.Person;
+    if (!D || !D.currentForPerson || !P || !rec) return null;
+    var list = D.currentForPerson(P.keyOf(rec) || ('c:' + rec.id)).filter(function (d) {
+      return d.kind === DECREE_KIND;
+    });
+    return list.length ? list[list.length - 1] : null;
+  }
+  function decreeDateOf(rec) {
+    if (rec.decreeDate) return rec.decreeDate;
+    var d = personDecree(rec);
+    return d ? (d.docDate || '') : '';
+  }
+  function hasDecree(rec) { return !!(rec.decreeDate || personDecree(rec)); }
+
   function stageDone(rec, stage) {
+    if (stage.key === 'decree') return hasDecree(rec);
     if (stage.key === 'verdict') return hasVerdict(rec);
     if (stage.key === 'result') return hasNoticeResult(rec);
     if (stage.key === 'outcome') return hasOutcome(rec);
@@ -98,6 +123,7 @@
     if (stage.key === 'outcome') {
       return rec.dismissalDate || rec.undertakingDate || '';
     }
+    if (stage.key === 'decree') return decreeDateOf(rec);
     var f = M.FIELD_BY_KEY[stage.field];
     if (!f || f.type !== 'date') return '';
     return rec[stage.field] || '';
@@ -372,7 +398,7 @@
     }
 
     // ۳) آخرین حکم کارگزینی
-    if (!rec.decreeDate) {
+    if (!hasDecree(rec)) {
       return make('decree', 'گرفتن و بارگذاری آخرین حکم', 'کارشناس',
         rec.deliveryDate, limits.decree);
     }
@@ -391,7 +417,7 @@
 
     // ۶) نامهٔ دعوت
     if (!rec.invitationLetterDate) {
-      return make('invite', 'صدور نامهٔ دعوت', 'کارشناس', rec.decreeDate, limits.invite);
+      return make('invite', 'صدور نامهٔ دعوت', 'کارشناس', decreeDateOf(rec), limits.invite);
     }
 
     // ۷) دفاعیات — اگر نیامد، اول پیگیری، بعد مهلت پیگیری
@@ -603,7 +629,7 @@
   /** شمارش پرونده‌ها روی هر مرحله از گردش‌کار */
   function pipeline(cases) {
     var counts = STAGES.map(function () { return 0; });
-    cases.forEach(function (rec) {
+    notTransferred(cases).forEach(function (rec) {
       stages(rec).forEach(function (st, i) {
         if (st.done) counts[i] += 1;
       });
@@ -612,6 +638,12 @@
       return { key: st.key, label: st.label, short: st.short, value: counts[i] };
     });
   }
+
+  /*
+   * پرونده‌ای که به کارشناس دیگر ارجاع شده، دیگر کارِ ما نیست: نه در آمار
+   * گردش‌کار می‌آید، نه در «ناقص‌ها». در گزارش‌ها جای خودش را دارد.
+   */
+  function notTransferred(cases) { return cases.filter(function (c) { return !isTransferred(c); }); }
 
   /*
    * ممیزیِ گردش‌کار: کدام پرونده کجاست، کدام ثبت شده، و کدام «ناقص» است.
@@ -644,7 +676,7 @@
       return { key: st.key, label: st.label, short: st.short, field: st.field,
         optional: !!st.optional, recorded: [], missing: [], here: [], passed: 0 };
     });
-    cases.forEach(function (rec) {
+    notTransferred(cases).forEach(function (rec) {
       audit(rec).forEach(function (a, i) {
         if (a.recorded) out[i].recorded.push(rec);
         if (a.missing) out[i].missing.push(rec);
@@ -658,7 +690,7 @@
   /** پرونده‌هایی که دستِ‌کم یک مرحلهٔ الزامیِ بی‌تاریخ دارند */
   function incomplete(cases) {
     var out = [];
-    cases.forEach(function (rec) {
+    notTransferred(cases).forEach(function (rec) {
       var miss = audit(rec).filter(function (a) { return a.missing; });
       if (miss.length) out.push({ rec: rec, missing: miss });
     });
@@ -770,6 +802,7 @@
     CTA: CTA, cta: cta,
     stageByKey: stageByKey, overrideOf: overrideOf, MANUAL_LABEL: MANUAL_LABEL,
     isClosed: isClosed, isTransferred: isTransferred, isDone: isDone,
+    hasDecree: hasDecree, decreeDateOf: decreeDateOf, personDecree: personDecree,
     isAcquitted: isAcquitted, needsSalaryResume: needsSalaryResume,
     defenseWatch: defenseWatch,
     hasOutcome: hasOutcome,

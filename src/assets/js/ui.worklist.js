@@ -233,6 +233,9 @@
 
   function pipelineCard(app, cases) {
     var st = app.state;
+    // ارجاع‌شده به کارشناس دیگر، دیگر کارِ ما نیست: در آمار و ناقص‌ها نمی‌آید
+    var moved = cases.filter(WL.isTransferred);
+    cases = cases.filter(function (c) { return !WL.isTransferred(c); });
     var detail = WL.pipelineDetail(cases);
     var inc = WL.incomplete(cases);
     var total = cases.length || 1;
@@ -263,7 +266,15 @@
 
     var head = el('div.wl-section-head', null, [
       el('h2', { text: 'گردش‌کار' }),
-      el('p.wl-sub', { text: 'روی هر مرحله بزنید: چه کسانی اینجا هستند، کدام ثبت شده و کدام ناقص است.' })
+      el('p.wl-sub', { text: 'روی هر مرحله بزنید: چه کسانی اینجا هستند، کدام ثبت شده و کدام ناقص است.' }),
+      moved.length ? el('button.linkish.tiny.wl-moved', {
+        type: 'button',
+        text: fa(moved.length) + ' پروندهٔ ارجاع‌شده به کارشناس دیگر در این آمار نیست',
+        title: 'دیدن این پرونده‌ها در فهرست',
+        onclick: function () {
+          app.showCases(moved.map(function (c) { return c.id; }), 'ارجاع‌شده به کارشناس دیگر');
+        }
+      }) : null
     ]);
 
     var nodes = [head];
@@ -293,7 +304,7 @@
         el('div.wl-st-head', null, [
           el('h3', { text: 'پرونده‌های ناقص' }),
           el('div.wl-st-tabs', { role: 'tablist' }, [
-            { k: 'open', t: 'در جریان', list: openInc }, { k: 'closed', t: 'مختومه و ارجاع‌شده', list: doneInc }
+            { k: 'open', t: 'در جریان', list: openInc }, { k: 'closed', t: 'مختومه', list: doneInc }
           ].map(function (x) {
             return el('button.wl-st-tab' + (x.k === incTab ? '.on' : ''), {
               type: 'button', role: 'tab', disabled: !x.list.length, text: x.t + ' ' + fa(x.list.length),

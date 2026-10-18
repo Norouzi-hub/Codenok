@@ -361,6 +361,8 @@
          بی‌صاحب است و نمایش دادنش فقط گیج می‌کند. */
       var rec = n.caseId ? M.get(n.caseId) : null;
       if (n.caseId && (!rec || !M.inScope(rec))) return;
+      // پرونده‌ای که به کارشناس دیگر ارجاع شده، از دست ما خارج است: پیگیری ندارد
+      if (rec && w.Worklist && w.Worklist.isTransferred(rec)) return;
       var days = J.diffDays(today, n.followUp);
       if (onlyDue && days != null && days < 0) return;
       out.push({ note: n, rec: rec, days: days, overdue: days != null && days > 0 });

@@ -138,7 +138,41 @@
    */
   function applyToCase(rec, doc) {
     var map = fieldsForKind(doc && doc.kind);
-    if (!rec || !map || doc.scope === 'person') return Promise.resolve([]);
+    if (!rec || !map) return Promise.resolve([]);
+    if (doc.scope === 'person') return applyToPerson(rec, doc);
+    return applyOne(rec, doc, map);
+  }
+
+  /*
+   * مدرکِ شخص (حکم کارگزینی) مالِ همهٔ پرونده‌های اوست: تاریخش در پرونده‌ای
+   * که از آن بارگذاری شد و در پرونده‌های در جریانِ همان شخص ثبت می‌شود.
+   * پرونده‌های مختومه و ارجاع‌شده دست نمی‌خورند — حکمِ امروز، حکمِ آن روزشان
+   * نبود.
+   */
+  function applyToPerson(rec, doc) {
+    var map = fieldsForKind(doc.kind);
+    var person = w.Person && doc.personKey ? w.Person.get(doc.personKey) : null;
+    var WL = w.Worklist;
+    var targets = [rec];
+    if (person) {
+      person.cases.forEach(function (c) {
+        var r = M.get(c.id);
+        if (!r || r.id === rec.id) return;
+        if (WL && WL.isDone(r)) return;
+        targets.push(r);
+      });
+    }
+    var filled = [];
+    return targets.reduce(function (p, r) {
+      return p.then(function () {
+        return applyOne(r, doc, map).then(function (list) {
+          if (r.id === rec.id) filled = filled.concat(list);
+        });
+      });
+    }, Promise.resolve()).then(function () { return filled; });
+  }
+
+  function applyOne(rec, doc, map) {
     var fresh = M.get(rec.id) || rec;
     var patch = {}, filled = [];
 
