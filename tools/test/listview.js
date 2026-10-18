@@ -98,6 +98,90 @@ function check(name, ok, extra) {
   check('کلیکِ بیرونِ کشو می‌بندد', !scrim);
   await page.evaluate(() => { window.App.state.filters = {}; window.App.refresh(true); });
 
+  // ====================================================== کپیِ کد ملی
+  console.log('\n— کپیِ کد ملی —');
+  // کلیپ‌بوردِ واقعی روی file:// اجازه نمی‌خواهد ولی خواندنش را نمی‌دهد؛ ضبطش می‌کنیم
+  await page.evaluate(() => {
+    window.__copied = [];
+    navigator.clipboard.writeText = t => { window.__copied.push(t); return Promise.resolve(); };
+  });
+  const rowCopy = await page.evaluate(async () => {
+    const row = [...document.querySelectorAll('.trow')].find(r => r.querySelector('.td-copy .copy-btn'));
+    const btn = row.querySelector('.td-copy .copy-btn');
+    const shown = row.querySelector('.td-copy-text').textContent;
+    btn.click();
+    await new Promise(r => setTimeout(r, 200));
+    return { shown, copied: window.__copied[0], view: window.App.state.view,
+      done: btn.classList.contains('is-done'), toast: document.querySelector('#toast').textContent,
+      title: btn.title };
+  });
+  check('کنار کد ملی در جدول، دکمهٔ کپی', rowCopy.title === 'کپی کد ملی', rowCopy.shown);
+  check('یک کلیک: کد ملی با رقمِ لاتین و بی‌فاصله کپی می‌شود', /^\d{10}$/.test(rowCopy.copied || '') &&
+    rowCopy.copied === rowCopy.shown.replace(/\D/g, ''), rowCopy.copied);
+  check('و پرونده باز نمی‌شود؛ تیک و پیامِ «کپی شد»', rowCopy.view === 'list' && rowCopy.done &&
+    /کد ملی کپی شد/.test(rowCopy.toast), rowCopy.toast);
+
+  const hover = await page.evaluate(() => {
+    const b = document.querySelector('.trow .td-copy .copy-btn:not(.is-done)');
+    return b ? +getComputedStyle(b).opacity : null;
+  });
+  check('در جدول کم‌رنگ است تا شلوغ نکند', hover !== null && hover < 0.6, String(hover));
+
+  // بی‌کلیپ‌بورد (بعضی مرورگرها روی file://): راهِ دوم
+  const fallback = await page.evaluate(async () => {
+    const keep = navigator.clipboard.writeText;
+    navigator.clipboard.writeText = () => Promise.reject(new Error('denied'));
+    const origExec = document.execCommand.bind(document);
+    let used = '';
+    document.execCommand = cmd => { if (cmd === 'copy') { used = document.activeElement.value; return true; } return origExec(cmd); };
+    const ok = await window.U.copy('0012345678', 'ok');
+    document.execCommand = origExec;
+    navigator.clipboard.writeText = keep;
+    return { ok, used };
+  });
+  check('اگر کلیپ‌بورد اجازه ندهد، با راهِ دوم کپی می‌شود', fallback.ok && fallback.used === '0012345678');
+
+  // کارتِ موبایل
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.evaluate(async () => { window.App.render(); await new Promise(r => setTimeout(r, 500)); });
+  const cardCopy = await page.evaluate(async () => {
+    const card = [...document.querySelectorAll('.case-card')].find(c => c.querySelector('.card-nid .copy-btn'));
+    if (!card) return null;
+    window.__copied = [];
+    card.querySelector('.card-nid .copy-btn').click();
+    await new Promise(r => setTimeout(r, 200));
+    const r = card.getBoundingClientRect(), n = card.querySelector('.card-nid').getBoundingClientRect();
+    return { copied: window.__copied[0], view: window.App.state.view,
+      inside: n.left >= r.left && n.right <= r.right + 1 };
+  });
+  check('روی کارتِ موبایل هم، کنار نام', cardCopy && /^\d{10}$/.test(cardCopy.copied || '') &&
+    cardCopy.view === 'list' && cardCopy.inside, JSON.stringify(cardCopy));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(async () => { window.App.render(); await new Promise(r => setTimeout(r, 400)); });
+
+  // فرمِ پرونده: کنار برچسبِ کد ملی و کد پرسنلی
+  const formCopy = await page.evaluate(async () => {
+    const rec = window.Model.state.cases.find(c => c.nationalId && c.personnelCode);
+    window.App.state.formTab = 'person';
+    window.App.openCase(rec.id);
+    await new Promise(r => setTimeout(r, 500));
+    const f = document.querySelector('[data-field="nationalId"]');
+    if (!f) return null;
+    const btn = f.querySelector('.field-head .copy-btn');
+    window.__copied = [];
+    document.body.focus();
+    btn.click();
+    await new Promise(r => setTimeout(r, 200));
+    const res = { copied: window.__copied[0], want: window.U.toLatinDigits(rec.nationalId).replace(/\D/g, ''),
+      focused: document.activeElement === f.querySelector('input'),
+      pc: !!document.querySelector('[data-field="personnelCode"] .copy-btn') };
+    window.App.goList();
+    await new Promise(r => setTimeout(r, 400));
+    return res;
+  });
+  check('در فرمِ پرونده، کنار برچسبِ کد ملی (و کد پرسنلی)', formCopy && formCopy.copied === formCopy.want &&
+    !formCopy.focused && formCopy.pc, JSON.stringify(formCopy));
+
   // ====================================================== ترتیب ستون‌ها
   console.log('\n— ترتیب ستون‌ها و مرتب‌سازی —');
   const cols = await page.evaluate(async () => {

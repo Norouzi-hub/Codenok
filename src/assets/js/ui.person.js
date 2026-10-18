@@ -135,9 +135,14 @@
       ['وضعیت اشتغال', person.profile.employmentStatus || '—']
     ];
     return el('div.person-profile', null, pairs.map(function (p) {
+      var raw = p[0] === 'کد ملی' ? person.nationalId
+        : p[0] === 'کد پرسنلی' ? person.personnelCode : null;
       return el('div.pp-item', null, [
         el('span.pp-label', { text: p[0] }),
-        el('span.pp-value', { text: p[1] })
+        el('span.pp-value', null, [
+          el('span', { text: p[1] }),
+          raw ? w.U.copyButton(raw, { label: p[0] }) : null
+        ])
       ]);
     }));
   }

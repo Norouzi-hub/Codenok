@@ -3580,6 +3580,21 @@ select.input { cursor: pointer; }
   white-space: nowrap;
 }
 .card-date { font-size: 11px; color: var(--muted); }
+.card-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.card-name-row .card-name { flex: 1 1 auto; min-width: 0; }
+.card-nid {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  padding: 1px 2px 1px 7px;
+  border-radius: 999px;
+  background: var(--paper-2, rgba(0,0,0,.035));
+}
 .card-name {
   font-size: 14px;
   font-weight: 600;
@@ -6274,17 +6289,52 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
   background: none; cursor: pointer; color: var(--muted); position: relative;
 }
 .wl-fold::before {
-  content: ''; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -5px 0 0 -3.5px;
-  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg);
-  transition: transform .2s;
+  content: ''; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -2px 0 0 -3.5px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-135deg);
+  transition: transform .2s, margin .2s;
 }
-.wl-card.is-collapsed .wl-fold::before { transform: rotate(-135deg); margin-top: -2px; }
+/* باز: رو به بالا (جمع کن)؛ جمع: رو به پایین (باز کن) */
+.wl-card.is-collapsed .wl-fold::before { transform: rotate(45deg); margin-top: -5px; }
 .wl-fold:hover { border-color: var(--line); color: var(--ink-800); background: var(--paper); }
 .wl-card.is-collapsed { padding-bottom: 4px; }
 .wl-card.is-collapsed > :not(.wl-section-head) { display: none !important; }
 .wl-card.is-collapsed > .wl-section-head { border-bottom: 0; margin-bottom: 0; }
 .wl-card.is-collapsed .wl-sub { display: none; }
 .wl-card.is-dragging { opacity: .45; }
+
+/* --- آکاردئون: کلِ سرتیتر دکمه است --- */
+.wl-acc-head { cursor: pointer; user-select: none; border-radius: 10px; outline: none;
+  transition: background .15s; }
+.wl-acc-head:hover .wl-fold { border-color: var(--line); color: var(--ink-800); background: var(--paper); }
+.wl-acc-head:focus-visible { box-shadow: 0 0 0 2px var(--brass-line); }
+.wl-card.is-collapsed { padding-top: 12px; }
+.wl-card.is-collapsed > .wl-section-head { padding-bottom: 0; margin: 0; }
+.wl-card.is-collapsed:hover { border-color: var(--brass-line); }
+.wl-acc-n {
+  font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-600, var(--muted)); white-space: nowrap;
+}
+.wl-acc-n.late { background: var(--cinnabar-soft, #FBEDEA); color: var(--cinnabar); }
+.wl-card:not(.is-collapsed) .wl-acc-n { display: none; }
+.wl-card.is-opening > :not(.wl-section-head) { animation: wl-acc-in .34s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes wl-acc-in {
+  from { opacity: 0; transform: translateY(-6px); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+}
+.wl-acc-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-block: 0 10px; padding: 0 4px; font-size: 12px; color: var(--muted);
+}
+.wl-acc-seg {
+  display: inline-flex; padding: 2px; border-radius: 9px;
+  background: var(--paper-2); border: 1px solid var(--line-soft);
+}
+.wl-acc-opt {
+  font: inherit; font-size: 12px; border: 0; background: none; cursor: pointer;
+  padding: 4px 12px; border-radius: 7px; color: var(--muted); transition: background .15s, color .15s;
+}
+.wl-acc-opt.on { background: var(--card); color: var(--ink-800); box-shadow: var(--shadow-sm); font-weight: 600; }
+@media (max-width: 640px) { .wl-acc-hint { display: none; } }
 .wl-card.drop-before { box-shadow: 0 -3px 0 var(--brass), var(--shadow); }
 .wl-card.drop-after { box-shadow: 0 3px 0 var(--brass), var(--shadow); }
 .wl-hidden-note { font-size: 12px; color: var(--muted); text-align: center; margin: 4px 0 0; }
@@ -6365,6 +6415,40 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
   .worklist > .wl-card { padding: 12px 12px 14px; margin-inline: -2px; }
   .rail-miss { left: calc(50% + 2px); }
 }
+
+/* ------------------------------------------------- دکمهٔ کپیِ کد ملی
+   کنار کد ملی در جدول، کارت موبایل، فرم پرونده و پروندهٔ شخص. در جدول
+   کم‌رنگ است تا شلوغ نکند؛ با رفتن موس روی ردیف پررنگ می‌شود. */
+.copy-btn {
+  border: 0;
+  background: transparent;
+  padding: 3px;
+  margin: -3px 0;
+  line-height: 0;
+  color: var(--ink-400);
+  cursor: pointer;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: color .14s, background .14s, transform .1s, opacity .14s;
+}
+.copy-btn svg { width: 15px; height: 15px; }
+.copy-btn:hover, .copy-btn:focus-visible { color: var(--brass-ink); background: var(--brass-soft); }
+.copy-btn:active { transform: scale(.86); }
+.copy-btn.is-done { color: var(--moss); background: var(--moss-soft, rgba(60,120,80,.12)); }
+.copy-btn.is-done svg { animation: copy-pop .32s ease-out; }
+@keyframes copy-pop { 0% { transform: scale(.5); } 70% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.td.td-copy { display: flex; align-items: center; gap: 4px; }
+.td-copy-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.trow .td-copy .copy-btn { opacity: .38; }
+.trow:hover .td-copy .copy-btn, .trow:focus-within .td-copy .copy-btn,
+.trow .td-copy .copy-btn.is-done { opacity: 1; }
+@media (hover: none) { .trow .td-copy .copy-btn { opacity: .8; } }
+.field-head .copy-btn { padding: 1px 2px; margin: 0; }
+.field-head .copy-btn svg { width: 14px; height: 14px; }
+.pp-value { display: inline-flex; align-items: center; gap: 4px; }
 
 </style>
 </head>
@@ -8627,6 +8711,71 @@ window.SEED_CASES = [
     return m === 'off' || (m === 'system' && systemReduce());
   }
 
+  /** کپی در حافظه — با راه دوم، چون روی file:// اجازهٔ کلیپ‌بورد همیشه نیست */
+  function copy(text, okMsg, failMsg) {
+    function done(ok) {
+      toast(ok ? (okMsg || 'کپی شد.') : (failMsg || 'کپی نشد؛ متن را انتخاب و با Ctrl+C کپی کنید.'),
+        ok ? 'good' : 'warn');
+    }
+    function fallback() {
+      var ta = el('textarea', { value: text });
+      ta.style.cssText = 'position:fixed;top:-2000px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+      return ok;
+    }
+    var clip = w.navigator.clipboard;
+    if (clip && clip.writeText) {
+      return clip.writeText(text).then(function () { done(true); return true; },
+        function () { var ok = fallback(); done(ok); return ok; });
+    }
+    var ok = fallback();
+    done(ok);
+    return Promise.resolve(ok);
+  }
+
+  /*
+   * دکمهٔ کوچکِ کپی کنار یک مقدار (کد ملی، کد پرسنلی، …).
+   * مقدار لحظهٔ کلیک خوانده می‌شود و با رقم لاتین و بی‌فاصله کپی می‌شود —
+   * سامانه‌های دیگر رقم فارسی یا خط تیره را نمی‌پذیرند.
+   */
+  function copyButton(get, opts) {
+    opts = opts || {};
+    var label = opts.label || 'مقدار';
+    var btn = el('button.copy-btn' + (opts.cls ? '.' + opts.cls : ''), {
+      type: 'button',
+      title: 'کپی ' + label,
+      'aria-label': 'کپی ' + label,
+      html: w.Mobile ? w.Mobile.icon('copy') : '⧉'
+    });
+    function stop(e) { e.preventDefault(); e.stopPropagation(); }
+    // دکمه داخل ردیف یا برچسب است: نه پرونده باز شود، نه فیلد فوکوس بگیرد
+    btn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+    });
+    btn.addEventListener('click', function (e) {
+      stop(e);
+      var raw = typeof get === 'function' ? get() : get;
+      var v = toLatinDigits(String(raw || '')).replace(opts.digits === false ? /\s+/g : /\D/g, '');
+      if (!v) { toast(label + ' ثبت نشده.', 'warn'); return; }
+      copy(v, label + ' کپی شد: ' + v).then(function (ok) {
+        if (!ok) return;
+        btn.classList.add('is-done');
+        if (w.Mobile) btn.innerHTML = w.Mobile.icon('tick');
+        clearTimeout(btn._t);
+        btn._t = setTimeout(function () {
+          btn.classList.remove('is-done');
+          if (w.Mobile) btn.innerHTML = w.Mobile.icon('copy');
+        }, 1400);
+      });
+    });
+    return btn;
+  }
+
   applyMotion();
 
   w.U = {
@@ -8634,7 +8783,7 @@ window.SEED_CASES = [
     systemReduce: systemReduce,
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     dots: dots,
-    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,
+    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast, copy: copy, copyButton: copyButton,
     modal: modal, confirmBox: confirmBox, download: download,
     safeName: safeName, uid: uid, countUp: countUp
   };
@@ -8718,6 +8867,8 @@ window.SEED_CASES = [
     fileImage: svg('<rect x="5" y="5.5" width="14" height="13" rx="1.8"/><circle cx="9.3" cy="9.8" r="1.2"/><path d="M5.6 16.3l3.6-3.3 2.6 2.3 2.6-2.6 4 3.8"/>'),
     fileZip: svg('<path d="M13.5 4.5H7.5A1.5 1.5 0 0 0 6 6v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 18V9z"/><path d="M13.5 4.5V9H18"/><path d="M10.6 5v2.2M12.4 7.2v2.2M10.6 9.4v2.2"/><rect x="10" y="13" width="3" height="3.4" rx="1"/>'),
     handoff: svg('<path d="M4.5 9.5h10"/><path d="M11.5 6.2L14.8 9.5l-3.3 3.3"/><path d="M19.5 14.5h-10"/><path d="M12.5 11.2L9.2 14.5l3.3 3.3"/>'),
+    copy: svg('<rect x="8.5" y="8.5" width="10.5" height="11" rx="2"/><path d="M15.5 8.5V6.5A1.5 1.5 0 0 0 14 5H6.5A1.5 1.5 0 0 0 5 6.5V14a1.5 1.5 0 0 0 1.5 1.5h2"/>'),
+    tick: svg('<path d="M5.5 12.5l4 4 9-9"/>'),
     paperclip: svg('<path d="M17.5 11.2l-6 6a3.4 3.4 0 0 1-4.8-4.8l7-7a2.3 2.3 0 0 1 3.2 3.2l-6.9 7a1.1 1.1 0 0 1-1.6-1.6l6.2-6.2"/>'),
     trash: svg('<path d="M5 7h14"/><path d="M10 7V5.2h4V7"/><path d="M6.5 7l.8 11.3A1.5 1.5 0 0 0 8.8 19.7h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10.5 10.5v6M13.5 10.5v6"/>'),
     chevronRight: svg('<path d="M9.5 5.5L16 12l-6.5 6.5"/>'),
@@ -20107,27 +20258,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
   function fa(n) { return w.U.toFaDigits(n); }
   function fmt(d) { return d && J.unpack(d) ? J.format(d) : ''; }
 
-  function copy(text, okMsg) {
-    function done(ok) {
-      w.U.toast(ok ? okMsg : 'کپی نشد؛ متن را انتخاب و با Ctrl+C کپی کنید.', ok ? 'good' : 'warn');
-    }
-    function fallback() {
-      var ta = el('textarea', { value: text });
-      ta.style.cssText = 'position:fixed;top:-2000px;opacity:0';
-      document.body.appendChild(ta);
-      ta.select();
-      var ok = false;
-      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-      ta.remove();
-      return ok;
-    }
-    if (w.navigator.clipboard && w.navigator.clipboard.writeText) {
-      w.navigator.clipboard.writeText(text).then(function () { done(true); },
-        function () { done(fallback()); });
-      return;
-    }
-    done(fallback());
-  }
+  function copy(text, okMsg) { return w.U.copy(text, okMsg); }
 
   function check(label, on, onChange, title) {
     var box = el('input', { type: 'checkbox' });
@@ -20964,6 +21095,11 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     return { node: scroller, paint: function () { lastStart = -1; paint(); } };
   }
 
+  /** کپیِ کد ملی با یک کلیک — بی‌آنکه پرونده باز شود */
+  function nidCopy(rec) {
+    return w.U.copyButton(function () { return rec.nationalId; }, { label: 'کد ملی' });
+  }
+
   function makeCard(app, rec) {
     var action = w.Worklist.nextAction(rec);
     var cls = '';
@@ -21000,9 +21136,13 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     ]));
 
     var who = w.Person.fullName(rec);
-    card.appendChild(el('div.card-name', {
-      text: who || 'بدون نام', title: who
-    }));
+    card.appendChild(el('div.card-name-row', null, [
+      el('div.card-name', { text: who || 'بدون نام', title: who }),
+      rec.nationalId ? el('span.card-nid', null, [
+        el('span', { text: w.U.toLatinDigits(rec.nationalId) }),
+        nidCopy(rec)
+      ]) : null
+    ]));
 
     var meta = [rec.orgUnit, rec.expert].filter(Boolean).join(' • ');
     card.appendChild(el('div.card-foot', null, [
@@ -21061,6 +21201,10 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         cell.appendChild(el('span.pill.' + (statusClass(text) || 'st-none'), { text: text }));
       } else if (f.key === 'caseNo') {
         cell.appendChild(el('span.reg-no', { text: w.U.toLatinDigits(text) }));
+      } else if (f.key === 'nationalId' && rec.nationalId) {
+        cell.classList.add('td-copy');
+        cell.appendChild(el('span.td-copy-text', { text: text }));
+        cell.appendChild(nidCopy(rec));
       } else {
         cell.textContent = text;
       }
@@ -22588,6 +22732,9 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       return box;
     }
 
+    // کد‌هایی که مدام در سامانه‌های دیگر جست‌وجو می‌شوند: یک کلیک تا کپی
+    var COPYABLE = { nationalId: 1, personnelCode: 1 };
+
     var CHIPS = {
       defenseDueDate: function () { return countdownChip(); },
       hireDate: function () { return serviceChip(); }
@@ -22606,6 +22753,10 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
           text: cleanLabel(f.label), title: f.label
         });
         var clip = letterClip(f);
+        if (COPYABLE[f.key]) {
+          clip = w.U.copyButton(function () { return draft[f.key]; },
+            { label: cleanLabel(f.label), cls: 'field-copy' });
+        }
         if (CHIPS[f.key]) chip = CHIPS[f.key]();
         grid.appendChild(el('label.field' +
           (f.type === 'textarea' ? '.wide' : '') + (chip ? '.has-cd' : '') +
@@ -31406,7 +31557,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         ]));
       }
     }
-    return el('section.wl-section.wl-pipe-card', null, nodes);
+    return el('section.wl-section.wl-pipe-card', inc.length
+      ? { 'data-badge': fa(inc.length) + ' ناقص', 'data-late': '1' } : null, nodes);
   }
 
   /* ================================================================
@@ -31544,7 +31696,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     if (deadlines) bits.push(fa(deadlines) + ' مهلت اقدام');
     if (follows) bits.push(fa(follows) + ' قرار پیگیری');
 
-    return el('section.wl-section.week-card', null, [
+    return el('section.wl-section.week-card', deadlines + follows
+      ? { 'data-badge': fa(deadlines + follows) + ' سررسید' } : null, [
       el('div.wl-section-head', null, [
         el('h2', { text: 'این هفته' }),
         el('p.wl-sub', { text: bits.join(' و ') + ' تا هفت روز آینده سررسید می‌شود.' })
@@ -31653,7 +31806,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     if (t.created) bits.push(fa(t.created) + ' پروندهٔ تازه');
     if (t.closed) bits.push(fa(t.closed) + ' مختومه');
 
-    var box = el('details.wl-today-log', null, [
+    var box = el('details.wl-today-log', { 'data-n': n }, [
       el('summary', null, [
         el('span.wl-log-tick', { text: '✓' }),
         el('span', { text: 'امروز: ' + bits.join('، ') }),
@@ -31728,7 +31881,12 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       var at = before.length ? order.indexOf(before[before.length - 1]) + 1 : 0;
       order.splice(at, 0, k);
     });
-    return { order: order, hidden: saved.hidden || {}, collapsed: saved.collapsed || {} };
+    return {
+      order: order, hidden: saved.hidden || {}, collapsed: saved.collapsed || {},
+      // آکاردئونی: پیش‌فرض روشن — یک بخش باز، بقیه فقط سرتیتر با شمارش
+      accordion: saved.accordion !== false,
+      open: saved.open == null ? null : saved.open
+    };
   }
 
   function saveLayout(patch) {
@@ -31736,35 +31894,125 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     return M.saveSettings({ worklistLayout: Object.assign({}, cur, patch) });
   }
 
-  /** کارت‌ها به ترتیبِ کاربر، با دستگیره و دکمهٔ جمع کردن */
+  /** شمارِ خلاصه روی سرتیترِ بخش — وقتی بخش جمع است، همین دیده می‌شود */
+  function badge(node, text, late) {
+    if (!node || !text) return;
+    node.setAttribute('data-badge', text);
+    if (late) node.setAttribute('data-late', '1');
+  }
+
+  function bucketBadge(node, buckets) {
+    var n = 0, late = 0;
+    buckets.forEach(function (b) { n += b.items.length; late += b.overdue || 0; });
+    badge(node, late ? fa(late) + ' دیرکرد از ' + fa(n) : fa(n) + ' پرونده', late > 0);
+  }
+
+  /** کدام بخش‌ها بازند؟ آکاردئونی: فقط یکی (یا هیچ‌کدام)؛ آزاد: هرچه کاربر گذاشته */
+  function openSet(L, keys) {
+    var open = {};
+    if (L.accordion) {
+      var k = L.open;
+      if (k == null || (k !== '' && keys.indexOf(k) < 0)) k = keys[0] || '';
+      if (k) open[k] = true;
+    } else {
+      keys.forEach(function (x) { if (!L.collapsed[x]) open[x] = true; });
+    }
+    return open;
+  }
+
+  /*
+   * کارت‌ها به ترتیبِ کاربر، با دستگیره، و آکاردئونی.
+   *
+   * کلیک روی هر جای سرتیتر (جز دکمه‌ها و پیوندهای خودش) بخش را باز و بسته
+   * می‌کند. این کار در همان صفحه انجام می‌شود، بی‌رندرِ دوباره — پس جای
+   * اسکرول و هرچه باز است (دسته‌ها، مرحلهٔ انتخاب‌شده) به هم نمی‌خورد.
+   */
   function arrange(app, parts) {
     var L = layout();
-    var out = [];
-    L.order.forEach(function (key) {
+    var keys = L.order.filter(function (k) { return parts[k] && !L.hidden[k]; });
+    var open = openSet(L, keys);
+    var cards = [];
+
+    function setOpen(node, on, animate) {
+      node.classList.toggle('is-collapsed', !on);
+      var head = node.querySelector('.wl-section-head');
+      if (head) head.setAttribute('aria-expanded', on ? 'true' : 'false');
+      var fold = node.querySelector('.wl-fold');
+      if (fold) fold.title = on ? 'جمع کردن' : 'باز کردن';
+      if (on && animate && !w.U.reducedMotion()) {
+        node.classList.remove('is-opening');
+        void node.offsetWidth;
+        node.classList.add('is-opening');
+        setTimeout(function () { node.classList.remove('is-opening'); }, 420);
+      }
+    }
+
+    function persist() {
+      var L2 = layout();
+      if (L2.accordion) {
+        var o = cards.filter(function (c) { return !c.classList.contains('is-collapsed'); })[0];
+        return saveLayout({ open: o ? o.getAttribute('data-sec') : '' });
+      }
+      var c = {};
+      cards.forEach(function (n) {
+        if (n.classList.contains('is-collapsed')) c[n.getAttribute('data-sec')] = true;
+      });
+      return saveLayout({ collapsed: c });
+    }
+
+    function toggle(node) {
+      var on = node.classList.contains('is-collapsed');
+      var head = node.querySelector('.wl-section-head');
+      var top = head ? head.getBoundingClientRect().top : 0;
+      if (on && layout().accordion) {
+        cards.forEach(function (c) { if (c !== node) setOpen(c, false); });
+      }
+      setOpen(node, on, true);
+      // بستنِ بخشِ بالایی سرتیترِ این بخش را جابه‌جا می‌کند؛ همان‌جا نگهش دار
+      if (head) {
+        var shift = head.getBoundingClientRect().top - top;
+        if (Math.abs(shift) > 2) w.scrollBy(0, shift);
+      }
+      persist();
+    }
+
+    keys.forEach(function (key) {
       var node = parts[key];
-      if (!node || L.hidden[key]) return;
       node.classList.add('wl-card');
       node.setAttribute('data-sec', key);
-      if (L.collapsed[key]) node.classList.add('is-collapsed');
       var head = node.querySelector('.wl-section-head');
       if (head) {
+        head.classList.add('wl-acc-head');
+        head.setAttribute('role', 'button');
+        head.setAttribute('tabindex', '0');
         head.insertBefore(el('span.wl-grip', {
           draggable: 'true', title: 'برای جابه‌جایی بکشید', 'aria-hidden': 'true'
         }), head.firstChild);
-        head.appendChild(el('button.wl-fold', {
-          type: 'button', title: L.collapsed[key] ? 'باز کردن' : 'جمع کردن',
-          'aria-label': L.collapsed[key] ? 'باز کردن' : 'جمع کردن',
-          'aria-expanded': L.collapsed[key] ? 'false' : 'true',
-          onclick: function () {
-            var c = Object.assign({}, layout().collapsed);
-            if (c[key]) delete c[key]; else c[key] = true;
-            saveLayout({ collapsed: c }).then(function () { app.render(); });
-          }
-        }));
+        var text = node.getAttribute('data-badge');
+        if (text && !head.querySelector('.wl-count')) {
+          var h2 = head.querySelector('h2');
+          var b = el('span.wl-acc-n' + (node.getAttribute('data-late') ? '.late' : ''), { text: text });
+          if (h2 && h2.nextSibling) head.insertBefore(b, h2.nextSibling); else head.appendChild(b);
+        }
+        head.appendChild(el('span.wl-fold', { 'aria-hidden': 'true' }));
+        head.addEventListener('click', function (e) {
+          // دکمه‌ها، پیوندها و دستگیرهٔ خودِ سرتیتر کارِ خودشان را می‌کنند
+          if (e.target.closest('button, a, input, select, textarea, label, .wl-grip')) return;
+          toggle(node);
+        });
+        head.addEventListener('keydown', function (e) {
+          if (e.target !== head) return;
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(node); }
+        });
       }
+      setOpen(node, !!open[key], false);
       dragCard(app, node, key);
-      out.push(node);
+      cards.push(node);
     });
+
+    var out = [];
+    if (cards.length > 1) out.push(accordionBar(app, cards, setOpen, persist));
+    out = out.concat(cards);
     var hidden = L.order.filter(function (k) { return L.hidden[k] && parts[k]; });
     if (hidden.length) {
       out.push(el('p.wl-hidden-note', null, [
@@ -31778,6 +32026,58 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       ]));
     }
     return out;
+  }
+
+  /** نوار بالای بخش‌ها: یکی‌یکی یا آزاد، و باز/بستنِ همه */
+  function accordionBar(app, cards, setOpen, persist) {
+    var acc = layout().accordion;
+    function mode(on) {
+      if (on === layout().accordion) return;
+      // هرچه الان باز است، در حالتِ تازه هم باز می‌ماند (در یکی‌یکی: اولی‌اش)
+      var opened = cards.filter(function (c) { return !c.classList.contains('is-collapsed'); });
+      var collapsed = {};
+      cards.forEach(function (c) {
+        if (opened.indexOf(c) < 0) collapsed[c.getAttribute('data-sec')] = true;
+      });
+      saveLayout({
+        accordion: on, collapsed: collapsed,
+        open: opened.length ? opened[0].getAttribute('data-sec') : ''
+      }).then(function () { app.render(); });
+    }
+    function all(on) {
+      if (on && layout().accordion) {
+        // «باز کردن همه» با یکی‌یکی جور نیست: به حالت آزاد می‌رویم
+        saveLayout({ accordion: false, collapsed: {} }).then(function () {
+          app.render();
+          w.U.toast('همهٔ بخش‌ها باز شد؛ حالت «آزاد» روشن است.', 'good');
+        });
+        return;
+      }
+      cards.forEach(function (c) { setOpen(c, on, on); });
+      persist();
+    }
+    return el('div.wl-acc-bar', null, [
+      el('div.wl-acc-seg', { role: 'group', 'aria-label': 'شیوهٔ باز شدن بخش‌ها' }, [
+        el('button.wl-acc-opt' + (acc ? '.on' : ''), {
+          type: 'button', text: 'یکی‌یکی', 'aria-pressed': acc ? 'true' : 'false',
+          title: 'آکاردئونی: با باز کردن یک بخش، بقیه جمع می‌شوند',
+          onclick: function () { mode(true); }
+        }),
+        el('button.wl-acc-opt' + (!acc ? '.on' : ''), {
+          type: 'button', text: 'آزاد', 'aria-pressed': !acc ? 'true' : 'false',
+          title: 'هر بخش جدا باز و بسته می‌شود',
+          onclick: function () { mode(false); }
+        })
+      ]),
+      el('span.wl-acc-hint', { text: 'روی سرتیترِ هر بخش بزنید تا باز یا جمع شود.' }),
+      el('div.spacer'),
+      el('button.linkish.tiny.wl-acc-all', {
+        type: 'button', text: 'باز کردن همه', onclick: function () { all(true); }
+      }),
+      el('button.linkish.tiny.wl-acc-none', {
+        type: 'button', text: 'بستن همه', onclick: function () { all(false); }
+      })
+    ]);
   }
 
   /** کشیدنِ کارت با دستگیره‌اش، و رها کردن روی کارتِ دیگر */
@@ -32149,6 +32449,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         ]),
         doneToday
       ]);
+      badge(parts.done, fa(doneToday.getAttribute('data-n')) + ' مورد');
     }
 
     parts.week = weekStrip(app, cases);
@@ -32163,6 +32464,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         ]),
         el('div', null, ours.map(function (b) { return bucketBlock(app, b); }))
       ]);
+      bucketBadge(parts.ours, ours);
     }
 
     if (ready.length) {
@@ -32189,6 +32491,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
           return actionRow(app, { rec: rec, action: WL.nextAction(rec) });
         }))
       ]);
+      badge(parts.ready, fa(ready.length) + ' پرونده');
     }
 
     if (theirs.length) {
@@ -32199,6 +32502,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         ]),
         el('div', null, theirs.map(function (b) { return bucketBlock(app, b); }))
       ]);
+      bucketBadge(parts.theirs, theirs);
     }
 
     var sections = arrange(app, parts);
@@ -32399,9 +32703,14 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       ['وضعیت اشتغال', person.profile.employmentStatus || '—']
     ];
     return el('div.person-profile', null, pairs.map(function (p) {
+      var raw = p[0] === 'کد ملی' ? person.nationalId
+        : p[0] === 'کد پرسنلی' ? person.personnelCode : null;
       return el('div.pp-item', null, [
         el('span.pp-label', { text: p[0] }),
-        el('span.pp-value', { text: p[1] })
+        el('span.pp-value', null, [
+          el('span', { text: p[1] }),
+          raw ? w.U.copyButton(raw, { label: p[0] }) : null
+        ])
       ]);
     }));
   }

@@ -127,6 +127,94 @@ function check(name, ok, extra) {
   check('هر بخش یک کارت با پس‌زمینه، دستگیره و دکمهٔ جمع کردن', cards.n >= 3 && cards.bg && cards.grips,
     cards.keys.join('،'));
 
+  // ================================================== آکاردئون
+  console.log('\n— آکاردئون —');
+  const openKeys = () => page.evaluate(() => [...document.querySelectorAll('.worklist > .wl-card')]
+    .filter(c => !c.classList.contains('is-collapsed')).map(c => c.dataset.sec));
+  const acc0 = await page.evaluate(() => {
+    const list = [...document.querySelectorAll('.worklist > .wl-card')];
+    const closed = list.filter(c => c.classList.contains('is-collapsed'));
+    return {
+      n: list.length, open: list.length - closed.length, first: !list[0].classList.contains('is-collapsed'),
+      heads: closed.every(c => getComputedStyle(c.querySelector('.wl-section-head')).display !== 'none'),
+      bodies: closed.every(c => [...c.children].filter(x => !x.classList.contains('wl-section-head'))
+        .every(x => getComputedStyle(x).display === 'none')),
+      badges: closed.filter(c => c.dataset.badge).map(c => [c.dataset.sec,
+        (c.querySelector('.wl-acc-n') || {}).textContent, getComputedStyle(c.querySelector('.wl-acc-n')).display]),
+      bar: !!document.querySelector('.wl-acc-bar .wl-acc-opt.on'),
+      aria: list.map(c => c.querySelector('.wl-section-head').getAttribute('aria-expanded')).join()
+    };
+  });
+  check('پیش‌فرض آکاردئونی: فقط بخشِ اول باز است، بقیه فقط سرتیتر', acc0.open === 1 && acc0.first &&
+    acc0.heads && acc0.bodies, JSON.stringify({ n: acc0.n, open: acc0.open, aria: acc0.aria }));
+  check('سرتیترِ بخشِ جمع، شمارِ خلاصه دارد', acc0.badges.length > 0 &&
+    acc0.badges.every(b => b[1] && b[2] !== 'none'), JSON.stringify(acc0.badges));
+
+  // کلیکِ واقعی روی سرتیتر — بی‌رندرِ دوباره
+  await page.evaluate(() => { document.querySelector('.worklist').__mark = 1; });
+  await page.click('.wl-card[data-sec="pipeline"] .wl-section-head h2');
+  await page.waitForTimeout(450);
+  const acc1 = await page.evaluate(() => ({
+    mark: document.querySelector('.worklist').__mark === 1,
+    saved: window.UIWorklist.layout().open,
+    rail: getComputedStyle(document.querySelector('.wl-card[data-sec="pipeline"] .rail')).display
+  }));
+  const o1 = await openKeys();
+  check('کلیک روی سرتیتر، همان بخش را باز و بقیه را جمع می‌کند', o1.length === 1 && o1[0] === 'pipeline' &&
+    acc1.rail !== 'none', o1.join('،'));
+  check('در همان صفحه، بی‌رندر؛ و بخشِ باز ذخیره می‌شود', acc1.mark && acc1.saved === 'pipeline');
+
+  await page.evaluate(async () => { window.App.render(); await new Promise(r => setTimeout(r, 300)); });
+  const o2 = await openKeys();
+  check('بعد از رندرِ دوباره هم همان بخش باز است', o2.length === 1 && o2[0] === 'pipeline', o2.join('،'));
+
+  await page.focus('.wl-card[data-sec="pipeline"] .wl-section-head');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(300);
+  const o3 = await openKeys();
+  check('Enter روی سرتیتر، جمعش می‌کند (همه بسته)', o3.length === 0, o3.join('،'));
+
+  // دکمه‌های داخلِ سرتیتر بخش را باز و بسته نمی‌کنند
+  const inner = await page.evaluate(async () => {
+    const c = document.querySelector('.wl-card[data-sec="week"]');
+    const grip = c.querySelector('.wl-grip');
+    grip.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 100));
+    return c.classList.contains('is-collapsed');
+  });
+  check('کلیک روی دستگیره، بخش را باز نمی‌کند', inner);
+
+  // حالت «آزاد»: چند بخش با هم، و باز/بستنِ همه
+  await page.click('.wl-acc-opt:not(.on)');
+  await page.waitForTimeout(400);
+  await page.click('.wl-card[data-sec="week"] .wl-section-head h2');
+  await page.click('.wl-card[data-sec="pipeline"] .wl-section-head h2');
+  await page.waitForTimeout(300);
+  const free = await openKeys();
+  const free2 = await page.evaluate(() => window.UIWorklist.layout());
+  check('حالت «آزاد»: چند بخش با هم باز می‌مانند', !free2.accordion && free.indexOf('week') >= 0 &&
+    free.indexOf('pipeline') >= 0, free.join('،'));
+  await page.click('.wl-acc-none');
+  await page.waitForTimeout(300);
+  const none = await openKeys();
+  await page.click('.wl-acc-all');
+  await page.waitForTimeout(300);
+  const allOpen = await openKeys();
+  const nCards = await page.evaluate(() => document.querySelectorAll('.worklist > .wl-card').length);
+  check('«بستن همه» و «باز کردن همه»', none.length === 0 && allOpen.length === nCards,
+    none.length + ' / ' + allOpen.length + ' از ' + nCards);
+
+  // «باز کردن همه» در حالت یکی‌یکی، به حالت آزاد می‌رود
+  await page.click('.wl-acc-opt:not(.on)');
+  await page.waitForTimeout(400);
+  const back = await openKeys();
+  await page.click('.wl-acc-all');
+  await page.waitForTimeout(400);
+  const all2 = await openKeys();
+  const L2 = await page.evaluate(() => window.UIWorklist.layout());
+  check('برگشت به «یکی‌یکی» فقط یکی را باز نگه می‌دارد؛ «باز کردن همه» آزادش می‌کند',
+    back.length === 1 && all2.length === nCards && !L2.accordion, back.join('،'));
+
   const lay = await page.evaluate(async () => {
     const W = window.UIWorklist;
     // ۱) کشیدن: «منتظر اقدام ما» به بالای «گردش‌کار»
@@ -134,7 +222,8 @@ function check(name, ok, extra) {
     await new Promise(r => setTimeout(r, 300));
     const k1 = [...document.querySelectorAll('.worklist > .wl-card')].map(c => c.dataset.sec);
     // ۲) جمع کردن
-    document.querySelector('.wl-card[data-sec="pipeline"] .wl-fold').click();
+    // (حالت آزاد است — از آزمونِ بالا) کلیک روی سرتیتر جمعش می‌کند
+    document.querySelector('.wl-card[data-sec="pipeline"] .wl-section-head h2').click();
     await new Promise(r => setTimeout(r, 300));
     const folded = document.querySelector('.wl-card[data-sec="pipeline"]').classList.contains('is-collapsed');
     const railHidden = getComputedStyle(document.querySelector('.wl-card[data-sec="pipeline"] .rail')).display === 'none';
@@ -171,9 +260,10 @@ function check(name, ok, extra) {
     await new Promise(r => setTimeout(r, 400));
     const L = window.UIWorklist.layout();
     return { order: L.order.join(), def: window.UIWorklist.SECTIONS.map(s => s.key).join(),
-      hidden: Object.keys(L.hidden).length, folded: Object.keys(L.collapsed).length };
+      hidden: Object.keys(L.hidden).length, folded: Object.keys(L.collapsed).length, acc: L.accordion };
   });
-  check('«بازگشت به پیش‌فرض»', reset.order === reset.def && !reset.hidden && !reset.folded);
+  check('«بازگشت به پیش‌فرض» (و دوباره آکاردئونی)', reset.order === reset.def && !reset.hidden &&
+    !reset.folded && reset.acc === true);
 
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 3).join(' | '));
   await browser.close();

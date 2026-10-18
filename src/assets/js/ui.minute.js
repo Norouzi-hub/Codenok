@@ -20,27 +20,7 @@
   function fa(n) { return w.U.toFaDigits(n); }
   function fmt(d) { return d && J.unpack(d) ? J.format(d) : ''; }
 
-  function copy(text, okMsg) {
-    function done(ok) {
-      w.U.toast(ok ? okMsg : 'کپی نشد؛ متن را انتخاب و با Ctrl+C کپی کنید.', ok ? 'good' : 'warn');
-    }
-    function fallback() {
-      var ta = el('textarea', { value: text });
-      ta.style.cssText = 'position:fixed;top:-2000px;opacity:0';
-      document.body.appendChild(ta);
-      ta.select();
-      var ok = false;
-      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-      ta.remove();
-      return ok;
-    }
-    if (w.navigator.clipboard && w.navigator.clipboard.writeText) {
-      w.navigator.clipboard.writeText(text).then(function () { done(true); },
-        function () { done(fallback()); });
-      return;
-    }
-    done(fallback());
-  }
+  function copy(text, okMsg) { return w.U.copy(text, okMsg); }
 
   function check(label, on, onChange, title) {
     var box = el('input', { type: 'checkbox' });

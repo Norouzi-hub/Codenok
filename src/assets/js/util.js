@@ -269,6 +269,71 @@
     return m === 'off' || (m === 'system' && systemReduce());
   }
 
+  /** کپی در حافظه — با راه دوم، چون روی file:// اجازهٔ کلیپ‌بورد همیشه نیست */
+  function copy(text, okMsg, failMsg) {
+    function done(ok) {
+      toast(ok ? (okMsg || 'کپی شد.') : (failMsg || 'کپی نشد؛ متن را انتخاب و با Ctrl+C کپی کنید.'),
+        ok ? 'good' : 'warn');
+    }
+    function fallback() {
+      var ta = el('textarea', { value: text });
+      ta.style.cssText = 'position:fixed;top:-2000px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+      return ok;
+    }
+    var clip = w.navigator.clipboard;
+    if (clip && clip.writeText) {
+      return clip.writeText(text).then(function () { done(true); return true; },
+        function () { var ok = fallback(); done(ok); return ok; });
+    }
+    var ok = fallback();
+    done(ok);
+    return Promise.resolve(ok);
+  }
+
+  /*
+   * دکمهٔ کوچکِ کپی کنار یک مقدار (کد ملی، کد پرسنلی، …).
+   * مقدار لحظهٔ کلیک خوانده می‌شود و با رقم لاتین و بی‌فاصله کپی می‌شود —
+   * سامانه‌های دیگر رقم فارسی یا خط تیره را نمی‌پذیرند.
+   */
+  function copyButton(get, opts) {
+    opts = opts || {};
+    var label = opts.label || 'مقدار';
+    var btn = el('button.copy-btn' + (opts.cls ? '.' + opts.cls : ''), {
+      type: 'button',
+      title: 'کپی ' + label,
+      'aria-label': 'کپی ' + label,
+      html: w.Mobile ? w.Mobile.icon('copy') : '⧉'
+    });
+    function stop(e) { e.preventDefault(); e.stopPropagation(); }
+    // دکمه داخل ردیف یا برچسب است: نه پرونده باز شود، نه فیلد فوکوس بگیرد
+    btn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+    });
+    btn.addEventListener('click', function (e) {
+      stop(e);
+      var raw = typeof get === 'function' ? get() : get;
+      var v = toLatinDigits(String(raw || '')).replace(opts.digits === false ? /\s+/g : /\D/g, '');
+      if (!v) { toast(label + ' ثبت نشده.', 'warn'); return; }
+      copy(v, label + ' کپی شد: ' + v).then(function (ok) {
+        if (!ok) return;
+        btn.classList.add('is-done');
+        if (w.Mobile) btn.innerHTML = w.Mobile.icon('tick');
+        clearTimeout(btn._t);
+        btn._t = setTimeout(function () {
+          btn.classList.remove('is-done');
+          if (w.Mobile) btn.innerHTML = w.Mobile.icon('copy');
+        }, 1400);
+      });
+    });
+    return btn;
+  }
+
   applyMotion();
 
   w.U = {
@@ -276,7 +341,7 @@
     systemReduce: systemReduce,
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     dots: dots,
-    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast,
+    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast, copy: copy, copyButton: copyButton,
     modal: modal, confirmBox: confirmBox, download: download,
     safeName: safeName, uid: uid, countUp: countUp
   };

@@ -908,6 +908,9 @@
       return box;
     }
 
+    // کد‌هایی که مدام در سامانه‌های دیگر جست‌وجو می‌شوند: یک کلیک تا کپی
+    var COPYABLE = { nationalId: 1, personnelCode: 1 };
+
     var CHIPS = {
       defenseDueDate: function () { return countdownChip(); },
       hireDate: function () { return serviceChip(); }
@@ -926,6 +929,10 @@
           text: cleanLabel(f.label), title: f.label
         });
         var clip = letterClip(f);
+        if (COPYABLE[f.key]) {
+          clip = w.U.copyButton(function () { return draft[f.key]; },
+            { label: cleanLabel(f.label), cls: 'field-copy' });
+        }
         if (CHIPS[f.key]) chip = CHIPS[f.key]();
         grid.appendChild(el('label.field' +
           (f.type === 'textarea' ? '.wide' : '') + (chip ? '.has-cd' : '') +

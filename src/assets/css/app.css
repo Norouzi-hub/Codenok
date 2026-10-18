@@ -3552,6 +3552,21 @@ select.input { cursor: pointer; }
   white-space: nowrap;
 }
 .card-date { font-size: 11px; color: var(--muted); }
+.card-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.card-name-row .card-name { flex: 1 1 auto; min-width: 0; }
+.card-nid {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  padding: 1px 2px 1px 7px;
+  border-radius: 999px;
+  background: var(--paper-2, rgba(0,0,0,.035));
+}
 .card-name {
   font-size: 14px;
   font-weight: 600;
@@ -6246,17 +6261,52 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
   background: none; cursor: pointer; color: var(--muted); position: relative;
 }
 .wl-fold::before {
-  content: ''; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -5px 0 0 -3.5px;
-  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg);
-  transition: transform .2s;
+  content: ''; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -2px 0 0 -3.5px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-135deg);
+  transition: transform .2s, margin .2s;
 }
-.wl-card.is-collapsed .wl-fold::before { transform: rotate(-135deg); margin-top: -2px; }
+/* باز: رو به بالا (جمع کن)؛ جمع: رو به پایین (باز کن) */
+.wl-card.is-collapsed .wl-fold::before { transform: rotate(45deg); margin-top: -5px; }
 .wl-fold:hover { border-color: var(--line); color: var(--ink-800); background: var(--paper); }
 .wl-card.is-collapsed { padding-bottom: 4px; }
 .wl-card.is-collapsed > :not(.wl-section-head) { display: none !important; }
 .wl-card.is-collapsed > .wl-section-head { border-bottom: 0; margin-bottom: 0; }
 .wl-card.is-collapsed .wl-sub { display: none; }
 .wl-card.is-dragging { opacity: .45; }
+
+/* --- آکاردئون: کلِ سرتیتر دکمه است --- */
+.wl-acc-head { cursor: pointer; user-select: none; border-radius: 10px; outline: none;
+  transition: background .15s; }
+.wl-acc-head:hover .wl-fold { border-color: var(--line); color: var(--ink-800); background: var(--paper); }
+.wl-acc-head:focus-visible { box-shadow: 0 0 0 2px var(--brass-line); }
+.wl-card.is-collapsed { padding-top: 12px; }
+.wl-card.is-collapsed > .wl-section-head { padding-bottom: 0; margin: 0; }
+.wl-card.is-collapsed:hover { border-color: var(--brass-line); }
+.wl-acc-n {
+  font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-600, var(--muted)); white-space: nowrap;
+}
+.wl-acc-n.late { background: var(--cinnabar-soft, #FBEDEA); color: var(--cinnabar); }
+.wl-card:not(.is-collapsed) .wl-acc-n { display: none; }
+.wl-card.is-opening > :not(.wl-section-head) { animation: wl-acc-in .34s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes wl-acc-in {
+  from { opacity: 0; transform: translateY(-6px); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+}
+.wl-acc-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-block: 0 10px; padding: 0 4px; font-size: 12px; color: var(--muted);
+}
+.wl-acc-seg {
+  display: inline-flex; padding: 2px; border-radius: 9px;
+  background: var(--paper-2); border: 1px solid var(--line-soft);
+}
+.wl-acc-opt {
+  font: inherit; font-size: 12px; border: 0; background: none; cursor: pointer;
+  padding: 4px 12px; border-radius: 7px; color: var(--muted); transition: background .15s, color .15s;
+}
+.wl-acc-opt.on { background: var(--card); color: var(--ink-800); box-shadow: var(--shadow-sm); font-weight: 600; }
+@media (max-width: 640px) { .wl-acc-hint { display: none; } }
 .wl-card.drop-before { box-shadow: 0 -3px 0 var(--brass), var(--shadow); }
 .wl-card.drop-after { box-shadow: 0 3px 0 var(--brass), var(--shadow); }
 .wl-hidden-note { font-size: 12px; color: var(--muted); text-align: center; margin: 4px 0 0; }
@@ -6337,3 +6387,37 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
   .worklist > .wl-card { padding: 12px 12px 14px; margin-inline: -2px; }
   .rail-miss { left: calc(50% + 2px); }
 }
+
+/* ------------------------------------------------- دکمهٔ کپیِ کد ملی
+   کنار کد ملی در جدول، کارت موبایل، فرم پرونده و پروندهٔ شخص. در جدول
+   کم‌رنگ است تا شلوغ نکند؛ با رفتن موس روی ردیف پررنگ می‌شود. */
+.copy-btn {
+  border: 0;
+  background: transparent;
+  padding: 3px;
+  margin: -3px 0;
+  line-height: 0;
+  color: var(--ink-400);
+  cursor: pointer;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: color .14s, background .14s, transform .1s, opacity .14s;
+}
+.copy-btn svg { width: 15px; height: 15px; }
+.copy-btn:hover, .copy-btn:focus-visible { color: var(--brass-ink); background: var(--brass-soft); }
+.copy-btn:active { transform: scale(.86); }
+.copy-btn.is-done { color: var(--moss); background: var(--moss-soft, rgba(60,120,80,.12)); }
+.copy-btn.is-done svg { animation: copy-pop .32s ease-out; }
+@keyframes copy-pop { 0% { transform: scale(.5); } 70% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.td.td-copy { display: flex; align-items: center; gap: 4px; }
+.td-copy-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.trow .td-copy .copy-btn { opacity: .38; }
+.trow:hover .td-copy .copy-btn, .trow:focus-within .td-copy .copy-btn,
+.trow .td-copy .copy-btn.is-done { opacity: 1; }
+@media (hover: none) { .trow .td-copy .copy-btn { opacity: .8; } }
+.field-head .copy-btn { padding: 1px 2px; margin: 0; }
+.field-head .copy-btn svg { width: 14px; height: 14px; }
+.pp-value { display: inline-flex; align-items: center; gap: 4px; }

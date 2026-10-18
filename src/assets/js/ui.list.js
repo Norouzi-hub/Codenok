@@ -314,6 +314,11 @@
     return { node: scroller, paint: function () { lastStart = -1; paint(); } };
   }
 
+  /** کپیِ کد ملی با یک کلیک — بی‌آنکه پرونده باز شود */
+  function nidCopy(rec) {
+    return w.U.copyButton(function () { return rec.nationalId; }, { label: 'کد ملی' });
+  }
+
   function makeCard(app, rec) {
     var action = w.Worklist.nextAction(rec);
     var cls = '';
@@ -350,9 +355,13 @@
     ]));
 
     var who = w.Person.fullName(rec);
-    card.appendChild(el('div.card-name', {
-      text: who || 'بدون نام', title: who
-    }));
+    card.appendChild(el('div.card-name-row', null, [
+      el('div.card-name', { text: who || 'بدون نام', title: who }),
+      rec.nationalId ? el('span.card-nid', null, [
+        el('span', { text: w.U.toLatinDigits(rec.nationalId) }),
+        nidCopy(rec)
+      ]) : null
+    ]));
 
     var meta = [rec.orgUnit, rec.expert].filter(Boolean).join(' • ');
     card.appendChild(el('div.card-foot', null, [
@@ -411,6 +420,10 @@
         cell.appendChild(el('span.pill.' + (statusClass(text) || 'st-none'), { text: text }));
       } else if (f.key === 'caseNo') {
         cell.appendChild(el('span.reg-no', { text: w.U.toLatinDigits(text) }));
+      } else if (f.key === 'nationalId' && rec.nationalId) {
+        cell.classList.add('td-copy');
+        cell.appendChild(el('span.td-copy-text', { text: text }));
+        cell.appendChild(nidCopy(rec));
       } else {
         cell.textContent = text;
       }

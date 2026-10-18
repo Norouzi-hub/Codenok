@@ -47,15 +47,18 @@ async function openList(page) {
     const future = await window.Notes.add(cs[2], 'با پروندهٔ مرتبط با هم مطرح شود.',
       R.addDays(J.today(), 6));
     const plain = await window.Notes.add(cs[0], 'یادداشت بدون قرار پیگیری.', '');
+    /* چک‌لیستِ مرحله در پس‌زمینه ساخته می‌شود و گاهی زودتر از این شمارش
+       می‌رسد؛ اینجا فقط یادداشتِ دست‌نویس مهم است. */
+    const writtenOf = id => window.Notes.forCase(id).filter(n => n.kind !== 'task');
     return {
-      forCase0: window.Notes.forCase(cs[0].id).length,
+      forCase0: writtenOf(cs[0].id).length,
       openFollowUp: !!window.Notes.openFollowUp(cs[0].id),
       dueNow: window.Notes.dueFollowUps(true).length,
       all: window.Notes.dueFollowUps(false).length,
       stats: window.Notes.stats(),
       ids: { past: past.id, today: today.id, future: future.id, plain: plain.id },
       // تازه‌ترین یادداشت بالای فهرست پرونده می‌آید
-      newestFirst: window.Notes.forCase(cs[0].id)[0].id === plain.id,
+      newestFirst: writtenOf(cs[0].id)[0].id === plain.id,
       /* چک‌لیست مرحله‌ای هم «کار» است و در همین انبار می‌نشیند؛ اینجا
          فقط یادداشت‌های دست‌نویس شمرده می‌شوند. */
       written: window.Notes.all().filter(n => n.kind !== 'task').length
