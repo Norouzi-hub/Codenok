@@ -288,7 +288,11 @@ function check(name, ok, extra) {
   ]);
   await c3.setFiles(files.slice(1));
   await page.waitForSelector('.doc-add-modal');
-  await page.waitForTimeout(500);
+  // سطرها پس از خواندن فایل‌ها ساخته و پر می‌شوند؛ به‌جای مکثِ ثابت، تا پر شدنشان صبر کن
+  await page.waitForFunction(() => {
+    const ins = [...document.querySelectorAll('.doc-add-modal .doc-add-row .dcase-field input')];
+    return ins.length > 0 && ins.every(i => i.value);
+  }, null, { timeout: 8000 }).catch(() => {});
   const prefill = await page.evaluate(() => {
     const m = document.querySelector('.doc-add-modal');
     return {
@@ -298,9 +302,11 @@ function check(name, ok, extra) {
         .map(i => i.value)
     };
   });
+  // ترتیبِ پرونده‌ها در حافظه ثابت نیست (شناسه‌ها تصادفی‌اند)؛ مبنا شمارهٔ همان پرونده است
+  const taskNo = await page.evaluate((id) => window.U.toLatinDigits(window.Model.get(id).caseNo || ''), taskCase);
   check('پروندهٔ کار، روی همهٔ سطرها از پیش نشسته',
-    prefill.rowCases.length === 3 && prefill.rowCases.every(v => /1404/.test(v)),
-    prefill.rowCases[0]);
+    prefill.rowCases.length === 3 && prefill.rowCases.every(v => v.indexOf(taskNo) === 0),
+    prefill.rowCases[0] + ' / ' + taskNo);
   check('و نام دسته از عنوان کار می‌آید',
     prefill.batchName === 'اسکن مدارک پرونده', prefill.batchName);
 

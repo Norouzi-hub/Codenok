@@ -613,6 +613,72 @@
     });
   }
 
+  /*
+   * ممیزیِ گردش‌کار: کدام پرونده کجاست، کدام ثبت شده، و کدام «ناقص» است.
+   *
+   * ریل، مرحله‌ای را که از آن گذشته‌ایم «انجام‌شده» می‌شمارد — حتی اگر
+   * تاریخش هیچ‌وقت وارد نشده باشد. برای «پرونده کجاست» درست است، ولی
+   * همین پرونده‌ها همان‌هایی‌اند که باید تکمیل شوند: پرونده به «دعوت»
+   * رسیده و «تاریخ حکم» ندارد. اینجا این دو از هم جدا می‌شوند.
+   *
+   * فقط مرحله‌های الزامی «ناقص» می‌شوند: نامهٔ رفع نواقص یا استعلام حراست
+   * برای خیلی از پرونده‌ها اصلاً پیش نمی‌آید و نبودنش کمبود نیست.
+   */
+  function audit(rec) {
+    var list = stages(rec);
+    return list.map(function (st, i) {
+      var stage = STAGES[i];
+      var recorded = stageDone(rec, stage);
+      return {
+        key: st.key, label: st.label, short: st.short, field: st.field,
+        optional: st.optional, current: st.current, date: st.date,
+        recorded: recorded,
+        missing: st.done && !recorded && !stage.optional
+      };
+    });
+  }
+
+  /** همان ممیزی برای همهٔ پرونده‌ها، مرحله به مرحله */
+  function pipelineDetail(cases) {
+    var out = STAGES.map(function (st) {
+      return { key: st.key, label: st.label, short: st.short, field: st.field,
+        optional: !!st.optional, recorded: [], missing: [], here: [], passed: 0 };
+    });
+    cases.forEach(function (rec) {
+      audit(rec).forEach(function (a, i) {
+        if (a.recorded) out[i].recorded.push(rec);
+        if (a.missing) out[i].missing.push(rec);
+        if (a.current) out[i].here.push(rec);
+        if (a.recorded || a.missing) out[i].passed++;
+      });
+    });
+    return out;
+  }
+
+  /** پرونده‌هایی که دستِ‌کم یک مرحلهٔ الزامیِ بی‌تاریخ دارند */
+  function incomplete(cases) {
+    var out = [];
+    cases.forEach(function (rec) {
+      var miss = audit(rec).filter(function (a) { return a.missing; });
+      if (miss.length) out.push({ rec: rec, missing: miss });
+    });
+    // پروندهٔ در جریان مهم‌تر از مختومه است؛ بعد، آن‌که کمبودِ بیشتری دارد
+    out.sort(function (a, b) {
+      var da = isDone(a.rec) ? 1 : 0, db = isDone(b.rec) ? 1 : 0;
+      return da - db || b.missing.length - a.missing.length;
+    });
+    return out;
+  }
+
+  /** فیلدی که «تکمیلِ» یک مرحله یعنی پر کردنِ آن */
+  function fixField(stageKey) {
+    var map = { verdict: 'verdictDate', result: 'noticeResultDate',
+      outcome: 'enforceOutcome', archive: 'archiveDate' };
+    if (map[stageKey]) return map[stageKey];
+    var st = stageByKey(stageKey);
+    return st ? st.field : '';
+  }
+
   function summary(cases) {
     var open = cases.filter(function (c) { return !isDone(c); });
     var transferred = cases.filter(isTransferred).length;
@@ -707,6 +773,7 @@
     isAcquitted: isAcquitted, needsSalaryResume: needsSalaryResume,
     defenseWatch: defenseWatch,
     hasOutcome: hasOutcome,
-    readyForCommittee: readyForCommittee, week: week
+    readyForCommittee: readyForCommittee, week: week,
+    audit: audit, pipelineDetail: pipelineDetail, incomplete: incomplete, fixField: fixField
   };
 })(window);

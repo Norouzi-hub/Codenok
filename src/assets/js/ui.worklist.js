@@ -185,6 +185,199 @@
   }
 
   /* ================================================================
+     گردش‌کار: کجا هستند، کدام ثبت شده، کدام ناقص است
+     ----------------------------------------------------------------
+     هر گرهِ ریل، دکمه است. زیرش پنلی باز می‌شود با سه فهرست: پرونده‌هایی
+     که الان روی همین مرحله‌اند، آن‌هایی که این مرحله را ثبت کرده‌اند، و
+     آن‌هایی که از آن گذشته‌اند بی‌آنکه تاریخش وارد شده باشد («ناقص»).
+     هر ناقص یک دکمهٔ «تکمیل» دارد که پرونده را درست سرِ همان فیلد باز
+     می‌کند.
+     ================================================================ */
+  function fixCase(app, rec, stageKey) {
+    var field = WL.fixField(stageKey);
+    app.state.formTab = 'case';
+    app.openCase(rec.id);
+    if (field) setTimeout(function () { if (app.jumpField) app.jumpField(field); }, 420);
+  }
+
+  function personName(rec) {
+    return [rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بی‌نام';
+  }
+
+  function stageRow(app, rec, stage, mode) {
+    var a = WL.nextAction(rec);
+    var date = '';
+    if (mode === 'recorded') {
+      var st = WL.STAGES.filter(function (x) { return x.key === stage.key; })[0];
+      var d = st && rec[st.field];
+      date = d && J.unpack(d) ? J.format(d) : (d || '');
+    }
+    return el('li.wl-st-row' + (mode === 'missing' ? '.is-missing' : ''), null, [
+      caseNumber(rec),
+      el('span.wl-st-who', { text: personName(rec) }),
+      el('span.wl-st-meta', {
+        text: mode === 'recorded' ? (date ? 'ثبت: ' + date : 'ثبت شده')
+          : (a && a.label ? a.label : (rec.status || ''))
+      }),
+      el('div.spacer'),
+      mode === 'missing' ? el('button.btn.small.wl-fix', {
+        type: 'button', text: 'تکمیل ←',
+        title: 'پرونده درست سرِ فیلدِ «' + stage.label + '» باز می‌شود',
+        onclick: function () { fixCase(app, rec, stage.key); }
+      }) : el('button.linkish.tiny', {
+        type: 'button', text: 'باز کردن',
+        onclick: function () { app.openCase(rec.id); }
+      })
+    ]);
+  }
+
+  function pipelineCard(app, cases) {
+    var st = app.state;
+    var detail = WL.pipelineDetail(cases);
+    var inc = WL.incomplete(cases);
+    var total = cases.length || 1;
+    var pick = st.wlStage || '';
+
+    var rail = el('ol.rail.rail-pipe.rail-pick');
+    detail.forEach(function (d, i) {
+      var pct = Math.round((d.passed / total) * 100);
+      var on = pick === d.key;
+      rail.appendChild(el('li.rail-step' + (d.passed ? '.done' : '') + (i === 0 ? '.first' : '') +
+        (on ? '.picked' : ''), null, [
+        el('button.rail-hit', {
+          type: 'button',
+          title: d.label + ' — ' + fa(d.passed) + ' پرونده (' + fa(pct) + '٪)' +
+            (d.here.length ? '، ' + fa(d.here.length) + ' پرونده الان اینجا' : '') +
+            (d.missing.length ? '، ' + fa(d.missing.length) + ' ناقص' : ''),
+          'aria-pressed': on ? 'true' : 'false',
+          onclick: function () { st.wlStage = on ? '' : d.key; st.wlIncomplete = false; app.render(); }
+        }, [
+          el('span.rail-dot'),
+          el('span.rail-count', { text: fa(d.passed) }),
+          el('span.rail-name', { text: d.short }),
+          d.missing.length ? el('span.rail-miss', { text: fa(d.missing.length), title: 'ناقص' }) : null,
+          d.here.length ? el('span.rail-here', { text: fa(d.here.length) + ' اینجا' }) : null
+        ])
+      ]));
+    });
+
+    var head = el('div.wl-section-head', null, [
+      el('h2', { text: 'گردش‌کار' }),
+      el('p.wl-sub', { text: 'روی هر مرحله بزنید: چه کسانی اینجا هستند، کدام ثبت شده و کدام ناقص است.' })
+    ]);
+
+    var nodes = [head];
+    if (inc.length) {
+      nodes.push(el('button.wl-inc-bar' + (st.wlIncomplete ? '.on' : ''), {
+        type: 'button',
+        onclick: function () { st.wlIncomplete = !st.wlIncomplete; st.wlStage = ''; app.render(); }
+      }, [
+        el('span.wl-inc-n', { text: fa(inc.length) }),
+        el('span', { text: 'پرونده اطلاعاتِ ناقص دارند — از مرحله‌ای گذشته‌اند که تاریخش وارد نشده.' }),
+        el('div.spacer'),
+        el('span.wl-inc-go', { text: st.wlIncomplete ? 'بستن' : 'دیدن و تکمیل ←' })
+      ]));
+    }
+    nodes.push(rail);
+
+    if (st.wlIncomplete && inc.length) {
+      /* پرونده‌های در جریان جدا از مختومه‌ها: پروندهٔ قدیمیِ واردشده از
+         اکسل معمولاً تاریخ‌های میانی ندارد، و نباید جلوی پرونده‌ای را
+         بگیرد که همین امروز باید تکمیل شود. */
+      var openInc = inc.filter(function (x) { return !WL.isDone(x.rec); });
+      var doneInc = inc.filter(function (x) { return WL.isDone(x.rec); });
+      var incTab = st.wlIncTab === 'closed' && doneInc.length ? 'closed'
+        : (openInc.length ? 'open' : 'closed');
+      var shown = incTab === 'open' ? openInc : doneInc;
+      nodes.push(el('div.wl-st-panel', null, [
+        el('div.wl-st-head', null, [
+          el('h3', { text: 'پرونده‌های ناقص' }),
+          el('div.wl-st-tabs', { role: 'tablist' }, [
+            { k: 'open', t: 'در جریان', list: openInc }, { k: 'closed', t: 'مختومه و ارجاع‌شده', list: doneInc }
+          ].map(function (x) {
+            return el('button.wl-st-tab' + (x.k === incTab ? '.on' : ''), {
+              type: 'button', role: 'tab', disabled: !x.list.length, text: x.t + ' ' + fa(x.list.length),
+              onclick: function () { st.wlIncTab = x.k; app.render(); }
+            });
+          })),
+          el('span.muted.tiny', { text: 'روی هر کمبود بزنید تا پرونده سرِ همان فیلد باز شود.' }),
+          el('div.spacer'),
+          el('button.btn.small.ghost', {
+            type: 'button', text: 'نمایش در فهرست',
+            onclick: function () {
+              app.showCases(shown.map(function (x) { return x.rec.id; }), 'پرونده‌های ناقص');
+            }
+          })
+        ]),
+        el('ul.wl-st-list', null, shown.slice(0, st.wlIncAll ? 500 : 30).map(function (x) {
+          return el('li.wl-st-row.is-missing', null, [
+            caseNumber(x.rec),
+            el('span.wl-st-who', { text: personName(x.rec) }),
+            el('div.wl-miss-chips', null, x.missing.map(function (m) {
+              return el('button.wl-miss', {
+                type: 'button', text: m.short, title: 'تکمیل «' + m.label + '»',
+                onclick: function () { fixCase(app, x.rec, m.key); }
+              });
+            }))
+          ]);
+        })),
+        shown.length > 30 && !st.wlIncAll ? el('button.btn.small.ghost', {
+          type: 'button', text: 'همهٔ ' + fa(shown.length) + ' پرونده',
+          onclick: function () { st.wlIncAll = true; app.render(); }
+        }) : null
+      ]));
+    } else if (pick) {
+      var d = detail.filter(function (x) { return x.key === pick; })[0];
+      if (d) {
+        var tabs = [
+          { k: 'here', t: 'الان در این مرحله', list: d.here },
+          { k: 'missing', t: 'ناقص', list: d.missing },
+          { k: 'recorded', t: 'ثبت‌شده', list: d.recorded }
+        ];
+        var tab = st.wlStageTab;
+        if (!tab || !tabs.filter(function (x) { return x.k === tab; })[0].list.length) {
+          tab = d.missing.length ? 'missing' : (d.here.length ? 'here' : 'recorded');
+        }
+        var cur = tabs.filter(function (x) { return x.k === tab; })[0];
+        nodes.push(el('div.wl-st-panel', null, [
+          el('div.wl-st-head', null, [
+            el('h3', { text: d.label }),
+            d.optional ? el('span.wl-st-opt', { text: 'اختیاری' }) : null,
+            el('div.wl-st-tabs', { role: 'tablist' }, tabs.map(function (x) {
+              return el('button.wl-st-tab' + (x.k === tab ? '.on' : '') + (x.k === 'missing' && x.list.length ? '.warn' : ''), {
+                type: 'button', role: 'tab', disabled: !x.list.length,
+                text: x.t + ' ' + fa(x.list.length),
+                onclick: function () { st.wlStageTab = x.k; app.render(); }
+              });
+            })),
+            el('div.spacer'),
+            cur.list.length ? el('button.btn.small.ghost', {
+              type: 'button', text: 'نمایش در فهرست',
+              onclick: function () {
+                app.showCases(cur.list.map(function (r) { return r.id; }), d.label + ' — ' + cur.t);
+              }
+            }) : null,
+            el('button.fdrawer-x', {
+              type: 'button', text: '✕', title: 'بستن',
+              onclick: function () { st.wlStage = ''; app.render(); }
+            })
+          ]),
+          tab === 'missing' ? el('p.wl-st-note', {
+            text: 'این پرونده‌ها از «' + d.label + '» گذشته‌اند ولی تاریخش ثبت نشده. «تکمیل» پرونده را سرِ همان فیلد باز می‌کند.'
+          }) : null,
+          cur.list.length ? el('ul.wl-st-list', null, cur.list.slice(0, 80).map(function (rec) {
+            return stageRow(app, rec, d, tab);
+          })) : el('p.muted.tiny', { text: 'پرونده‌ای نیست.' }),
+          cur.list.length > 80 ? el('p.muted.tiny', {
+            text: 'و ' + fa(cur.list.length - 80) + ' پروندهٔ دیگر — «نمایش در فهرست» همه را می‌آورد.'
+          }) : null
+        ]));
+      }
+    }
+    return el('section.wl-section.wl-pipe-card', null, nodes);
+  }
+
+  /* ================================================================
      نوار امروز
      ----------------------------------------------------------------
      یک نوار، چهار قطعه، هر قطعه به اندازهٔ سهمش. کلِ بارِ باز را در یک
@@ -473,6 +666,213 @@
   }
 
   // ------------------------------------------------------------------ صفحه
+  /* ================================================================
+     چیدمانِ کارتابل
+     ----------------------------------------------------------------
+     هر بخش یک کارت است، با پس‌زمینه و قابِ خودش. ترتیبشان سلیقهٔ خودِ
+     کاربر است: از «چیدمان کارتابل»، یا با کشیدنِ دستگیرهٔ هر کارت. هر
+     بخش جمع هم می‌شود، و هر کدام را می‌شود پنهان کرد. همه در تنظیماتِ
+     دیتابیس می‌ماند.
+     ================================================================ */
+  var SECTIONS = [
+    { key: 'follow', label: 'قرارهای پیگیری', hint: 'قرارهایی که خودتان روی پرونده‌ها گذاشته‌اید' },
+    { key: 'tasks', label: 'کارهای امروز', hint: 'کارهایی که سررسیدشان رسیده' },
+    { key: 'done', label: 'انجام‌شدهٔ امروز', hint: 'نامه، سند و کارِ امروز' },
+    { key: 'week', label: 'این هفته', hint: 'سررسیدهای هفت روز آینده' },
+    { key: 'pipeline', label: 'گردش‌کار', hint: 'مرحله‌ها، و پرونده‌های ناقص' },
+    { key: 'ours', label: 'منتظر اقدام ما', hint: 'کاری که با دبیرخانه است' },
+    { key: 'ready', label: 'آمادهٔ طرح در جلسه', hint: 'دفاعیه گرفته شده، آمادهٔ دستور کار' },
+    { key: 'theirs', label: 'منتظر دیگران', hint: 'توپ در زمین دیگران است' }
+  ];
+
+  function layout() {
+    var saved = (M.state.settings || {}).worklistLayout || {};
+    var known = SECTIONS.map(function (x) { return x.key; });
+    var order = (saved.order || []).filter(function (k) { return known.indexOf(k) >= 0; });
+    // بخشِ تازه‌ای که در ترتیبِ ذخیره‌شده نیست، سرِ جای پیش‌فرضش می‌نشیند
+    known.forEach(function (k, i) {
+      if (order.indexOf(k) >= 0) return;
+      var before = known.slice(0, i).filter(function (x) { return order.indexOf(x) >= 0; });
+      var at = before.length ? order.indexOf(before[before.length - 1]) + 1 : 0;
+      order.splice(at, 0, k);
+    });
+    return { order: order, hidden: saved.hidden || {}, collapsed: saved.collapsed || {} };
+  }
+
+  function saveLayout(patch) {
+    var cur = layout();
+    return M.saveSettings({ worklistLayout: Object.assign({}, cur, patch) });
+  }
+
+  /** کارت‌ها به ترتیبِ کاربر، با دستگیره و دکمهٔ جمع کردن */
+  function arrange(app, parts) {
+    var L = layout();
+    var out = [];
+    L.order.forEach(function (key) {
+      var node = parts[key];
+      if (!node || L.hidden[key]) return;
+      node.classList.add('wl-card');
+      node.setAttribute('data-sec', key);
+      if (L.collapsed[key]) node.classList.add('is-collapsed');
+      var head = node.querySelector('.wl-section-head');
+      if (head) {
+        head.insertBefore(el('span.wl-grip', {
+          draggable: 'true', title: 'برای جابه‌جایی بکشید', 'aria-hidden': 'true'
+        }), head.firstChild);
+        head.appendChild(el('button.wl-fold', {
+          type: 'button', title: L.collapsed[key] ? 'باز کردن' : 'جمع کردن',
+          'aria-label': L.collapsed[key] ? 'باز کردن' : 'جمع کردن',
+          'aria-expanded': L.collapsed[key] ? 'false' : 'true',
+          onclick: function () {
+            var c = Object.assign({}, layout().collapsed);
+            if (c[key]) delete c[key]; else c[key] = true;
+            saveLayout({ collapsed: c }).then(function () { app.render(); });
+          }
+        }));
+      }
+      dragCard(app, node, key);
+      out.push(node);
+    });
+    var hidden = L.order.filter(function (k) { return L.hidden[k] && parts[k]; });
+    if (hidden.length) {
+      out.push(el('p.wl-hidden-note', null, [
+        el('span', { text: fa(hidden.length) + ' بخشِ پنهان: ' + hidden.map(function (k) {
+          return SECTIONS.filter(function (x) { return x.key === k; })[0].label;
+        }).join('، ') + ' — ' }),
+        el('button.linkish.tiny', {
+          type: 'button', text: 'چیدمان کارتابل',
+          onclick: function () { layoutDialog(app); }
+        })
+      ]));
+    }
+    return out;
+  }
+
+  /** کشیدنِ کارت با دستگیره‌اش، و رها کردن روی کارتِ دیگر */
+  function dragCard(app, node, key) {
+    var grip = node.querySelector('.wl-grip');
+    if (grip) {
+      grip.addEventListener('dragstart', function (e) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'wl:' + key);
+        try { e.dataTransfer.setDragImage(node, 40, 20); } catch (x) { /* بعضی مرورگرها */ }
+        node.classList.add('is-dragging');
+      });
+      grip.addEventListener('dragend', function () {
+        node.classList.remove('is-dragging');
+        w.U.$$('.wl-card.drop-before, .wl-card.drop-after').forEach(function (n) {
+          n.classList.remove('drop-before', 'drop-after');
+        });
+      });
+    }
+    node.addEventListener('dragover', function (e) {
+      if (!e.dataTransfer.types || [].indexOf.call(e.dataTransfer.types, 'text/plain') < 0) return;
+      e.preventDefault();
+      var r = node.getBoundingClientRect();
+      var before = e.clientY < r.top + r.height / 2;
+      node.classList.toggle('drop-before', before);
+      node.classList.toggle('drop-after', !before);
+    });
+    node.addEventListener('dragleave', function (e) {
+      if (e.target === node) node.classList.remove('drop-before', 'drop-after');
+    });
+    node.addEventListener('drop', function (e) {
+      var data = e.dataTransfer.getData('text/plain') || '';
+      if (data.indexOf('wl:') !== 0) return;
+      e.preventDefault();
+      var from = data.slice(3);
+      var before = node.classList.contains('drop-before');
+      node.classList.remove('drop-before', 'drop-after');
+      if (from === key) return;
+      moveSection(app, from, key, before);
+    });
+  }
+
+  function moveSection(app, from, to, before) {
+    var order = layout().order.filter(function (k) { return k !== from; });
+    var at = order.indexOf(to);
+    if (at < 0) return Promise.resolve();
+    order.splice(before ? at : at + 1, 0, from);
+    return saveLayout({ order: order }).then(function () { app.render(); });
+  }
+
+  /** پنجرهٔ چیدمان: ترتیب با ↑↓، دیده شدن با تیک */
+  function layoutDialog(app) {
+    var L = layout();
+    var order = L.order.slice(), hidden = Object.assign({}, L.hidden);
+    var list = el('ol.cols-order.wl-lay-list');
+    function draw() {
+      w.U.clear(list);
+      order.forEach(function (k, i) {
+        var sec = SECTIONS.filter(function (x) { return x.key === k; })[0];
+        var box = el('input', { type: 'checkbox' });
+        box.checked = !hidden[k];
+        box.addEventListener('change', function () {
+          if (box.checked) delete hidden[k]; else hidden[k] = true;
+          draw();
+        });
+        var li = el('li.cols-item' + (hidden[k] ? '.is-off' : ''), { draggable: 'true' }, [
+          el('span.cols-grip', { text: '⋮⋮', 'aria-hidden': 'true' }),
+          el('span.cols-n', { text: fa(i + 1) }),
+          el('label.wl-lay-name', null, [box, el('span', null, [
+            el('b', { text: sec.label }), el('small', { text: sec.hint })
+          ])]),
+          el('button.cols-mv', { type: 'button', text: '↑', title: 'بالاتر', disabled: i === 0,
+            onclick: function () { mv(i, i - 1); } }),
+          el('button.cols-mv', { type: 'button', text: '↓', title: 'پایین‌تر', disabled: i === order.length - 1,
+            onclick: function () { mv(i, i + 1); } })
+        ]);
+        li.addEventListener('dragstart', function (e) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', k);
+          li.classList.add('is-dragging');
+        });
+        li.addEventListener('dragend', function () { li.classList.remove('is-dragging'); });
+        li.addEventListener('dragover', function (e) { e.preventDefault(); li.classList.add('drop'); });
+        li.addEventListener('dragleave', function () { li.classList.remove('drop'); });
+        li.addEventListener('drop', function (e) {
+          e.preventDefault();
+          li.classList.remove('drop');
+          var from = order.indexOf(e.dataTransfer.getData('text/plain'));
+          if (from >= 0) mv(from, i);
+        });
+        list.appendChild(li);
+      });
+    }
+    function mv(a, b) {
+      if (b < 0 || b >= order.length || a === b) return;
+      var k = order.splice(a, 1)[0];
+      order.splice(b, 0, k);
+      draw();
+    }
+    draw();
+    var m = w.U.modal('چیدمان کارتابل', el('div.wl-lay', null, [
+      el('p.muted', {
+        text: 'بخش‌ها به همین ترتیب، از بالا به پایین، در کارتابل می‌آیند. تیک را بردارید تا ' +
+          'بخشی پنهان شود. روی خودِ کارتابل هم می‌شود هر کارت را با دستگیره‌اش کشید.'
+      }),
+      list
+    ]), [
+      el('button.btn.ghost', {
+        type: 'button', text: 'بازگشت به پیش‌فرض',
+        onclick: function () {
+          M.saveSettings({ worklistLayout: {} }).then(function () { m.close(); app.render(); });
+        }
+      }),
+      el('button.btn.primary', {
+        type: 'button', text: 'ذخیره',
+        onclick: function () {
+          saveLayout({ order: order, hidden: hidden }).then(function () {
+            m.close(); app.render();
+            w.U.toast('چیدمان کارتابل ذخیره شد.', 'good');
+          });
+        }
+      })
+    ]);
+    m.root.classList.add('wl-lay-modal');
+    return m;
+  }
+
   function render(app, mount) {
     var cases = M.scoped();
     var sum = WL.summary(cases);
@@ -629,10 +1029,15 @@
         type: 'button', text: 'چاپ دستور کار',
         title: fa(ready.length) + ' پروندهٔ آمادهٔ طرح',
         onclick: function () { w.UIPrint.printAgenda(ready); }
-      }) : null
+      }) : null,
+      el('button.btn.small.ghost.wl-layout-btn', {
+        type: 'button', text: 'چیدمان کارتابل',
+        title: 'ترتیب بخش‌ها، و اینکه کدام دیده شوند',
+        onclick: function () { layoutDialog(app); }
+      })
     ]);
 
-    var sections = [];
+    var parts = {};
 
     /*
      * پیگیری‌های دستی — اول از همه، چون قرارِ خودتان است نه حدسِ برنامه.
@@ -649,7 +1054,7 @@
     });
     if (follow.length) {
       var late = follow.filter(function (f) { return f.overdue; }).length;
-      sections.push(el('section.wl-section.follow-section', null, [
+      parts.follow = el('section.wl-section.follow-section', null, [
         el('div.wl-section-head', null, [
           el('h2', { text: 'قرارهای پیگیری' }),
           el('span.wl-count' + (late ? '.late' : ''), {
@@ -696,40 +1101,40 @@
             ])
           ]);
         }))
-      ]));
+      ]);
     }
 
     /* کارهای امروز، بلافاصله بعد از قرارهای پیگیری: هر دو «قرارِ خودِ
        کاربر»اند، نه حدسِ برنامه، و با هم یک تصویر از امروز می‌دهند. */
-    var tasksToday = w.UITasks.todaySection(app);
-    if (tasksToday) sections.push(tasksToday);
+    parts.tasks = w.UITasks.todaySection(app);
 
     var doneToday = todayLog(app);
-    if (doneToday) sections.push(doneToday);
+    if (doneToday) {
+      parts.done = el('section.wl-section.done-card', null, [
+        el('div.wl-section-head', null, [
+          el('h2', { text: 'انجام‌شدهٔ امروز' }),
+          el('p.wl-sub', { text: 'نامه، سند، کار و پرونده‌هایی که امروز جلو رفتند.' })
+        ]),
+        doneToday
+      ]);
+    }
 
-    var week = weekStrip(app, cases);
-    if (week) sections.push(week);
+    parts.week = weekStrip(app, cases);
 
-    sections.push(el('section.wl-pipe-card', null, [
-      el('div.wl-section-head', null, [
-        el('h2', { text: 'گردش‌کار' }),
-        el('p.wl-sub', { text: 'هر گره، پرونده‌هایی که از آن مرحله گذشته‌اند.' })
-      ]),
-      pipelineRail(app, cases)
-    ]));
+    parts.pipeline = pipelineCard(app, cases);
 
     if (ours.length) {
-      sections.push(el('section.wl-section', null, [
+      parts.ours = el('section.wl-section', null, [
         el('div.wl-section-head', null, [
           el('h2', { text: 'منتظر اقدام ما' }),
           el('p.wl-sub', { text: 'کاری که تا انجامش ندهیم، پرونده تکان نمی‌خورد.' })
         ]),
         el('div', null, ours.map(function (b) { return bucketBlock(app, b); }))
-      ]));
+      ]);
     }
 
     if (ready.length) {
-      sections.push(el('section.wl-section', null, [
+      parts.ready = el('section.wl-section', null, [
         el('div.wl-section-head', null, [
           el('h2', { text: 'آمادهٔ طرح در جلسه' }),
           el('p.wl-sub', {
@@ -751,18 +1156,20 @@
         el('div.wl-rows', null, ready.map(function (rec) {
           return actionRow(app, { rec: rec, action: WL.nextAction(rec) });
         }))
-      ]));
+      ]);
     }
 
     if (theirs.length) {
-      sections.push(el('section.wl-section', null, [
+      parts.theirs = el('section.wl-section', null, [
         el('div.wl-section-head', null, [
           el('h2', { text: 'منتظر دیگران' }),
           el('p.wl-sub', { text: 'توپ در زمین ما نیست؛ ولی دیرکردش را باید پیگیری کرد.' })
         ]),
         el('div', null, theirs.map(function (b) { return bucketBlock(app, b); }))
-      ]));
+      ]);
     }
+
+    var sections = arrange(app, parts);
 
     if (!all.length && !ready.length) {
       sections.push(el('div.empty-state', null, [
@@ -815,6 +1222,7 @@
   }
 
   w.UIWorklist = { render: render, rail: rail, pipelineRail: pipelineRail,
+    SECTIONS: SECTIONS, layout: layout, moveSection: moveSection, layoutDialog: layoutDialog,
     caseNumber: caseNumber, weekStrip: weekStrip,
     countdown: countdown, clock: clock, cdText: cdText, cdShort: cdShort };
 })(window);
