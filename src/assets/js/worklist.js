@@ -677,9 +677,12 @@
         optional: !!st.optional, recorded: [], missing: [], here: [], passed: 0 };
     });
     notTransferred(cases).forEach(function (rec) {
+      /* نقصِ پروندهٔ مختومه دیگر کار نیست، سابقهٔ کیفیت است (Quality):
+         از مرحله گذشته و شمرده می‌شود، ولی در «ناقص»ها نمی‌آید. */
+      var closed = isClosed(rec);
       audit(rec).forEach(function (a, i) {
         if (a.recorded) out[i].recorded.push(rec);
-        if (a.missing) out[i].missing.push(rec);
+        if (a.missing && !closed) out[i].missing.push(rec);
         if (a.current) out[i].here.push(rec);
         if (a.recorded || a.missing) out[i].passed++;
       });
@@ -687,18 +690,16 @@
     return out;
   }
 
-  /** پرونده‌هایی که دستِ‌کم یک مرحلهٔ الزامیِ بی‌تاریخ دارند */
+  /** پرونده‌های در جریانی که دستِ‌کم یک مرحلهٔ الزامیِ بی‌تاریخ دارند.
+      مختومه‌ها اینجا نیستند: نقصشان در «کیفیت پرونده» ثبت است. */
   function incomplete(cases) {
     var out = [];
-    notTransferred(cases).forEach(function (rec) {
+    cases.filter(function (c) { return !isDone(c); }).forEach(function (rec) {
       var miss = audit(rec).filter(function (a) { return a.missing; });
       if (miss.length) out.push({ rec: rec, missing: miss });
     });
-    // پروندهٔ در جریان مهم‌تر از مختومه است؛ بعد، آن‌که کمبودِ بیشتری دارد
-    out.sort(function (a, b) {
-      var da = isDone(a.rec) ? 1 : 0, db = isDone(b.rec) ? 1 : 0;
-      return da - db || b.missing.length - a.missing.length;
-    });
+    // آن‌که کمبودِ بیشتری دارد، اول
+    out.sort(function (a, b) { return b.missing.length - a.missing.length; });
     return out;
   }
 

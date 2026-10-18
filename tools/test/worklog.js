@@ -47,7 +47,7 @@ function check(name, ok, extra) {
     document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
     for (let i = 0; i < 4; i++) T.tick();
     const active = T.forCase(rec.id, J.today(), J.today()) - before;
-    T._idle(300);                       // پنج دقیقه بی‌کاری
+    T._idle(T.IDLE + 60);               // بیش از ده دقیقه بی‌کاری
     T.tick(); T.tick();
     const idle = T.forCase(rec.id, J.today(), J.today()) - before - active;
     document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));

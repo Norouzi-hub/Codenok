@@ -1278,21 +1278,18 @@
           ctaButton(action)
         ]);
       } else {
-        // مختومه‌ای که مرحله‌هایش ناقص مانده، یعنی ثبت کار عقب است
-        var missing = w.Worklist.stages(existing).filter(function (st) {
-          return !st.done && !st.optional;
-        });
         next = el('div.case-next', null, [
           el('span.case-next-label', { text: 'مختومه' }),
-          el('span.case-next-meta', {
-            text: missing.length
-              ? 'مختومه ثبت شده، ولی ' +
-                missing.map(function (st) { return st.label; }).join(' و ') +
-                ' در پرونده ثبت نشده است.'
-              : 'اقدام بازی روی این پرونده نمانده است.'
-          })
+          el('span.case-next-meta', { text: 'اقدام بازی روی این پرونده نمانده است.' })
         ]);
       }
+      /* کیفیتِ پرونده: با چه نقصی بسته شد. نقصِ مختومه در کارتابل نمی‌آید
+         (کار نیست)، ولی اینجا می‌ماند — سابقهٔ کیفیتِ کار است. */
+      var qualityNode = w.UIQuality ? w.UIQuality.caseBox(M.get(existing.id) || existing,
+        function (stageKey) {
+          var f = w.Worklist.fixField(stageKey);
+          if (f) jumpToField(f);
+        }) : null;
       // پرونده‌ای که از دست ما خارج شده، باید همان بالا معلوم باشد
       var transferNode = null;
       if (w.Worklist.isTransferred(existing)) {
@@ -1388,6 +1385,7 @@
         }),
         w.UIChecklist.chip(app, fresh),
         transferNode || next,
+        qualityNode,
         cdNode,
         /* هشدار، نه سد: کارِ الزامیِ ماندهٔ مرحله‌های قبل گفته می‌شود
            ولی جلوی هیچ‌چیز را نمی‌گیرد. */

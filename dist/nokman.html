@@ -6451,6 +6451,72 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
 .field-head .copy-btn svg { width: 14px; height: 14px; }
 .pp-value { display: inline-flex; align-items: center; gap: 4px; }
 
+/* ------------------------------------------------- کیفیت پرونده
+   کادرِ بالای پروندهٔ مختومه، و تبِ «کیفیت پرونده‌ها» در گزارش‌ها. */
+.q-box {
+  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--card);
+  padding: 10px 14px; margin-top: 8px; display: flex; flex-direction: column; gap: 8px;
+}
+.q-box.is-good { border-color: var(--moss-line); background: var(--moss-soft); }
+.q-box.is-open { border-color: var(--cinnabar-line); }
+.q-box.is-fixed { border-color: var(--brass-line); }
+.q-box.is-before { background: var(--paper-2); }
+.q-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.q-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+  background: var(--paper-2); color: var(--muted);
+}
+.q-box.is-good .q-badge { background: var(--card); color: #1F5B41; }
+.q-title { font-weight: 600; font-size: 13.5px; }
+.q-box.is-good .q-title { color: #1F5B41; }
+.q-when { margin-inline-start: auto; font-size: 12px; color: var(--muted); }
+.q-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.q-item {
+  display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 9px;
+  font-size: 12.5px; border: 1px solid var(--line);
+}
+.q-item.is-open { background: var(--cinnabar-soft); border-color: var(--cinnabar-line); }
+.q-item.is-fixed { background: var(--moss-soft); border-color: var(--moss-line); }
+.q-item.is-fixed b { text-decoration: line-through; text-decoration-color: rgba(0,0,0,.3); }
+.q-item small { color: #1F5B41; font-size: 11px; }
+.q-fix { font-weight: 600; }
+.q-note { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.q-report { display: flex; flex-direction: column; gap: 16px; }
+.q-intro h2 { margin: 0 0 4px; }
+.q-intro p { margin: 0; max-width: 760px; }
+.q-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.q-tile {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; box-shadow: var(--shadow-sm);
+}
+.q-tile b { font-size: 26px; line-height: 1.2; }
+.q-tile span { font-weight: 600; font-size: 13px; }
+.q-tile small { color: var(--muted); font-size: 11.5px; }
+.q-tile.good b { color: var(--moss); }
+.q-tile.warn b { color: var(--cinnabar); }
+.q-before { margin: 0; font-size: 12.5px; color: var(--muted); }
+.q-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.q-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 14px 16px; box-shadow: var(--shadow-sm);
+}
+.q-card h3 { margin: 0 0 2px; font-size: 14.5px; }
+.q-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.q-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.q-row { display: grid; grid-template-columns: minmax(90px, 1.2fr) 2fr 48px 56px; gap: 10px; align-items: center; font-size: 12.5px; }
+.q-row-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-row-val { font-weight: 600; text-align: end; }
+.q-row-sub { color: var(--muted); font-size: 11.5px; }
+.q-bar { height: 8px; border-radius: 99px; background: var(--paper-2); overflow: hidden; display: block; }
+.q-bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--brass); transition: width .5s var(--ease, ease); }
+.q-bar.good .q-bar-fill { background: var(--moss); }
+.q-bar.low .q-bar-fill { background: var(--cinnabar); }
+@media (max-width: 640px) {
+  .q-row { grid-template-columns: 1fr 1.4fr 40px; }
+  .q-row-sub { display: none; }
+}
+
 </style>
 </head>
 <body>
@@ -10283,6 +10349,8 @@ window.SEED_CASES = [
     var idx = state.cases.indexOf(before);
     index(after);
     if (idx >= 0) state.cases[idx] = after; else state.cases.push(after);
+    // لحظهٔ مختومه شدن، وضعِ کیفیتِ پرونده ثبت می‌شود
+    if (w.Quality) w.Quality.observe(before, after);
     var entry = addHistory('update', after, changes);
     return Promise.all([
       w.Store.put('cases', [strip(after)]),
@@ -10296,6 +10364,7 @@ window.SEED_CASES = [
     var entry = addHistory('delete', rec, [], 'حذف پرونده');
     state.cases = state.cases.filter(function (c) { return c.id !== id; });
     delete byId[id];
+    if (w.Quality) w.Quality.forget(id);
     return Promise.all([
       w.Store.remove('cases', [id]),
       w.Store.put('history', [entry])
@@ -10336,6 +10405,7 @@ window.SEED_CASES = [
       var idx = state.cases.indexOf(before);
       index(after);
       if (idx >= 0) state.cases[idx] = after; else state.cases.push(after);
+      if (w.Quality) w.Quality.observe(before, after);
       touched.push(after);
       entries.push({
         id: w.U.uid(), caseId: id, caseNo: after.caseNo || '', at: now,
@@ -10794,7 +10864,7 @@ window.SEED_CASES = [
  *
  * قاعده ساده و محافظه‌کار است:
  *   - هر ۱۵ ثانیه یک بار نگاه می‌کند: پنجره دیده می‌شود؟ فوکوس دارد؟ در
- *     دو دقیقهٔ گذشته کلیک یا تایپ یا اسکرولی بوده؟ اگر هر سه بله،
+ *     ده دقیقهٔ گذشته کلیک یا تایپ یا اسکرولی بوده؟ اگر هر سه بله،
  *     همان ۱۵ ثانیه به «جایی که کاربر هست» نسبت داده می‌شود.
  *   - «جا»: اگر پرونده‌ای باز است، همان پرونده؛ وگرنه صفحه (کارتابل،
  *     فهرست، کارها، …).
@@ -10810,7 +10880,7 @@ window.SEED_CASES = [
   var J = w.J;
   var KEY = 'timelog';
   var TICK = 15;            // ثانیه
-  var IDLE = 120;           // بی‌کاریِ بیش از این، شمرده نمی‌شود
+  var IDLE = 600;           // بی‌کاریِ بیش از ده دقیقه شمرده نمی‌شود (خواندنِ سند هم کار است)
   var SAVE_EVERY = 60;      // نوشتن در انبار
   var FILE_EVERY = 300;     // فرستادن به فایل دیتابیس
 
@@ -15818,9 +15888,12 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         optional: !!st.optional, recorded: [], missing: [], here: [], passed: 0 };
     });
     notTransferred(cases).forEach(function (rec) {
+      /* نقصِ پروندهٔ مختومه دیگر کار نیست، سابقهٔ کیفیت است (Quality):
+         از مرحله گذشته و شمرده می‌شود، ولی در «ناقص»ها نمی‌آید. */
+      var closed = isClosed(rec);
       audit(rec).forEach(function (a, i) {
         if (a.recorded) out[i].recorded.push(rec);
-        if (a.missing) out[i].missing.push(rec);
+        if (a.missing && !closed) out[i].missing.push(rec);
         if (a.current) out[i].here.push(rec);
         if (a.recorded || a.missing) out[i].passed++;
       });
@@ -15828,18 +15901,16 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     return out;
   }
 
-  /** پرونده‌هایی که دستِ‌کم یک مرحلهٔ الزامیِ بی‌تاریخ دارند */
+  /** پرونده‌های در جریانی که دستِ‌کم یک مرحلهٔ الزامیِ بی‌تاریخ دارند.
+      مختومه‌ها اینجا نیستند: نقصشان در «کیفیت پرونده» ثبت است. */
   function incomplete(cases) {
     var out = [];
-    notTransferred(cases).forEach(function (rec) {
+    cases.filter(function (c) { return !isDone(c); }).forEach(function (rec) {
       var miss = audit(rec).filter(function (a) { return a.missing; });
       if (miss.length) out.push({ rec: rec, missing: miss });
     });
-    // پروندهٔ در جریان مهم‌تر از مختومه است؛ بعد، آن‌که کمبودِ بیشتری دارد
-    out.sort(function (a, b) {
-      var da = isDone(a.rec) ? 1 : 0, db = isDone(b.rec) ? 1 : 0;
-      return da - db || b.missing.length - a.missing.length;
-    });
+    // آن‌که کمبودِ بیشتری دارد، اول
+    out.sort(function (a, b) { return b.missing.length - a.missing.length; });
     return out;
   }
 
@@ -15949,6 +16020,182 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     hasOutcome: hasOutcome,
     readyForCommittee: readyForCommittee, week: week,
     audit: audit, pipelineDetail: pipelineDetail, incomplete: incomplete, fixField: fixField
+  };
+})(window);
+
+</script>
+<script>
+/* ==== assets/js/quality.js ==== */
+/*
+ * کیفیتِ پرونده — هر پرونده با چه وضعی بسته شد.
+ *
+ * نقصِ پروندهٔ در جریان «کار» است و جایش کارتابل است. نقصِ پروندهٔ مختومه
+ * دیگر کار نیست؛ سابقهٔ کیفیت است. پس لحظه‌ای که پرونده مختومه می‌شود، یک
+ * عکس گرفته می‌شود: کدام مرحله‌های الزامی تاریخ نداشتند. این عکس بعداً عوض
+ * نمی‌شود — اگر نقصی بعد از ختم تکمیل شد، کنارش «تکمیل پس از ختم» می‌آید،
+ * ولی پاک نمی‌شود. سابقه همان است که بود.
+ *
+ * پرونده‌ای که پیش از این نسخه مختومه شده (یا از اکسل مختومه آمده) عکس
+ * ندارد: «پیش از سنجش کیفیت» است و در آمار کیفیت نمی‌آید. آمار فقط از
+ * کاری ساخته می‌شود که واقعاً سنجیده شده.
+ *
+ * داده در meta (و با آن در فایل دیتابیس):
+ *   quality = { since: '14050727',
+ *               cases: { <id>: { at: '14050801', iso, missing: [{key, label}],
+ *                                fixed: { <stageKey>: '14050803' } } } }
+ */
+(function (w) {
+  'use strict';
+
+  var KEY = 'quality';
+
+  function J() { return w.J; }
+  function WL() { return w.Worklist; }
+
+  function data() {
+    var d = w.Store && w.Store.metaGet ? w.Store.metaGet(KEY, null) : null;
+    return d && typeof d === 'object' ? d : { since: '', cases: {} };
+  }
+
+  function save(d) {
+    if (!w.Store || !w.Store.metaSet) return Promise.resolve();
+    var p = w.Store.metaSet(KEY, d);
+    if (w.Store.scheduleSave) w.Store.scheduleSave();
+    return p;
+  }
+
+  /** از کِی سنجیده می‌شود؛ اولین بار که برنامه با این نسخه باز شد */
+  function ensureSince() {
+    var d = data();
+    if (d.since) return Promise.resolve(d.since);
+    d.since = J().today();
+    d.cases = d.cases || {};
+    return save(d).then(function () { return d.since; });
+  }
+
+  function missingNow(rec) {
+    return WL().audit(rec).filter(function (a) { return a.missing; })
+      .map(function (a) { return { key: a.key, label: a.label }; });
+  }
+
+  /*
+   * هر ذخیرهٔ پرونده از اینجا می‌گذرد (Model.update و applyPatches).
+   * گذارِ «در جریان → مختومه» عکس می‌گیرد؛ پروندهٔ مختومه‌ای که نقصش
+   * تکمیل شد، تاریخِ تکمیلش ثبت می‌شود.
+   */
+  function observe(before, after) {
+    if (!WL() || !after || !after.id) return;
+    var was = before && WL().isClosed(before);
+    var now = WL().isClosed(after);
+    if (!now) return;
+    var d = data(), dirty = false;
+    d.cases = d.cases || {};
+    if (!was) {
+      d.cases[after.id] = {
+        at: J().today(), iso: new Date().toISOString(),
+        missing: missingNow(after), fixed: {}
+      };
+      dirty = true;
+    } else {
+      var snap = d.cases[after.id];
+      if (snap && snap.missing.length) {
+        var audit = WL().audit(after);
+        snap.missing.forEach(function (m) {
+          if (snap.fixed[m.key]) return;
+          var a = audit.filter(function (x) { return x.key === m.key; })[0];
+          if (a && a.recorded) { snap.fixed[m.key] = J().today(); dirty = true; }
+        });
+      }
+    }
+    if (dirty) save(d);
+  }
+
+  /** پروندهٔ حذف‌شده، عکسش هم می‌رود */
+  function forget(id) {
+    var d = data();
+    if (!d.cases || !d.cases[id]) return Promise.resolve();
+    delete d.cases[id];
+    return save(d);
+  }
+
+  /*
+   * وضعِ کیفیتِ یک پرونده، برای خودِ پرونده و گزارش:
+   *   null — پرونده مختومه نیست
+   *   { measured: false, now: [...] } — پیش از سنجش بسته شده
+   *   { measured: true, at, missing: [{key, label, state, fixedAt}], complete,
+   *     open, fixed }
+   *   state: 'open' هنوز ناقص · 'fixed' تکمیل پس از ختم
+   */
+  function of(rec) {
+    if (!rec || !WL().isClosed(rec) || WL().isTransferred(rec)) return null;
+    var snap = (data().cases || {})[rec.id];
+    if (!snap) return { measured: false, now: missingNow(rec) };
+    var audit = WL().audit(rec);
+    var list = snap.missing.map(function (m) {
+      var a = audit.filter(function (x) { return x.key === m.key; })[0];
+      var done = !!snap.fixed[m.key] || !!(a && a.recorded);
+      return { key: m.key, label: m.label, state: done ? 'fixed' : 'open',
+        fixedAt: snap.fixed[m.key] || '' };
+    });
+    return {
+      measured: true, at: snap.at, missing: list,
+      complete: !list.length,
+      open: list.filter(function (m) { return m.state === 'open'; }).length,
+      fixed: list.filter(function (m) { return m.state === 'fixed'; }).length
+    };
+  }
+
+  /** آمارِ کیفیت برای گزارش */
+  function stats(cases) {
+    var closed = cases.filter(function (c) {
+      return WL().isClosed(c) && !WL().isTransferred(c);
+    });
+    var measured = [], unmeasured = [], months = {}, stages = {}, experts = {};
+    var T = { closed: closed.length, measured: 0, complete: 0, missing: 0, fixed: 0, open: 0 };
+    closed.forEach(function (rec) {
+      var q = of(rec);
+      if (!q || !q.measured) { unmeasured.push(rec); return; }
+      measured.push({ rec: rec, q: q });
+      T.measured++;
+      if (q.complete) T.complete++;
+      T.missing += q.missing.length;
+      T.fixed += q.fixed;
+      T.open += q.open;
+      var mk = String(q.at || '').slice(0, 6);
+      var m = months[mk] || (months[mk] = { key: mk, n: 0, complete: 0 });
+      m.n++;
+      if (q.complete) m.complete++;
+      q.missing.forEach(function (x) {
+        var s = stages[x.key] || (stages[x.key] = { key: x.key, label: x.label, n: 0, fixed: 0 });
+        s.n++;
+        if (x.state === 'fixed') s.fixed++;
+      });
+      var ek = rec.expert || '—';
+      var e = experts[ek] || (experts[ek] = { key: ek, n: 0, complete: 0 });
+      e.n++;
+      if (q.complete) e.complete++;
+    });
+    T.pct = T.measured ? Math.round(T.complete * 100 / T.measured) : null;
+    function pct(x) { x.pct = x.n ? Math.round(x.complete * 100 / x.n) : 0; return x; }
+    return {
+      totals: T,
+      since: data().since || '',
+      months: Object.keys(months).sort().map(function (k) { return pct(months[k]); }),
+      stages: Object.keys(stages).map(function (k) { return stages[k]; })
+        .sort(function (a, b) { return b.n - a.n; }),
+      experts: Object.keys(experts).map(function (k) { return pct(experts[k]); })
+        .sort(function (a, b) { return b.n - a.n; }),
+      // هنوز چیزی برای تکمیل دارند — برای وقتی که فرصتش هست
+      pending: measured.filter(function (x) { return x.q.open; })
+        .sort(function (a, b) { return (b.q.at || '') < (a.q.at || '') ? -1 : 1; }),
+      measured: measured,
+      unmeasured: unmeasured
+    };
+  }
+
+  w.Quality = {
+    KEY: KEY, observe: observe, forget: forget, of: of, stats: stats,
+    ensureSince: ensureSince, data: data
   };
 })(window);
 
@@ -23172,21 +23419,18 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
           ctaButton(action)
         ]);
       } else {
-        // مختومه‌ای که مرحله‌هایش ناقص مانده، یعنی ثبت کار عقب است
-        var missing = w.Worklist.stages(existing).filter(function (st) {
-          return !st.done && !st.optional;
-        });
         next = el('div.case-next', null, [
           el('span.case-next-label', { text: 'مختومه' }),
-          el('span.case-next-meta', {
-            text: missing.length
-              ? 'مختومه ثبت شده، ولی ' +
-                missing.map(function (st) { return st.label; }).join(' و ') +
-                ' در پرونده ثبت نشده است.'
-              : 'اقدام بازی روی این پرونده نمانده است.'
-          })
+          el('span.case-next-meta', { text: 'اقدام بازی روی این پرونده نمانده است.' })
         ]);
       }
+      /* کیفیتِ پرونده: با چه نقصی بسته شد. نقصِ مختومه در کارتابل نمی‌آید
+         (کار نیست)، ولی اینجا می‌ماند — سابقهٔ کیفیتِ کار است. */
+      var qualityNode = w.UIQuality ? w.UIQuality.caseBox(M.get(existing.id) || existing,
+        function (stageKey) {
+          var f = w.Worklist.fixField(stageKey);
+          if (f) jumpToField(f);
+        }) : null;
       // پرونده‌ای که از دست ما خارج شده، باید همان بالا معلوم باشد
       var transferNode = null;
       if (w.Worklist.isTransferred(existing)) {
@@ -23282,6 +23526,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         }),
         w.UIChecklist.chip(app, fresh),
         transferNode || next,
+        qualityNode,
         cdNode,
         /* هشدار، نه سد: کارِ الزامیِ ماندهٔ مرحله‌های قبل گفته می‌شود
            ولی جلوی هیچ‌چیز را نمی‌گیرد. */
@@ -31527,6 +31772,11 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         onclick: function () {
           app.showCases(moved.map(function (c) { return c.id; }), 'ارجاع‌شده به کارشناس دیگر');
         }
+      }) : null,
+      // نقصِ مختومه‌ها اینجا نیست؛ راهش گفته می‌شود
+      cases.some(WL.isClosed) ? el('button.linkish.tiny.wl-moved.wl-to-quality', {
+        type: 'button', text: 'نقصِ پرونده‌های مختومه: گزارش‌ها ← کیفیت پرونده‌ها',
+        onclick: function () { app.state.reportTab = 'quality'; app.goReport(); }
       }) : null
     ]);
 
@@ -31537,7 +31787,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         onclick: function () { st.wlIncomplete = !st.wlIncomplete; st.wlStage = ''; app.render(); }
       }, [
         el('span.wl-inc-n', { text: fa(inc.length) }),
-        el('span', { text: 'پرونده اطلاعاتِ ناقص دارند — از مرحله‌ای گذشته‌اند که تاریخش وارد نشده.' }),
+        el('span', { text: 'پروندهٔ در جریان اطلاعاتِ ناقص دارند — از مرحله‌ای گذشته‌اند که تاریخش وارد نشده.' }),
         el('div.spacer'),
         el('span.wl-inc-go', { text: st.wlIncomplete ? 'بستن' : 'دیدن و تکمیل ←' })
       ]));
@@ -31545,25 +31795,12 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     nodes.push(rail);
 
     if (st.wlIncomplete && inc.length) {
-      /* پرونده‌های در جریان جدا از مختومه‌ها: پروندهٔ قدیمیِ واردشده از
-         اکسل معمولاً تاریخ‌های میانی ندارد، و نباید جلوی پرونده‌ای را
-         بگیرد که همین امروز باید تکمیل شود. */
-      var openInc = inc.filter(function (x) { return !WL.isDone(x.rec); });
-      var doneInc = inc.filter(function (x) { return WL.isDone(x.rec); });
-      var incTab = st.wlIncTab === 'closed' && doneInc.length ? 'closed'
-        : (openInc.length ? 'open' : 'closed');
-      var shown = incTab === 'open' ? openInc : doneInc;
+      /* فقط پرونده‌های در جریان: نقصِ مختومه‌ها کار نیست، سابقهٔ کیفیت
+         است — در خودِ پرونده و در «گزارش‌ها ← کیفیت پرونده‌ها» می‌ماند. */
+      var shown = inc;
       nodes.push(el('div.wl-st-panel', null, [
         el('div.wl-st-head', null, [
-          el('h3', { text: 'پرونده‌های ناقص' }),
-          el('div.wl-st-tabs', { role: 'tablist' }, [
-            { k: 'open', t: 'در جریان', list: openInc }, { k: 'closed', t: 'مختومه', list: doneInc }
-          ].map(function (x) {
-            return el('button.wl-st-tab' + (x.k === incTab ? '.on' : ''), {
-              type: 'button', role: 'tab', disabled: !x.list.length, text: x.t + ' ' + fa(x.list.length),
-              onclick: function () { st.wlIncTab = x.k; app.render(); }
-            });
-          })),
+          el('h3', { text: 'پرونده‌های ناقصِ در جریان ' + fa(shown.length) }),
           el('span.muted.tiny', { text: 'روی هر کمبود بزنید تا پرونده سرِ همان فیلد باز شود.' }),
           el('div.spacer'),
           el('button.btn.small.ghost', {
@@ -32642,6 +32879,240 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     SECTIONS: SECTIONS, layout: layout, moveSection: moveSection, layoutDialog: layoutDialog,
     caseNumber: caseNumber, weekStrip: weekStrip,
     countdown: countdown, clock: clock, cdText: cdText, cdShort: cdShort };
+})(window);
+
+</script>
+<script>
+/* ==== assets/js/ui.quality.js ==== */
+/*
+ * کیفیتِ پرونده — رابط.
+ *
+ *   caseBox  — کادرِ «کیفیت پرونده» بالای پروندهٔ مختومه: با چه نقصی بسته
+ *              شد، کدام بعداً تکمیل شد، و دکمهٔ «تکمیل» برای بقیه.
+ *   render   — «گزارش‌ها ← کیفیت پرونده‌ها»: درصدِ پرونده‌هایی که کامل بسته
+ *              شدند ماه به ماه، مرحله‌ای که بیشتر جا می‌افتد، و فهرستِ
+ *              مختومه‌هایی که هنوز چیزی برای تکمیل دارند.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, Q = w.Quality, WL = w.Worklist, M = w.Model;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+  function fmt(d) { return d && J.unpack(d) ? J.format(d) : ''; }
+  function monthName(key) {
+    var y = key.slice(0, 4), m = +key.slice(4, 6);
+    var names = J.MONTHS || ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+      'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+    return (names[m - 1] || m) + ' ' + fa(y);
+  }
+  function personName(rec) {
+    return [rec.firstName, rec.lastName].filter(Boolean).join(' ') || 'بی‌نام';
+  }
+
+  /* ------------------------------------------------- کادرِ خودِ پرونده */
+  function caseBox(rec, onFix) {
+    var q = Q.of(rec);
+    if (!q) return null;
+    if (!q.measured) {
+      return el('div.q-box.is-before', null, [
+        el('div.q-head', null, [
+          el('span.q-badge', { text: 'کیفیت پرونده' }),
+          el('span.q-title', { text: 'پیش از سنجش کیفیت بسته شده' })
+        ]),
+        el('p.q-note', {
+          text: 'این پرونده قبل از آغاز سنجش کیفیت مختومه شده و در آمار کیفیت نمی‌آید.' +
+            (q.now.length ? ' مرحله‌های بی‌تاریخِ امروز:' : ' همهٔ مرحله‌های الزامی تاریخ دارند.')
+        }),
+        q.now.length ? el('div.q-items', null, q.now.map(function (m) {
+          return item(m.label, 'open', '', function () { onFix(m.key); });
+        })) : null
+      ]);
+    }
+    if (q.complete) {
+      return el('div.q-box.is-good', null, [
+        el('div.q-head', null, [
+          el('span.q-badge', { text: 'کیفیت پرونده' }),
+          el('span.q-title', { text: '✓ کامل بسته شد' }),
+          el('span.q-when', { text: 'ختم: ' + fmt(q.at) })
+        ])
+      ]);
+    }
+    var title = 'موقع ختم: ' + fa(q.missing.length) + ' مرحلهٔ بی‌تاریخ';
+    if (q.fixed) title += ' — ' + fa(q.fixed) + ' تا بعداً تکمیل شد';
+    return el('div.q-box' + (q.open ? '.is-open' : '.is-fixed'), null, [
+      el('div.q-head', null, [
+        el('span.q-badge', { text: 'کیفیت پرونده' }),
+        el('span.q-title', { text: title }),
+        el('span.q-when', { text: 'ختم: ' + fmt(q.at) })
+      ]),
+      el('div.q-items', null, q.missing.map(function (m) {
+        return item(m.label, m.state, m.fixedAt, function () { onFix(m.key); });
+      })),
+      el('p.q-note', {
+        text: 'این سابقه پاک نمی‌شود: نقصی که بعد از ختم تکمیل شود، با برچسب «تکمیل پس از ختم» همین‌جا می‌ماند.'
+      })
+    ]);
+  }
+
+  function item(label, state, fixedAt, fix) {
+    if (state === 'fixed') {
+      return el('span.q-item.is-fixed', {
+        title: fixedAt ? 'تکمیل در ' + fmt(fixedAt) : 'تکمیل پس از ختم'
+      }, [
+        el('b', { text: label }),
+        el('small', { text: 'تکمیل پس از ختم' + (fixedAt ? ' · ' + fmt(fixedAt) : '') })
+      ]);
+    }
+    return el('span.q-item.is-open', null, [
+      el('b', { text: label }),
+      el('button.linkish.tiny.q-fix', { type: 'button', text: 'تکمیل', onclick: fix })
+    ]);
+  }
+
+  /* ------------------------------------------------------ گزارش */
+  function tile(label, value, sub, cls) {
+    return el('div.q-tile' + (cls ? '.' + cls : ''), null, [
+      el('b', { text: value }), el('span', { text: label }),
+      sub ? el('small', { text: sub }) : null
+    ]);
+  }
+
+  function bar(pct, cls) {
+    var b = el('span.q-bar' + (cls ? '.' + cls : ''));
+    var f = el('span.q-bar-fill');
+    f.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    b.appendChild(f);
+    return b;
+  }
+
+  function openFix(app, rec, key) {
+    var field = WL.fixField(key);
+    app.state.formTab = 'case';
+    app.openCase(rec.id);
+    if (field) setTimeout(function () { if (app.jumpField) app.jumpField(field); }, 420);
+  }
+
+  function render(app, mount) {
+    var s = Q.stats(M.scoped());
+    var T = s.totals;
+    var box = el('div.q-report');
+
+    box.appendChild(el('div.q-intro', null, [
+      el('h2', { text: 'کیفیت پرونده‌های مختومه' }),
+      el('p.muted', {
+        text: 'هر پرونده لحظهٔ مختومه شدن سنجیده می‌شود: کدام مرحله‌های الزامی تاریخ نداشتند. ' +
+          'این سابقه با تکمیلِ بعدی پاک نمی‌شود؛ «تکمیل پس از ختم» کنارش ثبت می‌شود.' +
+          (s.since ? ' سنجش از ' + fmt(s.since) + '.' : '')
+      })
+    ]));
+
+    box.appendChild(el('div.q-tiles', null, [
+      tile('کامل بسته شد', T.pct == null ? '—' : fa(T.pct) + '٪',
+        fa(T.complete) + ' از ' + fa(T.measured) + ' پروندهٔ سنجیده', T.pct != null && T.pct >= 80 ? 'good' : ''),
+      tile('نقصِ موقع ختم', fa(T.missing), 'در ' + fa(T.measured - T.complete) + ' پرونده'),
+      tile('تکمیل پس از ختم', fa(T.fixed), T.missing ? fa(Math.round(T.fixed * 100 / T.missing)) + '٪ نقص‌ها' : ''),
+      tile('هنوز ناقص', fa(T.open), 'برای وقتی که فرصت هست', T.open ? 'warn' : '')
+    ]));
+
+    if (s.unmeasured.length) {
+      box.appendChild(el('p.q-before', null, [
+        el('span', { text: fa(s.unmeasured.length) + ' پروندهٔ مختومه پیش از سنجش کیفیت بسته شده‌اند و در این آمار نیستند — ' }),
+        el('button.linkish.tiny', {
+          type: 'button', text: 'دیدن در فهرست',
+          onclick: function () {
+            app.showCases(s.unmeasured.map(function (r) { return r.id; }), 'مختومهٔ پیش از سنجش کیفیت');
+          }
+        })
+      ]));
+    }
+
+    if (!T.measured) {
+      box.appendChild(el('div.empty-state', null, [
+        el('p', { text: 'هنوز پرونده‌ای پس از آغاز سنجش مختومه نشده. از اولین پرونده‌ای که مختومه کنید، آمار اینجا ساخته می‌شود.' })
+      ]));
+      w.U.clear(mount);
+      mount.appendChild(box);
+      return;
+    }
+
+    var grid = el('div.q-grid');
+
+    grid.appendChild(el('section.q-card', null, [
+      el('h3', { text: 'روند، ماه به ماه' }),
+      el('p.muted.tiny', { text: 'درصد پرونده‌هایی که در هر ماه کامل بسته شدند.' }),
+      el('div.q-rows', null, s.months.map(function (m) {
+        return el('div.q-row', null, [
+          el('span.q-row-name', { text: monthName(m.key) }),
+          bar(m.pct, m.pct >= 80 ? 'good' : (m.pct < 50 ? 'low' : '')),
+          el('span.q-row-val', { text: fa(m.pct) + '٪' }),
+          el('span.q-row-sub', { text: fa(m.complete) + '/' + fa(m.n) })
+        ]);
+      }))
+    ]));
+
+    grid.appendChild(el('section.q-card', null, [
+      el('h3', { text: 'کدام مرحله بیشتر جا می‌افتد' }),
+      el('p.muted.tiny', { text: 'از ' + fa(T.measured) + ' پروندهٔ سنجیده، در چندتا این مرحله موقع ختم تاریخ نداشت.' }),
+      s.stages.length ? el('div.q-rows', null, s.stages.map(function (st) {
+        var pct = Math.round(st.n * 100 / T.measured);
+        return el('div.q-row', null, [
+          el('span.q-row-name', { text: st.label }),
+          bar(pct, 'low'),
+          el('span.q-row-val', { text: fa(st.n) }),
+          el('span.q-row-sub', { text: st.fixed ? fa(st.fixed) + ' تکمیل' : '' })
+        ]);
+      })) : el('p.muted', { text: 'هیچ مرحله‌ای جا نیفتاده است. ✓' })
+    ]));
+
+    if (s.experts.length > 1) {
+      grid.appendChild(el('section.q-card', null, [
+        el('h3', { text: 'بر اساس کارشناس' }),
+        el('div.q-rows', null, s.experts.map(function (e) {
+          return el('div.q-row', null, [
+            el('span.q-row-name', { text: e.key }),
+            bar(e.pct, e.pct >= 80 ? 'good' : (e.pct < 50 ? 'low' : '')),
+            el('span.q-row-val', { text: fa(e.pct) + '٪' }),
+            el('span.q-row-sub', { text: fa(e.complete) + '/' + fa(e.n) })
+          ]);
+        }))
+      ]));
+    }
+    box.appendChild(grid);
+
+    box.appendChild(el('section.q-card.q-pending', null, [
+      el('div.q-card-head', null, [
+        el('h3', { text: 'مختومه‌هایی که هنوز چیزی برای تکمیل دارند ' + fa(s.pending.length) }),
+        el('div.spacer'),
+        s.pending.length ? el('button.btn.small.ghost', {
+          type: 'button', text: 'نمایش در فهرست',
+          onclick: function () {
+            app.showCases(s.pending.map(function (x) { return x.rec.id; }), 'مختومهٔ ناقص');
+          }
+        }) : null
+      ]),
+      s.pending.length ? el('ul.wl-st-list', null, s.pending.slice(0, 200).map(function (x) {
+        return el('li.wl-st-row.is-missing', null, [
+          w.UIWorklist.caseNumber(x.rec),
+          el('span.wl-st-who', { text: personName(x.rec) }),
+          el('span.wl-st-meta', { text: 'ختم: ' + fmt(x.q.at) }),
+          el('div.wl-miss-chips', null, x.q.missing.filter(function (m) {
+            return m.state === 'open';
+          }).map(function (m) {
+            return el('button.wl-miss', {
+              type: 'button', text: m.label, title: 'تکمیل «' + m.label + '»',
+              onclick: function () { openFix(app, x.rec, m.key); }
+            });
+          }))
+        ]);
+      })) : el('p.muted', { text: 'چیزی برای تکمیل نمانده است. ✓' })
+    ]));
+
+    w.U.clear(mount);
+    mount.appendChild(box);
+  }
+
+  w.UIQuality = { caseBox: caseBox, render: render };
 })(window);
 
 </script>
@@ -34062,13 +34533,24 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
        کردم. اولی برای تصمیم، دومی برای ارائه. */
     var tabs = el('div.rep-tabs', { role: 'tablist' }, [
       { k: 'analysis', t: 'تحلیل پرونده‌ها' },
-      { k: 'karnameh', t: 'کارنامهٔ من' }
+      { k: 'karnameh', t: 'کارنامهٔ من' },
+      { k: 'quality', t: 'کیفیت پرونده‌ها' }
     ].map(function (o) {
       return el('button.rep-tab' + (app.state.reportTab === o.k ? '.on' : ''), {
         type: 'button', text: o.t, role: 'tab',
         onclick: function () { app.state.reportTab = o.k; app.render(); }
       });
     }));
+
+    if (app.state.reportTab === 'quality') {
+      w.U.clear(mount);
+      var qHolder = el('div.report-view', null, [tabs, w.UIScope.banner(app)]);
+      mount.appendChild(qHolder);
+      var qInner = el('div');
+      qHolder.appendChild(qInner);
+      w.UIQuality.render(app, qInner);
+      return;
+    }
 
     if (app.state.reportTab === 'karnameh') {
       w.U.clear(mount);
@@ -35289,6 +35771,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       return w.Checklist.ensureAll().catch(function () { return 0; });
     }).then(function () {
       // زمانِ کار: یک بار راه می‌افتد؛ با دیتابیسِ دیگر، از نو خوانده می‌شود
+      if (w.Quality) w.Quality.ensureSince();
       if (w.Timelog) {
         if (!app.timelogOn) { w.Timelog.start(app); app.timelogOn = true; }
         else w.Timelog.reload();

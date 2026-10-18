@@ -185,6 +185,8 @@
     var idx = state.cases.indexOf(before);
     index(after);
     if (idx >= 0) state.cases[idx] = after; else state.cases.push(after);
+    // لحظهٔ مختومه شدن، وضعِ کیفیتِ پرونده ثبت می‌شود
+    if (w.Quality) w.Quality.observe(before, after);
     var entry = addHistory('update', after, changes);
     return Promise.all([
       w.Store.put('cases', [strip(after)]),
@@ -198,6 +200,7 @@
     var entry = addHistory('delete', rec, [], 'حذف پرونده');
     state.cases = state.cases.filter(function (c) { return c.id !== id; });
     delete byId[id];
+    if (w.Quality) w.Quality.forget(id);
     return Promise.all([
       w.Store.remove('cases', [id]),
       w.Store.put('history', [entry])
@@ -238,6 +241,7 @@
       var idx = state.cases.indexOf(before);
       index(after);
       if (idx >= 0) state.cases[idx] = after; else state.cases.push(after);
+      if (w.Quality) w.Quality.observe(before, after);
       touched.push(after);
       entries.push({
         id: w.U.uid(), caseId: id, caseNo: after.caseNo || '', at: now,

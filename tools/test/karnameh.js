@@ -205,8 +205,8 @@ function check(name, ok, extra) {
       rest: !!document.querySelector('.krn-rest')
     };
   });
-  check('گزارش‌ها دو تب دارد و کارنامه جای خودش را دارد',
-    view.tabs.length === 2 && view.active === 'کارنامهٔ من' && view.plate,
+  check('گزارش‌ها تبِ تحلیل، کارنامه و کیفیت دارد و کارنامه جای خودش را دارد',
+    view.tabs.length === 3 && view.tabs.indexOf('کیفیت پرونده‌ها') >= 0 && view.active === 'کارنامهٔ من' && view.plate,
     view.tabs.join(' | '));
   check('خط شمارش کارنامه، واحدهای کارِ دبیرخانه را می‌شمرد',
     view.tally.indexOf('نامهٔ صادره') >= 0 &&

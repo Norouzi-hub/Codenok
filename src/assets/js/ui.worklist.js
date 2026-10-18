@@ -274,6 +274,11 @@
         onclick: function () {
           app.showCases(moved.map(function (c) { return c.id; }), 'ارجاع‌شده به کارشناس دیگر');
         }
+      }) : null,
+      // نقصِ مختومه‌ها اینجا نیست؛ راهش گفته می‌شود
+      cases.some(WL.isClosed) ? el('button.linkish.tiny.wl-moved.wl-to-quality', {
+        type: 'button', text: 'نقصِ پرونده‌های مختومه: گزارش‌ها ← کیفیت پرونده‌ها',
+        onclick: function () { app.state.reportTab = 'quality'; app.goReport(); }
       }) : null
     ]);
 
@@ -284,7 +289,7 @@
         onclick: function () { st.wlIncomplete = !st.wlIncomplete; st.wlStage = ''; app.render(); }
       }, [
         el('span.wl-inc-n', { text: fa(inc.length) }),
-        el('span', { text: 'پرونده اطلاعاتِ ناقص دارند — از مرحله‌ای گذشته‌اند که تاریخش وارد نشده.' }),
+        el('span', { text: 'پروندهٔ در جریان اطلاعاتِ ناقص دارند — از مرحله‌ای گذشته‌اند که تاریخش وارد نشده.' }),
         el('div.spacer'),
         el('span.wl-inc-go', { text: st.wlIncomplete ? 'بستن' : 'دیدن و تکمیل ←' })
       ]));
@@ -292,25 +297,12 @@
     nodes.push(rail);
 
     if (st.wlIncomplete && inc.length) {
-      /* پرونده‌های در جریان جدا از مختومه‌ها: پروندهٔ قدیمیِ واردشده از
-         اکسل معمولاً تاریخ‌های میانی ندارد، و نباید جلوی پرونده‌ای را
-         بگیرد که همین امروز باید تکمیل شود. */
-      var openInc = inc.filter(function (x) { return !WL.isDone(x.rec); });
-      var doneInc = inc.filter(function (x) { return WL.isDone(x.rec); });
-      var incTab = st.wlIncTab === 'closed' && doneInc.length ? 'closed'
-        : (openInc.length ? 'open' : 'closed');
-      var shown = incTab === 'open' ? openInc : doneInc;
+      /* فقط پرونده‌های در جریان: نقصِ مختومه‌ها کار نیست، سابقهٔ کیفیت
+         است — در خودِ پرونده و در «گزارش‌ها ← کیفیت پرونده‌ها» می‌ماند. */
+      var shown = inc;
       nodes.push(el('div.wl-st-panel', null, [
         el('div.wl-st-head', null, [
-          el('h3', { text: 'پرونده‌های ناقص' }),
-          el('div.wl-st-tabs', { role: 'tablist' }, [
-            { k: 'open', t: 'در جریان', list: openInc }, { k: 'closed', t: 'مختومه', list: doneInc }
-          ].map(function (x) {
-            return el('button.wl-st-tab' + (x.k === incTab ? '.on' : ''), {
-              type: 'button', role: 'tab', disabled: !x.list.length, text: x.t + ' ' + fa(x.list.length),
-              onclick: function () { st.wlIncTab = x.k; app.render(); }
-            });
-          })),
+          el('h3', { text: 'پرونده‌های ناقصِ در جریان ' + fa(shown.length) }),
           el('span.muted.tiny', { text: 'روی هر کمبود بزنید تا پرونده سرِ همان فیلد باز شود.' }),
           el('div.spacer'),
           el('button.btn.small.ghost', {

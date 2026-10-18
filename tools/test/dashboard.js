@@ -109,8 +109,8 @@ function check(name, ok, extra) {
     return { title: p.querySelector('h3').textContent, chips: p.querySelectorAll('.wl-miss').length,
       tabs: [...p.querySelectorAll('.wl-st-tab')].map(t => t.textContent) };
   });
-  check('نوارِ «پرونده‌های ناقص» همه را با کمبودهایشان نشان می‌دهد',
-    incBar && /ناقص/.test(incBar.title) && incBar.chips > 0 && incBar.tabs.length === 2,
+  check('نوارِ «پرونده‌های ناقص» در جریان‌ها را با کمبودهایشان نشان می‌دهد (مختومه‌ها نه)',
+    incBar && /ناقص/.test(incBar.title) && incBar.chips > 0 && incBar.tabs.length === 0,
     incBar && incBar.tabs.join(' | '));
 
   // ============================================== کارت‌ها و چیدمان

@@ -609,13 +609,24 @@
        کردم. اولی برای تصمیم، دومی برای ارائه. */
     var tabs = el('div.rep-tabs', { role: 'tablist' }, [
       { k: 'analysis', t: 'تحلیل پرونده‌ها' },
-      { k: 'karnameh', t: 'کارنامهٔ من' }
+      { k: 'karnameh', t: 'کارنامهٔ من' },
+      { k: 'quality', t: 'کیفیت پرونده‌ها' }
     ].map(function (o) {
       return el('button.rep-tab' + (app.state.reportTab === o.k ? '.on' : ''), {
         type: 'button', text: o.t, role: 'tab',
         onclick: function () { app.state.reportTab = o.k; app.render(); }
       });
     }));
+
+    if (app.state.reportTab === 'quality') {
+      w.U.clear(mount);
+      var qHolder = el('div.report-view', null, [tabs, w.UIScope.banner(app)]);
+      mount.appendChild(qHolder);
+      var qInner = el('div');
+      qHolder.appendChild(qInner);
+      w.UIQuality.render(app, qInner);
+      return;
+    }
 
     if (app.state.reportTab === 'karnameh') {
       w.U.clear(mount);
