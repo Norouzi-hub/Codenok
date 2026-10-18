@@ -6530,3 +6530,32 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
 .sp-sug:hover { background: var(--moss); color: #fff; }
 .sp-settings { display: flex; flex-direction: column; gap: 8px; }
 .sp-words { min-height: 80px; }
+
+/* ------------------------------------------------- دفتر مقامات */
+.mn-addressee { display: flex; flex-direction: column; gap: 2px; margin: -4px 0 10px; font-size: 12.5px; }
+.mn-addressee.is-found b { color: #1F5B41; }
+.mn-stale { color: var(--cinnabar); }
+.of-modal .modal-box, .of-modal .modal { max-width: 1100px; }
+.of-dialog { display: flex; flex-direction: column; gap: 10px; }
+.of-info { margin: 0; font-weight: 600; }
+.of-list { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow: auto; padding: 2px; }
+.of-row {
+  display: grid; grid-template-columns: 110px 1.2fr 1fr 1.2fr 210px 40px; gap: 6px; align-items: center;
+  padding: 8px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--card);
+}
+.of-addr { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.of-log { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.of-change { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 12.5px; }
+.of-ch-title { color: var(--muted); }
+.of-change s { color: var(--cinnabar); }
+.of-change b { color: #1F5B41; }
+.of-import { display: flex; flex-direction: column; gap: 10px; }
+.of-map { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.of-preview { display: flex; flex-direction: column; gap: 8px; }
+.of-sum { margin: 0; }
+.of-changes { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px;
+  background: var(--brass-soft); border: 1px solid var(--brass-line); }
+.of-sample { margin: 0; padding-inline-start: 22px; font-size: 13px; line-height: 1.9; }
+@media (max-width: 760px) {
+  .of-row { grid-template-columns: 1fr 1fr; }
+}

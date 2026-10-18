@@ -174,6 +174,7 @@
         (w.Minute.conf().recipients || []).forEach(function (r) { add(r.title); add(r.name); add(r.short); add(r.unit); });
       } catch (e) { /* تنظیماتِ مینوت هنوز آماده نیست */ }
     }
+    if (w.Officials) w.Officials.list().forEach(function (o) { add(o.name); add(o.position); add(o.org); });
     if (w.BRAND) { add(w.BRAND.app); add(w.BRAND.owner); add(w.BRAND.tagline); }
     userWords().forEach(add);
     knownAt = now;

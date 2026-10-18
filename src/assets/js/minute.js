@@ -403,13 +403,20 @@
     var relationText = conf_ ? 'محرمانه — بدون ارجاع'
       : (letter ? relOf(relation).line + ' ' + letterPhrase(letter) : 'بدون ارجاع');
     var attach = t.attachOf ? t.attachOf(opts) : (t.attach || '');
-    var to = titleFor(recipient, rec);
+    /* نامِ مخاطب از «دفتر مقامات»: «جناب آقای … شهردار محترم منطقه ۵».
+       withName: false یعنی فقط سمت (کاربر خواسته، یا نامی پیدا نشد). */
+    var title = titleFor(recipient, rec);
+    var addressee = null;
+    if (o.withName !== false && w.Officials) {
+      addressee = recipient.official ? w.Officials.get(recipient.official) : w.Officials.find(title);
+    }
+    var to = addressee ? w.Officials.address(addressee, title) : title;
     var subject = t.subject + ' — ' + people(recs);
     var text = paragraphs.join('\n');
     var full = ['گیرنده: ' + to, 'موضوع: ' + subject, relationText,
       attach ? 'پیوست: ' + attach : ''].filter(Boolean).join('\n') + '\n\n' + text;
     return {
-      type: t, to: to, subject: subject, relation: relation, relationText: relationText,
+      type: t, to: to, title: title, addressee: addressee, subject: subject, relation: relation, relationText: relationText,
       attach: attach, letter: letter, recipient: recipient, opts: opts,
       paragraphs: paragraphs, text: text, full: full, confidential: conf_
     };

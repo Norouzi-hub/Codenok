@@ -63,6 +63,7 @@
       recipientId: MN.suggestRecipient(recs[0]).id,
       ref: { source: 'case', relation: 'auto', copy: false },
       confidential: false,
+      withName: true,
       opts: {},
       edited: false,
       logged: {}
@@ -94,13 +95,19 @@
     });
 
     function recipient() {
+      // گیرنده‌ای که مستقیم از «دفتر مقامات» انتخاب شده
+      if (String(st.recipientId).indexOf('off:') === 0 && w.Officials) {
+        var o = w.Officials.get(st.recipientId.slice(4));
+        if (o) return w.Officials.asRecipient(o);
+      }
       var list = MN.conf().recipients;
       return list.filter(function (r) { return r.id === st.recipientId; })[0] || list[0];
     }
 
     function current() {
       return MN.build(st.type, st.recs, {
-        recipient: recipient(), ref: st.ref, confidential: st.confidential, opts: st.opts
+        recipient: recipient(), ref: st.ref, confidential: st.confidential, opts: st.opts,
+        withName: st.withName
       });
     }
 
@@ -174,14 +181,28 @@
           value: r.id, text: MN.titleFor(r, st.recs[0]) + ' — ' + (rank ? rank.label : '')
         }));
       });
+      // هر کسِ دیگری در دفتر مقامات هم می‌تواند گیرنده باشد
+      var offs = w.Officials ? w.Officials.list() : [];
+      if (offs.length) {
+        var og = el('optgroup', { label: 'از دفتر مقامات' });
+        offs.slice().sort(function (a, b) {
+          return (a.org + a.position).localeCompare(b.org + b.position, 'fa');
+        }).forEach(function (o) {
+          og.appendChild(el('option', { value: 'off:' + o.id,
+            text: w.Officials.titleOf(o) + (o.name ? ' — ' + o.name : '') }));
+        });
+        rsel.appendChild(og);
+      }
       rsel.value = st.recipientId;
       rsel.addEventListener('change', function () {
-        st.recipientId = rsel.value; drawControls(); render();
+        // «بی‌نام» برای همان گیرنده بود؛ گیرندهٔ دیگر دوباره با نام
+        st.recipientId = rsel.value; st.withName = true; drawControls(); render();
       });
       var rk = recipient();
       controls.appendChild(row('گیرنده', rsel,
         (MN.RANKS.filter(function (k) { return k.key === rk.rank; })[0] || {}).label +
         ' ← «' + MN.verbOf(rk.rank) + '». فهرست و رتبه‌ها در تنظیمات.'));
+      controls.appendChild(addresseeLine(rk));
 
       // نامهٔ مرجع
       var rec = st.recs[0];
@@ -310,6 +331,43 @@
           }, 'بی‌تیک: فقط «از پرداخت هرگونه وجه خودداری نمایند»')
         ]));
         if (o.withInvite) box.appendChild(row('مهلت مراجعه', dateIn(o.due, set('due'))));
+      }
+      return box;
+    }
+
+    /* نامِ مخاطب: از دفتر مقامات پیدا شد؟ */
+    function addresseeLine(rk) {
+      if (!w.Officials) return null;
+      var title = MN.titleFor(rk, st.recs[0]);
+      var o = rk.official ? w.Officials.get(rk.official) : w.Officials.find(title);
+      var openDir = el('button.linkish.tiny', {
+        type: 'button', text: 'دفتر مقامات',
+        onclick: function () {
+          w.UIOfficials.dialog(app, function () { drawControls(); render(); });
+        }
+      });
+      var box = el('div.mn-addressee' + (o ? '.is-found' : ''));
+      if (o) {
+        var cb = el('input', { type: 'checkbox' });
+        cb.checked = st.withName;
+        cb.addEventListener('change', function () { st.withName = cb.checked; render(); });
+        var age = w.Officials.age();
+        box.appendChild(el('label.mn-check', null, [cb, el('span', null, [
+          el('b', { text: (o.honor || '') + ' ' + o.name }), el('span', { text: ' — نامِ مخاطب در نامه بیاید' })
+        ])]));
+        box.appendChild(el('span.mn-hint', null, [
+          el('span', { text: 'از ' }), openDir,
+          age != null && age > 120
+            ? el('span.mn-stale', { text: ' — ' + fa(Math.round(age / 30)) + ' ماه است به‌روز نشده؛ هنوز همین است؟' })
+            : null
+        ]));
+      } else {
+        box.appendChild(el('span.mn-hint', null, [
+          el('span', { text: w.Officials.list().length
+            ? 'نامِ «' + title + '» در دفتر مقامات نیست؛ فقط سمت نوشته می‌شود — '
+            : 'برای نوشتنِ نامِ مخاطب («جناب آقای …»)، فهرست مقامات را از اکسل وارد کنید: ' }),
+          openDir
+        ]));
       }
       return box;
     }
@@ -519,7 +577,13 @@
             data.push({ id: w.U.uid(), title: '', rank: 'peer', kind: 'workplace', unit: 'منطقه', match: '' });
             draw();
           }
-        })
+        }),
+        w.UIOfficials ? el('button.btn.small', {
+          type: 'button',
+          text: 'دفتر مقامات (' + fa(w.Officials.list().length) + ' نفر)',
+          title: 'نام شهرداران و مدیران — برای «جناب آقای … شهردار محترم منطقه ۵»',
+          onclick: function () { w.UIOfficials.dialog(null); }
+        }) : null
       ]),
       el('div.mn-conf-grid', null, [
         row('شمارهٔ ابلاغ آیین‌نامه', rulesNo),
