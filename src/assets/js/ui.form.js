@@ -22,7 +22,9 @@
     if (field.type === 'textarea') {
       var ta = el('textarea.input.area', { rows: 3, value: value || '' });
       ta.addEventListener('input', function () { onChange(ta.value); });
-      return ta;
+      // متنِ رأی و شرحِ تخلف به نامه‌ها می‌رود: غلط‌یاب زیرش
+      var spell = w.UISpell ? w.UISpell.attach(ta, { compact: true, delay: 400 }) : null;
+      return spell ? el('span.sp-field', null, [ta, spell]) : ta;
     }
     if (field.type === 'select') {
       var sel = el('select.input');

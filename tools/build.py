@@ -43,7 +43,7 @@ index.html          صفحهٔ برنامه (فقط ساختار؛ بدون اس
 assets/css/         استایل‌ها (app.css، fonts.css)
 assets/js/          اسکریپت‌های برنامه
 assets/fonts/       قلم وزیرمتن
-assets/vendor/      موتور SQLite (sql.js)
+assets/vendor/      موتور SQLite (sql.js)، واژه‌نامهٔ غلط‌یاب و ویراستار (مجوزها: LICENSES.txt)
 assets/img/         نماد برنامه
 
 داده‌ها

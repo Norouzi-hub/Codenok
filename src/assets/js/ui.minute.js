@@ -78,6 +78,14 @@
       onclick: function () { st.edited = false; render(); }
     });
     rebuildBtn.style.display = 'none';
+    // غلط‌یاب زیرِ متن؛ پیش از چاپ و کپی هم می‌پرسد
+    var spellBox = w.UISpell ? w.UISpell.attach(bodyArea, { delay: 120 }) : null;
+    function checked(action, fn) {
+      return function () {
+        (w.UISpell ? w.UISpell.guard(bodyArea, action) : Promise.resolve(true))
+          .then(function (ok) { if (ok) fn(); });
+      };
+    }
     bodyArea.addEventListener('input', function () {
       st.edited = true;
       rebuildBtn.style.display = '';
@@ -328,6 +336,7 @@
       if (!st.edited) {
         bodyArea.value = result.text;
         rebuildBtn.style.display = 'none';
+        if (bodyArea._spell) bodyArea._spell.refresh();
       }
       var missing = bodyArea.value.indexOf(MN.BLANK) >= 0;
       warnLine.textContent = missing
@@ -403,7 +412,7 @@
 
     /* -------------------------------------------------------- چیدمان */
     paper.appendChild(headBox);
-    paper.appendChild(el('div.mn-body-wrap', null, [bodyArea, rebuildBtn]));
+    paper.appendChild(el('div.mn-body-wrap', null, [bodyArea, rebuildBtn, spellBox]));
     paper.appendChild(warnLine);
     paper.appendChild(el('div.mn-reg', null, [
       el('b', { text: 'شمارهٔ نامه را گرفتید؟' }),
@@ -420,30 +429,30 @@
       el('button.btn.ghost', { type: 'button', text: 'بستن', onclick: function () { m.close(); } }),
       el('button.btn', {
         type: 'button', text: 'چاپ',
-        onclick: function () { log('چاپ'); m.close(); w.UILetters.printDoc(asDoc()); }
+        onclick: checked('چاپ شود', function () { log('چاپ'); m.close(); w.UILetters.printDoc(asDoc()); })
       }),
       el('button.btn', {
         type: 'button', text: 'ورد',
-        onclick: function () {
+        onclick: checked('فایل ورد ساخته شود', function () {
           log('ورد');
           var caseNo = w.U.toLatinDigits(st.recs[0].caseNo || '').replace(/[^\w.-]+/g, '-');
           w.UILetters.wordDoc(asDoc(), 'minute-' + result.type.key + (caseNo ? '-' + caseNo : '') + '.docx');
-        }
+        })
       }),
       el('button.btn', {
         type: 'button', text: 'کپی با سربرگ',
         title: 'گیرنده، موضوع، ارتباط و پیوست، و بعد متن',
-        onclick: function () {
+        onclick: checked('کپی شود', function () {
           log('کپی');
           var r = result;
           copy(['گیرنده: ' + r.to, 'موضوع: ' + r.subject, r.relationText,
             r.attach ? 'پیوست: ' + r.attach : ''].filter(Boolean).join('\n') + '\n\n' + bodyText(),
           'مینوت با سربرگ کپی شد.');
-        }
+        })
       }),
       el('button.btn.primary', {
         type: 'button', text: 'کپی برای اتوماسیون',
-        onclick: function () { log('کپی'); copy(bodyText(), 'متن نامه کپی شد؛ در اتوماسیون بچسبانید.'); }
+        onclick: checked('کپی شود', function () { log('کپی'); copy(bodyText(), 'متن نامه کپی شد؛ در اتوماسیون بچسبانید.'); })
       })
     ]);
     m.root.classList.add('minute-modal');

@@ -1448,6 +1448,11 @@
 
     body.appendChild(w.UIMinute.settingsBlock());
 
+    var spellSet = w.UISpell ? w.UISpell.settingsBlock(app) : null;
+    if (spellSet) {
+      body.appendChild(el('section.set-block', null, [el('h4', { text: 'غلط‌یاب فارسی' }), spellSet]));
+    }
+
     var editor = listsEditor();
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'لیست‌های کشویی' }), editor

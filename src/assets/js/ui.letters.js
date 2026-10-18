@@ -698,9 +698,11 @@
       input.value = extra[key];
       input.addEventListener('input', function () { extra[key] = input.value; });
       inputs[key] = input;
+      var spell = input.tagName === 'TEXTAREA' && w.UISpell
+        ? w.UISpell.attach(input, { compact: true }) : null;
       grid.appendChild(el('label.field' + (key === 'verdictText' ? '.wide' : ''), null, [
         el('span.field-label', { text: FIELD_LABELS[key] || key }),
-        input
+        input, spell
       ]));
     });
     if (!form.fields.length) {
