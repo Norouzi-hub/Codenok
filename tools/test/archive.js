@@ -63,7 +63,8 @@ function check(name, ok, extra) {
   await page.waitForSelector('.arc-view');
   const view = await page.evaluate(() => ({
     hash: location.hash,
-    nav: (document.querySelector('.nav-btn.active') || {}).textContent,
+    // «بایگانی» حالا در «⋯» است؛ خودِ «⋯» روشن می‌شود
+    nav: document.querySelector('.topbar .more-btn.active') ? 'بایگانی' : '',
     drop: !!document.querySelector('.arc-drop'),
     empty: !!document.querySelector('.arc-view .empty-state')
   }));

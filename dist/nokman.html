@@ -3419,7 +3419,10 @@ select.input { cursor: pointer; }
    ================================================================ */
 
 /* عنصرهای مخصوص موبایل، روی رایانه پنهان‌اند */
-.more-btn, .tabbar { display: none; }
+.tabbar { display: none; }
+/* «⋯» همیشه هست: بایگانی و اشخاص و اقدام‌های کم‌کاربرد آنجا‌اند */
+.more-btn { display: grid; place-items: center; width: 36px; height: 36px; font-size: 19px; }
+.topbar .more-btn.active { background: rgba(227, 182, 94, .22); color: #fff; box-shadow: inset 0 0 0 1px rgba(227, 182, 94, .55); }
 
 /* ------------------------------------------------------------ شیت پایین */
 .sheet-overlay { align-items: flex-end; padding: 0; }
@@ -6041,6 +6044,191 @@ button.tag-chip.ro { cursor: pointer; }
 .cols-empty { color: var(--muted); font-size: 12px; padding: 8px; }
 @media (max-width: 860px) { .cols-layout { grid-template-columns: 1fr; } .cols-side { position: static; } }
 
+/* ================================================================ کارها
+   سرِ صفحه: امروز در یک نگاه و دو تب. زیرش، کارها (راست) و کارکردِ روز
+   (چپ). تبِ دوم، گزارشِ کارِ یک بازه. ui.tasks.js، ui.workreport.js
+   ================================================================ */
+.tasks-view > * { max-width: 1320px; }
+.tk-top {
+  margin-bottom: 18px;
+  padding: 18px 20px 16px;
+  border-radius: var(--radius-lg);
+  color: #fff;
+  background:
+    radial-gradient(700px 260px at 100% -40%, rgba(227, 182, 94, .26), transparent 62%),
+    linear-gradient(160deg, var(--ink-800), var(--ink-900));
+  box-shadow: var(--shadow);
+}
+.tk-top .wl-hero-date { color: rgba(255, 255, 255, .55); margin-bottom: 2px; }
+.tk-top-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.tk-line { margin: 0; font-size: clamp(18px, 2.2vw, 24px); font-weight: 800; letter-spacing: -.02em; line-height: 1.45; }
+.tk-tabs { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); }
+.tk-tab {
+  font: inherit; font-size: 13px; padding: 7px 16px; border: 0; border-radius: 999px;
+  background: none; color: rgba(255, 255, 255, .72); cursor: pointer; transition: background .2s, color .2s;
+}
+.tk-tab:hover { color: #fff; }
+.tk-tab.on { background: #fff; color: var(--ink-900); font-weight: 700; box-shadow: 0 4px 14px -6px rgba(0, 0, 0, .5); }
+.tk-kpis { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.tk-kpi {
+  font: inherit; text-align: start; color: inherit;
+  display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
+  border-radius: 12px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .09);
+  animation: ft-rise .5s var(--ease) both;
+}
+button.tk-kpi { cursor: pointer; }
+button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
+.tk-kpi b { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-kpi span { font-size: 11.5px; color: rgba(255, 255, 255, .62); }
+.tk-kpi.hero { background: rgba(227, 182, 94, .16); border-color: rgba(227, 182, 94, .4); }
+.tk-kpi.hero b { color: var(--brass-glow); }
+.tk-kpi.good b { color: #9BE0BD; }
+.tk-kpi.bad b { color: #FFB4A6; }
+.tk-kpi:nth-child(2) { animation-delay: .04s; } .tk-kpi:nth-child(3) { animation-delay: .08s; }
+.tk-kpi:nth-child(4) { animation-delay: .12s; } .tk-kpi:nth-child(5) { animation-delay: .16s; }
+.tk-kpi:nth-child(6) { animation-delay: .2s; } .tk-kpi:nth-child(7) { animation-delay: .24s; }
+
+.tk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 22px; align-items: start; }
+.tk-main { min-width: 0; }
+.tk-tools { margin-bottom: 14px; }
+.tk-tools-h { margin: 0; font-size: 15px; color: var(--ink-800); }
+.tk-tools .task-filters { margin-top: 8px; }
+.task-min { font-size: 11.5px; color: var(--moss); background: var(--moss-soft); border-radius: 999px; padding: 0 8px; }
+.task-min-input, .task-dialog .task-min { width: 90px; }
+
+/* --- ستونِ کارکردِ روز --- */
+.wr-day {
+  position: sticky; top: 0;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--card); box-shadow: var(--shadow-sm);
+}
+.wr-day-head { display: flex; align-items: center; gap: 8px; }
+.wr-day-head h2 { margin: 0; font-size: 15px; }
+.wr-step { display: flex; align-items: center; gap: 8px; }
+.wr-step-b {
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--paper); cursor: pointer; font-size: 16px; color: var(--ink-700);
+}
+.wr-step-b:disabled { opacity: .35; cursor: default; }
+.wr-step-d { display: flex; flex-direction: column; line-height: 1.4; }
+.wr-step-d b { font-size: 13px; }
+.wr-step-d span { font-size: 11.5px; color: var(--muted); }
+.wr-total { padding: 10px 12px; border-radius: 12px; background: var(--brass-soft); border: 1px solid var(--brass-line); }
+.wr-total-n { display: flex; align-items: baseline; gap: 8px; }
+.wr-total-n b { font-size: 22px; font-weight: 800; color: var(--brass-ink); }
+.wr-est { font-size: 11px; color: var(--brass-ink); border: 1px dashed var(--brass); border-radius: 999px; padding: 0 7px; }
+.wr-total-sub { font-size: 12px; color: var(--ink-500); }
+.wr-sub { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.wr-cases { display: flex; flex-direction: column; gap: 6px; }
+.wr-case { border: 1px solid var(--line-soft); border-radius: 10px; background: var(--paper); }
+.wr-case > summary { list-style: none; cursor: pointer; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+.wr-case > summary::-webkit-details-marker { display: none; }
+.wr-case[open] { background: var(--card); border-color: var(--brass-line); }
+.wr-case-top { display: flex; align-items: center; gap: 8px; }
+.wr-case-name { font-size: 13px; }
+.wr-case.is-free .wr-case-name { color: var(--muted); font-weight: 600; }
+.wr-case-t { font-size: 12.5px; font-weight: 700; color: var(--ink-800); font-variant-numeric: tabular-nums; }
+.wr-bar { height: 4px; border-radius: 4px; background: var(--line-soft); overflow: hidden; }
+.wr-bar span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--brass), var(--brass-glow)); transform-origin: right; animation: rule-draw .7s var(--ease) both; }
+.wr-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.wr-chip { font-size: 10.5px; padding: 0 7px; border-radius: 999px; background: var(--paper-2); color: var(--ink-700); line-height: 1.8; }
+.wr-chip.s-form, .wr-chip.s-minute { background: var(--brass-soft); color: var(--brass-ink); }
+.wr-chip.s-doc { background: #EEF1F8; color: var(--ink-700); }
+.wr-chip.s-task { background: var(--moss-soft); color: var(--moss); }
+.wr-events { list-style: none; margin: 0; padding: 4px 10px 8px; display: flex; flex-direction: column; gap: 3px; }
+.wr-ev { display: flex; gap: 8px; align-items: baseline; font-size: 12px; border-inline-start: 2px solid var(--line); padding-inline-start: 8px; }
+.wr-ev.s-form, .wr-ev.s-minute { border-color: var(--brass); }
+.wr-ev.s-task { border-color: var(--moss); }
+.wr-ev-t { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 38px; }
+.wr-ev-l { font-weight: 600; color: var(--ink-800); white-space: nowrap; }
+.wr-ev-d { color: var(--ink-500); min-width: 0; overflow-wrap: anywhere; }
+.wr-ev-m { color: var(--moss); white-space: nowrap; }
+.wr-open { margin: 0 10px 8px; }
+.wr-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.wr-timeline::before { content: ''; position: absolute; top: 6px; bottom: 6px; right: 5px; width: 2px; background: var(--line); border-radius: 2px; }
+.wr-timeline li { position: relative; display: flex; gap: 8px; padding: 3px 18px 3px 0; font-size: 12px; }
+.wr-timeline li::before { content: ''; position: absolute; right: 1px; top: 9px; width: 10px; height: 10px; border-radius: 50%; background: var(--card); border: 2px solid var(--brass); }
+.wr-tl-t { font-weight: 700; color: var(--ink-800); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wr-tl-x { color: var(--ink-500); }
+.wr-views { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+/* --- تبِ گزارش کار --- */
+.wr-head { margin-bottom: 12px; }
+.wr-head h2 { margin: 0 0 4px; font-size: 18px; }
+.wr-lead { margin: 0 0 10px; color: var(--ink-500); }
+.wr-range { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.wr-custom { display: inline-flex; align-items: center; gap: 6px; }
+.wr-custom .date-field { width: 150px; }
+.wr-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+.wr-tiles.small { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.wr-tile {
+  display: flex; flex-direction: column; gap: 2px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-sm);
+  animation: ft-rise .5s var(--ease) both;
+}
+.wr-tile b { font-size: 19px; font-weight: 800; color: var(--ink-900); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wr-tile span { font-size: 12px; color: var(--ink-500); }
+.wr-tile small { font-size: 11px; color: var(--muted); }
+.wr-tile.hero { background: linear-gradient(160deg, var(--ink-800), var(--ink-900)); border-color: transparent; }
+.wr-tile.hero b { color: var(--brass-glow); }
+.wr-tile.hero span, .wr-tile.hero small { color: rgba(255, 255, 255, .7); }
+.wr-tile.good b { color: var(--moss); }
+.wr-tile.bad b { color: var(--cinnabar); }
+.wr-body { display: flex; flex-direction: column; gap: 16px; }
+.wr-sec { padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--card); }
+.wr-sec-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.wr-sec-head h3 { margin: 0; font-size: 14.5px; }
+.wr-sec-head p { margin: 0; font-size: 12px; color: var(--muted); }
+.wr-sec h4 { margin: 12px 0 6px; font-size: 13px; color: var(--ink-700); }
+.wr-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.wr-two > .wr-sec { margin: 0; }
+.wr-chart { display: flex; align-items: flex-end; gap: 4px; height: 170px; padding: 6px 2px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.wr-col { flex: 1 0 18px; max-width: 46px; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; cursor: pointer; padding: 0; }
+.wr-chart.is-dense .wr-col { flex-basis: 8px; }
+.wr-col-bar { flex: 1; width: 100%; display: flex; flex-direction: column-reverse; border-radius: 5px 5px 0 0; overflow: hidden; background: var(--paper); }
+.wr-seg { display: block; width: 100%; transition: filter .15s; }
+.wr-seg.trk { background: linear-gradient(0deg, var(--brass), var(--brass-glow)); }
+.wr-seg.man { background: var(--moss); }
+.wr-seg.est { background: repeating-linear-gradient(45deg, var(--ink-400) 0 3px, var(--line) 3px 6px); }
+.wr-col:hover .wr-seg { filter: brightness(1.12); }
+.wr-col-l { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wr-col.is-off .wr-col-bar { opacity: .5; }
+.wr-col.is-today .wr-col-l { color: var(--brass-ink); font-weight: 800; }
+.wr-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 11.5px; color: var(--ink-500); }
+.wr-legend .k { display: inline-flex; align-items: center; gap: 5px; }
+.wr-legend .k::before { content: ''; width: 10px; height: 10px; border-radius: 3px; }
+.wr-legend .k.trk::before { background: var(--brass); }
+.wr-legend .k.man::before { background: var(--moss); }
+.wr-legend .k.est::before { background: repeating-linear-gradient(45deg, var(--ink-400) 0 2px, var(--line) 2px 4px); }
+.wr-table td.num, .wr-table th { white-space: nowrap; }
+.wr-table td.num { font-variant-numeric: tabular-nums; }
+.wr-table td.late { color: var(--cinnabar); font-weight: 700; }
+.wr-tr { cursor: pointer; }
+.wr-tr:hover td { background: var(--brass-soft); }
+.wr-tr.is-open td { background: var(--paper); }
+.wr-tr.is-free b { color: var(--muted); }
+.wr-detail td { background: var(--paper); padding: 6px 10px 10px; }
+.wr-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.wr-bars li { display: grid; grid-template-columns: 130px 1fr 64px; align-items: center; gap: 8px; font-size: 12.5px; }
+.wr-bars-b { height: 8px; border-radius: 8px; background: var(--paper-2); overflow: hidden; }
+.wr-bars-b span { display: block; height: 100%; background: linear-gradient(90deg, var(--ink-500), var(--ink-700)); border-radius: 8px; transform-origin: right; animation: rule-draw .8s var(--ease) both; }
+.wr-bars-n { text-align: left; font-variant-numeric: tabular-nums; color: var(--ink-700); }
+.wr-tasks h4 { margin-top: 14px; }
+
+@media (max-width: 1180px) {
+  .tk-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tk-layout { grid-template-columns: 1fr; }
+  .wr-day { position: static; }
+  .wr-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wr-two { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .tk-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tk-top-row { align-items: flex-start; }
+  .wr-tiles.small { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 </style>
 </head>
 <body>
@@ -8366,6 +8554,7 @@ window.SEED_CASES = [
   }
   var ICONS = {
     plus: svg('<path d="M12 5.5v13M5.5 12h13"/>'),
+    people: svg('<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17.2 14.9c2 .6 3.3 2.3 3.3 4.6"/>'),
     imp: svg('<path d="M12 15.5V4.5"/><path d="M8.5 8L12 4.5 15.5 8"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>'),
     exp: svg('<path d="M12 4.5v11"/><path d="M8.5 12l3.5 3.5L15.5 12"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>'),
     db: svg('<ellipse cx="12" cy="6.5" rx="6.5" ry="2.5"/><path d="M5.5 6.5v11c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-11"/><path d="M5.5 12c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5"/>'),
@@ -10301,6 +10490,143 @@ window.SEED_CASES = [
     scope: scope, scoped: scoped, inScope: inScope, setScope: setScope,
     scopeIsOn: scopeIsOn, outOfScopeCount: outOfScopeCount,
     saveLists: saveLists, saveColumns: saveColumns, saveSettings: saveSettings
+  };
+})(window);
+
+</script>
+<script>
+/* ==== assets/js/timelog.js ==== */
+/*
+ * زمانِ کار — چقدر روی هر پرونده وقت گذاشته شد.
+ *
+ * تاریخچه می‌گوید *چه* شد (ذخیره، فرم، سند)، ولی نمی‌گوید *چقدر* طول
+ * کشید: نیم ساعت خواندنِ یک پرونده و یک بار ذخیره، در تاریخچه یک لحظه
+ * است. این فایل همان نیم ساعت را می‌شمارد.
+ *
+ * قاعده ساده و محافظه‌کار است:
+ *   - هر ۱۵ ثانیه یک بار نگاه می‌کند: پنجره دیده می‌شود؟ فوکوس دارد؟ در
+ *     دو دقیقهٔ گذشته کلیک یا تایپ یا اسکرولی بوده؟ اگر هر سه بله،
+ *     همان ۱۵ ثانیه به «جایی که کاربر هست» نسبت داده می‌شود.
+ *   - «جا»: اگر پرونده‌ای باز است، همان پرونده؛ وگرنه صفحه (کارتابل،
+ *     فهرست، کارها، …).
+ *   - قفل، صفحهٔ شروع و بی‌کاری شمرده نمی‌شوند. پس عدد کم‌برآورد است،
+ *     نه بیش‌برآورد — زمانی که اینجا ثبت شده، واقعاً کار بوده.
+ *
+ * داده روز به روز در meta (و با آن در فایل دیتابیس) می‌ماند:
+ *   timelog = { '14050722': { 'c:<id>': ثانیه, 'v:list': ثانیه, _s: '08:41', _e: '13:02' } }
+ */
+(function (w) {
+  'use strict';
+
+  var J = w.J;
+  var KEY = 'timelog';
+  var TICK = 15;            // ثانیه
+  var IDLE = 120;           // بی‌کاریِ بیش از این، شمرده نمی‌شود
+  var SAVE_EVERY = 60;      // نوشتن در انبار
+  var FILE_EVERY = 300;     // فرستادن به فایل دیتابیس
+
+  var lastInput = 0, sinceSave = 0, sinceFile = 0, timer = null, app = null;
+  var data = null;
+
+  function now() { return Date.now(); }
+  function hhmm(d) { return J.pad2(d.getHours()) + ':' + J.pad2(d.getMinutes()); }
+
+  function load() {
+    var saved = w.Store && w.Store.metaGet ? w.Store.metaGet(KEY, null) : null;
+    data = saved && typeof saved === 'object' ? saved : {};
+    return data;
+  }
+
+  function all() { return data || load(); }
+
+  function save(toFile) {
+    if (!data || !w.Store || !w.Store.metaSet) return Promise.resolve();
+    sinceSave = 0;
+    var p = w.Store.metaSet(KEY, data);
+    if (toFile && w.Store.scheduleSave) { sinceFile = 0; w.Store.scheduleSave(); }
+    return p;
+  }
+
+  function context() {
+    var st = app && app.state;
+    if (!st) return '';
+    if (st.view === 'case' && st.caseId) return 'c:' + st.caseId;
+    return 'v:' + (st.view || 'work');
+  }
+
+  function active() {
+    if (document.visibilityState !== 'visible') return false;
+    if (document.hasFocus && !document.hasFocus()) return false;
+    if (w.Store && w.Store.isLocked && w.Store.isLocked()) return false;
+    if (w.UIStart && w.UIStart.isShowing && w.UIStart.isShowing()) return false;
+    if (w.UILock && w.UILock.isShowing && w.UILock.isShowing()) return false;
+    return now() - lastInput < IDLE * 1000;
+  }
+
+  /** یک تیک: اگر کار در جریان است، به جای فعلی اضافه کن */
+  function tick() {
+    if (!active()) return;
+    var ctx = context();
+    if (!ctx) return;
+    add(J.today(), ctx, TICK, new Date());
+    sinceSave += TICK;
+    sinceFile += TICK;
+    if (sinceSave >= SAVE_EVERY) save(sinceFile >= FILE_EVERY);
+  }
+
+  /** افزودنِ ثانیه به یک روز و یک جا (آزمون‌ها هم از همین استفاده می‌کنند) */
+  function add(day, ctx, sec, at) {
+    var d = all();
+    var row = d[day] || (d[day] = {});
+    row[ctx] = (row[ctx] || 0) + sec;
+    if (at) {
+      var t = hhmm(at);
+      if (!row._s || t < row._s) row._s = t;
+      if (!row._e || t > row._e) row._e = t;
+    }
+  }
+
+  /** روزهای بازه → { day: { ctx: sec, _s, _e } } */
+  function range(from, to) {
+    var d = all(), out = {};
+    Object.keys(d).forEach(function (k) {
+      if (k >= from && k <= to) out[k] = d[k];
+    });
+    return out;
+  }
+
+  /** ثانیهٔ یک پرونده در بازه */
+  function forCase(caseId, from, to) {
+    var r = range(from || '00000000', to || '99999999'), n = 0;
+    Object.keys(r).forEach(function (k) { n += r[k]['c:' + caseId] || 0; });
+    return n;
+  }
+
+  function start(theApp) {
+    app = theApp;
+    load();
+    lastInput = now();
+    ['pointerdown', 'keydown', 'wheel', 'touchstart', 'input'].forEach(function (ev) {
+      document.addEventListener(ev, function () { lastInput = now(); }, { passive: true, capture: true });
+    });
+    // رفتن از صفحه یا پنهان شدن: هرچه شمرده شده، نوشته شود
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden' && sinceSave) save(true);
+    });
+    w.addEventListener('pagehide', function () { if (sinceSave) save(true); });
+    if (timer) clearInterval(timer);
+    timer = setInterval(tick, TICK * 1000);
+  }
+
+  /** بعد از باز شدن دیتابیسِ دیگر، داده از نو خوانده می‌شود */
+  function reload() { data = null; load(); }
+
+  w.Timelog = {
+    TICK: TICK, IDLE: IDLE,
+    start: start, reload: reload, tick: tick, add: add, save: save,
+    all: all, range: range, forCase: forCase, context: context,
+    // برای آزمون: «آخرین کلیک» را به گذشته ببر تا بی‌کاری شبیه‌سازی شود
+    _idle: function (sec) { lastInput = now() - sec * 1000; }
   };
 })(window);
 
@@ -12800,7 +13126,11 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       category: String(o.category || '').trim(),
       status: o.done ? 'done' : 'open',
       done: !!o.done,
-      doneAt: o.done ? J.today() : '',
+      doneAt: o.done ? (o.doneAt || J.today()) : '',
+      doneIso: o.done ? new Date().toISOString() : '',
+      /* زمانِ صرف‌شده، به دقیقه — برای کارِ بیرون از برنامه (تماس، جلسه،
+         خواندنِ پروندهٔ کاغذی) که زمان‌سنجِ برنامه نمی‌بیندش. */
+      minutes: Math.max(0, Math.round(Number(o.minutes) || 0)),
       batchId: o.batchId || '',
       docCount: o.docCount || 0,
       /* سه فیلدِ چک‌لیست: از کدام قالب، چندمین گام، مالِ کدام مرحله.
@@ -12855,7 +13185,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
   /** بستن یک کار یا پیگیری — انجام شد */
   function complete(note) {
     var rec = note.caseId ? M.get(note.caseId) : null;
-    return update(note, { done: true, status: 'done', doneAt: J.today() })
+    return update(note, { done: true, status: 'done', doneAt: J.today(),
+      doneIso: new Date().toISOString() })
       .then(function () {
         if (rec) {
           M.addHistory(note.kind === 'task' ? 'task-done' : 'note-done', rec, [],
@@ -12875,6 +13206,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     var rec = note.caseId ? M.get(note.caseId) : null;
     return update(note, {
       done: true, status: 'cancelled', doneAt: J.today(),
+      doneIso: new Date().toISOString(),
       cancelReason: String(why || '').trim()
     }).then(function () {
       if (rec) {
@@ -14164,6 +14496,352 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     COUNTED_ELSEWHERE: COUNTED_ELSEWHERE,
     daily: daily, weeks: weeks, months: months, fold: fold,
     bundle: bundle, csv: csv
+  };
+})(window);
+
+</script>
+<script>
+/* ==== assets/js/worklog.js ==== */
+/*
+ * کارکرد — هرچه کاربر کرده، با زمانش، کنار هم.
+ *
+ * سه منبع، یک تصویر:
+ *   زمان     — Timelog: چند دقیقه واقعاً روی هر پرونده و هر صفحه کار شد.
+ *   رویداد   — تاریخچه: چه شد (ویرایش، فرم، مینوت، سند، یادداشت).
+ *   کار       — Notes: کاری که تیک خورد، و زمانی که دستی برایش ثبت شد
+ *               (کارِ بیرون از برنامه: تماس، جلسه، پروندهٔ کاغذی).
+ *
+ * روزهایی که پیش از زمان‌سنج بوده‌اند زمانِ ثبت‌شده ندارند؛ برای آن‌ها
+ * زمان از فاصلهٔ رویدادها برآورد می‌شود و صریحاً «برآورد» نامیده می‌شود.
+ */
+(function (w) {
+  'use strict';
+
+  var J = w.J, M = w.Model;
+
+  /* رویدادهایی که کارِ کاربر نیستند (خودکارند) یا جای دیگری شمرده
+     می‌شوند (تیکِ کار از خودِ کار خوانده می‌شود، با ساعتش). */
+  var SKIP = {
+    'import': 1, 'restore': 1, 'checklist': 1, 'doc-sync': 1,
+    'task-done': 1, 'task-cancel': 1
+  };
+
+  /* جنسِ هر رویداد برای شمارش در گزارش */
+  var SORT = {
+    create: 'create', update: 'edit', bulk: 'edit', stage: 'edit', transfer: 'edit',
+    form: 'form', minute: 'minute', session: 'session',
+    'doc-add': 'doc', 'doc-batch': 'doc', 'doc-version': 'doc', 'doc-attach': 'doc',
+    'doc-remove': 'doc', 'doc-person': 'doc', 'doc-folder': 'doc', 'doc-edit': 'doc',
+    'note-add': 'note', 'note-done': 'note', 'note-remove': 'note',
+    'task-add': 'task', 'task-skip': 'task', 'task-remove': 'task'
+  };
+  var SORTS = [
+    { key: 'edit', label: 'ویرایش پرونده', short: 'ویرایش' },
+    { key: 'create', label: 'ثبت پروندهٔ تازه', short: 'پروندهٔ تازه' },
+    { key: 'form', label: 'فرم اداری', short: 'فرم' },
+    { key: 'minute', label: 'مینوت نامه', short: 'مینوت' },
+    { key: 'doc', label: 'سند و اسکن', short: 'سند' },
+    { key: 'task', label: 'کار', short: 'کار' },
+    { key: 'note', label: 'یادداشت', short: 'یادداشت' },
+    { key: 'session', label: 'صورت‌جلسه', short: 'صورت‌جلسه' }
+  ];
+
+  var VIEWS = {
+    work: 'کارتابل', list: 'فهرست پرونده‌ها', tasks: 'کارها', calendar: 'تقویم',
+    archive: 'بایگانی', report: 'گزارش‌ها', people: 'اشخاص', person: 'پروندهٔ شخص',
+    'case': 'پروندهٔ تازه (ذخیره‌نشده)'
+  };
+
+  /** برآورد برای روزِ بی‌زمان‌سنج: فاصلهٔ رویدادها، با سقف */
+  var GAP = 25 * 60;          // بیش از این، دو نشستِ جدا
+  var FIRST = 4 * 60;         // نخستین رویدادِ هر نشست
+
+  var LABEL = {};
+  (w.Activity ? w.Activity.ACTIONS : []).forEach(function (a) {
+    if (a.source === 'history') LABEL[a.from] = a.label;
+  });
+
+  function jalaliOf(d) {
+    if (isNaN(d.getTime())) return '';
+    var j = J.toJalali(d);
+    return J.pack(j.jy, j.jm, j.jd);
+  }
+  function hhmm(d) { return J.pad2(d.getHours()) + ':' + J.pad2(d.getMinutes()); }
+
+  function nameOf(rec) {
+    return rec ? [rec.firstName, rec.lastName].filter(Boolean).join(' ') : '';
+  }
+
+  /** «۱ ساعت و ۱۰ دقیقه» / «۴۵ دقیقه» / «کمتر از یک دقیقه» */
+  function dur(sec, short) {
+    var m = Math.round((sec || 0) / 60);
+    if (!sec) return short ? '—' : 'بدون زمان';
+    if (m < 1) return short ? '<۱ د' : 'کمتر از یک دقیقه';
+    var h = Math.floor(m / 60), mm = m % 60;
+    var fa = w.U.toFaDigits;
+    if (short) return h ? fa(h) + ':' + fa(J.pad2(mm)) : fa(mm) + ' د';
+    if (!h) return fa(mm) + ' دقیقه';
+    return fa(h) + ' ساعت' + (mm ? ' و ' + fa(mm) + ' دقیقه' : '');
+  }
+
+  /* -------------------------------------------------------- رویدادها */
+  /**
+   * events(from, to) — همهٔ کارهای بازه، با ساعت. مرتب از قدیم به نو.
+   * هر رویداد: { ms, day, time, caseId, kind, sort, label, detail, minutes }
+   */
+  function events(from, to) {
+    var scoped = {};
+    M.scoped().forEach(function (c) { scoped[c.id] = true; });
+    var out = [];
+
+    (M.state.history || []).forEach(function (h) {
+      if (SKIP[h.kind]) return;
+      if (h.caseId && !scoped[h.caseId] && M.get(h.caseId)) return;
+      var d = new Date(h.at), day = jalaliOf(d);
+      if (!day || day < from || day > to) return;
+      var detail = h.note || '';
+      if (h.kind === 'update' && h.changes && h.changes.length) {
+        var names = h.changes.slice(0, 3).map(function (c) {
+          return w.UIForm ? w.UIForm.cleanLabel(c.label) : c.label;
+        });
+        detail = w.U.toFaDigits(h.changes.length) + ' فیلد: ' + names.join('، ') +
+          (h.changes.length > 3 ? '، …' : '');
+      }
+      out.push({
+        ms: d.getTime(), day: day, time: hhmm(d), caseId: h.caseId || '',
+        kind: h.kind, sort: SORT[h.kind] || 'edit',
+        label: LABEL[h.kind] || h.kind, detail: detail,
+        fields: h.kind === 'update' ? (h.changes || []).length : 0
+      });
+    });
+
+    // کارهای بسته‌شده: با ساعتِ واقعی‌شان، و زمانِ دستی اگر ثبت شده
+    (w.Notes ? w.Notes.all() : []).forEach(function (n) {
+      if (n.kind !== 'task' || (n.status !== 'done' && n.status !== 'cancelled')) return;
+      if (n.caseId && !scoped[n.caseId] && M.get(n.caseId)) return;
+      var d = n.doneIso ? new Date(n.doneIso) : null;
+      var day = d ? jalaliOf(d) : (n.doneAt || '');
+      if (!day || day < from || day > to) return;
+      out.push({
+        ms: d ? d.getTime() : 0, day: day, time: d ? hhmm(d) : '',
+        caseId: n.caseId || '', kind: n.status === 'done' ? 'task-done' : 'task-cancel',
+        sort: 'task', label: (n.tpl ? 'چک‌لیست: ' : '') +
+          (n.status === 'done' ? 'انجام شد' : 'لغو شد'),
+        detail: n.title || '', minutes: n.minutes || 0, task: n
+      });
+    });
+
+    out.sort(function (a, b) { return a.day === b.day ? a.ms - b.ms : (a.day < b.day ? -1 : 1); });
+    return out;
+  }
+
+  /** نشست‌های یک روز: رویدادهای پشتِ سرِ هم با فاصلهٔ کمتر از GAP */
+  function blocks(dayEvents) {
+    var timed = dayEvents.filter(function (e) { return e.ms; });
+    var out = [], cur = null;
+    timed.forEach(function (e) {
+      if (!cur || (e.ms - cur.endMs) / 1000 > GAP) {
+        cur = { startMs: e.ms, endMs: e.ms, events: [], est: FIRST };
+        out.push(cur);
+      } else {
+        cur.est += (e.ms - cur.endMs) / 1000;
+      }
+      cur.endMs = e.ms;
+      cur.events.push(e);
+    });
+    out.forEach(function (b) {
+      b.start = hhmm(new Date(b.startMs));
+      b.end = hhmm(new Date(b.endMs));
+      var byCase = {}, order = [];
+      b.events.forEach(function (e) {
+        var k = e.caseId || '';
+        if (!byCase[k]) { byCase[k] = { caseId: k, n: 0, counts: {} }; order.push(k); }
+        byCase[k].n++;
+        byCase[k].counts[e.sort] = (byCase[k].counts[e.sort] || 0) + 1;
+      });
+      b.cases = order.map(function (k) { return byCase[k]; });
+    });
+    // رویدادهای بی‌ساعت (کارِ قدیمیِ تیک‌خورده) یک نشستِ جدا
+    var untimed = dayEvents.filter(function (e) { return !e.ms; });
+    if (untimed.length) {
+      out.push({ start: '', end: '', events: untimed, est: 0, untimed: true,
+        cases: [{ caseId: '', n: untimed.length, counts: { task: untimed.length } }] });
+    }
+    return out;
+  }
+
+  /* ---------------------------------------------------------- گزارش */
+  /**
+   * build(from, to) — کارکردِ بازه، آمادهٔ نمایش.
+   */
+  function build(from, to) {
+    var evs = events(from, to);
+    var tl = w.Timelog ? w.Timelog.range(from, to) : {};
+    var byDay = {};
+    evs.forEach(function (e) { (byDay[e.day] = byDay[e.day] || []).push(e); });
+
+    var cases = {}, sorts = {}, views = {};
+    function caseRow(id) {
+      var key = id || '';
+      if (!cases[key]) {
+        var rec = id ? M.get(id) : null;
+        cases[key] = {
+          id: key, rec: rec, caseNo: rec ? rec.caseNo || '' : '',
+          name: rec ? nameOf(rec) : '', unit: rec ? (rec.orgUnit || rec.servicePlace || '') : '',
+          sec: 0, manualSec: 0, estSec: 0, events: [], counts: {}, fields: 0, last: 0
+        };
+      }
+      return cases[key];
+    }
+
+    var days = [];
+    var d = from, guard = 0;
+    var T = { sec: 0, trackedSec: 0, estSec: 0, manualSec: 0, workedDays: 0, events: 0,
+      tasksDone: 0, fields: 0 };
+    while (d && d <= to && guard++ < 1500) {
+      var p = J.unpack(d);
+      var de = byDay[d] || [];
+      var row = tl[d] || {};
+      var tracked = 0;
+      Object.keys(row).forEach(function (k) {
+        if (k.charAt(0) === '_') return;
+        tracked += row[k];
+        if (k.indexOf('c:') === 0) caseRow(k.slice(2)).sec += row[k];
+        else views[k] = (views[k] || 0) + row[k];
+      });
+      var bl = blocks(de);
+      var est = 0;
+      if (!tracked && de.length) {
+        /* روزِ پیش از زمان‌سنج: برآورد از فاصلهٔ رویدادها، تقسیم بر
+           پرونده‌ها به نسبتِ تعداد رویدادشان در هر نشست. */
+        bl.forEach(function (b) {
+          est += b.est;
+          var n = b.events.length || 1;
+          b.cases.forEach(function (c) { caseRow(c.caseId).estSec += b.est * c.n / n; });
+        });
+      }
+      var manual = 0, done = 0, fields = 0;
+      de.forEach(function (e) {
+        var c = caseRow(e.caseId);
+        c.events.push(e);
+        c.counts[e.sort] = (c.counts[e.sort] || 0) + 1;
+        c.fields += e.fields || 0;
+        if (e.ms > c.last) c.last = e.ms;
+        sorts[e.sort] = (sorts[e.sort] || 0) + 1;
+        fields += e.fields || 0;
+        if (e.kind === 'task-done') done++;
+        if (e.minutes) { manual += e.minutes * 60; c.manualSec += e.minutes * 60; }
+      });
+      var caseIds = {};
+      de.forEach(function (e) { if (e.caseId) caseIds[e.caseId] = 1; });
+      Object.keys(row).forEach(function (k) { if (k.indexOf('c:') === 0) caseIds[k.slice(2)] = 1; });
+      var total = tracked + est + manual;
+      days.push({
+        date: d, weekday: p ? J.weekday(p.jy, p.jm, p.jd) : '',
+        holiday: p ? J.weekdayIndex(p.jy, p.jm, p.jd) === 6 : false,
+        trackedSec: tracked, estSec: est, manualSec: manual, sec: total,
+        estimated: !tracked && est > 0,
+        start: row._s || (bl[0] && bl[0].start) || '',
+        end: row._e || (bl.length && bl[bl.length - 1].end) || '',
+        events: de.length, cases: Object.keys(caseIds).length, tasksDone: done,
+        fields: fields, blocks: bl
+      });
+      if (total || de.length) T.workedDays++;
+      T.sec += total; T.trackedSec += tracked; T.estSec += est; T.manualSec += manual;
+      T.events += de.length; T.tasksDone += done; T.fields += fields;
+      d = J.addDays(d, 1);
+    }
+
+    var caseList = Object.keys(cases).map(function (k) {
+      var c = cases[k];
+      c.total = c.sec + c.estSec + c.manualSec;
+      return c;
+    }).filter(function (c) { return c.total || c.events.length; })
+      .sort(function (a, b) { return b.total - a.total || b.events.length - a.events.length; });
+
+    T.cases = caseList.filter(function (c) { return c.id; }).length;
+    SORTS.forEach(function (s) { T[s.key] = sorts[s.key] || 0; });
+
+    return {
+      from: from, to: to, days: days, totals: T,
+      cases: caseList,
+      sorts: SORTS.map(function (s) { return { key: s.key, label: s.label, n: sorts[s.key] || 0 }; })
+        .filter(function (s) { return s.n; }).sort(function (a, b) { return b.n - a.n; }),
+      views: Object.keys(views).map(function (k) {
+        return { key: k, label: VIEWS[k.slice(2)] || k.slice(2), sec: views[k] };
+      }).sort(function (a, b) { return b.sec - a.sec; }),
+      tasks: taskStats(from, to)
+    };
+  }
+
+  /* -------------------------------------------------- آمار کارها */
+  /**
+   * کارهای بازه، جزئی‌تر از گزارش قدیمی: ساخته‌شده، بسته‌شده، در مهلت یا
+   * با تأخیر، میانگین روز تا انجام، زمانِ دستی، و همهٔ این‌ها به تفکیک
+   * دسته و ارجاع‌دهنده.
+   */
+  function taskStats(from, to) {
+    var all = (w.Notes ? w.Notes.all() : []).filter(function (n) {
+      return n.kind === 'task' && !n.tpl;
+    });
+    var created = 0, done = 0, cancelled = 0, onTime = 0, late = 0, daysSum = 0, daysN = 0,
+      minutes = 0, overdueNow = 0, openNow = 0;
+    var byCat = {}, byFrom = {}, doneList = [];
+    function bucket(map, key) {
+      var k = key || '—';
+      return map[k] || (map[k] = { key: k, created: 0, done: 0, cancelled: 0, onTime: 0,
+        late: 0, minutes: 0, open: 0, overdue: 0 });
+    }
+    all.forEach(function (n) {
+      var made = n.at ? jalaliOf(new Date(n.at)) : '';
+      var cat = bucket(byCat, n.category), fr = bucket(byFrom, n.from);
+      if (made >= from && made <= to) { created++; cat.created++; fr.created++; }
+      if (n.status === 'open' && !n.archived) {
+        var od = w.Notes.bucketOf(n) === 'overdue';
+        if (od) { overdueNow++; cat.overdue++; fr.overdue++; }
+        else { openNow++; cat.open++; fr.open++; }
+        return;
+      }
+      var when = n.doneAt || '';
+      if (!when || when < from || when > to) return;
+      if (n.status === 'cancelled') { cancelled++; cat.cancelled++; fr.cancelled++; return; }
+      if (n.status !== 'done') return;
+      done++; cat.done++; fr.done++;
+      doneList.push(n);
+      if (n.minutes) { minutes += n.minutes; cat.minutes += n.minutes; fr.minutes += n.minutes; }
+      if (n.followUp) {
+        if (when <= n.followUp) { onTime++; cat.onTime++; fr.onTime++; }
+        else { late++; cat.late++; fr.late++; }
+      }
+      if (made) {
+        var dd = J.diffDays(when, made);
+        if (dd != null && dd >= 0) { daysSum += dd; daysN++; }
+      }
+    });
+    function rows(map) {
+      return Object.keys(map).map(function (k) { return map[k]; })
+        .filter(function (r) { return r.created || r.done || r.cancelled || r.open || r.overdue; })
+        .sort(function (a, b) { return (b.done + b.open + b.overdue) - (a.done + a.open + a.overdue); });
+    }
+    doneList.sort(function (a, b) {
+      return (b.doneIso || b.doneAt || '') < (a.doneIso || a.doneAt || '') ? -1 : 1;
+    });
+    return {
+      created: created, done: done, cancelled: cancelled, onTime: onTime, late: late,
+      onTimePct: (onTime + late) ? Math.round(onTime * 100 / (onTime + late)) : null,
+      avgDays: daysN ? Math.round(daysSum * 10 / daysN) / 10 : null,
+      minutes: minutes, overdueNow: overdueNow, openNow: openNow,
+      byCategory: rows(byCat), byFrom: rows(byFrom), doneList: doneList
+    };
+  }
+
+  /** کارکردِ امروز — برای صفحهٔ کارها */
+  function today() { var t = J.today(); return build(t, t); }
+
+  w.Worklog = {
+    SORTS: SORTS, VIEWS: VIEWS, GAP: GAP,
+    events: events, blocks: blocks, build: build, today: today,
+    taskStats: taskStats, dur: dur, nameOf: nameOf
   };
 })(window);
 
@@ -22742,7 +23420,16 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     run('کارنامه — ' + K.label(data));
   }
 
+  /** چاپِ هر چند بخشِ آماده، زیر سربرگِ استاندارد (گزارش کار و …) */
+  function printNodes(title, subtitle, nodes) {
+    var node = area();
+    node.appendChild(header(title, subtitle));
+    (nodes || []).forEach(function (n) { if (n) node.appendChild(n); });
+    run(title);
+  }
+
   w.UIPrint = {
+    printNodes: printNodes,
     printCase: printCase, printList: printList, printReport: printReport,
     printPerson: printPerson, printAgenda: printAgenda, printMinutes: printMinutes,
     printKarnameh: printKarnameh
@@ -27563,6 +28250,9 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     var task = o.task || null;
     var fixedCase = o.caseId || (task ? task.caseId : '');
     var lockCase = !!o.caseId && !task;      // از داخل پرونده باز شده
+    /* «ثبت کار انجام‌شده»: کاری که تمام شده و فقط باید با زمانش ثبت شود —
+       بی‌سررسید و بی‌فوریت، چون دیگر کاری برای انجام نمانده. */
+    var log = !!o.log && !task;
 
     var state = {
       title: task ? (task.title || '') : '',
@@ -27572,7 +28262,9 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       from: task ? (task.from || '') : '',
       owner: task ? (task.owner || '') : (M.state.settings.user || ''),
       category: task ? (task.category || '') : '',
-      caseId: fixedCase || ''
+      caseId: fixedCase || '',
+      minutes: task ? (task.minutes || '') : '',
+      day: o.day || J.today()
     };
 
     var body = el('div.task-dialog');
@@ -27663,6 +28355,35 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       ]));
     }
 
+    // --- زمان صرف‌شده ---
+    var minInput = el('input.input.small.task-min', {
+      type: 'number', min: '0', step: '5', inputmode: 'numeric',
+      value: state.minutes || '', placeholder: 'دقیقه'
+    });
+    minInput.addEventListener('input', function () { state.minutes = minInput.value; });
+    function minChip(n) {
+      return el('button.btn.small.ghost', {
+        type: 'button', text: w.U.toFaDigits(n) + ' د',
+        onclick: function () { state.minutes = n; minInput.value = n; }
+      });
+    }
+    var minRow = el('div.task-row', null, [
+      el('span.field-label', { text: log ? 'چقدر طول کشید' : 'زمان صرف‌شده' }),
+      minInput, minChip(15), minChip(30), minChip(45), minChip(60), minChip(90),
+      el('span.muted.tiny', {
+        text: log ? 'کارِ بیرون از برنامه — تماس، جلسه، پروندهٔ کاغذی.'
+          : 'اختیاری؛ برای کاری که بیرون از برنامه وقت گرفت.'
+      })
+    ]);
+
+    if (log) {
+      var dayField = w.DatePicker.field(state.day, function (v) { state.day = v || J.today(); });
+      body.appendChild(minRow);
+      body.appendChild(el('div.task-row', null, [
+        el('span.field-label', { text: 'تاریخ انجام' }), dayField
+      ]));
+    }
+
     // --- سررسید ---
     var dateField = w.DatePicker.field(state.followUp, function (v) {
       state.followUp = v;
@@ -27677,7 +28398,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         }
       });
     }
-    body.appendChild(el('div.task-row', null, [
+    if (!log) body.appendChild(el('div.task-row', null, [
       el('span.field-label', { text: 'سررسید' }),
       dateField,
       quick('امروز', 0), quick('فردا', 1), quick('یک هفته', 7),
@@ -27703,9 +28424,10 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       if (p.key === state.priority) b.classList.add('on');
       return b;
     }));
-    body.appendChild(el('div.task-row', null, [
+    if (!log) body.appendChild(el('div.task-row', null, [
       el('span.field-label', { text: 'فوریت' }), prio
     ]));
+    if (!log) body.appendChild(minRow);
 
     // --- ارجاع‌دهنده / مسئول / دسته ---
     /* این دو فیلد از دادهٔ قبلی خودشان یاد می‌گیرند: هر چه تا امروز نوشته
@@ -27793,7 +28515,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
 
     var m;
     var save = el('button.btn.primary', {
-      type: 'button', text: task ? 'ذخیرهٔ تغییرات' : 'ثبت کار',
+      type: 'button', text: task ? 'ذخیرهٔ تغییرات' : (log ? 'ثبت کار انجام‌شده' : 'ثبت کار'),
       onclick: function () {
         if (!state.title.trim()) {
           w.U.toast('عنوان کار را بنویسید.', 'warn');
@@ -27807,17 +28529,25 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
           from: state.from.trim(), owner: state.owner.trim(),
           category: state.category, caseId: state.caseId,
           caseNo: state.caseId && M.get(state.caseId)
-            ? (M.get(state.caseId).caseNo || '') : ''
+            ? (M.get(state.caseId).caseNo || '') : '',
+          minutes: Math.max(0, Math.round(Number(state.minutes) || 0))
         };
+        if (log && !patch.minutes) {
+          save.disabled = false;
+          w.U.toast('زمانش را بنویسید — چند دقیقه طول کشید؟', 'warn');
+          minInput.focus();
+          return;
+        }
         var p = task ? N.update(task, patch)
           : N.create({
             kind: 'task', caseId: patch.caseId, title: patch.title,
-            text: patch.text, followUp: patch.followUp, priority: patch.priority,
-            from: patch.from, owner: patch.owner, category: patch.category
+            text: patch.text, followUp: log ? '' : patch.followUp, priority: patch.priority,
+            from: patch.from, owner: patch.owner, category: patch.category,
+            minutes: patch.minutes, done: log, doneAt: log ? state.day : ''
           });
         p.then(function () {
           m.close();
-          w.U.toast(task ? 'کار به‌روز شد.' : 'کار ثبت شد.', 'good');
+          w.U.toast(task ? 'کار به‌روز شد.' : (log ? 'کار انجام‌شده با زمانش ثبت شد.' : 'کار ثبت شد.'), 'good');
           if (onDone) onDone();
         }).catch(function (e) {
           save.disabled = false;
@@ -27826,7 +28556,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       }
     });
 
-    m = w.U.modal(task ? 'ویرایش کار' : 'کار تازه', body, [
+    m = w.U.modal(task ? 'ویرایش کار' : (log ? 'ثبت کار انجام‌شده' : 'کار تازه'), body, [
       el('button.btn.ghost', {
         type: 'button', text: 'انصراف', onclick: function () { m.close(); }
       }),
@@ -27940,6 +28670,9 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     }
     if (task.from) meta.push(el('span.task-from', { text: 'از: ' + task.from }));
     if (task.category) meta.push(el('span.task-cat', { text: task.category }));
+    if (task.minutes) {
+      meta.push(el('span.task-min', { text: '⏱ ' + w.Worklog.dur(task.minutes * 60), title: 'زمان صرف‌شده' }));
+    }
     if (cancelled) {
       meta.push(el('span.task-cancel-why', {
         text: 'لغو شد' + (task.cancelReason ? ' — ' + task.cancelReason : '')
@@ -28219,6 +28952,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
   ];
 
   function render(app, mount) {
+    if (app.state.taskTab === 'report') { renderReport(app, mount); return; }
     var st = app.state;
     if (!st.taskFilter) st.taskFilter = 'all';
     if (st.taskCat == null) st.taskCat = null;      // null = همهٔ دسته‌ها
@@ -28312,9 +29046,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       onclick: function () { dialog(app, {}, refresh); }
     }));
 
-    var head = el('header.wl-hero.task-hero', null, [
-      el('div.wl-hero-date', { text: J.format(J.today(), { long: true }) }),
-      el('h1.wl-hero-line', {
+    var head = el('header.wl-hero.task-hero.tk-tools', null, [
+      el('h2.tk-tools-h', {
         text: archived
           ? fa(nArchived) + ' کار در بایگانی.'
           : (!s.openTasks ? 'کارِ بازی نمانده است.'
@@ -28452,10 +29185,78 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       }
     }
 
-    if (!archived) body.appendChild(reportBlock(app));
-
     w.U.clear(mount);
-    mount.appendChild(el('div.tasks-view', null, [head, quickBar, body]));
+    mount.appendChild(el('div.tasks-view', null, [
+      topHero(app, refresh),
+      el('div.tk-layout', null, [
+        el('section.tk-main', null, [head, quickBar, body]),
+        w.UIWorkReport.dayPanel(app, refresh)
+      ])
+    ]));
+  }
+
+  /* ================================================================
+     سرِ صفحهٔ کارها: امروز در یک نگاه، و دو تب
+     ----------------------------------------------------------------
+     «کار» فقط کاری نیست که در فهرست نوشته شده: ویرایشِ پرونده، فرم،
+     مینوت و سند هم کارند، و زمانی که روی پرونده گذاشته شد هم. این سر
+     همه را کنار هم می‌گذارد.
+     ================================================================ */
+  function topHero(app, refresh) {
+    var st = app.state;
+    var today = w.Worklog.today();
+    var d = today.days[0], T = today.totals;
+    var s = N.stats();
+    var tab = st.taskTab === 'report' ? 'report' : 'work';
+    var left = s.openTasks || 0, late = s.overdueTasks || 0;
+
+    var line = d.sec || d.events
+      ? 'امروز ' + w.Worklog.dur(d.sec) + ' کار' + (d.cases ? ' روی ' + fa(d.cases) + ' پرونده' : '') +
+        (d.tasksDone ? '، ' + fa(d.tasksDone) + ' کار انجام شد' : '') + '.'
+      : 'امروز هنوز کاری ثبت نشده است.';
+
+    function k(value, label, cls, onclick) {
+      return el((onclick ? 'button' : 'div') + '.tk-kpi' + (cls ? '.' + cls : ''),
+        onclick ? { type: 'button', onclick: onclick } : null, [
+          el('b', { text: value }), el('span', { text: label })
+        ]);
+    }
+
+    return el('header.tk-top', null, [
+      el('div.tk-top-row', null, [
+        el('div.tk-top-words', null, [
+          el('div.wl-hero-date', { text: J.format(J.today(), { long: true }) }),
+          el('h1.tk-line', { text: line })
+        ]),
+        el('div.spacer'),
+        el('div.tk-tabs', { role: 'tablist' }, [
+          { k: 'work', t: 'کارها و کارکرد' }, { k: 'report', t: 'گزارش کار' }
+        ].map(function (o) {
+          return el('button.tk-tab' + (tab === o.k ? '.on' : ''), {
+            type: 'button', role: 'tab', text: o.t, 'aria-selected': tab === o.k ? 'true' : 'false',
+            onclick: function () { st.taskTab = o.k; app.render(); }
+          });
+        }))
+      ]),
+      el('div.tk-kpis', null, [
+        k(w.Worklog.dur(d.sec), 'زمانِ کارِ امروز', 'hero'),
+        k(fa(d.cases), 'پرونده امروز'),
+        k(fa(T.edit + T.create), 'ویرایش و ثبت'),
+        k(fa(T.form + T.minute), 'فرم و مینوت'),
+        k(fa(T.doc), 'سند'),
+        k(fa(d.tasksDone), 'کار انجام شد', 'good'),
+        k(fa(left), late ? fa(late) + ' عقب‌افتاده' : 'کار باز', late ? 'bad' : '', function () {
+          st.taskTab = 'work'; st.taskFilter = 'all'; app.render();
+        })
+      ])
+    ]);
+  }
+
+  function renderReport(app, mount) {
+    var holder = el('div.tk-report');
+    w.U.clear(mount);
+    mount.appendChild(el('div.tasks-view', null, [topHero(app, function () { app.render(); }), holder]));
+    w.UIWorkReport.render(app, holder);
   }
 
   /** نوار دسته‌ها — صافی، نه گروه‌بندی؛ گروه‌بندی کلید جداگانه دارد */
@@ -28492,6 +29293,561 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     render: render, dialog: dialog, row: row, casePanel: casePanel,
     todaySection: todaySection, quickAdd: quickAdd, reportBlock: reportBlock
   };
+})(window);
+
+</script>
+<script>
+/* ==== assets/js/ui.workreport.js ==== */
+/*
+ * کارکرد و گزارش کار — نمای صفحهٔ «کارها».
+ *
+ * دو تکه:
+ *   dayPanel — ستونِ کنارِ کارها: امروز (یا هر روز) چه کردید، روی کدام
+ *              پرونده، چقدر، و به چه ترتیبی. هر پرونده باز می‌شود و
+ *              رویدادهایش با ساعت دیده می‌شوند.
+ *   render   — تبِ «گزارش کار»: یک بازه، با زمان، روز به روز، پرونده به
+ *              پرونده، نوعِ کار، و کارها (در مهلت، با تأخیر، میانگین روز
+ *              تا انجام، به تفکیک دسته و ارجاع‌دهنده). خروجی اکسل و چاپ.
+ */
+(function (w) {
+  'use strict';
+
+  var el = w.U.el, J = w.J, M = w.Model, WL = w.Worklog;
+
+  function fa(n) { return w.U.toFaDigits(n); }
+  function dur(s, short) { return WL.dur(s, short); }
+
+  function caseTitle(c) {
+    if (!c.id) return { no: '', name: 'بیرون از پرونده‌ها' };
+    return { no: w.U.toLatinDigits(c.caseNo || '—'), name: c.name || 'بی‌نام' };
+  }
+
+  function openCase(app, id) {
+    if (!id || !M.get(id)) return;
+    app.openCase(id);
+  }
+
+  /** نشانِ شمارهٔ رویدادها: «ویرایش ۱۲ · فرم ۲ · مینوت ۱» */
+  function chips(counts, fields) {
+    var box = el('span.wr-chips');
+    WL.SORTS.forEach(function (s) {
+      var n = counts[s.key];
+      if (!n) return;
+      var text = s.short + ' ' + fa(n);
+      if (s.key === 'edit' && fields) text += ' (' + fa(fields) + ' فیلد)';
+      box.appendChild(el('span.wr-chip.s-' + s.key, { text: text }));
+    });
+    return box;
+  }
+
+  function eventList(evs, withDate) {
+    return el('ol.wr-events', null, evs.map(function (e) {
+      return el('li.wr-ev.s-' + e.sort, null, [
+        el('span.wr-ev-t', {
+          text: (withDate ? J.format(e.day) + ' ' : '') + (e.time ? fa(e.time) : '—')
+        }),
+        el('span.wr-ev-l', { text: e.label }),
+        e.detail ? el('span.wr-ev-d', { text: e.detail }) : null,
+        e.minutes ? el('span.wr-ev-m', { text: dur(e.minutes * 60) }) : null
+      ]);
+    }));
+  }
+
+  /* ================================================== ستونِ کارکردِ روز */
+  function dayPanel(app, refresh) {
+    var st = app.state;
+    var day = st.logDay || J.today();
+    var data = WL.build(day, day);
+    var d = data.days[0];
+    var isToday = day === J.today();
+
+    var stepper = el('div.wr-step', null, [
+      el('button.wr-step-b', {
+        type: 'button', text: '›', title: 'روز قبل', 'aria-label': 'روز قبل',
+        onclick: function () { st.logDay = J.addDays(day, -1); refresh(); }
+      }),
+      el('div.wr-step-d', null, [
+        el('b', { text: isToday ? 'امروز' : d.weekday }),
+        el('span', { text: J.format(day, { long: true }) })
+      ]),
+      el('button.wr-step-b', {
+        type: 'button', text: '‹', title: 'روز بعد', 'aria-label': 'روز بعد',
+        disabled: isToday,
+        onclick: function () { st.logDay = J.addDays(day, 1); refresh(); }
+      }),
+      isToday ? null : el('button.linkish.tiny', {
+        type: 'button', text: 'امروز',
+        onclick: function () { st.logDay = ''; refresh(); }
+      })
+    ]);
+
+    var total = el('div.wr-total', null, [
+      el('div.wr-total-n', null, [
+        el('b', { text: dur(d.sec) }),
+        d.estimated ? el('span.wr-est', { text: 'برآورد', title: 'این روز پیش از زمان‌سنج بوده؛ زمان از فاصلهٔ رویدادها برآورد شده' }) : null
+      ]),
+      el('div.wr-total-sub', {
+        text: [
+          d.cases ? fa(d.cases) + ' پرونده' : '',
+          d.events ? fa(d.events) + ' رویداد' : '',
+          d.tasksDone ? fa(d.tasksDone) + ' کار انجام شد' : '',
+          d.start && d.end ? 'از ' + fa(d.start) + ' تا ' + fa(d.end) : ''
+        ].filter(Boolean).join(' · ') || 'هنوز کاری ثبت نشده است.'
+      }),
+      d.manualSec ? el('div.wr-total-sub', {
+        text: 'شامل ' + dur(d.manualSec) + ' کارِ ثبت‌شدهٔ دستی (بیرون از برنامه)'
+      }) : null
+    ]);
+
+    var box = el('aside.wr-day', null, [
+      el('div.wr-day-head', null, [
+        el('h2', { text: 'کارکرد' }),
+        el('div.spacer'),
+        el('button.btn.small.primary', {
+          type: 'button', text: '＋ ثبت کار انجام‌شده',
+          title: 'کاری که بیرون از برنامه انجام دادید (تماس، جلسه، پروندهٔ کاغذی) با زمانش',
+          onclick: function () { w.UITasks.dialog(app, { log: true, day: day }, refresh); }
+        })
+      ]),
+      stepper,
+      total
+    ]);
+
+    // --- پرونده‌های این روز، به ترتیبِ زمان
+    var list = data.cases;
+    if (list.length) {
+      var max = list.reduce(function (m, c) { return Math.max(m, c.total); }, 0) || 1;
+      box.appendChild(el('h3.wr-sub', { text: 'روی چه پرونده‌هایی' }));
+      box.appendChild(el('div.wr-cases', null, list.map(function (c) {
+        var t = caseTitle(c);
+        var det = el('details.wr-case' + (c.id ? '' : '.is-free'));
+        det.appendChild(el('summary', null, [
+          el('div.wr-case-top', null, [
+            t.no ? el('span.reg-no', { text: t.no }) : null,
+            el('b.wr-case-name', { text: t.name }),
+            el('div.spacer'),
+            el('span.wr-case-t', { text: dur(c.total, true), title: dur(c.total) })
+          ]),
+          el('div.wr-bar', null, [el('span', { style: 'width:' + Math.max(4, c.total * 100 / max) + '%' })]),
+          chips(c.counts, c.fields)
+        ]));
+        det.appendChild(eventList(c.events));
+        if (c.id) {
+          det.appendChild(el('button.linkish.tiny.wr-open', {
+            type: 'button', text: 'باز کردن پرونده ←',
+            onclick: function () { openCase(app, c.id); }
+          }));
+        }
+        return det;
+      })));
+    }
+
+    // --- روندِ روز: نشست‌ها
+    var bl = d.blocks.filter(function (b) { return !b.untimed; });
+    if (bl.length) {
+      box.appendChild(el('h3.wr-sub', { text: 'روندِ روز' }));
+      box.appendChild(el('ol.wr-timeline', null, bl.map(function (b) {
+        var names = b.cases.map(function (c) {
+          var rec = c.caseId ? M.get(c.caseId) : null;
+          return rec ? w.U.toLatinDigits(rec.caseNo || '') : 'بی‌پرونده';
+        });
+        return el('li', null, [
+          el('span.wr-tl-t', { text: fa(b.start) + (b.end !== b.start ? '–' + fa(b.end) : '') }),
+          el('span.wr-tl-x', {
+            text: fa(b.events.length) + ' رویداد روی ' +
+              (names.length > 3 ? fa(names.length) + ' پرونده' : names.join('، '))
+          })
+        ]);
+      })));
+    }
+
+    // --- زمان در صفحه‌ها
+    if (data.views.length) {
+      box.appendChild(el('p.wr-views', {
+        text: 'بیرون از پرونده‌ها: ' + data.views.slice(0, 4).map(function (v) {
+          return v.label + ' ' + dur(v.sec, true);
+        }).join(' · ')
+      }));
+    }
+
+    if (!list.length && !bl.length) {
+      box.appendChild(el('p.muted.tiny.wr-empty', {
+        text: isToday
+          ? 'از همین حالا هر دقیقه‌ای که روی پرونده‌ها کار کنید، اینجا می‌آید — ' +
+            'با هر ویرایش، فرم، مینوت و سند. کارِ بیرون از برنامه را با «ثبت کار انجام‌شده» بنویسید.'
+          : 'در این روز کاری ثبت نشده است.'
+      }));
+    }
+    return box;
+  }
+
+  /* ======================================================= گزارش کار */
+  var RANGES = [
+    { key: 'today', label: 'امروز' },
+    { key: 'week', label: 'این هفته' },
+    { key: 'lastWeek', label: 'هفتهٔ گذشته' },
+    { key: 'month', label: 'این ماه' },
+    { key: 'lastMonth', label: 'ماه گذشته' },
+    { key: 'custom', label: 'بازهٔ دلخواه' }
+  ];
+
+  function rangeOf(st) {
+    var key = st.wrRange || 'week';
+    if (key === 'today') return { from: J.today(), to: J.today(), label: 'امروز' };
+    return w.Karnameh.range(key, st.wrCustom || {});
+  }
+
+  function tile(value, label, hint, tone) {
+    return el('div.wr-tile' + (tone ? '.' + tone : ''), null, [
+      el('b', { text: value }),
+      el('span', { text: label }),
+      hint ? el('small', { text: hint }) : null
+    ]);
+  }
+
+  function section(title, sub, body) {
+    return el('section.wr-sec', null, [
+      el('div.wr-sec-head', null, [el('h3', { text: title }), sub ? el('p', { text: sub }) : null]),
+      body
+    ]);
+  }
+
+  function table(head, rows, cls) {
+    return el('div.table-scroll', null, [el('table.c-table.wr-table' + (cls || ''), null, [
+      el('thead', null, [el('tr', null, head.map(function (h) { return el('th', { text: h }); }))]),
+      el('tbody', null, rows)
+    ])]);
+  }
+
+  /** نمودارِ ستونیِ روز به روز — زمانِ ثبت‌شده، دستی و برآورد، روی هم */
+  function dayChart(app, data) {
+    var max = data.days.reduce(function (m, d) { return Math.max(m, d.sec); }, 0) || 1;
+    var many = data.days.length > 40;
+    var chart = el('div.wr-chart' + (many ? '.is-dense' : ''), { role: 'img',
+      'aria-label': 'زمان کار روز به روز' });
+    data.days.forEach(function (d) {
+      var col = el('button.wr-col' + (d.holiday ? '.is-off' : '') + (d.date === J.today() ? '.is-today' : ''), {
+        type: 'button',
+        title: d.weekday + ' ' + J.format(d.date) + ' — ' + dur(d.sec) +
+          (d.estimated ? ' (برآورد)' : '') + (d.events ? '، ' + fa(d.events) + ' رویداد' : ''),
+        onclick: function () { app.state.taskTab = 'work'; app.state.logDay = d.date; app.render(); }
+      }, [
+        el('span.wr-col-bar', null, [
+          el('span.wr-seg.trk', { style: 'height:' + (d.trackedSec * 100 / max) + '%' }),
+          el('span.wr-seg.man', { style: 'height:' + (d.manualSec * 100 / max) + '%' }),
+          el('span.wr-seg.est', { style: 'height:' + (d.estSec * 100 / max) + '%' })
+        ]),
+        el('span.wr-col-l', { text: fa(Number(d.date.slice(6))) })
+      ]);
+      chart.appendChild(col);
+    });
+    return el('div', null, [
+      chart,
+      el('div.wr-legend', null, [
+        el('span.k.trk', { text: 'زمانِ ثبت‌شده در برنامه' }),
+        el('span.k.man', { text: 'ثبت دستی' }),
+        el('span.k.est', { text: 'برآورد (روزهای پیش از زمان‌سنج)' }),
+        el('span.muted', { text: 'روی هر روز بزنید تا کارکردِ همان روز باز شود.' })
+      ])
+    ]);
+  }
+
+  function barList(items, fmt) {
+    var max = items.reduce(function (m, x) { return Math.max(m, x.v); }, 0) || 1;
+    return el('ul.wr-bars', null, items.map(function (x) {
+      return el('li', null, [
+        el('span.wr-bars-l', { text: x.label }),
+        el('span.wr-bars-b', null, [el('span', { style: 'width:' + Math.max(2, x.v * 100 / max) + '%' })]),
+        el('span.wr-bars-n', { text: fmt ? fmt(x.v) : fa(x.v) })
+      ]);
+    }));
+  }
+
+  function render(app, mount) {
+    var st = app.state;
+    var r = rangeOf(st);
+    var data = WL.build(r.from, r.to);
+    var T = data.totals, K = data.tasks;
+    var worked = T.workedDays || 0;
+
+    // --- نوار بازه
+    var bar = el('div.wr-range', null, RANGES.map(function (x) {
+      return el('button.chip-btn' + ((st.wrRange || 'week') === x.key ? '.on' : ''), {
+        type: 'button', text: x.label,
+        onclick: function () { st.wrRange = x.key; app.render(); }
+      });
+    }));
+    if ((st.wrRange || 'week') === 'custom') {
+      st.wrCustom = st.wrCustom || { from: r.from, to: r.to };
+      bar.appendChild(el('span.wr-custom', null, [
+        el('span.muted.tiny', { text: 'از' }),
+        w.DatePicker.field(st.wrCustom.from, function (v) { st.wrCustom.from = v; if (v) app.render(); }),
+        el('span.muted.tiny', { text: 'تا' }),
+        w.DatePicker.field(st.wrCustom.to, function (v) { st.wrCustom.to = v; if (v) app.render(); })
+      ]));
+    }
+    bar.appendChild(el('div.spacer'));
+    bar.appendChild(el('button.btn.small.ghost', {
+      type: 'button', text: 'چاپ', onclick: function () { printIt(data, r); }
+    }));
+    bar.appendChild(el('button.btn.small', {
+      type: 'button', text: 'خروجی اکسل', onclick: function () { excel(data, r); }
+    }));
+
+    var head = el('div.wr-head', null, [
+      el('h2', { text: 'گزارش کار — ' + J.format(r.from) + (r.to !== r.from ? ' تا ' + J.format(r.to) : '') }),
+      el('p.wr-lead', { text: sentence(data) }),
+      bar
+    ]);
+
+    // --- کاشی‌ها
+    var tiles = el('div.wr-tiles', null, [
+      tile(dur(T.sec), 'زمان کار',
+        T.estSec ? 'شامل ' + dur(T.estSec) + ' برآورد' : (T.manualSec ? 'شامل ' + dur(T.manualSec) + ' ثبت دستی' : ''), 'hero'),
+      tile(worked ? dur(T.sec / worked) : '—', 'میانگین هر روز کاری', fa(worked) + ' روز کاری'),
+      tile(fa(T.cases), 'پرونده رسیدگی شد', fa(T.events) + ' رویداد'),
+      tile(fa(T.edit + T.create), 'ویرایش و ثبت', T.fields ? fa(T.fields) + ' فیلد تغییر کرد' : ''),
+      tile(fa(T.form + T.minute), 'فرم و مینوت', fa(T.form) + ' فرم · ' + fa(T.minute) + ' مینوت'),
+      tile(fa(T.doc), 'سند و اسکن'),
+      tile(fa(K.done), 'کار انجام شد', K.onTimePct != null ? fa(K.onTimePct) + '٪ در مهلت' : '', 'good'),
+      tile(fa(K.overdueNow), 'کارِ عقب‌افتادهٔ الان', '', K.overdueNow ? 'bad' : '')
+    ]);
+
+    var body = el('div.wr-body');
+    body.appendChild(section('زمان، روز به روز', 'هر ستون یک روز؛ جمعه کم‌رنگ است.', dayChart(app, data)));
+
+    // --- پرونده‌ها
+    var caseRows = data.cases.slice(0, st.wrAllCases ? 1000 : 25).map(function (c) {
+      var t = caseTitle(c);
+      var tr = el('tr.wr-tr' + (c.id ? '' : '.is-free'), { tabindex: '0' }, [
+        el('td', null, [t.no ? el('span.reg-no', { text: t.no }) : el('span.muted', { text: '—' })]),
+        el('td', null, [el('b', { text: t.name }), c.unit ? el('div.muted.tiny', { text: c.unit }) : null]),
+        el('td.num', { text: dur(c.total, true), title: dur(c.total) +
+          (c.estSec ? ' (برآورد: ' + dur(c.estSec) + ')' : '') + (c.manualSec ? ' (دستی: ' + dur(c.manualSec) + ')' : '') }),
+        el('td.num', { text: c.counts.edit ? fa(c.counts.edit) + (c.fields ? ' / ' + fa(c.fields) : '') : '—' }),
+        el('td.num', { text: c.counts.form ? fa(c.counts.form) : '—' }),
+        el('td.num', { text: c.counts.minute ? fa(c.counts.minute) : '—' }),
+        el('td.num', { text: c.counts.doc ? fa(c.counts.doc) : '—' }),
+        el('td.num', { text: c.counts.task ? fa(c.counts.task) : '—' }),
+        el('td.num', { text: c.events.length ? fa(c.events.length) : '—' }),
+        el('td', { text: c.last ? J.format(J.pack.apply(null, (function () {
+          var j = J.toJalali(new Date(c.last)); return [j.jy, j.jm, j.jd];
+        })())) : '' })
+      ]);
+      var detail = el('tr.wr-detail', null, [el('td', { colspan: 10 }, [
+        eventList(c.events, true),
+        c.id ? el('button.linkish.tiny', {
+          type: 'button', text: 'باز کردن پرونده ←', onclick: function () { openCase(app, c.id); }
+        }) : null
+      ])]);
+      detail.style.display = 'none';
+      function toggle() {
+        var open = detail.style.display === 'none';
+        detail.style.display = open ? '' : 'none';
+        tr.classList.toggle('is-open', open);
+      }
+      tr.addEventListener('click', toggle);
+      tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') toggle(); });
+      return [tr, detail];
+    });
+    var flat = [];
+    caseRows.forEach(function (p) { flat.push(p[0], p[1]); });
+    var casesBody = data.cases.length ? el('div', null, [
+      table(['پرونده', 'کارمند', 'زمان', 'ویرایش / فیلد', 'فرم', 'مینوت', 'سند', 'کار', 'رویداد', 'آخرین کار'], flat),
+      data.cases.length > 25 && !st.wrAllCases ? el('button.btn.small.ghost', {
+        type: 'button', text: 'همهٔ ' + fa(data.cases.length) + ' پرونده',
+        onclick: function () { st.wrAllCases = true; app.render(); }
+      }) : null
+    ]) : el('p.muted', { text: 'در این بازه روی پرونده‌ای کار ثبت نشده است.' });
+    body.appendChild(section('پرونده به پرونده', 'به ترتیبِ زمان. روی هر سطر بزنید تا رویدادهایش با تاریخ و ساعت باز شود.', casesBody));
+
+    // --- نوع کار و صفحه‌ها
+    var two = el('div.wr-two', null, [
+      section('چه نوع کاری', null, data.sorts.length
+        ? barList(data.sorts.map(function (s) { return { label: s.label, v: s.n }; }))
+        : el('p.muted', { text: 'رویدادی ثبت نشده.' })),
+      section('زمان بیرون از پرونده‌ها', 'صفحه‌هایی که در آن‌ها کار کردید.', data.views.length
+        ? barList(data.views.map(function (v) { return { label: v.label, v: v.sec }; }), function (v) { return dur(v, true); })
+        : el('p.muted', { text: 'زمانی ثبت نشده.' }))
+    ]);
+    body.appendChild(two);
+
+    // --- کارها
+    body.appendChild(section('کارها', 'کارهای آزاد (چک‌لیست‌ها جدا شمرده می‌شوند).', taskBlock(app, K)));
+
+    // --- روز به روز
+    var dayRows = data.days.slice().reverse().filter(function (d) { return d.sec || d.events; }).map(function (d) {
+      return el('tr', null, [
+        el('td', { text: d.weekday }),
+        el('td', { text: J.format(d.date) }),
+        el('td', { text: d.start ? fa(d.start) + (d.end ? '–' + fa(d.end) : '') : '—' }),
+        el('td.num', { text: dur(d.sec, true) + (d.estimated ? ' *' : '') }),
+        el('td.num', { text: fa(d.cases) }),
+        el('td.num', { text: fa(d.events) }),
+        el('td.num', { text: fa(d.fields) }),
+        el('td.num', { text: fa(d.tasksDone) })
+      ]);
+    });
+    body.appendChild(section('روز به روز', '* یعنی زمانِ آن روز برآورد است.', dayRows.length
+      ? table(['روز', 'تاریخ', 'از–تا', 'زمان', 'پرونده', 'رویداد', 'فیلد', 'کار انجام‌شده'], dayRows)
+      : el('p.muted', { text: 'در این بازه روزِ کاری ثبت نشده.' })));
+
+    w.U.clear(mount);
+    mount.appendChild(el('div.wr', null, [head, tiles, body]));
+  }
+
+  function sentence(data) {
+    var T = data.totals, K = data.tasks;
+    if (!T.sec && !T.events && !K.done) return 'در این بازه کاری ثبت نشده است.';
+    var bits = [];
+    if (T.sec) bits.push(dur(T.sec) + ' کار');
+    if (T.cases) bits.push('روی ' + fa(T.cases) + ' پرونده');
+    var s = bits.join(' ');
+    var more = [];
+    if (T.form + T.minute) more.push(fa(T.form + T.minute) + ' فرم و مینوت');
+    if (T.doc) more.push(fa(T.doc) + ' سند');
+    if (K.done) more.push(fa(K.done) + ' کار انجام‌شده');
+    return (s ? s + '؛ ' : '') + more.join('، ') + (more.length ? '.' : '');
+  }
+
+  function taskBlock(app, K) {
+    var box = el('div.wr-tasks');
+    box.appendChild(el('div.wr-tiles.small', null, [
+      tile(fa(K.created), 'ثبت شد'),
+      tile(fa(K.done), 'انجام شد', '', 'good'),
+      tile(K.onTimePct != null ? fa(K.onTimePct) + '٪' : '—', 'در مهلت', fa(K.onTime) + ' در مهلت · ' + fa(K.late) + ' با تأخیر'),
+      tile(K.avgDays == null ? '—' : (K.avgDays === 0 ? 'همان روز' : fa(K.avgDays) + ' روز'), 'میانگینِ ثبت تا انجام'),
+      tile(fa(K.cancelled), 'لغو شد'),
+      tile(K.minutes ? dur(K.minutes * 60) : '—', 'زمانِ ثبت‌شدهٔ دستی'),
+      tile(fa(K.openNow), 'باز و در مهلتِ الان'),
+      tile(fa(K.overdueNow), 'عقب‌افتادهٔ الان', '', K.overdueNow ? 'bad' : '')
+    ]));
+    function rows(list) {
+      return list.map(function (x) {
+        return el('tr', null, [
+          el('td', { text: x.key }),
+          el('td.num', { text: fa(x.created) }),
+          el('td.num', { text: fa(x.done) }),
+          el('td.num', { text: fa(x.onTime) }),
+          el('td.num' + (x.late ? '.late' : ''), { text: fa(x.late) }),
+          el('td.num', { text: fa(x.cancelled) }),
+          el('td.num', { text: fa(x.open) }),
+          el('td.num' + (x.overdue ? '.late' : ''), { text: fa(x.overdue) }),
+          el('td.num', { text: x.minutes ? dur(x.minutes * 60, true) : '—' })
+        ]);
+      });
+    }
+    var H = ['ثبت', 'انجام', 'در مهلت', 'با تأخیر', 'لغو', 'باز', 'عقب', 'زمان دستی'];
+    box.appendChild(el('div.wr-two', null, [
+      el('div', null, [el('h4', { text: 'به تفکیک دسته' }),
+        K.byCategory.length ? table(['دسته'].concat(H), rows(K.byCategory)) : el('p.muted.tiny', { text: 'کاری نیست.' })]),
+      el('div', null, [el('h4', { text: 'به تفکیک ارجاع‌دهنده' }),
+        K.byFrom.length ? table(['ارجاع‌دهنده'].concat(H), rows(K.byFrom)) : el('p.muted.tiny', { text: 'کاری نیست.' })])
+    ]));
+    if (K.doneList.length) {
+      box.appendChild(el('h4', { text: 'کارهای انجام‌شده' }));
+      box.appendChild(table(['تاریخ', 'کار', 'پرونده', 'دسته', 'ارجاع', 'مهلت', 'زمان'],
+        K.doneList.slice(0, 200).map(function (n) {
+          var rec = n.caseId ? M.get(n.caseId) : null;
+          var tone = n.followUp ? (n.doneAt <= n.followUp ? 'در مهلت' : 'با تأخیر') : '';
+          return el('tr', null, [
+            el('td', { text: J.format(n.doneAt) }),
+            el('td', { text: n.title || '' }),
+            el('td', null, [rec ? el('button.linkish.tiny', {
+              type: 'button', text: w.U.toLatinDigits(rec.caseNo || '') + ' ' + WL.nameOf(rec),
+              onclick: function () { openCase(app, rec.id); }
+            }) : el('span.muted', { text: '—' })]),
+            el('td', { text: n.category || '—' }),
+            el('td', { text: n.from || '—' }),
+            el('td' + (tone === 'با تأخیر' ? '.late' : ''), { text: tone || '—' }),
+            el('td.num', { text: n.minutes ? dur(n.minutes * 60, true) : '—' })
+          ]);
+        })));
+    }
+    return box;
+  }
+
+  /* ------------------------------------------------------- خروجی‌ها */
+  function minutes(sec) { return Math.round((sec || 0) / 60); }
+
+  function excel(data, r) {
+    var T = data.totals, K = data.tasks;
+    var summary = [['شاخص', 'مقدار'],
+      ['بازه', J.format(r.from, { latin: true }) + ' تا ' + J.format(r.to, { latin: true })],
+      ['زمان کار (دقیقه)', minutes(T.sec)], ['زمانِ ثبت‌شده در برنامه (دقیقه)', minutes(T.trackedSec)],
+      ['ثبت دستی (دقیقه)', minutes(T.manualSec)], ['برآورد (دقیقه)', minutes(T.estSec)],
+      ['روز کاری', T.workedDays], ['پرونده', T.cases], ['رویداد', T.events],
+      ['فیلد تغییرکرده', T.fields], ['فرم', T.form], ['مینوت', T.minute], ['سند', T.doc],
+      ['کار ثبت‌شده', K.created], ['کار انجام‌شده', K.done], ['در مهلت', K.onTime], ['با تأخیر', K.late],
+      ['لغو', K.cancelled], ['عقب‌افتادهٔ الان', K.overdueNow]];
+    var days = [['تاریخ', 'روز', 'شروع', 'پایان', 'زمان (دقیقه)', 'برآورد؟', 'پرونده', 'رویداد', 'فیلد', 'کار انجام‌شده']]
+      .concat(data.days.map(function (d) {
+        return [J.format(d.date, { latin: true }), d.weekday, d.start, d.end, minutes(d.sec),
+          d.estimated ? 'بله' : '', d.cases, d.events, d.fields, d.tasksDone];
+      }));
+    var cases = [['شماره پرونده', 'کارمند', 'واحد', 'زمان (دقیقه)', 'ویرایش', 'فیلد', 'فرم', 'مینوت', 'سند', 'کار', 'رویداد']]
+      .concat(data.cases.map(function (c) {
+        return [w.U.toLatinDigits(c.caseNo || ''), c.name || (c.id ? '' : 'بیرون از پرونده‌ها'), c.unit,
+          minutes(c.total), c.counts.edit || 0, c.fields, c.counts.form || 0, c.counts.minute || 0,
+          c.counts.doc || 0, c.counts.task || 0, c.events.length];
+      }));
+    var evs = [['تاریخ', 'ساعت', 'شماره پرونده', 'نوع', 'رویداد', 'جزئیات', 'دقیقهٔ دستی']];
+    data.cases.forEach(function (c) {
+      c.events.forEach(function (e) {
+        evs.push([J.format(e.day, { latin: true }), e.time, w.U.toLatinDigits(c.caseNo || ''),
+          (WL.SORTS.filter(function (s) { return s.key === e.sort; })[0] || {}).label || '', e.label,
+          e.detail, e.minutes || '']);
+      });
+    });
+    var tasks = [['تاریخ انجام', 'کار', 'شماره پرونده', 'دسته', 'ارجاع‌دهنده', 'سررسید', 'دقیقه']]
+      .concat(K.doneList.map(function (n) {
+        var rec = n.caseId ? M.get(n.caseId) : null;
+        return [J.format(n.doneAt, { latin: true }), n.title || '', rec ? w.U.toLatinDigits(rec.caseNo || '') : '',
+          n.category || '', n.from || '', n.followUp ? J.format(n.followUp, { latin: true }) : '', n.minutes || ''];
+      }));
+    var blob = w.XLSX.build([
+      { name: 'خلاصه', rows: summary, widths: [30, 24] },
+      { name: 'روزانه', rows: days, widths: [12, 10, 8, 8, 12, 8, 8, 8, 8, 12] },
+      { name: 'پرونده‌ها', rows: cases, widths: [14, 22, 22, 12, 8, 8, 8, 8, 8, 8, 8] },
+      { name: 'رویدادها', rows: evs, widths: [12, 8, 14, 14, 28, 50, 10] },
+      { name: 'کارها', rows: tasks, widths: [12, 36, 14, 18, 18, 12, 8] }
+    ]);
+    w.U.download('gozaresh-kar-' + r.from + '-' + r.to + '.xlsx', blob);
+  }
+
+  function printIt(data, r) {
+    var T = data.totals, K = data.tasks;
+    function ptable(head, rows) {
+      return el('table.p-table', null, [
+        el('thead', null, [el('tr', null, head.map(function (h) { return el('th', { text: h }); }))]),
+        el('tbody', null, rows.map(function (row) {
+          return el('tr', null, row.map(function (c) { return el('td', { text: String(c) }); }));
+        }))
+      ]);
+    }
+    w.UIPrint.printNodes('گزارش کار', J.format(r.from) + ' تا ' + J.format(r.to), [
+      el('div.p-section', null, [el('p', { text: sentence(data) })]),
+      el('div.p-section', null, [el('h2', { text: 'خلاصه' }), ptable(['شاخص', 'مقدار'], [
+        ['زمان کار', dur(T.sec)], ['روز کاری', fa(T.workedDays)], ['پرونده', fa(T.cases)],
+        ['رویداد', fa(T.events)], ['فرم و مینوت', fa(T.form + T.minute)], ['سند', fa(T.doc)],
+        ['کار انجام‌شده', fa(K.done) + (K.onTimePct != null ? ' (' + fa(K.onTimePct) + '٪ در مهلت)' : '')]
+      ])]),
+      el('div.p-section', null, [el('h2', { text: 'پرونده‌ها' }), ptable(
+        ['پرونده', 'کارمند', 'زمان', 'ویرایش', 'فرم', 'مینوت', 'سند', 'کار'],
+        data.cases.slice(0, 60).map(function (c) {
+          return [w.U.toLatinDigits(c.caseNo || '—'), c.name || (c.id ? '' : 'بیرون از پرونده‌ها'),
+            dur(c.total, true), fa(c.counts.edit || 0), fa(c.counts.form || 0), fa(c.counts.minute || 0),
+            fa(c.counts.doc || 0), fa(c.counts.task || 0)];
+        }))]),
+      el('div.p-section', null, [el('h2', { text: 'روز به روز' }), ptable(
+        ['روز', 'تاریخ', 'زمان', 'پرونده', 'رویداد', 'کار'],
+        data.days.filter(function (d) { return d.sec || d.events; }).map(function (d) {
+          return [d.weekday, J.format(d.date), dur(d.sec, true), fa(d.cases), fa(d.events), fa(d.tasksDone)];
+        }))])
+    ]);
+  }
+
+  w.UIWorkReport = { dayPanel: dayPanel, render: render, excel: excel, RANGES: RANGES };
 })(window);
 
 </script>
@@ -31798,7 +33154,10 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     var s = String(B().site || '').trim();
     if (!s) return null;
     var href = /^https?:\/\//i.test(s) ? s : 'https://' + s;
-    return { href: href, text: s.replace(/^https?:\/\//i, '').replace(/\/$/, '') };
+    var text = s.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '');
+    // نامِ سایت با حرفِ بزرگ آغاز می‌شود: Hosseinnorouzi.com
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+    return { href: href, text: text };
   }
 
   /* --------------------------------------------------------- نمادها */
@@ -32354,6 +33713,8 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     var chip = statusChip;
     if (chip) chip.classList.add('busy');
     return Promise.resolve()
+      // زمانِ شمرده‌شده پیش از خواندنِ دوبارهٔ فایل نوشته شود، وگرنه می‌پرد
+      .then(function () { return w.Timelog ? w.Timelog.save() : null; })
       .then(function () { return w.Store.flushNow(); })
       .then(function () {
         // اگر به فایلی وصل نیستیم، چیزی برای خواندن از دیسک نیست
@@ -32369,6 +33730,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         return w.Notes.load().then(function () { return took; });
       })
       .then(function (took) {
+        if (w.Timelog) w.Timelog.reload();
         app.state.dirty = false;
         app.render();
         renderAccessBar();
@@ -32435,6 +33797,9 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
     w.U.$$('[data-nav]').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-nav') === active);
     });
+    // مقصدی که در «⋯» است، روی خودِ دکمهٔ «⋯» نشان داده می‌شود
+    var more = document.querySelector('.topbar .more-btn');
+    if (more) more.classList.toggle('active', active === 'archive' || active === 'people');
   }
 
   // ------------------------------------------------------------- نوار وضعیت
@@ -32554,9 +33919,10 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),
+      /* «بایگانی» و «اشخاص» گاه‌به‌گاه لازم‌اند، نه هر روز؛ جایشان در «⋯»
+         است تا نوار بالا برای پنج مقصدِ روزانه جا داشته باشد. */
       el('nav.main-nav', null, [navButtons.work, navButtons.list,
-        navButtons.tasks, navButtons.calendar, navButtons.archive,
-        navButtons.people, navButtons.report]),
+        navButtons.tasks, navButtons.calendar, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -32600,7 +33966,7 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
       ]),
       // روی موبایل همهٔ اقدام‌های بالا در یک شیت جمع می‌شوند
       el('button.icon-btn.more-btn', {
-        type: 'button', text: '⋯', title: 'اقدام‌ها',
+        type: 'button', text: '⋯', title: 'بایگانی، اشخاص و اقدام‌های دیگر',
         'aria-label': 'اقدام‌ها',
         onclick: openActionSheet
       })
@@ -32624,6 +33990,11 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
         icon: 'fileZip', label: 'بایگانی اسناد',
         hint: 'دسته‌های اسکن و سندهای بی‌پرونده',
         onclick: function () { app.goArchive(); }
+      },
+      {
+        icon: 'people', label: 'اشخاص',
+        hint: 'کارمندان و پرونده‌های هرکدام',
+        onclick: function () { app.goPeople(); }
       },
       {
         icon: 'refresh', label: 'به‌روزرسانی',
@@ -32915,6 +34286,11 @@ window.SQLJS_WASM_B64 = 'AGFzbQEAAAABoARFYAJ/fwF/YAF/AX9gA39/fwBgA39/fwF/YAF/AGA
          و فقط برای مرحله‌ای که پرونده الان در آن است. */
       return w.Checklist.ensureAll().catch(function () { return 0; });
     }).then(function () {
+      // زمانِ کار: یک بار راه می‌افتد؛ با دیتابیسِ دیگر، از نو خوانده می‌شود
+      if (w.Timelog) {
+        if (!app.timelogOn) { w.Timelog.start(app); app.timelogOn = true; }
+        else w.Timelog.reload();
+      }
       if (topBarNode.parentNode !== document.body) {
         document.body.insertBefore(topBarNode, mount);
       }

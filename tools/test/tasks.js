@@ -373,7 +373,8 @@ function check(name, ok, extra) {
     const v = document.querySelector('.tasks-view');
     v.scrollTop = 99999;
     await new Promise(r => setTimeout(r, 120));
-    const r = document.querySelector('.task-report').getBoundingClientRect();
+    // گزارش به تبِ «گزارش کار» رفت؛ ته صفحه حالا آخرین بخشِ فهرستِ کارهاست
+    const r = document.querySelector('.task-buckets').lastElementChild.getBoundingClientRect();
     return {
       overflow: getComputedStyle(v).overflowY,
       scrollable: v.scrollHeight > v.clientHeight,
@@ -384,7 +385,7 @@ function check(name, ok, extra) {
   check('صفحهٔ کارها اسکرول می‌خورد',
     scrolled.overflow === 'auto' && scrolled.scrollable && scrolled.moved,
     JSON.stringify(scrolled));
-  check('گزارشِ پایین صفحه با اسکرول دیده می‌شود', scrolled.reportVisible);
+  check('ته صفحه با اسکرول دیده می‌شود', scrolled.reportVisible);
 
   // ------------------------------------------------ دسته و بایگانی کارها
   console.log('\n— دسته‌بندی و بایگانی کارها —');

@@ -338,6 +338,8 @@
     var chip = statusChip;
     if (chip) chip.classList.add('busy');
     return Promise.resolve()
+      // زمانِ شمرده‌شده پیش از خواندنِ دوبارهٔ فایل نوشته شود، وگرنه می‌پرد
+      .then(function () { return w.Timelog ? w.Timelog.save() : null; })
       .then(function () { return w.Store.flushNow(); })
       .then(function () {
         // اگر به فایلی وصل نیستیم، چیزی برای خواندن از دیسک نیست
@@ -353,6 +355,7 @@
         return w.Notes.load().then(function () { return took; });
       })
       .then(function (took) {
+        if (w.Timelog) w.Timelog.reload();
         app.state.dirty = false;
         app.render();
         renderAccessBar();
@@ -419,6 +422,9 @@
     w.U.$$('[data-nav]').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-nav') === active);
     });
+    // مقصدی که در «⋯» است، روی خودِ دکمهٔ «⋯» نشان داده می‌شود
+    var more = document.querySelector('.topbar .more-btn');
+    if (more) more.classList.toggle('active', active === 'archive' || active === 'people');
   }
 
   // ------------------------------------------------------------- نوار وضعیت
@@ -538,9 +544,10 @@
           el('small', { text: 'کمیتهٔ انضباطی' })
         ])
       ]),
+      /* «بایگانی» و «اشخاص» گاه‌به‌گاه لازم‌اند، نه هر روز؛ جایشان در «⋯»
+         است تا نوار بالا برای پنج مقصدِ روزانه جا داشته باشد. */
       el('nav.main-nav', null, [navButtons.work, navButtons.list,
-        navButtons.tasks, navButtons.calendar, navButtons.archive,
-        navButtons.people, navButtons.report]),
+        navButtons.tasks, navButtons.calendar, navButtons.report]),
       el('div.search-wrap', null, [searchInput]),
       el('div.top-actions', null, [
         el('button.btn.primary', {
@@ -584,7 +591,7 @@
       ]),
       // روی موبایل همهٔ اقدام‌های بالا در یک شیت جمع می‌شوند
       el('button.icon-btn.more-btn', {
-        type: 'button', text: '⋯', title: 'اقدام‌ها',
+        type: 'button', text: '⋯', title: 'بایگانی، اشخاص و اقدام‌های دیگر',
         'aria-label': 'اقدام‌ها',
         onclick: openActionSheet
       })
@@ -608,6 +615,11 @@
         icon: 'fileZip', label: 'بایگانی اسناد',
         hint: 'دسته‌های اسکن و سندهای بی‌پرونده',
         onclick: function () { app.goArchive(); }
+      },
+      {
+        icon: 'people', label: 'اشخاص',
+        hint: 'کارمندان و پرونده‌های هرکدام',
+        onclick: function () { app.goPeople(); }
       },
       {
         icon: 'refresh', label: 'به‌روزرسانی',
@@ -899,6 +911,11 @@
          و فقط برای مرحله‌ای که پرونده الان در آن است. */
       return w.Checklist.ensureAll().catch(function () { return 0; });
     }).then(function () {
+      // زمانِ کار: یک بار راه می‌افتد؛ با دیتابیسِ دیگر، از نو خوانده می‌شود
+      if (w.Timelog) {
+        if (!app.timelogOn) { w.Timelog.start(app); app.timelogOn = true; }
+        else w.Timelog.reload();
+      }
       if (topBarNode.parentNode !== document.body) {
         document.body.insertBefore(topBarNode, mount);
       }

@@ -527,7 +527,16 @@
     run('کارنامه — ' + K.label(data));
   }
 
+  /** چاپِ هر چند بخشِ آماده، زیر سربرگِ استاندارد (گزارش کار و …) */
+  function printNodes(title, subtitle, nodes) {
+    var node = area();
+    node.appendChild(header(title, subtitle));
+    (nodes || []).forEach(function (n) { if (n) node.appendChild(n); });
+    run(title);
+  }
+
   w.UIPrint = {
+    printNodes: printNodes,
     printCase: printCase, printList: printList, printReport: printReport,
     printPerson: printPerson, printAgenda: printAgenda, printMinutes: printMinutes,
     printKarnameh: printKarnameh

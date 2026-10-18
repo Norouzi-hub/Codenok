@@ -216,7 +216,11 @@
       category: String(o.category || '').trim(),
       status: o.done ? 'done' : 'open',
       done: !!o.done,
-      doneAt: o.done ? J.today() : '',
+      doneAt: o.done ? (o.doneAt || J.today()) : '',
+      doneIso: o.done ? new Date().toISOString() : '',
+      /* زمانِ صرف‌شده، به دقیقه — برای کارِ بیرون از برنامه (تماس، جلسه،
+         خواندنِ پروندهٔ کاغذی) که زمان‌سنجِ برنامه نمی‌بیندش. */
+      minutes: Math.max(0, Math.round(Number(o.minutes) || 0)),
       batchId: o.batchId || '',
       docCount: o.docCount || 0,
       /* سه فیلدِ چک‌لیست: از کدام قالب، چندمین گام، مالِ کدام مرحله.
@@ -271,7 +275,8 @@
   /** بستن یک کار یا پیگیری — انجام شد */
   function complete(note) {
     var rec = note.caseId ? M.get(note.caseId) : null;
-    return update(note, { done: true, status: 'done', doneAt: J.today() })
+    return update(note, { done: true, status: 'done', doneAt: J.today(),
+      doneIso: new Date().toISOString() })
       .then(function () {
         if (rec) {
           M.addHistory(note.kind === 'task' ? 'task-done' : 'note-done', rec, [],
@@ -291,6 +296,7 @@
     var rec = note.caseId ? M.get(note.caseId) : null;
     return update(note, {
       done: true, status: 'cancelled', doneAt: J.today(),
+      doneIso: new Date().toISOString(),
       cancelReason: String(why || '').trim()
     }).then(function () {
       if (rec) {

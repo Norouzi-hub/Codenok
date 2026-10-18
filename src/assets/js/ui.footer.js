@@ -48,7 +48,10 @@
     var s = String(B().site || '').trim();
     if (!s) return null;
     var href = /^https?:\/\//i.test(s) ? s : 'https://' + s;
-    return { href: href, text: s.replace(/^https?:\/\//i, '').replace(/\/$/, '') };
+    var text = s.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '');
+    // نامِ سایت با حرفِ بزرگ آغاز می‌شود: Hosseinnorouzi.com
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+    return { href: href, text: text };
   }
 
   /* --------------------------------------------------------- نمادها */

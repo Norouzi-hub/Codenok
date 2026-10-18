@@ -82,6 +82,9 @@
     var task = o.task || null;
     var fixedCase = o.caseId || (task ? task.caseId : '');
     var lockCase = !!o.caseId && !task;      // از داخل پرونده باز شده
+    /* «ثبت کار انجام‌شده»: کاری که تمام شده و فقط باید با زمانش ثبت شود —
+       بی‌سررسید و بی‌فوریت، چون دیگر کاری برای انجام نمانده. */
+    var log = !!o.log && !task;
 
     var state = {
       title: task ? (task.title || '') : '',
@@ -91,7 +94,9 @@
       from: task ? (task.from || '') : '',
       owner: task ? (task.owner || '') : (M.state.settings.user || ''),
       category: task ? (task.category || '') : '',
-      caseId: fixedCase || ''
+      caseId: fixedCase || '',
+      minutes: task ? (task.minutes || '') : '',
+      day: o.day || J.today()
     };
 
     var body = el('div.task-dialog');
@@ -182,6 +187,35 @@
       ]));
     }
 
+    // --- زمان صرف‌شده ---
+    var minInput = el('input.input.small.task-min', {
+      type: 'number', min: '0', step: '5', inputmode: 'numeric',
+      value: state.minutes || '', placeholder: 'دقیقه'
+    });
+    minInput.addEventListener('input', function () { state.minutes = minInput.value; });
+    function minChip(n) {
+      return el('button.btn.small.ghost', {
+        type: 'button', text: w.U.toFaDigits(n) + ' د',
+        onclick: function () { state.minutes = n; minInput.value = n; }
+      });
+    }
+    var minRow = el('div.task-row', null, [
+      el('span.field-label', { text: log ? 'چقدر طول کشید' : 'زمان صرف‌شده' }),
+      minInput, minChip(15), minChip(30), minChip(45), minChip(60), minChip(90),
+      el('span.muted.tiny', {
+        text: log ? 'کارِ بیرون از برنامه — تماس، جلسه، پروندهٔ کاغذی.'
+          : 'اختیاری؛ برای کاری که بیرون از برنامه وقت گرفت.'
+      })
+    ]);
+
+    if (log) {
+      var dayField = w.DatePicker.field(state.day, function (v) { state.day = v || J.today(); });
+      body.appendChild(minRow);
+      body.appendChild(el('div.task-row', null, [
+        el('span.field-label', { text: 'تاریخ انجام' }), dayField
+      ]));
+    }
+
     // --- سررسید ---
     var dateField = w.DatePicker.field(state.followUp, function (v) {
       state.followUp = v;
@@ -196,7 +230,7 @@
         }
       });
     }
-    body.appendChild(el('div.task-row', null, [
+    if (!log) body.appendChild(el('div.task-row', null, [
       el('span.field-label', { text: 'سررسید' }),
       dateField,
       quick('امروز', 0), quick('فردا', 1), quick('یک هفته', 7),
@@ -222,9 +256,10 @@
       if (p.key === state.priority) b.classList.add('on');
       return b;
     }));
-    body.appendChild(el('div.task-row', null, [
+    if (!log) body.appendChild(el('div.task-row', null, [
       el('span.field-label', { text: 'فوریت' }), prio
     ]));
+    if (!log) body.appendChild(minRow);
 
     // --- ارجاع‌دهنده / مسئول / دسته ---
     /* این دو فیلد از دادهٔ قبلی خودشان یاد می‌گیرند: هر چه تا امروز نوشته
@@ -312,7 +347,7 @@
 
     var m;
     var save = el('button.btn.primary', {
-      type: 'button', text: task ? 'ذخیرهٔ تغییرات' : 'ثبت کار',
+      type: 'button', text: task ? 'ذخیرهٔ تغییرات' : (log ? 'ثبت کار انجام‌شده' : 'ثبت کار'),
       onclick: function () {
         if (!state.title.trim()) {
           w.U.toast('عنوان کار را بنویسید.', 'warn');
@@ -326,17 +361,25 @@
           from: state.from.trim(), owner: state.owner.trim(),
           category: state.category, caseId: state.caseId,
           caseNo: state.caseId && M.get(state.caseId)
-            ? (M.get(state.caseId).caseNo || '') : ''
+            ? (M.get(state.caseId).caseNo || '') : '',
+          minutes: Math.max(0, Math.round(Number(state.minutes) || 0))
         };
+        if (log && !patch.minutes) {
+          save.disabled = false;
+          w.U.toast('زمانش را بنویسید — چند دقیقه طول کشید؟', 'warn');
+          minInput.focus();
+          return;
+        }
         var p = task ? N.update(task, patch)
           : N.create({
             kind: 'task', caseId: patch.caseId, title: patch.title,
-            text: patch.text, followUp: patch.followUp, priority: patch.priority,
-            from: patch.from, owner: patch.owner, category: patch.category
+            text: patch.text, followUp: log ? '' : patch.followUp, priority: patch.priority,
+            from: patch.from, owner: patch.owner, category: patch.category,
+            minutes: patch.minutes, done: log, doneAt: log ? state.day : ''
           });
         p.then(function () {
           m.close();
-          w.U.toast(task ? 'کار به‌روز شد.' : 'کار ثبت شد.', 'good');
+          w.U.toast(task ? 'کار به‌روز شد.' : (log ? 'کار انجام‌شده با زمانش ثبت شد.' : 'کار ثبت شد.'), 'good');
           if (onDone) onDone();
         }).catch(function (e) {
           save.disabled = false;
@@ -345,7 +388,7 @@
       }
     });
 
-    m = w.U.modal(task ? 'ویرایش کار' : 'کار تازه', body, [
+    m = w.U.modal(task ? 'ویرایش کار' : (log ? 'ثبت کار انجام‌شده' : 'کار تازه'), body, [
       el('button.btn.ghost', {
         type: 'button', text: 'انصراف', onclick: function () { m.close(); }
       }),
@@ -459,6 +502,9 @@
     }
     if (task.from) meta.push(el('span.task-from', { text: 'از: ' + task.from }));
     if (task.category) meta.push(el('span.task-cat', { text: task.category }));
+    if (task.minutes) {
+      meta.push(el('span.task-min', { text: '⏱ ' + w.Worklog.dur(task.minutes * 60), title: 'زمان صرف‌شده' }));
+    }
     if (cancelled) {
       meta.push(el('span.task-cancel-why', {
         text: 'لغو شد' + (task.cancelReason ? ' — ' + task.cancelReason : '')
@@ -738,6 +784,7 @@
   ];
 
   function render(app, mount) {
+    if (app.state.taskTab === 'report') { renderReport(app, mount); return; }
     var st = app.state;
     if (!st.taskFilter) st.taskFilter = 'all';
     if (st.taskCat == null) st.taskCat = null;      // null = همهٔ دسته‌ها
@@ -831,9 +878,8 @@
       onclick: function () { dialog(app, {}, refresh); }
     }));
 
-    var head = el('header.wl-hero.task-hero', null, [
-      el('div.wl-hero-date', { text: J.format(J.today(), { long: true }) }),
-      el('h1.wl-hero-line', {
+    var head = el('header.wl-hero.task-hero.tk-tools', null, [
+      el('h2.tk-tools-h', {
         text: archived
           ? fa(nArchived) + ' کار در بایگانی.'
           : (!s.openTasks ? 'کارِ بازی نمانده است.'
@@ -971,10 +1017,78 @@
       }
     }
 
-    if (!archived) body.appendChild(reportBlock(app));
-
     w.U.clear(mount);
-    mount.appendChild(el('div.tasks-view', null, [head, quickBar, body]));
+    mount.appendChild(el('div.tasks-view', null, [
+      topHero(app, refresh),
+      el('div.tk-layout', null, [
+        el('section.tk-main', null, [head, quickBar, body]),
+        w.UIWorkReport.dayPanel(app, refresh)
+      ])
+    ]));
+  }
+
+  /* ================================================================
+     سرِ صفحهٔ کارها: امروز در یک نگاه، و دو تب
+     ----------------------------------------------------------------
+     «کار» فقط کاری نیست که در فهرست نوشته شده: ویرایشِ پرونده، فرم،
+     مینوت و سند هم کارند، و زمانی که روی پرونده گذاشته شد هم. این سر
+     همه را کنار هم می‌گذارد.
+     ================================================================ */
+  function topHero(app, refresh) {
+    var st = app.state;
+    var today = w.Worklog.today();
+    var d = today.days[0], T = today.totals;
+    var s = N.stats();
+    var tab = st.taskTab === 'report' ? 'report' : 'work';
+    var left = s.openTasks || 0, late = s.overdueTasks || 0;
+
+    var line = d.sec || d.events
+      ? 'امروز ' + w.Worklog.dur(d.sec) + ' کار' + (d.cases ? ' روی ' + fa(d.cases) + ' پرونده' : '') +
+        (d.tasksDone ? '، ' + fa(d.tasksDone) + ' کار انجام شد' : '') + '.'
+      : 'امروز هنوز کاری ثبت نشده است.';
+
+    function k(value, label, cls, onclick) {
+      return el((onclick ? 'button' : 'div') + '.tk-kpi' + (cls ? '.' + cls : ''),
+        onclick ? { type: 'button', onclick: onclick } : null, [
+          el('b', { text: value }), el('span', { text: label })
+        ]);
+    }
+
+    return el('header.tk-top', null, [
+      el('div.tk-top-row', null, [
+        el('div.tk-top-words', null, [
+          el('div.wl-hero-date', { text: J.format(J.today(), { long: true }) }),
+          el('h1.tk-line', { text: line })
+        ]),
+        el('div.spacer'),
+        el('div.tk-tabs', { role: 'tablist' }, [
+          { k: 'work', t: 'کارها و کارکرد' }, { k: 'report', t: 'گزارش کار' }
+        ].map(function (o) {
+          return el('button.tk-tab' + (tab === o.k ? '.on' : ''), {
+            type: 'button', role: 'tab', text: o.t, 'aria-selected': tab === o.k ? 'true' : 'false',
+            onclick: function () { st.taskTab = o.k; app.render(); }
+          });
+        }))
+      ]),
+      el('div.tk-kpis', null, [
+        k(w.Worklog.dur(d.sec), 'زمانِ کارِ امروز', 'hero'),
+        k(fa(d.cases), 'پرونده امروز'),
+        k(fa(T.edit + T.create), 'ویرایش و ثبت'),
+        k(fa(T.form + T.minute), 'فرم و مینوت'),
+        k(fa(T.doc), 'سند'),
+        k(fa(d.tasksDone), 'کار انجام شد', 'good'),
+        k(fa(left), late ? fa(late) + ' عقب‌افتاده' : 'کار باز', late ? 'bad' : '', function () {
+          st.taskTab = 'work'; st.taskFilter = 'all'; app.render();
+        })
+      ])
+    ]);
+  }
+
+  function renderReport(app, mount) {
+    var holder = el('div.tk-report');
+    w.U.clear(mount);
+    mount.appendChild(el('div.tasks-view', null, [topHero(app, function () { app.render(); }), holder]));
+    w.UIWorkReport.render(app, holder);
   }
 
   /** نوار دسته‌ها — صافی، نه گروه‌بندی؛ گروه‌بندی کلید جداگانه دارد */
