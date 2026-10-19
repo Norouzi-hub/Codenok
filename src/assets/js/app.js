@@ -913,6 +913,8 @@
     }).then(function () {
       // زمانِ کار: یک بار راه می‌افتد؛ با دیتابیسِ دیگر، از نو خوانده می‌شود
       if (w.Quality) w.Quality.ensureSince();
+      // نسخهٔ شخصی: فهرستِ همراهِ برنامه، اگر دفتر مقامات هنوز خالی است
+      if (w.Officials) w.Officials.seedIfEmpty();
       if (w.Timelog) {
         if (!app.timelogOn) { w.Timelog.start(app); app.timelogOn = true; }
         else w.Timelog.reload();

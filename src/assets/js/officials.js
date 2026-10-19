@@ -45,7 +45,8 @@
   function clean(s) {
     return w.U.toFaDigits(String(s == null ? '' : s))
       .replace(/[يى]/g, 'ی').replace(/ك/g, 'ک')
-      .replace(/ـ/g, '').replace(/[ \t ]+/g, ' ').trim();
+      .replace(/[ـ​‍‎‏﻿]/g, '')
+      .replace(/\s*[\r\n]+\s*/g, ' ').replace(/[ \t ]+/g, ' ').trim();
   }
   /** برای مقایسه: بی‌اعراب، رقمِ لاتین، نیم‌فاصله مثلِ فاصله */
   function flat(s) {
@@ -85,20 +86,37 @@
     return clean(position) + ' محترم' + (org ? ' ' + clean(org) : '');
   }
 
-  function titleOf(o) { return honorTitle(o.position, o.org); }
+  /** «منطقه 05» ← «منطقه ۵» */
+  function regionDisplay(s) {
+    return String(s || '').replace(/منطقه(\s*)([0-9۰-۹]+)/g, function (_, sp, n) {
+      return 'منطقه ' + w.U.toFaDigits(String(parseInt(w.U.toLatinDigits(n), 10)));
+    });
+  }
 
-  /** «جناب آقای احمد احمدی شهردار محترم منطقه ۵» */
+  /** عنوانِ کامل، همان‌طور که در نامه می‌آید */
+  function titleOf(o) {
+    if (o.title) return regionDisplay(clean(o.title));
+    return honorTitle(o.position, o.org);
+  }
+
+  /*
+   * «جناب آقای احمد احمدی شهردار محترم منطقه ۵».
+   * title: عنوانی که گیرندهٔ مینوت ساخته؛ ولی اگر فهرست خودش عنوانِ کامل
+   * دارد («سرپرست محترم و نایب رئیس هیئت مدیره …»)، همان نوشته می‌شود.
+   */
   function address(o, title) {
     var name = String(o.name || '').trim();
-    var t = title || titleOf(o);
+    var t = o.title ? titleOf(o) : (title || titleOf(o));
     return name ? (o.honor || HONORS[0]) + ' ' + name + ' ' + t : t;
   }
 
   /** رتبهٔ پیشنهادی برای فعلِ نامه (مقتضی/شایسته/خواهشمند) */
-  function guessRank(position, org) {
-    var s = flat(position + ' ' + org);
-    if (/شهردار(?!ی)|معاون شهردار تهران|شهردار تهران|شورا/.test(s)) return 'high';
-    if (/^مدیرعامل/.test(s) && /(شرکت|موسسه|مؤسسه)/.test(s)) return 'low';
+  function guessRank(title, org) {
+    var t = flat(title), g = flat(org);
+    if (/^شهردار(?!ی)/.test(t) || /^(جانشین|دستیار) محترم شهردار/.test(t)) return 'high';
+    if (/^(شرکت|موسسه|مؤسسه)/.test(g.replace(/^شهرداری\s+/, ''))) return 'low';
+    // معاونانِ شهردارِ تهران؛ معاونِ منطقه همتراز است
+    if (/^(معاون|معاونت)(\s|$)/.test(t) && !/منطقه/.test(t + ' ' + g)) return 'high';
     return 'peer';
   }
 
@@ -109,13 +127,27 @@
   }
 
   /* ------------------------------------------------------ جست‌وجو */
+  /** بخشِ بعد از «محترم»: «شهردار محترم منطقه پنج» ← «منطقه پنج» */
+  function orgPart(title) {
+    var t = flat(title).split(' ');
+    var i = t.indexOf('محترم');
+    return i >= 0 ? t.slice(i + 1).join(' ') : '';
+  }
+
+  /*
+   * کسی که این عنوان را دارد. اول عنوانِ کامل؛ وگرنه همان واحد: نامه به
+   * «مدیرعامل محترم شرکت خدمات اداری شهر» به سرپرستِ فعلیِ همان شرکت می‌رسد.
+   * «معاون … منطقه ۵» با شهردارِ منطقه ۵ اشتباه نمی‌شود — واحدش «مالی و
+   * اداری منطقه ۵» است، نه «منطقه ۵».
+   */
   function find(title) {
     var k = key(title);
     if (!k) return null;
-    var all = list();
-    for (var i = 0; i < all.length; i++) {
-      if (key(all[i].position + ' ' + all[i].org) === k) return all[i];
-    }
+    var all = list(), i;
+    for (i = 0; i < all.length; i++) if (key(titleOf(all[i])) === k) return all[i];
+    var ok = key(orgPart(title));
+    if (!ok) return null;
+    for (i = 0; i < all.length; i++) if (all[i].org && key(all[i].org) === ok) return all[i];
     return null;
   }
 
@@ -124,7 +156,7 @@
   /** گیرندهٔ مینوت از روی یک نفر در دفتر */
   function asRecipient(o) {
     return {
-      id: 'off:' + o.id, title: titleOf(o), rank: o.rank || guessRank(o.position, o.org),
+      id: 'off:' + o.id, title: titleOf(o), rank: o.rank || guessRank(titleOf(o), o.org),
       kind: 'workplace', unit: unitOf(o.org), match: '', official: o.id
     };
   }
@@ -189,6 +221,39 @@
     return { position: s.slice(0, m.index).trim(), org: m[1].trim() };
   }
 
+  /*
+   * یک ستون برای همه‌چیز: «جناب آقای علی احمدی مدیرکل محترم امور …».
+   * نام تا اولین واژهٔ سمت است؛ عنوان از همان‌جا تا آخر، همان‌طور که نوشته شده.
+   */
+  var ROLE_TOKEN = /^(معاون|معاونت|مدیرعامل|شهردار|مدیرکل|مدیر|رئیس|رییس|ریاست|سرپرست|دبیر|دبیرکل|قائم‌مقام|قائممقام|مشاور|بازرس|دادستان|نماینده|فرمانده|مسئول|نایب|عضو)(محترم)?$/;
+  function splitLine(text) {
+    var s = clean(text);
+    var honor = '';
+    // «جناب اقای»، «سرکا رخانم» و مانندِ این‌ها در فهرست‌ها پیش می‌آید
+    var m = /^(جناب\s*(?:آقا\s*ی|اقا\s*ی|آقا)|سرکا\s*ر\s*خانم|جناب|سرکار|آقای|اقای|خانم)\s+/.exec(s);
+    if (m) { honor = /خانم|سرکا/.test(m[1]) ? HONORS[1] : HONORS[0]; s = s.slice(m[0].length); }
+    s = s.replace(/(\S)محترم(?=\s|$)/g, '$1 محترم');
+    var t = s.split(' ');
+    var j = t.indexOf('محترم');
+    var start = -1;
+    // اولین واژهٔ سمت، پیش از «محترم» (اگر «محترم» هست)
+    for (var i = 0; i < t.length && (j < 0 || i <= j); i++) {
+      if (ROLE_TOKEN.test(t[i])) { start = i; break; }
+    }
+    // «جانشین محترم …»، «دستیار محترم …»: هرچه پیش از «محترم» است، سمت است نه نام
+    if (start < 0 && j > 0) {
+      start = j - 1;
+      if (start > 0 && /^(کل|عامل|مقام)$/.test(t[start])) start--;
+    }
+    if (start < 0) return { honor: honor, name: s, title: '' };
+    return { honor: honor, name: t.slice(0, start).join(' '), title: t.slice(start).join(' ') };
+  }
+  /** «شهردار محترم» تنها، بی واحد */
+  function bareRole(title) {
+    var t = flat(title).split(' ').filter(function (x) { return x !== 'محترم' && x !== 'و'; });
+    return t.length > 0 && t.length <= 2 && t.every(function (x) { return ROLE_TOKEN.test(x) || x === 'کل'; });
+  }
+
   var RANK_WORDS = { 'بالادست': 'high', 'بالا': 'high', 'همتراز': 'peer', 'هم‌تراز': 'peer', 'پایین‌دست': 'low', 'پایین': 'low' };
 
   /** سطرهای اکسل ← فهرستِ افراد. map همان خروجیِ detect (یا دست‌کاری‌شدهٔ کاربر) است. */
@@ -197,43 +262,78 @@
     rows.slice(header + 1).forEach(function (r) {
       function cell(k) { return map[k] == null ? '' : clean(r[map[k]]); }
       var name = cell('name') || [cell('first'), cell('last')].filter(Boolean).join(' ');
-      var pos = cell('position'), org = cell('org');
-      if (!pos && !org) return;
-      if (!org) { var sp = splitTitle(pos); pos = sp.position; org = sp.org; }
-      // «شهردار» + «شهرداری منطقه ۵» ← همان «منطقه ۵»
-      org = org.replace(/^شهرداری\s+(?=منطقه)/, '');
-      var h = splitHonor(name, cell('honor'));
-      var rank = RANK_WORDS[flat(cell('rank'))] || guessRank(pos, org);
-      out.push({ id: w.U.uid(), honor: h.honor, name: h.name, position: pos, org: org, rank: rank });
+      var pos = cell('position'), org = cell('org'), title = '', h = null;
+      // سمتی که «محترم» دارد، خودش عنوانِ کامل است (خروجیِ همین دفتر)
+      if (/(^|\s)محترم(\s|$)/.test(pos)) { title = pos; pos = ''; }
+      // نام و عنوان در یک ستون
+      if (!pos && !title && name) {
+        var line = splitLine(name);
+        if (line.title) { title = line.title; h = { honor: line.honor || HONORS[0], name: line.name }; }
+      }
+      if (!h) h = splitHonor(name, cell('honor'));
+      // سطرِ عنوانِ بخش یا خالی؛ ولی سمتِ بی‌نام (پستِ خالی) می‌ماند
+      if (!h.name && !title) return;
+      if (!pos && !org && !title) return;
+      if (!org && pos) { var sp = splitTitle(pos); pos = sp.position; org = sp.org; }
+      // «شهرداری منطقه 05» ← «منطقه ۵»
+      org = regionDisplay(org.replace(/^شهرداری\s+(?=منطقه)/, ''));
+      // «شهردار محترم» + واحد ← «شهردار محترم منطقه ۵»
+      if (title && bareRole(title) && org) title = title + ' ' + org;
+      var rank = RANK_WORDS[flat(cell('rank'))] || guessRank(title || pos, org);
+      out.push({ id: w.U.uid(), honor: h.honor, name: h.name, position: pos, org: org, title: title, rank: rank });
     });
     return out;
   }
 
+  /*
+   * «همان سمت» یعنی همان واحد و همان نقش (یک واحد گاهی دو نفر دارد: رئیس و
+   * مدیرعامل). اگر نقش هم عوض شده باشد («سرپرست» ← «مدیرعامل»)، باز همان
+   * واحد است — پس در دورِ دوم فقط واحد سنجیده می‌شود.
+   */
+  function roleOf(o) {
+    var t = flat(o.title || o.position).split(' ');
+    for (var i = 0; i < t.length; i++) if (ROLE_TOKEN.test(t[i])) return t[i].replace(/محترم$/, '');
+    return '';
+  }
+  function ident(o) { return o.org ? 'o:' + key(o.org) + '|' + roleOf(o) : 't:' + key(titleOf(o)); }
+
+  /** هر سطرِ تازه با کدام سطرِ فعلی؟ — [[تازه، فعلی یا null]] و فعلی‌های بی‌جفت */
+  function pair(cur, next) {
+    var byId = {}, used = {}, out = [];
+    cur.forEach(function (o, i) { (byId[ident(o)] = byId[ident(o)] || []).push(i); });
+    next.forEach(function (o) {
+      var c = (byId[ident(o)] || []).filter(function (i) { return !used[i]; })[0];
+      if (c != null) used[c] = 1;
+      out.push([o, c == null ? null : cur[c]]);
+    });
+    out.forEach(function (p) {
+      if (p[1] || !p[0].org) return;
+      var k = key(p[0].org);
+      for (var i = 0; i < cur.length; i++) {
+        if (!used[i] && cur[i].org && key(cur[i].org) === k) { used[i] = 1; p[1] = cur[i]; return; }
+      }
+    });
+    return { pairs: out, rest: cur.filter(function (o, i) { return !used[i]; }) };
+  }
+
   /** فرقِ فهرستِ تازه با فعلی: تازه، عوض‌شده (نامِ دیگر روی همان سمت)، حذف‌شده */
   function diff(next) {
-    var cur = list(), byKey = {};
-    cur.forEach(function (o) { byKey[key(o.position + ' ' + o.org)] = o; });
-    var seen = {}, added = [], changed = [], same = 0;
-    next.forEach(function (o) {
-      var k = key(o.position + ' ' + o.org);
-      seen[k] = 1;
-      var old = byKey[k];
+    var p = pair(list(), next), added = [], changed = [], same = 0;
+    p.pairs.forEach(function (x) {
+      var o = x[0], old = x[1];
       if (!old) added.push(o);
       else if (flat(old.name) !== flat(o.name) || old.honor !== o.honor) changed.push({ from: old, to: o });
       else same++;
     });
-    var removed = cur.filter(function (o) { return !seen[key(o.position + ' ' + o.org)]; });
-    return { added: added, changed: changed, removed: removed, same: same };
+    return { added: added, changed: changed, removed: p.rest, same: same };
   }
 
   /** جایگزینیِ دفتر با فهرستِ تازه (keepMissing: آنچه در فایل نیست، بماند) */
   function replace(next, opts) {
     opts = opts || {};
     var d = data(), dd = diff(next);
-    var byKey = {};
-    d.list.forEach(function (o) { byKey[key(o.position + ' ' + o.org)] = o; });
-    var merged = next.map(function (o) {
-      var old = byKey[key(o.position + ' ' + o.org)];
+    var merged = pair(d.list, next).pairs.map(function (x) {
+      var o = x[0], old = x[1];
       // رتبه‌ای که کاربر دستی گذاشته، با فهرستِ تازه از دست نمی‌رود
       if (old && old.rankManual) { o.rank = old.rank; o.rankManual = true; }
       if (old) o.id = old.id;
@@ -248,14 +348,32 @@
         return { title: titleOf(c.to), from: c.from.name, to: c.to.name };
       })
     });
-    return save({ updatedAt: J.today(), source: opts.source || d.source || '', list: merged, log: log })
+    return save({ updatedAt: J.today(), source: opts.source || d.source || '', list: merged, log: log, seeded: d.seeded })
       .then(function () { return dd; });
+  }
+
+  /*
+   * نسخهٔ شخصیِ برنامه می‌تواند فهرستِ اولیه را همراه داشته باشد
+   * (window.OFFICIALS_SEED — tools/build.py --officials). فقط وقتی دفتر
+   * خالی است وارد می‌شود؛ بعد از آن، دفترِ خودِ کاربر حرفِ آخر است.
+   */
+  function seedIfEmpty() {
+    var seed = w.OFFICIALS_SEED;
+    if (!seed || !Array.isArray(seed.list) || !seed.list.length) return Promise.resolve(false);
+    var d = data();
+    if (d.list.length || d.seeded === seed.id) return Promise.resolve(false);
+    var next = seed.list.map(function (o) { return Object.assign({ id: w.U.uid() }, o); });
+    return replace(next, { source: seed.source || 'فهرست همراهِ برنامه' }).then(function () {
+      var d2 = data();
+      d2.seeded = seed.id || seed.source || true;
+      return save(d2).then(function () { return true; });
+    });
   }
 
   /** ویرایشِ دستی (از پنجرهٔ دفتر) */
   function setList(next) {
     var d = data();
-    return save({ updatedAt: J.today(), source: d.source, list: next, log: d.log || [] });
+    return save({ updatedAt: J.today(), source: d.source, list: next, log: d.log || [], seeded: d.seeded });
   }
 
   /** چند روز از آخرین به‌روزرسانی گذشته */
@@ -267,8 +385,8 @@
 
   /** برای خروجیِ اکسل — همان شکلی که دوباره وارد می‌شود */
   function rows() {
-    return [['عنوان احترام', 'نام و نام خانوادگی', 'سمت', 'واحد / منطقه / سازمان', 'رتبه']].concat(list().map(function (o) {
-      return [o.honor, o.name, o.position, o.org,
+    return [['عنوان احترام', 'نام و نام خانوادگی', 'سمت (عنوان کامل)', 'نام واحد', 'رتبه']].concat(list().map(function (o) {
+      return [o.honor, o.name, titleOf(o), o.org,
         { high: 'بالادست', peer: 'همتراز', low: 'پایین‌دست' }[o.rank] || ''];
     }));
   }
@@ -276,7 +394,8 @@
   w.Officials = {
     KEY: KEY, HONORS: HONORS, COLS: COLS,
     data: data, list: list, get: get, find: find, key: key, address: address, titleOf: titleOf,
-    honorTitle: honorTitle, guessRank: guessRank, asRecipient: asRecipient,
+    honorTitle: honorTitle, guessRank: guessRank, asRecipient: asRecipient, splitLine: splitLine,
+    seedIfEmpty: seedIfEmpty,
     detect: detect, parse: parse, diff: diff, replace: replace, setList: setList, age: age, rows: rows
   };
 })(window);

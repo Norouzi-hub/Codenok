@@ -182,23 +182,24 @@
       w.U.clear(table);
       var nq = q.replace(/\s+/g, '');
       var shown = work.filter(function (o) {
-        return !nq || (o.name + o.position + o.org).replace(/\s+/g, '').indexOf(nq) >= 0;
+        return !nq || (o.name + o.position + (o.title || '') + o.org).replace(/\s+/g, '').indexOf(nq) >= 0;
       });
       shown.forEach(function (o) {
         var prev = el('div.of-addr', { text: O.address(o) });
         function upd(k) {
           return function (v) { o[k] = v; if (k === 'rank') o.rankManual = true; dirty = true; prev.textContent = O.address(o); };
         }
-        function input(k, ph) {
-          var x = el('input.input.small', { type: 'text', value: o[k] || '', placeholder: ph });
+        function input(k, ph, value) {
+          var x = el('input.input.small', { type: 'text', value: value != null ? value : (o[k] || ''), placeholder: ph });
           x.addEventListener('input', function () { upd(k)(x.value); });
           return x;
         }
         table.appendChild(el('div.of-row', null, [
           select(O.HONORS.map(function (h) { return [h, h]; }), o.honor || O.HONORS[0], upd('honor')),
           input('name', 'نام و نام خانوادگی'),
-          input('position', 'سمت — شهردار، مدیرعامل، …'),
-          input('org', 'منطقه ۵، سازمان …'),
+          // عنوانِ کامل، همان‌طور که در نامه می‌آید
+          input('title', 'شهردار محترم منطقه ۵', O.titleOf(o)),
+          input('org', 'نام واحد: منطقه ۵، شرکت …'),
           select(RANKS, o.rank || 'peer', upd('rank')),
           el('button.btn.small.ghost.danger', {
             type: 'button', text: '✕', title: 'حذف',
@@ -248,7 +249,7 @@
         el('button.btn.small.ghost', {
           type: 'button', text: '＋ افزودن',
           onclick: function () {
-            work.unshift({ id: w.U.uid(), honor: O.HONORS[0], name: '', position: '', org: '', rank: 'peer' });
+            work.unshift({ id: w.U.uid(), honor: O.HONORS[0], name: '', position: '', title: '', org: '', rank: 'peer' });
             dirty = true; q = ''; search.value = '';
             drawList(); drawInfo();
             var first = table.querySelector('.of-row input');
@@ -265,7 +266,7 @@
       el('button.btn.primary', {
         type: 'button', text: 'ذخیره',
         onclick: function () {
-          var clean = work.filter(function (o) { return (o.position || o.org) && true; });
+          var clean = work.filter(function (o) { return o.title || o.position || o.org; });
           O.setList(clean).then(function () {
             dirty = false;
             m.close();

@@ -12,7 +12,10 @@
 
 هیچ‌کدام سرور یا اینترنت نمی‌خواهد؛ index.html را در کروم یا اج باز کنید.
 """
+import argparse
 import base64
+import hashlib
+import json
 import io
 import os
 import re
@@ -62,6 +65,41 @@ BANNER = """<!--
 
 SKIP = {'.DS_Store', 'Thumbs.db'}
 
+# نسخهٔ شخصی: فایل‌هایی که در src نیستند ولی در خروجی می‌آیند {مسیر: متن}
+EXTRA = {}
+SEED_REL = 'assets/data/officials-seed.js'
+
+
+def page_html():
+    """index.html — در نسخهٔ شخصی، با اسکریپتِ فهرستِ همراه پیش از officials.js"""
+    html = read(os.path.join(SRC, 'index.html'))
+    if SEED_REL in EXTRA:
+        tag = '<script src="assets/js/officials.js"></script>'
+        if tag not in html:
+            raise SystemExit('جای اسکریپتِ officials.js در index.html پیدا نشد')
+        html = html.replace(tag, '<script src="%s"></script>\n%s' % (SEED_REL, tag), 1)
+    return html
+
+
+def officials_seed(path):
+    """فهرستِ خوانده‌شدهٔ دفتر مقامات (JSON) ← اسکریپتِ window.OFFICIALS_SEED"""
+    with io.open(path, encoding='utf-8') as fh:
+        data = json.load(fh)
+    items = data['list'] if isinstance(data, dict) else data
+    keep = ('honor', 'name', 'position', 'org', 'title', 'rank')
+    items = [{k: o.get(k, '') for k in keep} for o in items]
+    body = json.dumps(items, ensure_ascii=False, sort_keys=True)
+    seed = {
+        'id': hashlib.sha1(body.encode('utf-8')).hexdigest()[:12],
+        'source': (data.get('source') if isinstance(data, dict) else '') or os.path.basename(path),
+        'list': items
+    }
+    code = ('/* فهرستِ همراهِ نسخهٔ شخصی — فقط وقتی دفتر مقامات خالی است وارد می‌شود */\n'
+            'window.OFFICIALS_SEED = ' + json.dumps(seed, ensure_ascii=False) + ';\n')
+    if '</script' in code:
+        raise SystemExit('فهرست شامل «</script» است')
+    return code, len(items)
+
 
 def read(path):
     with io.open(path, encoding='utf-8') as fh:
@@ -83,6 +121,14 @@ def build_folder():
     if os.path.isdir(out):
         shutil.rmtree(out)
     shutil.copytree(SRC, out, ignore=shutil.ignore_patterns(*SKIP))
+    for rel, code in EXTRA.items():
+        target = os.path.join(out, *rel.split('/'))
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        with io.open(target, 'w', encoding='utf-8') as fh:
+            fh.write(code)
+    if EXTRA:
+        with io.open(os.path.join(out, 'index.html'), 'w', encoding='utf-8') as fh:
+            fh.write(page_html())
     with io.open(os.path.join(out, 'README.txt'), 'w', encoding='utf-8-sig',
                  newline='\r\n') as fh:
         fh.write(GUIDE)
@@ -104,7 +150,7 @@ def build_zip(folder):
 
 
 def build_single():
-    html = read(os.path.join(SRC, 'index.html'))
+    html = page_html()
 
     font = base64.b64encode(open(src_path('assets/fonts/vazirmatn.woff2'), 'rb').read())
     font_uri = 'data:font/woff2;base64,' + font.decode('ascii')
@@ -125,7 +171,7 @@ def build_single():
 
     def inline(match):
         rel = match.group(1)
-        code = read(src_path(rel))
+        code = EXTRA[rel] if rel in EXTRA else read(src_path(rel))
         if '</script' in code:
             raise SystemExit('فایل %s شامل تگ بستهٔ script است' % rel)
         return '<script>\n/* ==== ' + rel + ' ==== */\n' + code + '\n</script>'
@@ -142,6 +188,21 @@ def build_single():
 
 
 def main():
+    global DIST
+    ap = argparse.ArgumentParser(description='ساختِ نوکمان (پوشه، زیپ، تک‌فایلی)')
+    ap.add_argument('--officials', help='نسخهٔ شخصی: فهرستِ دفتر مقامات (JSON) همراهِ برنامه')
+    ap.add_argument('--out', help='پوشهٔ خروجی (پیش‌فرض: dist)')
+    args = ap.parse_args()
+    if args.out:
+        DIST = os.path.abspath(args.out)
+    if args.officials:
+        # نام‌های واقعی نباید در مخزن بنشینند: نسخهٔ شخصی فقط بیرون از آن ساخته می‌شود
+        if os.path.commonpath([DIST, ROOT]) == ROOT:
+            raise SystemExit('نسخهٔ شخصی را بیرون از مخزن بسازید: --out <پوشه‌ای بیرون از %s>' % ROOT)
+        code, n = officials_seed(args.officials)
+        EXTRA[SEED_REL] = code
+        print('دفتر مقامات: %d نفر همراهِ برنامه' % n)
+
     page = read(os.path.join(SRC, 'index.html'))
     if re.search(r'<script>(?!\s*</script>)|<style>', page):
         raise SystemExit('index.html اسکریپت یا استایلِ درون‌خطی دارد؛ جایش assets است')
