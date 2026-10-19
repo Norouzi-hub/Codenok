@@ -253,20 +253,20 @@ function check(name, ok, extra) {
     addresseeRole: 'شهردار محترم منطقه ۵', outLetterNo: '۱۴۰۵/۳۱۱/م'
   };
 
-  // ۱) خلاصه پرونده — روی کاغذ سفید
+  // ۱) خلاصه پرونده — حالا هم روی همان سربرگ
   const summary = await page.evaluate(({ id, extra }) => {
     window.UILetters.printSummary(window.Model.get(id), extra);
     const rows = [...document.querySelectorAll('#print-area .lf-summary tr')];
     return {
-      plain: !!document.querySelector('#print-area .lf-plain'),
+      plain: !!document.querySelector('#print-area .lf-letterhead'),
       head: !!document.querySelector('#print-area .lf-head-space'),
       title: (document.querySelector('#print-area .lf-title') || {}).textContent,
       labels: rows.map(r => r.querySelector('th').textContent),
       values: rows.map(r => r.querySelector('td').textContent)
     };
   }, { id: recId, extra });
-  check('فرم خلاصه پرونده روی کاغذ سفید ساخته می‌شود',
-    summary.plain && !summary.head && summary.title === 'خلاصه پرونده');
+  check('فرم خلاصه پرونده هم روی سربرگ ساخته می‌شود',
+    summary.plain && summary.head && summary.title === 'خلاصه پرونده');
   // دوازده سطر: یازده سطرِ فرم شما، به‌علاوه خلاصه‌ای که کارشناس نوشته
   check('دوازده سطر نمونه، با همان ترتیب فرم شما',
     summary.labels.length === 12 &&
@@ -434,8 +434,8 @@ function check(name, ok, extra) {
   check('در ورد، سربرگ از بالا و از راست فاصله می‌گیرد',
     vm.top === 20 && vm.right === 58 && vm.left === 10, JSON.stringify(vm));
   const sm = margins(sx);
-  check('کاغذ سفید حاشیه معمولی دارد، نه حاشیه سربرگ',
-    sm.top === 16 && sm.right === 10 && sm.left === 10, JSON.stringify(sm));
+  check('خلاصه پرونده هم حاشیه سربرگ دارد',
+    sm.top === 20 && sm.right === 58 && sm.left === 10, JSON.stringify(sm));
 
   const dm = margins(unzip(docs.defense.file, 'word/document.xml'));
   check('تفهیم اتهام در ورد هم روی سربرگ می‌نشیند',

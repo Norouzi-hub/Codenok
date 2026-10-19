@@ -6572,3 +6572,8 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
 @media (max-width: 760px) {
   .of-row { grid-template-columns: 1fr 1fr; }
 }
+@media print {
+  /* دستور کار و صورت‌جلسه روی سربرگ: جدول‌ها ریزتر و فشرده‌تر از متنِ نامه */
+  #print-area .lf-sheet { font-size: 11pt; line-height: 1.6; }
+  #print-area .lf-sheet .p-header { border-bottom-width: 1px; }
+}

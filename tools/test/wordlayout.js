@@ -153,6 +153,43 @@ function unzip(file, entry) {
   check('اندازه‌های قدیمیِ پیش‌فرض (۴۵ بالا، ۲۵ راست) به اندازهٔ نمونه می‌روند', mig.a.join() === '20,58', mig.a.join());
   check('اندازه‌ای که کاربر خودش گذاشته، می‌ماند', mig.b.join() === '30,50', mig.b.join());
 
+  // ============================================= بقیهٔ فرم‌ها و برگه‌های جلسه
+  console.log('\n— بقیهٔ فرم‌ها —');
+  await page.emulateMedia({ media: 'print' });   // قلمِ کاغذ در CSSِ چاپ است
+  const all = await page.evaluate(async () => {
+    const L = window.UILetters, M = window.Model;
+    await M.saveSettings({ letters: {} });
+    const rec = M.get(window.__id);
+    const out = {};
+    for (const k of ['summary', 'defense', 'verdict', 'notice']) {
+      const doc = L.build(k, rec, {});
+      const b = new Uint8Array(await L.toDocx(doc).arrayBuffer());
+      let s = ''; b.forEach(x => { s += String.fromCharCode(x); });
+      out[k] = { paper: doc.paper, b64: btoa(s) };
+    }
+    window.print = () => {};
+    window.UIPrint.printAgenda([rec]);
+    out.agenda = { band: (document.querySelector('#print-area .lf-letterhead') || { style: {} }).style.paddingRight,
+      font: getComputedStyle(document.getElementById('print-area')).fontFamily,
+      hamza: /[\u0654\u06C0]/.test(document.getElementById('print-area').textContent) };
+    window.UIPrint.printMinutes({ session: '۱۲', date: window.J.today() }, [{ rec, outcomeLabel: 'توبیخ' }]);
+    out.minutes = (document.querySelector('#print-area .lf-letterhead') || { style: {} }).style.paddingRight;
+    return out;
+  });
+  ['summary', 'defense', 'verdict', 'notice'].forEach(k => {
+    const f = path.join(tmp, k + '.docx');
+    fs.writeFileSync(f, Buffer.from(all[k].b64, 'base64'));
+    const x = unzip(f, 'word/document.xml');
+    const m = /<w:pgMar w:top="(\d+)" w:right="(\d+)"/.exec(x).slice(1).map(v => Math.round(v / 56.6929));
+    const fontsOk = (x.match(/<w:rFonts [^>]*\/>/g) || []).every(t => /w:ascii="B Zar"/.test(t) && /w:cs="B Zar"/.test(t));
+    const jcOk = !/<w:jc w:val="(right|left)"/.test(x);
+    check(k + ': سربرگ (راست ۵۸)، قلم B Zar، راست‌به‌چپ، بی «ٔ»', all[k].paper === 'letterhead' &&
+      m[0] === 20 && m[1] === 58 && fontsOk && jcOk && x.indexOf('\u0654') < 0, m.join(','));
+  });
+  check('دستور کار و صورت‌جلسه هم روی سربرگ، با B Zar', all.agenda.band === '48mm' && all.minutes === '48mm' &&
+    /B Zar/.test(all.agenda.font), all.agenda.band + ' / ' + all.minutes);
+  check('هیچ چاپی «ٔ» ندارد (کمیتهٔ، جلسهٔ)', all.agenda.hamza === false);
+
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 3).join(' | '));
   await browser.close();
   fs.rmSync(tmp, { recursive: true, force: true });

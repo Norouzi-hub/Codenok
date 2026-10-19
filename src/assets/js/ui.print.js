@@ -23,6 +23,7 @@
       window.removeEventListener('afterprint', restore);
     };
     window.addEventListener('afterprint', restore);
+    w.U.forPaper(document.getElementById('print-area'));
     window.print();
     setTimeout(restore, 1500);
   }
@@ -360,8 +361,16 @@
   }
 
   /** دستور کار جلسهٔ کمیته: پرونده‌هایی که آمادهٔ طرح‌اند */
+  /* برگه‌های رسمیِ جلسه هم روی همان سربرگ و با همان قلمِ نامه‌ها */
+  function sheet(node) {
+    if (!w.UILetters || !w.UILetters.letterheadWrap) return node;
+    var wrap = w.UILetters.letterheadWrap([]);
+    node.appendChild(wrap);
+    return wrap;
+  }
+
   function printAgenda(cases) {
-    var node = area();
+    var node = sheet(area());
     node.appendChild(header('دستور کار جلسهٔ کمیتهٔ انضباطی',
       w.U.toFaDigits(cases.length) + ' پرونده'));
 
@@ -399,7 +408,7 @@
    * این برگه چیزی است که امضا می‌شود و در پرونده می‌ماند.
    */
   function printMinutes(head, rows) {
-    var node = area();
+    var node = sheet(area());
     node.appendChild(header('صورت‌جلسهٔ کمیتهٔ انضباطی',
       'جلسهٔ ' + w.U.toFaDigits(head.session || '—') +
       ' — ' + (head.date ? J.format(head.date, { long: true }) : '—')));

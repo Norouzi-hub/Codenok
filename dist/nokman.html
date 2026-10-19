@@ -6600,6 +6600,11 @@ button.tk-kpi:hover { background: rgba(255, 255, 255, .1); }
 @media (max-width: 760px) {
   .of-row { grid-template-columns: 1fr 1fr; }
 }
+@media print {
+  /* دستور کار و صورت‌جلسه روی سربرگ: جدول‌ها ریزتر و فشرده‌تر از متنِ نامه */
+  #print-area .lf-sheet { font-size: 11pt; line-height: 1.6; }
+  #print-area .lf-sheet .p-header { border-bottom-width: 1px; }
+}
 
 </style>
 </head>
@@ -8927,6 +8932,22 @@ window.SEED_CASES = [
     return btn;
   }
 
+  /*
+   * کاغذ با قلمِ B Zar چاپ می‌شود و «ٔ» (نامهٔ، کمیتهٔ) در آن نیست — جایش
+   * دایرهٔ خالی می‌آید. پیش از هر چاپ، از همهٔ متنِ برگه برداشته می‌شود.
+   */
+  function forPaper(node) {
+    if (!node) return node;
+    var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+    var t;
+    while ((t = walker.nextNode())) {
+      if (/[\u0654\u06C0]/.test(t.nodeValue)) {
+        t.nodeValue = t.nodeValue.replace(/\u0654/g, '').replace(/\u06C0/g, '\u0647');
+      }
+    }
+    return node;
+  }
+
   applyMotion();
 
   w.U = {
@@ -8934,7 +8955,7 @@ window.SEED_CASES = [
     systemReduce: systemReduce,
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     dots: dots,
-    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast, copy: copy, copyButton: copyButton,
+    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast, copy: copy, copyButton: copyButton, forPaper: forPaper,
     modal: modal, confirmBox: confirmBox, download: download,
     safeName: safeName, uid: uid, countUp: countUp
   };
@@ -11787,7 +11808,8 @@ window.SEED_CASES = [
   function table(rows, cols, o) {
     o = o || {};
     var grid = '';
-    var each = Math.round(9638 / (cols || 1));   // عرض مفید A4 با حاشیهٔ ۱۲ میلی‌متر
+    // عرضِ مفیدِ صفحه (روی سربرگ باریک‌تر است)؛ پیش‌فرض: A4 با حاشیهٔ ۱۲ میلی‌متر
+    var each = Math.round((o.total || 9638) / (cols || 1));
     for (var i = 0; i < (cols || 1); i++) {
       grid += '<w:gridCol w:w="' + (o.widths ? o.widths[i] : each) + '"/>';
     }
@@ -21985,6 +22007,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
       window.removeEventListener('afterprint', restore);
     };
     window.addEventListener('afterprint', restore);
+    w.U.forPaper(document.getElementById('print-area'));
     window.print();
     setTimeout(restore, 1500);
   }
@@ -22038,7 +22061,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   /** ۱) خلاصهٔ پرونده — کاغذ سفید */
   function docSummary(rec, extra) {
     return {
-      key: 'summary', paper: 'plain', title: 'خلاصهٔ پرونده', file: 'kholase',
+      key: 'summary', paper: 'letterhead', title: 'خلاصهٔ پرونده', file: 'kholase',
       blocks: [
         { t: 'h1', text: 'خلاصهٔ پرونده' },
         {
@@ -22287,6 +22310,17 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   function bandFits(c) { return Number(c.letterheadRight) >= 40; }
   var BAND = { edge: 17, width: 40 };   // میلی‌متر: لبهٔ راستِ نوشته‌های نوار، و پهنایش
 
+  /** همان کاغذِ سربرگ‌دار برای چاپ‌های دیگر (دستور کار، صورت‌جلسه) */
+  function letterheadWrap(children) {
+    var c = conf();
+    var wrap = el('div.lf.lf-letterhead.lf-sheet');
+    wrap.style.paddingRight = beyond(c.letterheadRight, PAGE.side) + 'mm';
+    wrap.style.paddingLeft = beyond(c.letterheadLeft, PAGE.side) + 'mm';
+    wrap.appendChild(letterheadSpace(c));
+    (children || []).forEach(function (n) { if (n) wrap.appendChild(n); });
+    return wrap;
+  }
+
   function toHtml(doc) {
     var c = conf();
     doc = plainDoc(doc);
@@ -22458,10 +22492,10 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
       } else if (b.t === 'labelTable') {
         out.push(D.table(b.rows.map(function (r) {
           return [
-            D.cell([{ text: r.label, bold: true }], { width: 2600 }),
-            D.cell(r.value || '', { width: 7000, minMm: r.minMm })
+            D.cell([{ text: r.label, bold: true }], { width: Math.round(bodyTw * 0.27) }),
+            D.cell(r.value || '', { width: bodyTw - Math.round(bodyTw * 0.27), minMm: r.minMm })
           ];
-        }), 2));
+        }), 2, { total: bodyTw, widths: [Math.round(bodyTw * 0.27), bodyTw - Math.round(bodyTw * 0.27)] }));
       } else if (b.t === 'kvTable') {
         out.push(D.table(b.rows.map(function (row) {
           return row.map(function (kv) {
@@ -22470,7 +22504,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
               { text: dash(kv.v) }
             ], { span: kv.span, size: 20 });
           });
-        }), b.cols));
+        }), b.cols, { total: bodyTw }));
       } else if (b.t === 'box') {
         out.push(D.table([
           [D.cell(b.head ? [{ text: b.head, bold: true }] : '', {})],
@@ -22479,7 +22513,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
           b.foot ? [D.cell(b.foot.map(function (x, i) {
             return { text: (i ? '        ' : '') + x, bold: true };
           }), {})] : null
-        ].filter(Boolean), 1));
+        ].filter(Boolean), 1, { total: bodyTw }));
       } else if (b.t === 'members') {
         var rows = [], line = [];
         b.items.forEach(function (mb, i) {
@@ -22493,7 +22527,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
             line = [];
           }
         });
-        if (rows.length) out.push(D.table(rows, b.cols || 4, { noBorder: true }));
+        if (rows.length) out.push(D.table(rows, b.cols || 4, { noBorder: true, total: bodyTw }));
       } else if (b.t === 'lines') {
         out.push(D.emptyPara({ after: 120 }));
         b.items.forEach(function (x) {
@@ -22592,7 +22626,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   // ------------------------------------------------------------- پنجره
   var FORMS = [
     {
-      key: 'summary', label: 'خلاصهٔ پرونده', paper: 'کاغذ سفید A4',
+      key: 'summary', label: 'خلاصهٔ پرونده', paper: 'سربرگ',
       hint: 'مشخصات، سابقه، موضوع تخلف و خلاصهٔ دفاعیه در یک جدول',
       fields: ['service']
     },
@@ -22758,6 +22792,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   }
 
   w.UILetters = {
+    letterheadWrap: letterheadWrap,
     chooser: chooser, formDialog: formDialog, FORMS: FORMS,
     conf: conf, saveConf: saveConf, DEFAULTS: DEFAULTS,
     printForm: printForm, wordForm: wordForm, toHtml: toHtml, toDocx: toDocx,
@@ -26167,6 +26202,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
       window.removeEventListener('afterprint', restore);
     };
     window.addEventListener('afterprint', restore);
+    w.U.forPaper(document.getElementById('print-area'));
     window.print();
     setTimeout(restore, 1500);
   }
@@ -26504,8 +26540,16 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   }
 
   /** دستور کار جلسهٔ کمیته: پرونده‌هایی که آمادهٔ طرح‌اند */
+  /* برگه‌های رسمیِ جلسه هم روی همان سربرگ و با همان قلمِ نامه‌ها */
+  function sheet(node) {
+    if (!w.UILetters || !w.UILetters.letterheadWrap) return node;
+    var wrap = w.UILetters.letterheadWrap([]);
+    node.appendChild(wrap);
+    return wrap;
+  }
+
   function printAgenda(cases) {
-    var node = area();
+    var node = sheet(area());
     node.appendChild(header('دستور کار جلسهٔ کمیتهٔ انضباطی',
       w.U.toFaDigits(cases.length) + ' پرونده'));
 
@@ -26543,7 +26587,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
    * این برگه چیزی است که امضا می‌شود و در پرونده می‌ماند.
    */
   function printMinutes(head, rows) {
-    var node = area();
+    var node = sheet(area());
     node.appendChild(header('صورت‌جلسهٔ کمیتهٔ انضباطی',
       'جلسهٔ ' + w.U.toFaDigits(head.session || '—') +
       ' — ' + (head.date ? J.format(head.date, { long: true }) : '—')));

@@ -169,7 +169,8 @@
   function table(rows, cols, o) {
     o = o || {};
     var grid = '';
-    var each = Math.round(9638 / (cols || 1));   // عرض مفید A4 با حاشیهٔ ۱۲ میلی‌متر
+    // عرضِ مفیدِ صفحه (روی سربرگ باریک‌تر است)؛ پیش‌فرض: A4 با حاشیهٔ ۱۲ میلی‌متر
+    var each = Math.round((o.total || 9638) / (cols || 1));
     for (var i = 0; i < (cols || 1); i++) {
       grid += '<w:gridCol w:w="' + (o.widths ? o.widths[i] : each) + '"/>';
     }

@@ -334,6 +334,22 @@
     return btn;
   }
 
+  /*
+   * کاغذ با قلمِ B Zar چاپ می‌شود و «ٔ» (نامهٔ، کمیتهٔ) در آن نیست — جایش
+   * دایرهٔ خالی می‌آید. پیش از هر چاپ، از همهٔ متنِ برگه برداشته می‌شود.
+   */
+  function forPaper(node) {
+    if (!node) return node;
+    var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+    var t;
+    while ((t = walker.nextNode())) {
+      if (/[\u0654\u06C0]/.test(t.nodeValue)) {
+        t.nodeValue = t.nodeValue.replace(/\u0654/g, '').replace(/\u06C0/g, '\u0647');
+      }
+    }
+    return node;
+  }
+
   applyMotion();
 
   w.U = {
@@ -341,7 +357,7 @@
     systemReduce: systemReduce,
     toLatinDigits: toLatinDigits, toFaDigits: toFaDigits, normalize: normalize,
     dots: dots,
-    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast, copy: copy, copyButton: copyButton,
+    debounce: debounce, el: el, $: $, $$: $$, clear: clear, toast: toast, copy: copy, copyButton: copyButton, forPaper: forPaper,
     modal: modal, confirmBox: confirmBox, download: download,
     safeName: safeName, uid: uid, countUp: countUp
   };

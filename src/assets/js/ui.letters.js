@@ -118,6 +118,7 @@
       window.removeEventListener('afterprint', restore);
     };
     window.addEventListener('afterprint', restore);
+    w.U.forPaper(document.getElementById('print-area'));
     window.print();
     setTimeout(restore, 1500);
   }
@@ -171,7 +172,7 @@
   /** ۱) خلاصهٔ پرونده — کاغذ سفید */
   function docSummary(rec, extra) {
     return {
-      key: 'summary', paper: 'plain', title: 'خلاصهٔ پرونده', file: 'kholase',
+      key: 'summary', paper: 'letterhead', title: 'خلاصهٔ پرونده', file: 'kholase',
       blocks: [
         { t: 'h1', text: 'خلاصهٔ پرونده' },
         {
@@ -420,6 +421,17 @@
   function bandFits(c) { return Number(c.letterheadRight) >= 40; }
   var BAND = { edge: 17, width: 40 };   // میلی‌متر: لبهٔ راستِ نوشته‌های نوار، و پهنایش
 
+  /** همان کاغذِ سربرگ‌دار برای چاپ‌های دیگر (دستور کار، صورت‌جلسه) */
+  function letterheadWrap(children) {
+    var c = conf();
+    var wrap = el('div.lf.lf-letterhead.lf-sheet');
+    wrap.style.paddingRight = beyond(c.letterheadRight, PAGE.side) + 'mm';
+    wrap.style.paddingLeft = beyond(c.letterheadLeft, PAGE.side) + 'mm';
+    wrap.appendChild(letterheadSpace(c));
+    (children || []).forEach(function (n) { if (n) wrap.appendChild(n); });
+    return wrap;
+  }
+
   function toHtml(doc) {
     var c = conf();
     doc = plainDoc(doc);
@@ -591,10 +603,10 @@
       } else if (b.t === 'labelTable') {
         out.push(D.table(b.rows.map(function (r) {
           return [
-            D.cell([{ text: r.label, bold: true }], { width: 2600 }),
-            D.cell(r.value || '', { width: 7000, minMm: r.minMm })
+            D.cell([{ text: r.label, bold: true }], { width: Math.round(bodyTw * 0.27) }),
+            D.cell(r.value || '', { width: bodyTw - Math.round(bodyTw * 0.27), minMm: r.minMm })
           ];
-        }), 2));
+        }), 2, { total: bodyTw, widths: [Math.round(bodyTw * 0.27), bodyTw - Math.round(bodyTw * 0.27)] }));
       } else if (b.t === 'kvTable') {
         out.push(D.table(b.rows.map(function (row) {
           return row.map(function (kv) {
@@ -603,7 +615,7 @@
               { text: dash(kv.v) }
             ], { span: kv.span, size: 20 });
           });
-        }), b.cols));
+        }), b.cols, { total: bodyTw }));
       } else if (b.t === 'box') {
         out.push(D.table([
           [D.cell(b.head ? [{ text: b.head, bold: true }] : '', {})],
@@ -612,7 +624,7 @@
           b.foot ? [D.cell(b.foot.map(function (x, i) {
             return { text: (i ? '        ' : '') + x, bold: true };
           }), {})] : null
-        ].filter(Boolean), 1));
+        ].filter(Boolean), 1, { total: bodyTw }));
       } else if (b.t === 'members') {
         var rows = [], line = [];
         b.items.forEach(function (mb, i) {
@@ -626,7 +638,7 @@
             line = [];
           }
         });
-        if (rows.length) out.push(D.table(rows, b.cols || 4, { noBorder: true }));
+        if (rows.length) out.push(D.table(rows, b.cols || 4, { noBorder: true, total: bodyTw }));
       } else if (b.t === 'lines') {
         out.push(D.emptyPara({ after: 120 }));
         b.items.forEach(function (x) {
@@ -725,7 +737,7 @@
   // ------------------------------------------------------------- پنجره
   var FORMS = [
     {
-      key: 'summary', label: 'خلاصهٔ پرونده', paper: 'کاغذ سفید A4',
+      key: 'summary', label: 'خلاصهٔ پرونده', paper: 'سربرگ',
       hint: 'مشخصات، سابقه، موضوع تخلف و خلاصهٔ دفاعیه در یک جدول',
       fields: ['service']
     },
@@ -891,6 +903,7 @@
   }
 
   w.UILetters = {
+    letterheadWrap: letterheadWrap,
     chooser: chooser, formDialog: formDialog, FORMS: FORMS,
     conf: conf, saveConf: saveConf, DEFAULTS: DEFAULTS,
     printForm: printForm, wordForm: wordForm, toHtml: toHtml, toDocx: toDocx,
