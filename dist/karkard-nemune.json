@@ -1,0 +1,819 @@
+{
+ "meta": {
+  "app": "نوکمان — کمیتهٔ انضباطی",
+  "schema": 1,
+  "generatedAt": "2026-09-29T11:50:12.710Z",
+  "generatedAtJalali": "۱۴۰۵/۰۷/۰۷ ساعت ۱۱:۵۰",
+  "calendar": "jalali",
+  "dateFormat": "YYYYMMDD",
+  "from": "14050625",
+  "to": "14050707",
+  "days": 14,
+  "user": "",
+  "scope": "working",
+  "org": "",
+  "note": "هر سطرِ days یک روز است، حتی روزی که کاری نشده (worked=false). counts کلیدهای actions را دارد. جمعِ منبع‌های مختلف روی هم، یک کار را دوبار می‌شمارد؛ برای همین bySource جداست."
+ },
+ "actions": [
+  {
+   "key": "case.create",
+   "label": "ثبت پروندهٔ تازه",
+   "group": "case",
+   "source": "history",
+   "from": "create"
+  },
+  {
+   "key": "case.update",
+   "label": "ویرایش پرونده",
+   "group": "case",
+   "source": "history",
+   "from": "update"
+  },
+  {
+   "key": "case.delete",
+   "label": "حذف پرونده",
+   "group": "case",
+   "source": "history",
+   "from": "delete"
+  },
+  {
+   "key": "case.bulk",
+   "label": "اقدام دسته‌ای روی چند پرونده",
+   "group": "case",
+   "source": "history",
+   "from": "bulk"
+  },
+  {
+   "key": "case.stage",
+   "label": "تنظیم دستی مرحلهٔ پرونده",
+   "group": "case",
+   "source": "history",
+   "from": "stage"
+  },
+  {
+   "key": "data.import",
+   "label": "ورود داده از اکسل",
+   "group": "data",
+   "source": "history",
+   "from": "import"
+  },
+  {
+   "key": "data.restore",
+   "label": "بازیابی از نسخهٔ پشتیبان",
+   "group": "data",
+   "source": "history",
+   "from": "restore"
+  },
+  {
+   "key": "doc.add",
+   "label": "افزودن سند به پرونده",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-add"
+  },
+  {
+   "key": "doc.batch",
+   "label": "بارگذاری دسته‌ای (اسکن)",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-batch"
+  },
+  {
+   "key": "doc.version",
+   "label": "نسخهٔ تازهٔ یک سند",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-version"
+  },
+  {
+   "key": "doc.attach",
+   "label": "وصل سند بی‌پرونده به پرونده",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-attach"
+  },
+  {
+   "key": "doc.sync",
+   "label": "پر شدن فیلد پرونده از روی سند",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-sync"
+  },
+  {
+   "key": "doc.remove",
+   "label": "حذف سند",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-remove"
+  },
+  {
+   "key": "doc.person",
+   "label": "مدرک شخص",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-person"
+  },
+  {
+   "key": "doc.folder",
+   "label": "تغییر پوشهٔ مستندات",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-folder"
+  },
+  {
+   "key": "doc.edit",
+   "label": "ویرایش مشخصات سند",
+   "group": "doc",
+   "source": "history",
+   "from": "doc-edit"
+  },
+  {
+   "key": "task.add",
+   "label": "ثبت کار تازه",
+   "group": "task",
+   "source": "history",
+   "from": "task-add"
+  },
+  {
+   "key": "task.remove",
+   "label": "حذف کار",
+   "group": "task",
+   "source": "history",
+   "from": "task-remove"
+  },
+  {
+   "key": "task.done",
+   "label": "انجام شدن کار",
+   "group": "task",
+   "source": "task",
+   "from": "done"
+  },
+  {
+   "key": "task.cancel",
+   "label": "لغو کار",
+   "group": "task",
+   "source": "task",
+   "from": "cancelled"
+  },
+  {
+   "key": "note.add",
+   "label": "نوشتن یادداشت",
+   "group": "task",
+   "source": "history",
+   "from": "note-add"
+  },
+  {
+   "key": "note.done",
+   "label": "بستن پیگیری یادداشت",
+   "group": "task",
+   "source": "history",
+   "from": "note-done"
+  },
+  {
+   "key": "note.remove",
+   "label": "حذف یادداشت",
+   "group": "task",
+   "source": "history",
+   "from": "note-remove"
+  },
+  {
+   "key": "form.make",
+   "label": "ساختن فرم اداری (چاپ یا ورد)",
+   "group": "letter",
+   "source": "history",
+   "from": "form"
+  },
+  {
+   "key": "committee.minutes",
+   "label": "ثبت صورت‌جلسهٔ کمیته",
+   "group": "committee",
+   "source": "history",
+   "from": "session"
+  },
+  {
+   "key": "case.intake",
+   "label": "ورود پرونده به دبیرخانه",
+   "group": "case",
+   "source": "case",
+   "from": "intakeDate"
+  },
+  {
+   "key": "case.assign",
+   "label": "تحویل پرونده به کارشناس",
+   "group": "case",
+   "source": "case",
+   "from": "deliveryDate"
+  },
+  {
+   "key": "doc.decree",
+   "label": "بارگذاری آخرین حکم کارگزینی",
+   "group": "doc",
+   "source": "case",
+   "from": "decreeDate"
+  },
+  {
+   "key": "letter.defect",
+   "label": "نامهٔ رفع نواقص",
+   "group": "letter",
+   "source": "case",
+   "from": "defectLetterDate"
+  },
+  {
+   "key": "letter.inquiryOut",
+   "label": "نامهٔ استعلام حراست (صادره)",
+   "group": "letter",
+   "source": "case",
+   "from": "securityOutLetterDate"
+  },
+  {
+   "key": "letter.inquiryIn",
+   "label": "پاسخ حراست (وارده)",
+   "group": "letter",
+   "source": "case",
+   "from": "securityInLetterDate"
+  },
+  {
+   "key": "letter.invite",
+   "label": "نامهٔ دعوت به کمیته",
+   "group": "letter",
+   "source": "case",
+   "from": "invitationLetterDate"
+  },
+  {
+   "key": "letter.salaryStop",
+   "label": "نامهٔ بستن حقوق",
+   "group": "letter",
+   "source": "case",
+   "from": "salaryStopLetterDate"
+  },
+  {
+   "key": "letter.chase",
+   "label": "نامهٔ پیگیری دفاعیات",
+   "group": "letter",
+   "source": "case",
+   "from": "defenseChaseLetterDate"
+  },
+  {
+   "key": "defense.received",
+   "label": "دریافت دفاعیهٔ کارمند",
+   "group": "defense",
+   "source": "case",
+   "from": "defenseReceivedDate"
+  },
+  {
+   "key": "case.docsComplete",
+   "label": "تکمیل مستندات پرونده",
+   "group": "case",
+   "source": "case",
+   "from": "docsCompleteDate"
+  },
+  {
+   "key": "letter.hearing",
+   "label": "نامهٔ دعوت به جلسهٔ کمیته",
+   "group": "letter",
+   "source": "case",
+   "from": "hearingLetterDate"
+  },
+  {
+   "key": "committee.hearing",
+   "label": "طرح در کمیته / جلسهٔ دفاع",
+   "group": "committee",
+   "source": "case",
+   "from": "committeeDate"
+  },
+  {
+   "key": "verdict.issue",
+   "label": "صدور رأی",
+   "group": "verdict",
+   "source": "case",
+   "from": "verdictDate"
+  },
+  {
+   "key": "verdict.sign",
+   "label": "امضای رأی توسط اعضا",
+   "group": "verdict",
+   "source": "case",
+   "from": "verdictSignedDate"
+  },
+  {
+   "key": "letter.notice",
+   "label": "نامهٔ ابلاغ رأی",
+   "group": "letter",
+   "source": "case",
+   "from": "noticeLetterDate"
+  },
+  {
+   "key": "notice.result",
+   "label": "دریافت نتیجهٔ ابلاغ",
+   "group": "verdict",
+   "source": "case",
+   "from": "noticeResultDate"
+  },
+  {
+   "key": "letter.salaryResume",
+   "label": "نامهٔ باز کردن حقوق",
+   "group": "letter",
+   "source": "case",
+   "from": "salaryResumeLetterDate"
+  },
+  {
+   "key": "enforce.dismissal",
+   "label": "اخراج / خاتمهٔ همکاری",
+   "group": "enforce",
+   "source": "case",
+   "from": "dismissalDate"
+  },
+  {
+   "key": "enforce.undertaking",
+   "label": "اخذ تعهد از کارمند",
+   "group": "enforce",
+   "source": "case",
+   "from": "undertakingDate"
+  },
+  {
+   "key": "case.archive",
+   "label": "ارسال پرونده به بایگانی",
+   "group": "case",
+   "source": "case",
+   "from": "archiveDate"
+  },
+  {
+   "key": "file.scan",
+   "label": "فایل بایگانی‌شده (اسکن یا بارگذاری)",
+   "group": "doc",
+   "source": "doc",
+   "from": "file"
+  },
+  {
+   "key": "file.batch",
+   "label": "نوبت بارگذاری (دسته)",
+   "group": "doc",
+   "source": "doc",
+   "from": "batch"
+  }
+ ],
+ "groups": [
+  {
+   "key": "case",
+   "label": "پرونده"
+  },
+  {
+   "key": "letter",
+   "label": "مکاتبات"
+  },
+  {
+   "key": "doc",
+   "label": "مستندات و اسکن"
+  },
+  {
+   "key": "defense",
+   "label": "دفاعیات"
+  },
+  {
+   "key": "committee",
+   "label": "کمیته"
+  },
+  {
+   "key": "verdict",
+   "label": "رأی و ابلاغ"
+  },
+  {
+   "key": "enforce",
+   "label": "اجرای رأی"
+  },
+  {
+   "key": "task",
+   "label": "کارها و یادداشت‌ها"
+  },
+  {
+   "key": "data",
+   "label": "داده و پشتیبان"
+  }
+ ],
+ "sources": [
+  {
+   "key": "history",
+   "label": "رویدادِ ثبت‌شده در برنامه"
+  },
+  {
+   "key": "case",
+   "label": "تاریخِ نشسته در خودِ پرونده"
+  },
+  {
+   "key": "doc",
+   "label": "فایلِ بایگانی‌شده روی دیسک"
+  },
+  {
+   "key": "task",
+   "label": "کارِ بسته‌شده"
+  }
+ ],
+ "totals": {
+  "key": "all",
+  "label": "کل بازه",
+  "from": "14050625",
+  "to": "14050707",
+  "days": 14,
+  "workedDays": 6,
+  "idleDays": 8,
+  "total": 43,
+  "bySource": {
+   "history": 36,
+   "case": 6,
+   "doc": 0,
+   "task": 1
+  },
+  "counts": {
+   "case.intake": 1,
+   "case.assign": 1,
+   "doc.decree": 1,
+   "letter.invite": 1,
+   "letter.inquiryOut": 1,
+   "data.import": 31,
+   "case.create": 1,
+   "case.update": 1,
+   "task.add": 1,
+   "note.add": 1,
+   "form.make": 1,
+   "committee.hearing": 1,
+   "task.done": 1
+  }
+ },
+ "days": [
+  {
+   "date": "14050625",
+   "dateText": "1405/06/25",
+   "weekday": "چهارشنبه",
+   "weekdayIndex": 4,
+   "holiday": false,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050626",
+   "dateText": "1405/06/26",
+   "weekday": "پنج‌شنبه",
+   "weekdayIndex": 5,
+   "holiday": false,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050627",
+   "dateText": "1405/06/27",
+   "weekday": "جمعه",
+   "weekdayIndex": 6,
+   "holiday": true,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050628",
+   "dateText": "1405/06/28",
+   "weekday": "شنبه",
+   "weekdayIndex": 0,
+   "holiday": false,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050629",
+   "dateText": "1405/06/29",
+   "weekday": "یک‌شنبه",
+   "weekdayIndex": 1,
+   "holiday": false,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050630",
+   "dateText": "1405/06/30",
+   "weekday": "دوشنبه",
+   "weekdayIndex": 2,
+   "holiday": false,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050631",
+   "dateText": "1405/06/31",
+   "weekday": "سه‌شنبه",
+   "weekdayIndex": 3,
+   "holiday": false,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050701",
+   "dateText": "1405/07/01",
+   "weekday": "چهارشنبه",
+   "weekdayIndex": 4,
+   "holiday": false,
+   "worked": true,
+   "total": 1,
+   "cases": 1,
+   "bySource": {
+    "history": 0,
+    "case": 1,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {
+    "case.intake": 1
+   }
+  },
+  {
+   "date": "14050702",
+   "dateText": "1405/07/02",
+   "weekday": "پنج‌شنبه",
+   "weekdayIndex": 5,
+   "holiday": false,
+   "worked": true,
+   "total": 1,
+   "cases": 1,
+   "bySource": {
+    "history": 0,
+    "case": 1,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {
+    "case.assign": 1
+   }
+  },
+  {
+   "date": "14050703",
+   "dateText": "1405/07/03",
+   "weekday": "جمعه",
+   "weekdayIndex": 6,
+   "holiday": true,
+   "worked": true,
+   "total": 1,
+   "cases": 1,
+   "bySource": {
+    "history": 0,
+    "case": 1,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {
+    "doc.decree": 1
+   }
+  },
+  {
+   "date": "14050704",
+   "dateText": "1405/07/04",
+   "weekday": "شنبه",
+   "weekdayIndex": 0,
+   "holiday": false,
+   "worked": true,
+   "total": 1,
+   "cases": 1,
+   "bySource": {
+    "history": 0,
+    "case": 1,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {
+    "letter.invite": 1
+   }
+  },
+  {
+   "date": "14050705",
+   "dateText": "1405/07/05",
+   "weekday": "یک‌شنبه",
+   "weekdayIndex": 1,
+   "holiday": false,
+   "worked": true,
+   "total": 1,
+   "cases": 1,
+   "bySource": {
+    "history": 0,
+    "case": 1,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {
+    "letter.inquiryOut": 1
+   }
+  },
+  {
+   "date": "14050706",
+   "dateText": "1405/07/06",
+   "weekday": "دوشنبه",
+   "weekdayIndex": 2,
+   "holiday": false,
+   "worked": false,
+   "total": 0,
+   "cases": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "date": "14050707",
+   "dateText": "1405/07/07",
+   "weekday": "سه‌شنبه",
+   "weekdayIndex": 3,
+   "holiday": false,
+   "worked": true,
+   "total": 38,
+   "cases": 32,
+   "bySource": {
+    "history": 36,
+    "case": 1,
+    "doc": 0,
+    "task": 1
+   },
+   "counts": {
+    "data.import": 31,
+    "case.create": 1,
+    "case.update": 1,
+    "task.add": 1,
+    "note.add": 1,
+    "form.make": 1,
+    "committee.hearing": 1,
+    "task.done": 1
+   }
+  }
+ ],
+ "weeks": [
+  {
+   "key": "w1",
+   "label": "هفتهٔ ۱",
+   "from": "14050625",
+   "to": "14050627",
+   "days": 3,
+   "workedDays": 0,
+   "idleDays": 3,
+   "total": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "key": "w2",
+   "label": "هفتهٔ ۲",
+   "from": "14050628",
+   "to": "14050703",
+   "days": 7,
+   "workedDays": 3,
+   "idleDays": 4,
+   "total": 3,
+   "bySource": {
+    "history": 0,
+    "case": 3,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {
+    "case.intake": 1,
+    "case.assign": 1,
+    "doc.decree": 1
+   }
+  },
+  {
+   "key": "w3",
+   "label": "هفتهٔ ۳",
+   "from": "14050704",
+   "to": "14050707",
+   "days": 4,
+   "workedDays": 3,
+   "idleDays": 1,
+   "total": 40,
+   "bySource": {
+    "history": 36,
+    "case": 3,
+    "doc": 0,
+    "task": 1
+   },
+   "counts": {
+    "letter.invite": 1,
+    "letter.inquiryOut": 1,
+    "data.import": 31,
+    "case.create": 1,
+    "case.update": 1,
+    "task.add": 1,
+    "note.add": 1,
+    "form.make": 1,
+    "committee.hearing": 1,
+    "task.done": 1
+   }
+  }
+ ],
+ "months": [
+  {
+   "key": "140506",
+   "label": "شهریور ۱۴۰۵",
+   "from": "14050625",
+   "to": "14050631",
+   "days": 7,
+   "workedDays": 0,
+   "idleDays": 7,
+   "total": 0,
+   "bySource": {
+    "history": 0,
+    "case": 0,
+    "doc": 0,
+    "task": 0
+   },
+   "counts": {}
+  },
+  {
+   "key": "140507",
+   "label": "مهر ۱۴۰۵",
+   "from": "14050701",
+   "to": "14050707",
+   "days": 7,
+   "workedDays": 6,
+   "idleDays": 1,
+   "total": 43,
+   "bySource": {
+    "history": 36,
+    "case": 6,
+    "doc": 0,
+    "task": 1
+   },
+   "counts": {
+    "case.intake": 1,
+    "case.assign": 1,
+    "doc.decree": 1,
+    "letter.invite": 1,
+    "letter.inquiryOut": 1,
+    "data.import": 31,
+    "case.create": 1,
+    "case.update": 1,
+    "task.add": 1,
+    "note.add": 1,
+    "form.make": 1,
+    "committee.hearing": 1,
+    "task.done": 1
+   }
+  }
+ ]
+}
