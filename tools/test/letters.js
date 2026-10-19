@@ -18,13 +18,13 @@ function unzip(file, entry) {
 }
 
 /* ------------------------------------------------------------------
-   ترتیب عناصر در OOXML اختیاری نیست: طرح‌وارهٔ ECMA-376 «توالی» است و ورد
+   ترتیب عناصر در OOXML اختیاری نیست: طرح‌واره ECMA-376 «توالی» است و ورد
    اگر jc را قبل از spacing ببیند، فایل را خراب اعلام می‌کند و اصلاً باز
    نمی‌کند. خوش‌ساخت‌بودن XML کافی نیست، پس ترتیب را خودمان می‌سنجیم.
    فهرست‌ها فقط همان عناصری را دارند که این برنامه می‌نویسد. */
 const SEQ = {
-  'w:pPr': ['w:pBdr', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc'],
-  'w:rPr': ['w:rFonts', 'w:b', 'w:bCs', 'w:sz', 'w:szCs', 'w:rtl'],
+  'w:pPr': ['w:keepNext', 'w:framePr', 'w:pBdr', 'w:bidi', 'w:spacing', 'w:ind', 'w:jc', 'w:rPr'],
+  'w:rPr': ['w:rFonts', 'w:b', 'w:bCs', 'w:sz', 'w:szCs', 'w:rtl', 'w:lang'],
   'w:tcPr': ['w:tcW', 'w:gridSpan', 'w:vAlign'],
   'w:tblPr': ['w:bidiVisual', 'w:tblW', 'w:tblBorders', 'w:tblCellMar'],
   'w:tblBorders': ['w:top', 'w:start', 'w:left', 'w:bottom', 'w:end', 'w:right',
@@ -96,14 +96,14 @@ function check(name, ok, extra) {
   await bootApp(page, APP);
   await page.evaluate(() => { window.print = () => {}; });
 
-  // پروندهٔ نمونه با همهٔ چیزهایی که فرم‌ها لازم دارند
+  // پرونده نمونه با همه چیزهایی که فرم‌ها لازم دارند
   const recId = await page.evaluate(async () => {
     const J = window.J, M = window.Model;
     const c = M.state.cases.slice()
       .sort((a, b) => (a.caseNo || '') < (b.caseNo || '') ? -1 : 1)[0];
     await M.update(c.id, Object.assign({}, c, {
       fatherName: 'محمد', personnelCode: '88123', phone: '09121112233',
-      education: 'لیسانس', jobTitle: 'کارشناس امور شهری', servicePlace: 'منطقهٔ ۵',
+      education: 'لیسانس', jobTitle: 'کارشناس امور شهری', servicePlace: 'منطقه ۵',
       priorRecord: 'ندارد', defenseSummary: 'نامبرده اظهار داشت بیمار بوده است.',
       committeeDate: J.addDays(J.today(), -5), committeeRegNo: '1405/ک2/33',
       verdictDate: J.addDays(J.today(), -4),
@@ -113,11 +113,11 @@ function check(name, ok, extra) {
       letters: {
         signerName: 'امیریزدی', preparedBy: 'حسین نوروزی', letterheadTop: 45,
         members: [
-          { name: 'سید مجتبی حسینی', role: 'نمایندهٔ کارکنان' },
-          { name: 'هادی حق‌بین', role: 'نمایندهٔ سرپرستان' },
-          { name: 'علی امیریزدی', role: 'نمایندهٔ مدیریت' }
+          { name: 'سید مجتبی حسینی', role: 'نماینده کارکنان' },
+          { name: 'هادی حق‌بین', role: 'نماینده سرپرستان' },
+          { name: 'علی امیریزدی', role: 'نماینده مدیریت' }
         ],
-        cc: ['ادارهٔ کمیتهٔ انضباط کار برای اطلاع.']
+        cc: ['اداره کمیته انضباط کار برای اطلاع.']
       }
     });
     return c.id;
@@ -153,7 +153,7 @@ function check(name, ok, extra) {
     s.value = '__new';
     s.dispatchEvent(new Event('change'));
     const i = document.querySelectorAll('.transfer-head input')[0];
-    i.value = 'کمیتهٔ منطقهٔ ۵';
+    i.value = 'کمیته منطقه ۵';
     i.dispatchEvent(new Event('input'));
     const reason = document.querySelector('.transfer-head textarea');
     reason.value = 'خارج از صلاحیت این کمیته';
@@ -186,7 +186,7 @@ function check(name, ok, extra) {
   }, recId);
 
   check('ارجاع با تاریخ، مقصد، کارشناس قبلی و علت ثبت می‌شود',
-    after.to === 'کمیتهٔ منطقهٔ ۵' && !!after.date && !!after.from &&
+    after.to === 'کمیته منطقه ۵' && !!after.date && !!after.from &&
     /خارج از صلاحیت/.test(after.reason || ''),
     JSON.stringify({ to: after.to, from: after.from }));
   check('پرونده از کارتابل بیرون می‌رود', !after.inBuckets && after.action === 'transferred');
@@ -250,10 +250,10 @@ function check(name, ok, extra) {
   const extra = {
     service: '۱۲ سال', serviceFrom: '۱۳۹۲/۰۳/۰۱', serviceTo: '۱۴۰۵/۰۶/۲۸',
     company: 'موسسه هادیان شهر', addressee: 'رضایی',
-    addresseeRole: 'شهردار محترم منطقهٔ ۵', outLetterNo: '۱۴۰۵/۳۱۱/م'
+    addresseeRole: 'شهردار محترم منطقه ۵', outLetterNo: '۱۴۰۵/۳۱۱/م'
   };
 
-  // ۱) خلاصهٔ پرونده — روی کاغذ سفید
+  // ۱) خلاصه پرونده — روی کاغذ سفید
   const summary = await page.evaluate(({ id, extra }) => {
     window.UILetters.printSummary(window.Model.get(id), extra);
     const rows = [...document.querySelectorAll('#print-area .lf-summary tr')];
@@ -265,15 +265,15 @@ function check(name, ok, extra) {
       values: rows.map(r => r.querySelector('td').textContent)
     };
   }, { id: recId, extra });
-  check('فرم خلاصهٔ پرونده روی کاغذ سفید ساخته می‌شود',
-    summary.plain && !summary.head && summary.title === 'خلاصهٔ پرونده');
-  // دوازده سطر: یازده سطرِ فرم شما، به‌علاوهٔ خلاصه‌ای که کارشناس نوشته
+  check('فرم خلاصه پرونده روی کاغذ سفید ساخته می‌شود',
+    summary.plain && !summary.head && summary.title === 'خلاصه پرونده');
+  // دوازده سطر: یازده سطرِ فرم شما، به‌علاوه خلاصه‌ای که کارشناس نوشته
   check('دوازده سطر نمونه، با همان ترتیب فرم شما',
     summary.labels.length === 12 &&
     summary.labels[0] === 'نام' &&
-    summary.labels[5] === 'سابقهٔ کار در شهرداری' &&
-    summary.labels[10] === 'خلاصهٔ پرونده' &&
-    summary.labels[11] === 'خلاصهٔ دفاعیه',
+    summary.labels[5] === 'سابقه کار در شهرداری' &&
+    summary.labels[10] === 'خلاصه پرونده' &&
+    summary.labels[11] === 'خلاصه دفاعیه',
     summary.labels.join('/'));
   check('مقدارها از خود پرونده پر می‌شوند',
     /لیسانس/.test(summary.values.join(' ')) &&
@@ -288,7 +288,7 @@ function check(name, ok, extra) {
     return {
       head: !!document.querySelector('#print-area .lf-letterhead'),
       space: (document.querySelector('#print-area .lf-head-space') || {}).style.height,
-      side: wrap ? wrap.style.paddingInlineEnd : '',
+      side: wrap ? wrap.style.paddingRight : '',
       title: (document.querySelector('#print-area .lf-title') || {}).textContent,
       blank: !!document.querySelector('#print-area .lf-blank'),
       signRow: (document.querySelector('#print-area .lf-sign-row') || {}).textContent || '',
@@ -297,13 +297,14 @@ function check(name, ok, extra) {
   }, { id: recId, extra });
   check('فرم تفهیم اتهام با جای خالی دفاعیه ساخته می‌شود',
     defense.title === 'فرم تفهیم اتهام و دفاعیه' && defense.blank);
-  // ۲۵ میلی‌متر از لبهٔ راست، منهای ۱۲ میلی‌متر حاشیهٔ خود کاغذ
+  // ۵۸ میلی‌متر از لبه راست (نوار سربرگ)، منهای ۱۰ میلی‌متر حاشیه خود کاغذ؛
+  // بالا ۲۰ منهای ۱۰. تنظیمِ قدیمیِ «۴۵ از بالا» خودش به اندازهٔ تازه می‌رود.
   check('تفهیم اتهام هم روی سربرگ است و از راست فاصله می‌گیرد',
-    defense.head && defense.space === '31mm' && defense.side === '13mm',
+    defense.head && defense.space === '10mm' && defense.side === '48mm',
     defense.space + ' / ' + defense.side);
   check('پای فرم، نام و امضا و تاریخ دارد',
     /امضاء/.test(defense.signRow) && /تاریخ/.test(defense.signRow));
-  check('سابقهٔ کار در فرم می‌نشیند', defense.hasService);
+  check('سابقه کار در فرم می‌نشیند', defense.hasService);
 
   // ۳) رأی صادره — روی سربرگ
   const verdict = await page.evaluate(({ id, extra }) => {
@@ -321,11 +322,10 @@ function check(name, ok, extra) {
       persianId: /۱۲۳۴۵۶۷۸۹۰/.test(t)
     };
   }, { id: recId, extra });
-  // تنظیم ۴۵ میلی‌متر «از لبهٔ کاغذ» است و خود کاغذ ۱۴ میلی‌متر حاشیه دارد،
-  // پس فضای افزوده ۳۱ میلی‌متر می‌شود — جمعاً همان ۴۵.
+  // ۲۰ میلی‌متر «از لبه کاغذ»، منهای ۱۰ میلی‌متر حاشیه خود کاغذ
   check('فرم رأی روی سربرگ ساخته می‌شود و بالای صفحه خالی می‌ماند',
-    verdict.space === '31mm' && /رأی صادره/.test(verdict.mark), verdict.space);
-  check('متن رأی، جملهٔ قطعیت و مستند آیین‌نامه در فرم هست',
+    verdict.space === '10mm' && /رأی صادره/.test(verdict.mark), verdict.space);
+  check('متن رأی، جمله قطعیت و مستند آیین‌نامه در فرم هست',
     verdict.hasVerdict && verdict.hasFinal && verdict.hasRegulation);
   check('اعضای کمیته و بخش ابلاغ پای فرم می‌آیند',
     verdict.members === 3 && verdict.notice === 3,
@@ -347,20 +347,20 @@ function check(name, ok, extra) {
       hasSession: /مطرح و منتج به صدور رأی/.test(t)
     };
   }, { id: recId, extra });
-  check('نامهٔ ابلاغ روی سربرگ، با مخاطب و موضوع ساخته می‌شود',
-    notice.space === '31mm' && /رضایی/.test(notice.to) &&
-    /ابلاغ رأی کمیتهٔ انضباط کار/.test(notice.to));
+  check('نامه ابلاغ روی سربرگ، با مخاطب و موضوع ساخته می‌شود',
+    notice.space === '10mm' && /رضایی/.test(notice.to) &&
+    /ابلاغ رأی کمیته انضباط کار/.test(notice.to));
   check('متن رأی داخل گیومه در نامه می‌آید', /توبیخ کتبی/.test(notice.quote));
   check('امضاکننده، رونوشت‌ها و تهیه‌کننده می‌نشینند',
     /امیریزدی/.test(notice.signer) && notice.cc === 1 && notice.prepared,
     notice.cc + ' رونوشت');
-  check('شمارهٔ نامهٔ صادره و ارجاع به جلسه در متن هست',
+  check('شماره نامه صادره و ارجاع به جلسه در متن هست',
     notice.hasLetterNo && notice.hasSession);
 
   // ------------------------------------------------------------ خروجی ورد
   console.log('\n— خروجی ورد —');
 
-  /** فرم را با دکمهٔ واقعیِ برنامه در ورد می‌گیرد و فایل را برمی‌گرداند */
+  /** فرم را با دکمه واقعیِ برنامه در ورد می‌گیرد و فایل را برمی‌گرداند */
   async function word(kind, form) {
     await page.evaluate(({ id, k }) => {
       const rec = window.Model.get(id);
@@ -395,7 +395,7 @@ function check(name, ok, extra) {
     Object.keys(docs).map(k => docs[k].name).join(' | '));
 
   const zipList = execFileSync('unzip', ['-l', docs.verdict.file]).toString();
-  check('فایل واقعاً بستهٔ ورد است، نه HTML با پسوند عوضی',
+  check('فایل واقعاً بسته ورد است، نه HTML با پسوند عوضی',
     /word\/document\.xml/.test(zipList) && /\[Content_Types\]\.xml/.test(zipList) &&
     /word\/styles\.xml/.test(zipList));
 
@@ -413,17 +413,17 @@ function check(name, ok, extra) {
         orderBad.push(k + ' ' + part.split('/')[1] + ': ' + e));
     }
   }
-  check('ترتیب عناصر با طرح‌وارهٔ ورد می‌خواند (وگرنه ورد فایل را باز نمی‌کند)',
+  check('ترتیب عناصر با طرح‌واره ورد می‌خواند (وگرنه ورد فایل را باز نمی‌کند)',
     orderBad.length === 0, orderBad.slice(0, 5).join(' | '));
   check('اعضای کمیته و بخش ابلاغ در فایل ورد هم هستند',
     vx.indexOf('هادی حق‌بین') > 0 && vx.indexOf('مأمور ابلاغ') > 0);
 
   const sx = unzip(docs.summary.file, 'word/document.xml');
-  check('خلاصهٔ پرونده در ورد، همان دوازده سطر جدول را دارد',
-    (sx.match(/<w:tr>/g) || []).length === 12 && sx.indexOf('خلاصهٔ دفاعیه') > 0,
+  check('خلاصه پرونده در ورد، همان دوازده سطر جدول را دارد',
+    (sx.match(/<w:tr>/g) || []).length === 12 && sx.indexOf('خلاصه دفاعیه') > 0,
     (sx.match(/<w:tr>/g) || []).length + ' سطر');
 
-  /** حاشیهٔ صفحه در ورد، از twip به میلی‌متر */
+  /** حاشیه صفحه در ورد، از twip به میلی‌متر */
   function margins(xml) {
     const attrs = /<w:pgMar ([^>]*)\/>/.exec(xml)[1];
     const mm = k =>
@@ -432,14 +432,14 @@ function check(name, ok, extra) {
   }
   const vm = margins(vx);
   check('در ورد، سربرگ از بالا و از راست فاصله می‌گیرد',
-    vm.top === 45 && vm.right === 25 && vm.left === 12, JSON.stringify(vm));
+    vm.top === 20 && vm.right === 58 && vm.left === 10, JSON.stringify(vm));
   const sm = margins(sx);
-  check('کاغذ سفید حاشیهٔ معمولی دارد، نه حاشیهٔ سربرگ',
-    sm.top === 16 && sm.right === 12 && sm.left === 12, JSON.stringify(sm));
+  check('کاغذ سفید حاشیه معمولی دارد، نه حاشیه سربرگ',
+    sm.top === 16 && sm.right === 10 && sm.left === 10, JSON.stringify(sm));
 
   const dm = margins(unzip(docs.defense.file, 'word/document.xml'));
   check('تفهیم اتهام در ورد هم روی سربرگ می‌نشیند',
-    dm.top === 45 && dm.right === 25, JSON.stringify(dm));
+    dm.top === 20 && dm.right === 58, JSON.stringify(dm));
 
   console.log('\n— تنظیمات سربرگ —');
   await page.evaluate(() => window.UIMisc.settingsDialog(window.App));
@@ -452,9 +452,9 @@ function check(name, ok, extra) {
       nums: nums.map(n => n.value)
     };
   });
-  check('فاصلهٔ بالا و فاصلهٔ راستِ سربرگ، هر دو قابل تنظیم‌اند',
-    settings.fields === 6 && settings.members === 3 &&
-    settings.nums.join(',') === '45,25', JSON.stringify(settings));
+  check('فاصله بالا و فاصله راستِ سربرگ، هر دو قابل تنظیم‌اند',
+    settings.fields === 7 && settings.members === 3 &&
+    settings.nums.join(',') === '20,58,10', JSON.stringify(settings));
 
   await page.evaluate(() => {
     const nums = [...document.querySelectorAll('.letters-settings input[type=number]')];
@@ -469,12 +469,12 @@ function check(name, ok, extra) {
     return {
       top: c.letterheadTop, right: c.letterheadRight,
       space: (document.querySelector('#print-area .lf-head-space') || {}).style.height,
-      side: (document.querySelector('#print-area .lf') || {}).style.paddingInlineEnd
+      side: (document.querySelector('#print-area .lf') || {}).style.paddingRight
     };
   }, recId);
-  check('تغییر اندازهٔ سربرگ روی چاپ اثر می‌گذارد',
+  check('تغییر اندازه سربرگ روی چاپ اثر می‌گذارد',
     applied.top === 60 && applied.right === 32 &&
-    applied.space === '46mm' && applied.side === '20mm', JSON.stringify(applied));
+    applied.space === '50mm' && applied.side === '22mm', JSON.stringify(applied));
 
   const reWord = await word('verdict');
   const am = margins(unzip(reWord.file, 'word/document.xml'));
@@ -485,6 +485,6 @@ function check(name, ok, extra) {
   check('بدون خطای جاوااسکریپت', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();
-  console.log('\n' + (failures ? '✗ ' + failures + ' تست ناموفق' : '✓ همهٔ تست‌ها موفق'));
+  console.log('\n' + (failures ? '✗ ' + failures + ' تست ناموفق' : '✓ همه تست‌ها موفق'));
   process.exit(failures ? 1 : 0);
 })().catch(e => { console.error('خطای اجرای تست:', e); process.exit(2); });

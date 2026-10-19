@@ -79,7 +79,10 @@ function check(name, ok, extra) {
         const opts = t.defaults(rec, MN.conf());
         MN.conf().recipients.forEach(rc => {
           const res = MN.build(t.key, [rec], { recipient: rc, ref: { source: 'case', relation: 'auto' }, opts });
+          // غلطی که از خودِ دادهٔ پرونده آمده (دادهٔ نمونهٔ اکسل) کارِ متنِ مینوت نیست
+          const own = Object.values(rec).filter(v => typeof v === 'string').join(' ');
           window.Spell.check(res.text + '\n' + res.subject + '\n' + res.relationText).forEach(i => {
+            if (own.indexOf(i.word) >= 0) return;
             out[i.kind + ':' + i.word] = 1;
           });
         });
@@ -111,8 +114,8 @@ function check(name, ok, extra) {
     const r = window.Spell.cleanup('احتراما ، آقای ...... در جلسه ی كميته حاضر ميشود و نامهها نمیباشد .');
     return r;
   });
-  check('اصلاح نگارشی: تنوین، «ی/ک»، کسرهٔ اضافه، نیم‌فاصله و فاصلهٔ نشانه‌ها',
-    cu.text === 'احتراماً، آقای ...... در جلسهٔ کمیته حاضر می‌شود و نامه‌ها نمی‌باشد.' && cu.changes > 0,
+  check('اصلاح نگارشی: تنوین، «ی/ک»، «جلسه‌ی» (بی «ٔ» که در B Zar نیست)، نیم‌فاصله و فاصلهٔ نشانه‌ها',
+    cu.text === 'احتراماً، آقای ...... در جلسه\u200cی کمیته حاضر می‌شود و نامه‌ها نمی‌باشد.' && cu.changes > 0,
     cu.text);
   check('جای خالیِ مینوت («......») دست نمی‌خورد', cu.text.indexOf('......') > 0);
 

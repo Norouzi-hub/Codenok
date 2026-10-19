@@ -253,7 +253,7 @@ function unzip(file, want) {
   check('همهٔ متنِ فایل ورد با «B Zar» است',
     fonts.length === 1 && fonts[0] === 'w:cs="B Zar"', fonts.join(' / '));
   check('قلم پیش‌فرضِ سند هم همان است',
-    /w:ascii="B Zar" w:hAnsi="B Zar" w:cs="B Zar"/.test(styles));
+    /w:ascii="B Zar" w:hAnsi="B Zar" w:eastAsia="B Zar" w:cs="B Zar"/.test(styles));
   check('اندازهٔ متنِ فارسی جبران شده (B Zar ریزتر می‌نشیند)',
     /<w:sz w:val="22"\/><w:szCs w:val="26"\/>/.test(doc), sizes.join(' | '));
   check('راست‌به‌چپ در هر سه جا هست: پاراگراف، متن و جدول',

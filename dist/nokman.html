@@ -3282,7 +3282,7 @@ select.input { cursor: pointer; }
 }
 
 @media print {
-  @page { size: A4; margin: 14mm 12mm; }
+  @page { size: A4; margin: 10mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
@@ -3372,6 +3372,19 @@ select.input { cursor: pointer; }
   .lf-notice-row { margin-bottom: 8px; font-weight: 700; font-size: 10pt; }
 
   .lf-letter-no { text-align: left; font-size: 10pt; margin-bottom: 10px; }
+  /* سربرگِ دبیرخانه: نوارِ چاپیِ سمتِ راست؛ شماره بالای آن، «تهیه‌کننده» کنارِ امضا */
+  .lf-letterhead { position: relative; font-size: 12.5pt; line-height: 2; }
+  .lf-letterhead .lf-letter-no.in-band { position: absolute; text-align: right; margin: 0; }
+  .lf-letterhead .lf-to { line-height: 1.75; margin-bottom: 6mm; }
+  .lf-letterhead .lf-para { margin: 0 0 2px; }
+  .lf-letterhead .lf-quote { border: 0; padding: 0; margin: 2px 0; line-height: 1.8; }
+  .lf-signer-row { position: relative; margin-top: 10mm; break-inside: avoid; }
+  .lf-signer-row .lf-signer { margin-top: 0; width: 72mm; margin-inline-start: auto; font-weight: 700; }
+  .lf-prepared.in-band { position: absolute; top: 4mm; text-align: right; font-size: 9pt; line-height: 1.6; margin: 0; }
+  .lf-letterhead .lf-foot { margin-top: 2mm; }
+  .lf-letterhead .lf-cc { font-size: 8pt; line-height: 1.6; }
+  .lf-letterhead .lf-cc-list { list-style: none; padding: 0; line-height: 1.6; }
+  .lf-letterhead .lf-cc-list li::before { content: '- '; }
   .lf-to { font-weight: 700; margin-bottom: 10px; line-height: 2; }
   .lf-subject { margin-top: 2px; }
   .lf-quote {
@@ -11647,23 +11660,56 @@ window.SEED_CASES = [
    */
   var FONT = 'B Zar';
   var CS_SCALE = 1.18;
+  // هر چهار جایگاهِ قلم: بی این، ورد رقم و نشانه را با Times New Roman می‌نویسد
+  var FONTS = '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:eastAsia="' + FONT +
+    '" w:cs="' + FONT + '" w:hint="cs"/>';
+  var LANG = '<w:lang w:val="fa-IR" w:eastAsia="fa-IR" w:bidi="fa-IR"/>';
 
   /** ویژگی‌های متن: درشتی، اندازه، و همیشه راست‌به‌چپ */
   function rPr(o) {
     o = o || {};
     var size = o.size || 22;            // نیم‌پوینت: ۲۲ یعنی ۱۱ پوینت
     var csSize = Math.round(size * CS_SCALE);
-    return '<w:rPr>' +
-      '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
+    return '<w:rPr>' + FONTS +
       (o.bold ? '<w:b/><w:bCs/>' : '') +
       '<w:sz w:val="' + size + '"/><w:szCs w:val="' + csSize + '"/>' +
-      '<w:rtl/>' +
+      '<w:rtl/>' + LANG +
       '</w:rPr>';
+  }
+
+  /*
+   * متن برای ورد و قلمِ B Zar:
+   *   - «ٔ» (همزهٔ روی «ه») در B Zar نیست؛ ورد جایش دایرهٔ خالی می‌گذارد.
+   *     نامه‌های دبیرخانه هم «نامه شماره» می‌نویسند، نه «نامهٔ شمارهٔ».
+   *   - تاریخ و شمارهٔ نامه («۱۴۰۵/۰۷/۲۰») در متنِ راست‌به‌چپِ ورد وارونه
+   *     می‌شود («۲۰/۰۷/۱۴۰۵»)؛ با نشانهٔ «چپ‌به‌راست» دورش، همان‌طور که
+   *     نوشته شده می‌ماند.
+   */
+  function forWord(text) {
+    return String(text == null ? '' : text)
+      .replace(/\u0654/g, '').replace(/\u06C0/g, '\u0647')
+      .replace(/[0-9\u06F0-\u06F9]+(?:[\/\-][0-9\u06F0-\u06F9]+)+/g, function (m) {
+        return '\u202A' + m + '\u202C';
+      });
   }
 
   function run(text, o) {
     return '<w:r>' + rPr(o) +
-      '<w:t xml:space="preserve">' + esc(text) + '</w:t></w:r>';
+      '<w:t xml:space="preserve">' + esc(forWord(text)) + '</w:t></w:r>';
+  }
+
+  /*
+   * ترازِ پاراگراف. در پاراگرافِ راست‌به‌چپِ ورد «right» و «left» جابه‌جا
+   * خوانده می‌شوند — «right» چپ‌چین می‌شد. «start/end» همیشه درست است:
+   * start = راست، end = چپ.
+   */
+  var JC = { right: 'start', left: 'end', center: 'center', both: 'both', start: 'start', end: 'end' };
+
+  /** قابِ جاگذاری‌شده (برای نوارِ کنارِ سربرگ): میلی‌متر از لبهٔ کاغذ */
+  function framePr(f) {
+    return '<w:framePr w:w="' + mm(f.wMm) + '" w:hSpace="0" w:wrap="around"' +
+      ' w:vAnchor="' + (f.anchor === 'text' ? 'text' : 'page') + '" w:hAnchor="page"' +
+      ' w:x="' + mm(f.xMm) + '" w:y="' + mm(f.yMm || 0) + '"/>';
   }
 
   /**
@@ -11677,15 +11723,18 @@ window.SEED_CASES = [
   function para(text, o) {
     o = o || {};
     var pPr = '<w:pPr>' +
+      (o.keepNext ? '<w:keepNext/>' : '') +
+      (o.frame ? framePr(o.frame) : '') +
       (o.border
         ? '<w:pBdr><w:right w:val="single" w:sz="12" w:space="6" w:color="000000"/></w:pBdr>'
         : '') +
       '<w:bidi/>' +
       '<w:spacing w:before="' + (o.before == null ? 0 : o.before) +
       '" w:after="' + (o.after == null ? 80 : o.after) +
-      '" w:line="300" w:lineRule="auto"/>' +
+      '" w:line="' + (o.line || 300) + '" w:lineRule="auto"/>' +
       (o.indent ? '<w:ind w:right="' + o.indent + '"/>' : '') +
-      '<w:jc w:val="' + (o.align || 'right') + '"/>' +
+      '<w:jc w:val="' + (JC[o.align] || 'start') + '"/>' +
+      '<w:rPr>' + FONTS + '<w:rtl/></w:rPr>' +
       '</w:pPr>';
     var body = text == null || text === ''
       ? ''
@@ -11703,7 +11752,9 @@ window.SEED_CASES = [
     var runs = (Array.isArray(parts) ? parts : [parts]).map(function (p) {
       if (p == null) return '';
       if (typeof p === 'string') return run(p, { size: o.size });
-      return run(p.text, { bold: p.bold, size: o.size });
+      return String(p.text).split('\n').map(function (line, i) {
+        return (i ? '<w:r><w:br/></w:r>' : '') + run(line, { bold: p.bold, size: p.size || o.size });
+      }).join('');
     }).join('');
     // ترتیب tcPr:  tcW → gridSpan → vAlign
     return '<w:tc><w:tcPr>' +
@@ -11712,8 +11763,8 @@ window.SEED_CASES = [
       '<w:vAlign w:val="top"/>' +
       '</w:tcPr>' +
       '<w:p><w:pPr><w:bidi/>' +
-      '<w:spacing w:before="20" w:after="20" w:line="276" w:lineRule="auto"/>' +
-      '<w:jc w:val="right"/>' +
+      '<w:spacing w:before="20" w:after="20" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+      '<w:jc w:val="' + (JC[o.align] || 'start') + '"/>' +
       '</w:pPr>' + runs + '</w:p>' +
       (o.minMm ? emptyHeight(o.minMm) : '') +
       '</w:tc>';
@@ -11723,7 +11774,7 @@ window.SEED_CASES = [
   function emptyHeight(heightMm) {
     var lines = Math.max(1, Math.round(heightMm / 6));
     var out = '';
-    for (var i = 0; i < lines; i++) out += '<w:p><w:pPr><w:bidi/></w:pPr></w:p>';
+    for (var i = 0; i < lines; i++) out += '<w:p><w:pPr><w:bidi/><w:rPr>' + FONTS + '</w:rPr></w:pPr></w:p>';
     return out;
   }
 
@@ -11737,7 +11788,9 @@ window.SEED_CASES = [
     o = o || {};
     var grid = '';
     var each = Math.round(9638 / (cols || 1));   // عرض مفید A4 با حاشیهٔ ۱۲ میلی‌متر
-    for (var i = 0; i < (cols || 1); i++) grid += '<w:gridCol w:w="' + each + '"/>';
+    for (var i = 0; i < (cols || 1); i++) {
+      grid += '<w:gridCol w:w="' + (o.widths ? o.widths[i] : each) + '"/>';
+    }
     // ترتیب tblPr:  bidiVisual → tblW → tblBorders → tblCellMar
     return '<w:tbl><w:tblPr>' +
       '<w:bidiVisual/>' +                      // بدون این، ستون‌ها چپ‌به‌راست می‌شوند
@@ -11783,14 +11836,14 @@ window.SEED_CASES = [
   var STYLES =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
-    '<w:docDefaults><w:rPrDefault><w:rPr>' +
-    '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
-    '<w:sz w:val="22"/><w:szCs w:val="' + Math.round(22 * CS_SCALE) + '"/><w:rtl/>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' + FONTS +
+    '<w:sz w:val="22"/><w:szCs w:val="' + Math.round(22 * CS_SCALE) + '"/><w:rtl/>' + LANG +
     '</w:rPr></w:rPrDefault>' +
-    '<w:pPrDefault><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr></w:pPrDefault>' +
+    '<w:pPrDefault><w:pPr><w:bidi/><w:jc w:val="start"/></w:pPr></w:pPrDefault>' +
     '</w:docDefaults>' +
     '<w:style w:type="paragraph" w:default="1" w:styleId="Normal">' +
-    '<w:name w:val="Normal"/><w:qFormat/></w:style>' +
+    '<w:name w:val="Normal"/><w:qFormat/>' +
+    '<w:pPr><w:bidi/></w:pPr><w:rPr>' + FONTS + '<w:rtl/></w:rPr></w:style>' +
     '</w:styles>';
 
   /**
@@ -11830,7 +11883,8 @@ window.SEED_CASES = [
 
   w.Docx = {
     build: build, para: para, emptyPara: emptyPara, run: run,
-    cell: cell, table: table, emptyHeight: emptyHeight, mm: mm, esc: esc, MIME: MIME
+    cell: cell, table: table, emptyHeight: emptyHeight, mm: mm, esc: esc, MIME: MIME,
+    forWord: forWord, FONT: FONT
   };
 })(window);
 
@@ -16750,6 +16804,8 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
 
   /* ------------------------------------------------------ اصلاح نگارشی */
   var VOPTS = {
+    // «جلسه ی» ← «جلسهٔ» نه: «ٔ» در B Zar نیست و دایرهٔ خالی می‌شود
+    fix_hamzeh: false,
     fix_english_numbers: false, normalize_dates: false, fix_numeral_symbols: false,
     markdown_normalize_lists: false, markdown_normalize_braces: false,
     cleanup_line_breaks: false, kashidas_as_parenthetic: false,
@@ -19734,10 +19790,12 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
       // «بازگشت به …، شایسته است » — ارجاع و فعل، با ویرگولِ میانشان
       lead: (ref ? ref + '، ' : '') + verb + ' '
     };
-    var paragraphs = ['با سلام و احترام؛'].concat(t.body(x));
-    var relationText = conf_ ? 'محرمانه — بدون ارجاع'
-      : (letter ? relOf(relation).line + ' ' + letterPhrase(letter) : 'بدون ارجاع');
-    var attach = t.attachOf ? t.attachOf(opts) : (t.attach || '');
+    /* «ٔ» (نامهٔ، شمارهٔ) در قلمِ B Zar نیست و در ورد و اتوماسیون دایرهٔ خالی
+       می‌شود؛ نامه‌های دبیرخانه «نامه شماره» می‌نویسند. */
+    var paragraphs = ['با سلام و احترام؛'].concat(t.body(x)).map(plain);
+    var relationText = plain(conf_ ? 'محرمانه — بدون ارجاع'
+      : (letter ? relOf(relation).line + ' ' + letterPhrase(letter) : 'بدون ارجاع'));
+    var attach = plain(t.attachOf ? t.attachOf(opts) : (t.attach || ''));
     /* نامِ مخاطب از «دفتر مقامات»: «جناب آقای … شهردار محترم منطقه ۵».
        withName: false یعنی فقط سمت (کاربر خواسته، یا نامی پیدا نشد). */
     var title = titleFor(recipient, rec);
@@ -19745,8 +19803,8 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
     if (o.withName !== false && w.Officials) {
       addressee = recipient.official ? w.Officials.get(recipient.official) : w.Officials.find(title);
     }
-    var to = addressee ? w.Officials.address(addressee, title) : title;
-    var subject = t.subject + ' — ' + people(recs);
+    var to = plain(addressee ? w.Officials.address(addressee, title) : title);
+    var subject = plain(t.subject + ' — ' + people(recs));
     var text = paragraphs.join('\n');
     var full = ['گیرنده: ' + to, 'موضوع: ' + subject, relationText,
       attach ? 'پیوست: ' + attach : ''].filter(Boolean).join('\n') + '\n\n' + text;
@@ -19756,6 +19814,8 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
       paragraphs: paragraphs, text: text, full: full, confidential: conf_
     };
   }
+
+  function plain(s) { return String(s == null ? '' : s).replace(/\u0654/g, '').replace(/\u06C0/g, '\u0647'); }
 
   w.Minute = {
     BLANK: BLANK, TYPES: TYPES, RANKS: RANKS, RELATIONS: RELATIONS, OUR_LETTERS: OUR_LETTERS,
@@ -21860,9 +21920,13 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
 
   var DEFAULTS = {
     orgTitle: 'کمیتهٔ انضباط کار شهرداری تهران',
-    letterheadTop: 45,          // میلی‌متر، از لبهٔ بالای کاغذ
-    letterheadRight: 25,        // میلی‌متر، از لبهٔ راست کاغذ (نوار کنار سربرگ)
-    letterheadBottom: 25,
+    /* از روی نمونهٔ خودِ دبیرخانه: سربرگِ سازمان نواری در سمتِ راستِ کاغذ
+       است، نه در بالا. متن ۵۸ میلی‌متر از لبهٔ راست فاصله دارد؛ بالا و چپ
+       فقط حاشیهٔ معمول‌اند. شمارهٔ نامه و «تهیه‌کننده» داخلِ همان نوار می‌نشینند. */
+    letterheadTop: 20,          // میلی‌متر، از لبهٔ بالای کاغذ
+    letterheadRight: 58,        // میلی‌متر، از لبهٔ راست کاغذ (نوار کنار سربرگ)
+    letterheadLeft: 10,
+    letterheadBottom: 15,
     signerName: '',
     signerRole: 'مدیر کل',
     preparedBy: '',
@@ -21874,7 +21938,9 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   /* حاشیهٔ خود کاغذ در چاپ، از  @page  در app.css. تنظیمات سربرگ «از لبهٔ
      کاغذ» است، پس برای چاپ باید همین مقدار از آن کم شود وگرنه دو بار
      حساب می‌شود؛ در ورد مستقیم حاشیهٔ صفحه گذاشته می‌شود. */
-  var PAGE = { top: 14, side: 12 };
+  var PAGE = { top: 10, side: 10 };
+  // اندازه‌های قدیمی (سربرگ از بالا)؛ کسی که خودش عوضشان نکرده، اندازهٔ تازه می‌گیرد
+  var LEGACY = { letterheadTop: 45, letterheadRight: 25, letterheadBottom: 25 };
 
   function beyond(total, base) {
     var n = Number(total);
@@ -21885,7 +21951,11 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   function conf() {
     var saved = M.state.settings.letters || {};
     var out = {};
+    var legacy = !saved.layoutV && Object.keys(LEGACY).every(function (k) {
+      return saved[k] == null || Number(saved[k]) === LEGACY[k];
+    });
     Object.keys(DEFAULTS).forEach(function (k) {
+      if (legacy && LEGACY[k] != null) { out[k] = DEFAULTS[k]; return; }
       out[k] = saved[k] != null && saved[k] !== '' ? saved[k] : DEFAULTS[k];
     });
     if (!Array.isArray(out.members) || !out.members.length) out.members = DEFAULT_MEMBERS;
@@ -21894,7 +21964,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   }
 
   function saveConf(patch) {
-    var next = Object.assign({}, conf(), patch);
+    var next = Object.assign({}, conf(), patch, { layoutV: 2 });
     return M.saveSettings({ letters: next });
   }
 
@@ -22126,7 +22196,7 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
         {
           t: 'to',
           lines: [
-            'جناب ' + (val(extra.addressee) ? 'آقای ' + extra.addressee : 'آقای ...'),
+            addresseeLine(extra.addressee),
             val(extra.addresseeRole) || 'شهردار محترم ...',
             'موضوع: ابلاغ رأی کمیتهٔ انضباط کار شهرداری تهران'
           ]
@@ -22165,9 +22235,28 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
         },
         { t: 'signer', name: dots(c.signerName), role: val(c.signerRole) },
         c.cc.length ? { t: 'list', head: 'رونوشت:', items: c.cc } : null,
-        val(c.preparedBy) ? { t: 'small', text: 'تهیه‌کننده: ' + c.preparedBy } : null
+        val(c.preparedBy) ? { t: 'small', text: 'تهیه‌کننده: ' + c.preparedBy, date: J.format(J.today()) } : null
       ].filter(Boolean)
     };
+  }
+
+  /* «جناب آقای …» — اگر نام خودش عنوان دارد (از دفتر مقامات یا دست‌نوشته)،
+     دوباره «جناب آقای» نمی‌گیرد. */
+  function addresseeLine(name) {
+    var n = val(name);
+    if (!n) return 'جناب آقای ...';
+    if (/^(جناب|سرکار|آقای|خانم|آقا)(\s|$)/.test(n)) return n.replace(/^آقای\s+/, 'جناب آقای ').replace(/^خانم\s+/, 'سرکار خانم ');
+    return 'جناب آقای ' + n;
+  }
+
+  /** مخاطبِ ابلاغ: شهردارِ منطقهٔ کارمند، از دفتر مقامات */
+  function noticeAddressee(rec) {
+    if (!w.Officials || !w.Minute) return null;
+    var mayor = w.Minute.conf().recipients.filter(function (r) { return r.id === 'mayor'; })[0];
+    var title = mayor ? w.Minute.titleFor(mayor, rec) : 'شهردار محترم ' + (rec.servicePlace || rec.orgUnit || '');
+    var o = w.Officials.find(title);
+    if (!o) return null;
+    return { name: o.name ? (o.honor || 'جناب آقای') + ' ' + o.name : '', role: w.Officials.titleOf(o) };
   }
 
   var BUILDERS = {
@@ -22175,14 +22264,45 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   };
 
   // --------------------------------------------------- رندر HTML برای چاپ
+  /* «ٔ» در B Zar نیست و جایش دایرهٔ خالی می‌آید؛ نامه‌های دبیرخانه هم
+     «نامه شماره» می‌نویسند. همهٔ متنِ سند، پیش از چاپ و ورد. */
+  function plainText(v) {
+    return typeof v === 'string' ? v.replace(/\u0654/g, '').replace(/\u06C0/g, '\u0647') : v;
+  }
+  function plainDoc(doc) {
+    function walk(x) {
+      if (typeof x === 'string') return plainText(x);
+      if (Array.isArray(x)) return x.map(walk);
+      if (x && typeof x === 'object') {
+        var o = {};
+        Object.keys(x).forEach(function (k) { o[k] = walk(x[k]); });
+        return o;
+      }
+      return x;
+    }
+    return walk(doc);
+  }
+
+  /** نوارِ کنارِ سربرگ آن‌قدر پهن هست که شماره و «تهیه‌کننده» تویش بنشیند؟ */
+  function bandFits(c) { return Number(c.letterheadRight) >= 40; }
+  var BAND = { edge: 17, width: 40 };   // میلی‌متر: لبهٔ راستِ نوشته‌های نوار، و پهنایش
+
   function toHtml(doc) {
     var c = conf();
-    var wrap = el('div.lf.' + (doc.paper === 'letterhead' ? 'lf-letterhead' : 'lf-plain'));
-    if (doc.paper === 'letterhead') {
+    doc = plainDoc(doc);
+    var head = doc.paper === 'letterhead';
+    var band = head && bandFits(c);
+    var padR = beyond(c.letterheadRight, PAGE.side);
+    var wrap = el('div.lf.' + (head ? 'lf-letterhead' : 'lf-plain'));
+    if (head) {
       // نوار کنارِ سربرگ سمت راست است؛ متن باید از آن فاصله بگیرد.
-      wrap.style.paddingInlineEnd = beyond(c.letterheadRight, PAGE.side) + 'mm';
+      // راست و چپِ فیزیکی: در صفحهٔ راست‌به‌چپ «inline-end» یعنی چپ، و نوار
+      // سربرگ آن‌وقت سمتِ اشتباه می‌افتاد
+      wrap.style.paddingRight = padR + 'mm';
+      wrap.style.paddingLeft = beyond(c.letterheadLeft, PAGE.side) + 'mm';
       wrap.appendChild(letterheadSpace(c));
     }
+    var small = doc.blocks.filter(function (b) { return b.t === 'small'; })[0];
 
     doc.blocks.forEach(function (b) {
       if (b.t === 'h1') wrap.appendChild(el('h1.lf-title', { text: b.text }));
@@ -22197,7 +22317,15 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
       } else if (b.t === 'quote') {
         wrap.appendChild(el('blockquote.lf-quote', { text: b.text }));
       } else if (b.t === 'letterNo') {
-        wrap.appendChild(el('div.lf-letter-no', { text: b.text }));
+        if (!b.text) return;
+        var no = el('div.lf-letter-no' + (band ? '.in-band' : ''), { text: b.text });
+        if (band) {
+          // داخلِ نوارِ سربرگ، بالا — مثلِ نمونهٔ دبیرخانه
+          no.style.top = Math.max(0, c.letterheadTop - 2 - PAGE.top) + 'mm';
+          no.style.right = (BAND.edge - PAGE.side) + 'mm';
+          no.style.width = BAND.width + 'mm';
+        }
+        wrap.appendChild(no);
       } else if (b.t === 'to') {
         wrap.appendChild(el('div.lf-to', null, b.lines.map(function (line, i) {
           return el(i === 2 ? 'div.lf-subject' : 'div', { text: line });
@@ -22256,10 +22384,20 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
           return el('div.lf-notice-row', { text: x });
         })));
       } else if (b.t === 'signer') {
-        wrap.appendChild(el('div.lf-signer', null, [
+        var row = el('div.lf-signer-row', null, [el('div.lf-signer', null, [
           el('div.lf-signer-name', { text: b.name }),
           el('div.lf-signer-role', { text: b.role })
-        ]));
+        ])]);
+        // «تهیه‌کننده» هم‌ترازِ امضا، داخلِ نوارِ سربرگ
+        if (small && band) {
+          var pr = el('div.lf-prepared.in-band', null, [
+            el('div', { text: small.text }), small.date ? el('div', { text: small.date }) : null
+          ]);
+          pr.style.right = -(padR - (BAND.edge - PAGE.side)) + 'mm';
+          pr.style.width = BAND.width + 'mm';
+          row.appendChild(pr);
+        }
+        wrap.appendChild(row);
       } else if (b.t === 'list') {
         wrap.appendChild(el('div.lf-foot', null, [
           el('div.lf-cc', null, [
@@ -22270,7 +22408,8 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
           ])
         ]));
       } else if (b.t === 'small') {
-        wrap.appendChild(el('div.lf-prepared', { text: b.text }));
+        if (band && doc.blocks.some(function (x) { return x.t === 'signer'; })) return;
+        wrap.appendChild(el('div.lf-prepared', { text: b.text + (b.date ? ' — ' + b.date : '') }));
       }
     });
     return wrap;
@@ -22280,7 +22419,16 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
   function toDocx(doc) {
     var D = w.Docx;
     var c = conf();
+    doc = plainDoc(doc);
     var out = [];
+    var head = doc.paper === 'letterhead';
+    var band = head && bandFits(c);
+    var left = head ? Number(c.letterheadLeft) : PAGE.side;
+    var right = head ? Number(c.letterheadRight) : PAGE.side;
+    var bodyTw = D.mm(210 - left - right);
+    var small = doc.blocks.filter(function (b) { return b.t === 'small'; })[0];
+    // جای نوشته‌های نوار، از لبهٔ چپِ کاغذ
+    var bandX = 210 - BAND.edge - BAND.width;
 
     doc.blocks.forEach(function (b) {
       if (b.t === 'h1') {
@@ -22291,17 +22439,22 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
         out.push(D.para(b.text, { bold: true, after: 60 }));
       } else if (b.t === 'p') {
         out.push(D.para(b.text, {
-          bold: b.bold, align: b.justify ? 'both' : 'right', after: 120
+          bold: b.bold, align: b.justify ? 'both' : 'right', after: 40, line: 360
         }));
       } else if (b.t === 'quote') {
-        out.push(D.para(b.text, { bold: true, align: 'both', border: true, after: 140 }));
+        // نمونهٔ دبیرخانه: متنِ رأی درشت و میانِ گیومه، بی‌قاب
+        out.push(D.para(b.text, { bold: true, align: 'both', after: 40, line: 300 }));
       } else if (b.t === 'letterNo') {
-        out.push(D.para(b.text, { align: 'left', after: 160 }));
+        if (!b.text) return;
+        out.push(band
+          ? D.para(b.text, { size: 20, align: 'right', after: 0,
+            frame: { xMm: bandX, yMm: Math.max(8, c.letterheadTop - 2), wMm: BAND.width } })
+          : D.para(b.text, { align: 'left', after: 160 }));
       } else if (b.t === 'to') {
         b.lines.forEach(function (line) {
-          out.push(D.para(line, { bold: true, after: 40 }));
+          out.push(D.para(line, { bold: true, size: 24, after: 0, line: 276 }));
         });
-        out.push(D.emptyPara({ after: 80 }));
+        out.push(D.emptyPara({ after: 60 }));
       } else if (b.t === 'labelTable') {
         out.push(D.table(b.rows.map(function (r) {
           return [
@@ -22347,26 +22500,39 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
           out.push(D.para(x, { bold: true, size: 20, after: 140 }));
         });
       } else if (b.t === 'signer') {
-        out.push(D.emptyPara({ after: 400 }));
-        out.push(D.para(b.name, { bold: true, align: 'center', after: 20 }));
-        out.push(D.para(b.role, { align: 'center', after: 200 }));
+        out.push(D.emptyPara({ after: 240, keepNext: true }));
+        // «تهیه‌کننده» هم‌ترازِ امضا، در نوارِ سربرگ
+        if (small && band) {
+          out.push(D.para(small.text + (small.date ? '\n' + small.date : ''), {
+            size: 18, align: 'right', after: 0, line: 276,
+            frame: { xMm: bandX, yMm: 6, wMm: BAND.width, anchor: 'text' }
+          }));
+        }
+        // امضا در سمتِ چپ، مثلِ نمونه: جدولِ بی‌خطِ دوستونه (ستونِ اول = راست)
+        var signW = Math.min(D.mm(72), Math.round(bodyTw / 2));
+        out.push(D.table([[
+          D.cell('', { width: bodyTw - signW }),
+          D.cell([{ text: b.name, bold: true, size: 24 }, { text: '\n' + b.role, bold: true, size: 24 }],
+            { width: signW, align: 'center' })
+        ]], 2, { noBorder: true, widths: [bodyTw - signW, signW] }));
       } else if (b.t === 'list') {
-        out.push(D.para(b.head, { bold: true, size: 17, after: 20 }));
+        out.push(D.para(b.head, { bold: true, size: 16, after: 0, line: 240 }));
         b.items.forEach(function (x) {
-          out.push(D.para('– ' + x, { size: 17, after: 10 }));
+          out.push(D.para('- ' + x, { size: 16, after: 0, line: 240 }));
         });
       } else if (b.t === 'small') {
-        out.push(D.para(b.text, { size: 17, after: 0 }));
+        if (band && doc.blocks.some(function (x) { return x.t === 'signer'; })) return;
+        out.push(D.para(b.text + (b.date ? ' — ' + b.date : ''), { size: 17, after: 0 }));
       }
     });
 
-    var head = doc.paper === 'letterhead';
     return D.build(out.join(''), {
       topMm: head ? c.letterheadTop : 16,
       bottomMm: head ? c.letterheadBottom : 14,
       sideMm: PAGE.side,
       // در ورد، w:right همان لبهٔ راستِ فیزیکی کاغذ است — جای نوار سربرگ.
-      rightMm: head ? c.letterheadRight : PAGE.side
+      rightMm: right,
+      leftMm: left
     });
   }
 
@@ -22474,6 +22640,10 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
     }
     if (key === 'company') return rec.contractType || '';
     if (key === 'verdictText') return rec.verdictFull || '';
+    // مخاطب، شهردارِ منطقهٔ همین کارمند است — نه نامِ پروندهٔ قبلی
+    var off = (key === 'addressee' || key === 'addresseeRole') ? noticeAddressee(rec) : null;
+    if (off && key === 'addressee' && off.name) return off.name;
+    if (off && key === 'addresseeRole') return off.role;
     if (key === 'addresseeRole') return 'شهردار محترم ' + (rec.orgUnit || '');
     if (key === 'outLetterNo') return rec.noticeLetterNo || '';
     if (key === 'phoneFixed') return rec.phone || '';
@@ -28195,16 +28365,19 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'سربرگ و فرم‌های اداری' }),
       el('p.muted.tiny', {
-        text: 'فرم تفهیم اتهام، رأی و ابلاغ روی سربرگ ساخته می‌شوند؛ دو ' +
-          'اندازهٔ زیر خالی می‌ماند تا متن روی چاپِ سازمان نیفتد. هر دو را ' +
-          'با خط‌کش از لبهٔ خودِ کاغذ اندازه بگیرید. بقیهٔ این‌ها هر بار ' +
-          'یکسان‌اند و در فرم‌ها می‌نشینند.'
+        text: 'فرم تفهیم اتهام، رأی، ابلاغ و مینوت روی سربرگ ساخته می‌شوند. نوارِ چاپیِ ' +
+          'سربرگ سمتِ راستِ کاغذ است؛ متن به‌اندازهٔ «فاصله از سمت راست» از آن فاصله ' +
+          'می‌گیرد و شمارهٔ نامه و «تهیه‌کننده» داخلِ همان نوار می‌نشینند. اندازه‌ها را با ' +
+          'خط‌کش از لبهٔ خودِ کاغذ بگیرید (پیش‌فرض از روی نمونهٔ دبیرخانه: راست ۵۸، بالا ۲۰، ' +
+          'چپ ۱۰ میلی‌متر).'
       }),
       el('div.letters-settings', null, [
         lField('letterheadTop', 'فاصله از بالای سربرگ (میلی‌متر)',
           'از لبهٔ بالای کاغذ تا جایی که چاپ سربرگ تمام می‌شود', 'number'),
         lField('letterheadRight', 'فاصله از سمت راست سربرگ (میلی‌متر)',
           'از لبهٔ راست کاغذ تا جایی که متن می‌تواند شروع شود', 'number'),
+        lField('letterheadLeft', 'حاشیهٔ چپ (میلی‌متر)',
+          'از لبهٔ چپ کاغذ تا انتهای سطر', 'number'),
         lField('orgTitle', 'عنوان کمیته در سربرگ فرم‌ها'),
         lField('signerName', 'نام امضاکنندهٔ نامهٔ ابلاغ'),
         lField('signerRole', 'سمت امضاکننده'),
@@ -28306,7 +28479,8 @@ window.FA_DICT = {"sfx":[["sa","م","FFWW"],["sa","ت","FFWW"],["sa","ش","FFWW"
           };
           w.UILetters.saveConf({
             letterheadTop: mmOf('letterheadTop', 120),
-            letterheadRight: mmOf('letterheadRight', 80),
+            letterheadRight: mmOf('letterheadRight', 90),
+            letterheadLeft: mmOf('letterheadLeft', 40),
             orgTitle: lInputs.orgTitle.value.trim(),
             signerName: lInputs.signerName.value.trim(),
             signerRole: lInputs.signerRole.value.trim(),

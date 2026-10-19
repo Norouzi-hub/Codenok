@@ -3254,7 +3254,7 @@ select.input { cursor: pointer; }
 }
 
 @media print {
-  @page { size: A4; margin: 14mm 12mm; }
+  @page { size: A4; margin: 10mm; }
   body { overflow: visible; background: #fff; display: block; height: auto; }
   /* نوار پایین موبایل و شیت‌ها هم نباید روی کاغذ بیایند */
   .topbar, #main, .toast, .overlay, .dp-pop, .tabbar, .sel-bar,
@@ -3344,6 +3344,19 @@ select.input { cursor: pointer; }
   .lf-notice-row { margin-bottom: 8px; font-weight: 700; font-size: 10pt; }
 
   .lf-letter-no { text-align: left; font-size: 10pt; margin-bottom: 10px; }
+  /* سربرگِ دبیرخانه: نوارِ چاپیِ سمتِ راست؛ شماره بالای آن، «تهیه‌کننده» کنارِ امضا */
+  .lf-letterhead { position: relative; font-size: 12.5pt; line-height: 2; }
+  .lf-letterhead .lf-letter-no.in-band { position: absolute; text-align: right; margin: 0; }
+  .lf-letterhead .lf-to { line-height: 1.75; margin-bottom: 6mm; }
+  .lf-letterhead .lf-para { margin: 0 0 2px; }
+  .lf-letterhead .lf-quote { border: 0; padding: 0; margin: 2px 0; line-height: 1.8; }
+  .lf-signer-row { position: relative; margin-top: 10mm; break-inside: avoid; }
+  .lf-signer-row .lf-signer { margin-top: 0; width: 72mm; margin-inline-start: auto; font-weight: 700; }
+  .lf-prepared.in-band { position: absolute; top: 4mm; text-align: right; font-size: 9pt; line-height: 1.6; margin: 0; }
+  .lf-letterhead .lf-foot { margin-top: 2mm; }
+  .lf-letterhead .lf-cc { font-size: 8pt; line-height: 1.6; }
+  .lf-letterhead .lf-cc-list { list-style: none; padding: 0; line-height: 1.6; }
+  .lf-letterhead .lf-cc-list li::before { content: '- '; }
   .lf-to { font-weight: 700; margin-bottom: 10px; line-height: 2; }
   .lf-subject { margin-top: 2px; }
   .lf-quote {

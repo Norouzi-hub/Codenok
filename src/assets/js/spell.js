@@ -302,6 +302,8 @@
 
   /* ------------------------------------------------------ اصلاح نگارشی */
   var VOPTS = {
+    // «جلسه ی» ← «جلسهٔ» نه: «ٔ» در B Zar نیست و دایرهٔ خالی می‌شود
+    fix_hamzeh: false,
     fix_english_numbers: false, normalize_dates: false, fix_numeral_symbols: false,
     markdown_normalize_lists: false, markdown_normalize_braces: false,
     cleanup_line_breaks: false, kashidas_as_parenthetic: false,

@@ -4,12 +4,12 @@
  * نام‌ها و شماره‌های این آزمون ساختگی‌اند؛ فقط *شکلِ* متن از نمونه‌های
  * دبیرخانه گرفته شده.
  *
- *   ۱) فعل از رتبهٔ گیرنده: پایین‌دست مقتضی، همتراز شایسته، بالادست خواهشمند.
- *   ۲) ارجاع: نامهٔ گیرنده «بازگشت به» (عطف)، نامهٔ ما «پیرو»، بقیه «با عنایت
+ *   ۱) فعل از رتبه گیرنده: پایین‌دست مقتضی، همتراز شایسته، بالادست خواهشمند.
+ *   ۲) ارجاع: نامه گیرنده «بازگشت به» (عطف)، نامه ما «پیرو»، بقیه «با عنایت
  *      به» (در ارتباط)؛ رونوشت؛ بی‌شماره فقط تاریخ؛ محرمانه بی‌ارجاع.
  *   ۳) چهار نامه: دعوت به کمیته، دعوت به جلسه، تکمیل مستندات، بستن حقوق.
  *   ۴) چند نفر در یک نامه.
- *   ۵) پنجره، ثبت در تاریخچه و کارنامه و کارکرد، و ثبت شمارهٔ نامهٔ صادره.
+ *   ۵) پنجره، ثبت در تاریخچه و کارنامه و کارکرد، و ثبت شماره نامه صادره.
  *
  * اجرا:  node tools/test/minute.js
  */
@@ -62,7 +62,7 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
   });
 
   // =========================================================== قاعده‌ها
-  console.log('— فعل از رتبهٔ گیرنده، ارجاع از جنسِ نامه —');
+  console.log('— فعل از رتبه گیرنده، ارجاع از جنسِ نامه —');
   const r = await page.evaluate((ids) => {
     const MN = window.Minute, M = window.Model;
     const A = M.get(ids.a), B = M.get(ids.b), C = M.get(ids.c);
@@ -87,33 +87,33 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     return out;
   }, ids);
 
-  check('گیرندهٔ پیشنهادی از «نوع قرارداد»: شرکت خدمات اداری شهر', r.sugA === 'khadamat', r.sugA);
+  check('گیرنده پیشنهادی از «نوع قرارداد»: شرکت خدمات اداری شهر', r.sugA === 'khadamat', r.sugA);
   check('قرارداد مدت معین: محل خدمت (همتراز)', r.sugC === 'region', r.sugC);
   check('پایین‌دست ← «مقتضی است»', /مقتضی است دستور فرمایید/.test(r.low.text));
   check('همتراز ← «شایسته است»', /شایسته است دستور فرمایید/.test(r.peer.text));
   check('بالادست ← «خواهشمند است»', /خواهشمند است دستور فرمایید/.test(r.high.text));
-  check('نامهٔ خودِ گیرنده: «بازگشت به» و عطف',
-    r.low.rel === 'atf' && r.low.text.indexOf('بازگشت به نامهٔ شمارهٔ ' + fa('48120507') +
+  check('نامه خودِ گیرنده: «بازگشت به» و عطف',
+    r.low.rel === 'atf' && r.low.text.indexOf('بازگشت به نامه شماره ' + fa('48120507') +
       ' مورخ ' + fa('1405/06/31') + '، مقتضی است') >= 0 &&
-    r.low.relText === 'عطف به نامهٔ شمارهٔ ' + fa('48120507') + ' مورخ ' + fa('1405/06/31'),
+    r.low.relText === 'عطف به نامه شماره ' + fa('48120507') + ' مورخ ' + fa('1405/06/31'),
     r.low.relText);
-  check('نامهٔ دیگری: «با عنایت به» و در ارتباط، با فرستنده', r.peer.rel === 'related' &&
-    /با عنایت به نامهٔ شمارهٔ .+ شرکت خدمات اداری شهر، شایسته است/.test(r.peer.text), r.peer.relText);
-  check('نامهٔ بی‌شماره: فقط تاریخ', /با عنایت به نامهٔ مورخ ۱۴۰۵\/۰۶\/۲۰ نهاد راهبردی/.test(r.noNo.text),
+  check('نامه دیگری: «با عنایت به» و در ارتباط، با فرستنده', r.peer.rel === 'related' &&
+    /با عنایت به نامه شماره .+ شرکت خدمات اداری شهر، شایسته است/.test(r.peer.text), r.peer.relText);
+  check('نامه بی‌شماره: فقط تاریخ', /با عنایت به نامه مورخ ۱۴۰۵\/۰۶\/۲۰ نهاد راهبردی/.test(r.noNo.text),
     r.noNo.text.split('\n')[1].slice(0, 60));
-  check('رونوشت: «با عنایت به رونوشت نامهٔ …»', /با عنایت به رونوشت نامهٔ شمارهٔ/.test(r.copy.text));
+  check('رونوشت: «با عنایت به رونوشت نامه …»', /با عنایت به رونوشت نامه شماره/.test(r.copy.text));
   check('محرمانه: بی‌ارجاع، مستقیم سرِ درخواست',
     !/بازگشت به|پیرو نامه|با عنایت به نامه/.test(r.conf.text) &&
     /^با سلام و احترام؛\nمقتضی است دستور فرمایید/.test(r.conf.text) &&
     /محرمانه/.test(r.conf.relText), r.conf.relText);
   check('بدون ارجاع', /^با سلام و احترام؛\nمقتضی است/.test(r.none.text) && r.none.relText === 'بدون ارجاع');
   check('نوع ارتباط را می‌شود دستی عوض کرد', r.forced.rel === 'related' && /^با سلام و احترام؛\nبا عنایت به/.test(r.forced.text));
-  check('نامهٔ دیگرِ دستی، با شماره و تاریخ و فرستنده',
-    /با عنایت به نامهٔ شمارهٔ ۷۰۵۱۲ مورخ ۱۴۰۵\/۰۲\/۰۱ نهاد راهبردی/.test(r.custom.text));
-  check('نامهٔ خودمان: «پیرو» و پیرو', r.ours.rel === 'peyro' &&
-    /پیرو نامهٔ شمارهٔ ۴۱۰۰۰ مورخ ۱۴۰۵\/۰۷\/۰۵/.test(r.ours.text) && /^پیرو نامهٔ/.test(r.ours.relText),
+  check('نامه دیگرِ دستی، با شماره و تاریخ و فرستنده',
+    /با عنایت به نامه شماره ۷۰۵۱۲ مورخ ۱۴۰۵\/۰۲\/۰۱ نهاد راهبردی/.test(r.custom.text));
+  check('نامه خودمان: «پیرو» و پیرو', r.ours.rel === 'peyro' &&
+    /پیرو نامه شماره ۴۱۰۰۰ مورخ ۱۴۰۵\/۰۷\/۰۵/.test(r.ours.text) && /^پیرو نامه/.test(r.ours.relText),
     r.ours.relText);
-  check('شمارهٔ «۲۲۹۲۱/۵۱۷» درست نوشته می‌شود و منطقهٔ خودش عطف است',
+  check('شماره «۲۲۹۲۱/۵۱۷» درست نوشته می‌شود و منطقه خودش عطف است',
     r.atfC.rel === 'atf' && r.atfC.text.indexOf(fa('31407/208')) >= 0, r.atfC.relText);
 
   console.log('\n— معرفی کارمند: به کارفرما یا به محل خدمت —');
@@ -122,7 +122,7 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
   check('به منطقه: «… طرف قرارداد شرکت خدمات اداری شهر شاغل در آن منطقه»',
     /از کارکنان طرف قرارداد شرکت خدمات اداری شهر شاغل در آن منطقه/.test(r.peer.text));
   check('خانم و قرارداد مدت معین', /به خانم زهره امینی از کارکنان قرارداد مدت معین آن منطقه/.test(r.atfC.text));
-  check('گیرنده با منطقهٔ پرونده', r.peer.to === 'معاون محترم مالی و اداری شهرداری منطقه پنج', r.peer.to);
+  check('گیرنده با منطقه پرونده', r.peer.to === 'معاون محترم مالی و اداری شهرداری منطقه پنج', r.peer.to);
 
   // ========================================================= چهار نامه
   console.log('\n— چهار نامه —');
@@ -131,7 +131,7 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     const A = M.get(ids.a), B = M.get(ids.b);
     const rc = k => MN.conf().recipients.find(x => x.id === k);
     return {
-      invite: MN.build('invite', [A], { opts: { about: 'قرارداد شمارهٔ ۳۵۴۱' } }).text,
+      invite: MN.build('invite', [A], { opts: { about: 'قرارداد شماره ۳۵۴۱' } }).text,
       hearing: MN.build('hearing', [A], { recipient: rc('region') }),
       defect: MN.build('defect', [A]).text,
       defectInv: MN.build('defect', [A], { opts: { withInvite: true } }),
@@ -144,23 +144,23 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     };
   }, ids);
   check('دعوت: مهلت از «مهلت حضور و ارائه دفاعیه»، «در ارتباط با»، دو بند ثابت',
-    t.invite.indexOf('جهت ادای توضیح در ارتباط با قرارداد شمارهٔ ۳۵۴۱، حداکثر تا تاریخ ۱۴۰۵/۰۷/۱۳') >= 0 &&
+    t.invite.indexOf('جهت ادای توضیح در ارتباط با قرارداد شماره ۳۵۴۱، حداکثر تا تاریخ ۱۴۰۵/۰۷/۱۳') >= 0 &&
     /بدیهی است هرگونه خروج از خدمت نامبرده/.test(t.invite) && /متعاقباً ارسال خواهد شد/.test(t.invite));
   check('جلسه: ساعت، روزِ هفته، تاریخ و محل', t.hearing.text.indexOf('راس ساعت ۱۴:۰۰ روز ' + t.weekday +
-    ' مورخ ۱۴۰۵/۰۷/۱۹ در جلسهٔ کمیتهٔ انضباط کار، که در شهرداری منطقهٔ یک') >= 0, t.weekday);
+    ' مورخ ۱۴۰۵/۰۷/۱۹ در جلسه کمیته انضباط کار، که در شهرداری منطقه یک') >= 0, t.weekday);
   check('جلسه: مهلت پیامک، روز کاریِ پیش از جلسه', t.before === '14050718' &&
     /روز شنبه مورخ ۱۴۰۵\/۰۷\/۱۸/.test(t.hearing.text), t.before);
   check('پیش از شنبه، پنج‌شنبه و جمعه رد می‌شوند', t.beforeSat === '14050722', t.beforeSat);
-  check('جلسه: تبصرهٔ ۳۰ مادهٔ ۳۶', /تبصرهٔ ۳۰ مادهٔ ۳۶/.test(t.hearing.text) &&
+  check('جلسه: تبصره ۳۰ ماده ۳۶', /تبصره ۳۰ ماده ۳۶/.test(t.hearing.text) &&
     t.hearing.attach === 'فرم دعوت به جلسه');
   check('تکمیل مستندات: آیین‌نامه، کد ملی، فهرست مدارک، بند پایانی',
     /در خصوص اعلام غیبت آقای بهرام نیک‌پور \(کد ملی: ۰۰۱۲۳۴۵۶۷۹\)/.test(t.defect) &&
-    /ابلاغ آیین‌نامهٔ کمیتهٔ انضباط کار به شمارهٔ ۱۰۹۱۳۴۸ مورخ ۱۴۰۲\/۰۹\/۲۵/.test(t.defect) &&
-    /\(فرم اعلام تخلف شمارهٔ ۱، صورتجلسهٔ شورای عملیاتی تحول اداری، پرینت تردد ایام غیبت\)/.test(t.defect) &&
+    /ابلاغ آیین‌نامه کمیته انضباط کار به شماره ۱۰۹۱۳۴۸ مورخ ۱۴۰۲\/۰۹\/۲۵/.test(t.defect) &&
+    /\(فرم اعلام تخلف شماره ۱، صورتجلسه شورای عملیاتی تحول اداری، پرینت تردد ایام غیبت\)/.test(t.defect) &&
     /عدم وصول مستندات لازم/.test(t.defect));
-  check('تکمیل مستندات + دعوت: فرم شمارهٔ ۴ و پیوستش',
-    /فرم شمارهٔ ۴ دعوت به کمیتهٔ انضباط کار \(به پیوست\)/.test(t.defectInv.text) &&
-    /فرم شمارهٔ ۴/.test(t.defectInv.attach));
+  check('تکمیل مستندات + دعوت: فرم شماره ۴ و پیوستش',
+    /فرم شماره ۴ دعوت به کمیته انضباط کار \(به پیوست\)/.test(t.defectInv.text) &&
+    /فرم شماره ۴/.test(t.defectInv.attach));
   check('بستن حقوق + دعوت: «ضمن خودداری از پرداخت هرگونه وجه»',
     /ضمن خودداری از پرداخت هرگونه وجه، به نامبرده ابلاغ گردد/.test(t.salary.text) &&
     /\(تصویر پیوست\)/.test(t.salary.text));
@@ -172,7 +172,7 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
   check('مرد و زن با هم: «آقای … و خانم …»', t.mixed === 'آقای بهرام نیک‌پور و خانم زهره امینی', t.mixed);
 
   // ============================================================ پنجره
-  console.log('\n— پنجره، ثبت در کارها، شمارهٔ نامهٔ صادره —');
+  console.log('\n— پنجره، ثبت در کارها، شماره نامه صادره —');
   const ui = await page.evaluate(async (ids) => {
     window.App.openCase(ids.a);
     await new Promise(r => setTimeout(r, 800));
@@ -195,11 +195,11 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     out.mayor = body();
     // دست‌نوشته با کلید بعدی پاک نمی‌شود
     const ta = document.querySelector('.mn-body');
-    ta.value = ta.value + '\nجملهٔ دستی.'; ta.dispatchEvent(new Event('input'));
+    ta.value = ta.value + '\nجمله دستی.'; ta.dispatchEvent(new Event('input'));
     const sel2 = document.querySelector('.mn-controls select');
     sel2.value = 'region'; sel2.dispatchEvent(new Event('change'));
     await new Promise(r => setTimeout(r, 100));
-    out.keptEdit = /جملهٔ دستی/.test(body());
+    out.keptEdit = /جمله دستی/.test(body());
     // عوض کردن نوع، با متنِ دستی، اول می‌پرسد
     [...document.querySelectorAll('.mn-type')].find(b => /دعوت به کمیته/.test(b.textContent)).click();
     await new Promise(r => setTimeout(r, 150));
@@ -207,7 +207,7 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     [...document.querySelectorAll('.overlay')].pop().querySelector('.btn.danger').click();
     await new Promise(r => setTimeout(r, 150));
     document.querySelector('.mn-rebuild').click();
-    out.rebuilt = !/جملهٔ دستی/.test(body()) && /حداکثر تا تاریخ/.test(body());
+    out.rebuilt = !/جمله دستی/.test(body()) && /حداکثر تا تاریخ/.test(body());
 
     const before = window.Model.historyFor(ids.a).filter(h => h.kind === 'minute').length;
     const copyBtn = [...document.querySelectorAll('.modal-foot .btn')].find(b => /کپی برای اتوماسیون/.test(b.textContent));
@@ -216,7 +216,7 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     out.logged = window.Model.historyFor(ids.a).filter(h => h.kind === 'minute').length - before;
     out.logNote = (window.Model.historyFor(ids.a).filter(h => h.kind === 'minute').pop() || {}).note;
 
-    // شمارهٔ نامهٔ صادره
+    // شماره نامه صادره
     const reg = document.querySelector('.mn-reg input.input.small');
     reg.value = '41234'; reg.dispatchEvent(new Event('input'));
     [...document.querySelectorAll('.mn-reg .btn')].pop().click();
@@ -235,20 +235,20 @@ const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
   if (ui.noBtn) check('«نامه و فرم» در پرونده، با مینوت‌ها', false);
   else {
     check('«نامه و فرم» ← «مینوت دعوت به کمیته»، و متنِ آماده', /مقتضی است/.test(ui.first) &&
-      /گیرنده/.test(ui.head) && /عطف به نامهٔ/.test(ui.head));
-    check('عوض کردن نوع، متن را عوض می‌کند', /در جلسهٔ کمیتهٔ انضباط کار/.test(ui.hearing));
+      /گیرنده/.test(ui.head) && /عطف به نامه/.test(ui.head));
+    check('عوض کردن نوع، متن را عوض می‌کند', /در جلسه کمیته انضباط کار/.test(ui.hearing));
     check('عوض کردن گیرنده، فعل را عوض می‌کند', /خواهشمند است/.test(ui.mayor));
     check('دست‌نوشته با کلیدِ بعدی نمی‌پرد؛ عوض کردن نوع اول می‌پرسد', ui.keptEdit && ui.asked && ui.rebuilt,
       JSON.stringify([ui.keptEdit, ui.asked, ui.rebuilt]));
     check('یک بار در تاریخچه، نه به تعداد کلیک', ui.logged === 1, ui.logged + ' — ' + ui.logNote);
-    check('شمارهٔ نامهٔ صادره در پرونده نشست', ui.reg.no === '41234' && ui.reg.date === ui.reg.today,
+    check('شماره نامه صادره در پرونده نشست', ui.reg.no === '41234' && ui.reg.date === ui.reg.today,
       JSON.stringify(ui.reg));
     check('در خروجی کارکرد روزانه شمرده می‌شود', ui.activity === 1, ui.activity);
     check('و در کارنامه', ui.karnameh === 1 && /مینوت نامه نوشته شد/.test(ui.headline), ui.headline);
   }
 
   const more = await page.evaluate(async (ids) => {
-    // تنظیمات: رتبهٔ گیرنده عوض شود، فعل عوض شود
+    // تنظیمات: رتبه گیرنده عوض شود، فعل عوض شود
     const MN = window.Minute;
     const list = MN.conf().recipients.map(r => r.id === 'khadamat' ? Object.assign({}, r, { rank: 'peer' }) : r);
     await MN.saveConf({ recipients: list });

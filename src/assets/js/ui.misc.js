@@ -1421,16 +1421,19 @@
     body.appendChild(el('section.set-block', null, [
       el('h4', { text: 'سربرگ و فرم‌های اداری' }),
       el('p.muted.tiny', {
-        text: 'فرم تفهیم اتهام، رأی و ابلاغ روی سربرگ ساخته می‌شوند؛ دو ' +
-          'اندازهٔ زیر خالی می‌ماند تا متن روی چاپِ سازمان نیفتد. هر دو را ' +
-          'با خط‌کش از لبهٔ خودِ کاغذ اندازه بگیرید. بقیهٔ این‌ها هر بار ' +
-          'یکسان‌اند و در فرم‌ها می‌نشینند.'
+        text: 'فرم تفهیم اتهام، رأی، ابلاغ و مینوت روی سربرگ ساخته می‌شوند. نوارِ چاپیِ ' +
+          'سربرگ سمتِ راستِ کاغذ است؛ متن به‌اندازهٔ «فاصله از سمت راست» از آن فاصله ' +
+          'می‌گیرد و شمارهٔ نامه و «تهیه‌کننده» داخلِ همان نوار می‌نشینند. اندازه‌ها را با ' +
+          'خط‌کش از لبهٔ خودِ کاغذ بگیرید (پیش‌فرض از روی نمونهٔ دبیرخانه: راست ۵۸، بالا ۲۰، ' +
+          'چپ ۱۰ میلی‌متر).'
       }),
       el('div.letters-settings', null, [
         lField('letterheadTop', 'فاصله از بالای سربرگ (میلی‌متر)',
           'از لبهٔ بالای کاغذ تا جایی که چاپ سربرگ تمام می‌شود', 'number'),
         lField('letterheadRight', 'فاصله از سمت راست سربرگ (میلی‌متر)',
           'از لبهٔ راست کاغذ تا جایی که متن می‌تواند شروع شود', 'number'),
+        lField('letterheadLeft', 'حاشیهٔ چپ (میلی‌متر)',
+          'از لبهٔ چپ کاغذ تا انتهای سطر', 'number'),
         lField('orgTitle', 'عنوان کمیته در سربرگ فرم‌ها'),
         lField('signerName', 'نام امضاکنندهٔ نامهٔ ابلاغ'),
         lField('signerRole', 'سمت امضاکننده'),
@@ -1532,7 +1535,8 @@
           };
           w.UILetters.saveConf({
             letterheadTop: mmOf('letterheadTop', 120),
-            letterheadRight: mmOf('letterheadRight', 80),
+            letterheadRight: mmOf('letterheadRight', 90),
+            letterheadLeft: mmOf('letterheadLeft', 40),
             orgTitle: lInputs.orgTitle.value.trim(),
             signerName: lInputs.signerName.value.trim(),
             signerRole: lInputs.signerRole.value.trim(),

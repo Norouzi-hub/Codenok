@@ -399,10 +399,12 @@
       // «بازگشت به …، شایسته است » — ارجاع و فعل، با ویرگولِ میانشان
       lead: (ref ? ref + '، ' : '') + verb + ' '
     };
-    var paragraphs = ['با سلام و احترام؛'].concat(t.body(x));
-    var relationText = conf_ ? 'محرمانه — بدون ارجاع'
-      : (letter ? relOf(relation).line + ' ' + letterPhrase(letter) : 'بدون ارجاع');
-    var attach = t.attachOf ? t.attachOf(opts) : (t.attach || '');
+    /* «ٔ» (نامهٔ، شمارهٔ) در قلمِ B Zar نیست و در ورد و اتوماسیون دایرهٔ خالی
+       می‌شود؛ نامه‌های دبیرخانه «نامه شماره» می‌نویسند. */
+    var paragraphs = ['با سلام و احترام؛'].concat(t.body(x)).map(plain);
+    var relationText = plain(conf_ ? 'محرمانه — بدون ارجاع'
+      : (letter ? relOf(relation).line + ' ' + letterPhrase(letter) : 'بدون ارجاع'));
+    var attach = plain(t.attachOf ? t.attachOf(opts) : (t.attach || ''));
     /* نامِ مخاطب از «دفتر مقامات»: «جناب آقای … شهردار محترم منطقه ۵».
        withName: false یعنی فقط سمت (کاربر خواسته، یا نامی پیدا نشد). */
     var title = titleFor(recipient, rec);
@@ -410,8 +412,8 @@
     if (o.withName !== false && w.Officials) {
       addressee = recipient.official ? w.Officials.get(recipient.official) : w.Officials.find(title);
     }
-    var to = addressee ? w.Officials.address(addressee, title) : title;
-    var subject = t.subject + ' — ' + people(recs);
+    var to = plain(addressee ? w.Officials.address(addressee, title) : title);
+    var subject = plain(t.subject + ' — ' + people(recs));
     var text = paragraphs.join('\n');
     var full = ['گیرنده: ' + to, 'موضوع: ' + subject, relationText,
       attach ? 'پیوست: ' + attach : ''].filter(Boolean).join('\n') + '\n\n' + text;
@@ -421,6 +423,8 @@
       paragraphs: paragraphs, text: text, full: full, confidential: conf_
     };
   }
+
+  function plain(s) { return String(s == null ? '' : s).replace(/\u0654/g, '').replace(/\u06C0/g, '\u0647'); }
 
   w.Minute = {
     BLANK: BLANK, TYPES: TYPES, RANKS: RANKS, RELATIONS: RELATIONS, OUR_LETTERS: OUR_LETTERS,

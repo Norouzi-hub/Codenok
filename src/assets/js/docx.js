@@ -42,23 +42,56 @@
    */
   var FONT = 'B Zar';
   var CS_SCALE = 1.18;
+  // هر چهار جایگاهِ قلم: بی این، ورد رقم و نشانه را با Times New Roman می‌نویسد
+  var FONTS = '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:eastAsia="' + FONT +
+    '" w:cs="' + FONT + '" w:hint="cs"/>';
+  var LANG = '<w:lang w:val="fa-IR" w:eastAsia="fa-IR" w:bidi="fa-IR"/>';
 
   /** ویژگی‌های متن: درشتی، اندازه، و همیشه راست‌به‌چپ */
   function rPr(o) {
     o = o || {};
     var size = o.size || 22;            // نیم‌پوینت: ۲۲ یعنی ۱۱ پوینت
     var csSize = Math.round(size * CS_SCALE);
-    return '<w:rPr>' +
-      '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
+    return '<w:rPr>' + FONTS +
       (o.bold ? '<w:b/><w:bCs/>' : '') +
       '<w:sz w:val="' + size + '"/><w:szCs w:val="' + csSize + '"/>' +
-      '<w:rtl/>' +
+      '<w:rtl/>' + LANG +
       '</w:rPr>';
+  }
+
+  /*
+   * متن برای ورد و قلمِ B Zar:
+   *   - «ٔ» (همزهٔ روی «ه») در B Zar نیست؛ ورد جایش دایرهٔ خالی می‌گذارد.
+   *     نامه‌های دبیرخانه هم «نامه شماره» می‌نویسند، نه «نامهٔ شمارهٔ».
+   *   - تاریخ و شمارهٔ نامه («۱۴۰۵/۰۷/۲۰») در متنِ راست‌به‌چپِ ورد وارونه
+   *     می‌شود («۲۰/۰۷/۱۴۰۵»)؛ با نشانهٔ «چپ‌به‌راست» دورش، همان‌طور که
+   *     نوشته شده می‌ماند.
+   */
+  function forWord(text) {
+    return String(text == null ? '' : text)
+      .replace(/\u0654/g, '').replace(/\u06C0/g, '\u0647')
+      .replace(/[0-9\u06F0-\u06F9]+(?:[\/\-][0-9\u06F0-\u06F9]+)+/g, function (m) {
+        return '\u202A' + m + '\u202C';
+      });
   }
 
   function run(text, o) {
     return '<w:r>' + rPr(o) +
-      '<w:t xml:space="preserve">' + esc(text) + '</w:t></w:r>';
+      '<w:t xml:space="preserve">' + esc(forWord(text)) + '</w:t></w:r>';
+  }
+
+  /*
+   * ترازِ پاراگراف. در پاراگرافِ راست‌به‌چپِ ورد «right» و «left» جابه‌جا
+   * خوانده می‌شوند — «right» چپ‌چین می‌شد. «start/end» همیشه درست است:
+   * start = راست، end = چپ.
+   */
+  var JC = { right: 'start', left: 'end', center: 'center', both: 'both', start: 'start', end: 'end' };
+
+  /** قابِ جاگذاری‌شده (برای نوارِ کنارِ سربرگ): میلی‌متر از لبهٔ کاغذ */
+  function framePr(f) {
+    return '<w:framePr w:w="' + mm(f.wMm) + '" w:hSpace="0" w:wrap="around"' +
+      ' w:vAnchor="' + (f.anchor === 'text' ? 'text' : 'page') + '" w:hAnchor="page"' +
+      ' w:x="' + mm(f.xMm) + '" w:y="' + mm(f.yMm || 0) + '"/>';
   }
 
   /**
@@ -72,15 +105,18 @@
   function para(text, o) {
     o = o || {};
     var pPr = '<w:pPr>' +
+      (o.keepNext ? '<w:keepNext/>' : '') +
+      (o.frame ? framePr(o.frame) : '') +
       (o.border
         ? '<w:pBdr><w:right w:val="single" w:sz="12" w:space="6" w:color="000000"/></w:pBdr>'
         : '') +
       '<w:bidi/>' +
       '<w:spacing w:before="' + (o.before == null ? 0 : o.before) +
       '" w:after="' + (o.after == null ? 80 : o.after) +
-      '" w:line="300" w:lineRule="auto"/>' +
+      '" w:line="' + (o.line || 300) + '" w:lineRule="auto"/>' +
       (o.indent ? '<w:ind w:right="' + o.indent + '"/>' : '') +
-      '<w:jc w:val="' + (o.align || 'right') + '"/>' +
+      '<w:jc w:val="' + (JC[o.align] || 'start') + '"/>' +
+      '<w:rPr>' + FONTS + '<w:rtl/></w:rPr>' +
       '</w:pPr>';
     var body = text == null || text === ''
       ? ''
@@ -98,7 +134,9 @@
     var runs = (Array.isArray(parts) ? parts : [parts]).map(function (p) {
       if (p == null) return '';
       if (typeof p === 'string') return run(p, { size: o.size });
-      return run(p.text, { bold: p.bold, size: o.size });
+      return String(p.text).split('\n').map(function (line, i) {
+        return (i ? '<w:r><w:br/></w:r>' : '') + run(line, { bold: p.bold, size: p.size || o.size });
+      }).join('');
     }).join('');
     // ترتیب tcPr:  tcW → gridSpan → vAlign
     return '<w:tc><w:tcPr>' +
@@ -107,8 +145,8 @@
       '<w:vAlign w:val="top"/>' +
       '</w:tcPr>' +
       '<w:p><w:pPr><w:bidi/>' +
-      '<w:spacing w:before="20" w:after="20" w:line="276" w:lineRule="auto"/>' +
-      '<w:jc w:val="right"/>' +
+      '<w:spacing w:before="20" w:after="20" w:line="' + (o.line || 276) + '" w:lineRule="auto"/>' +
+      '<w:jc w:val="' + (JC[o.align] || 'start') + '"/>' +
       '</w:pPr>' + runs + '</w:p>' +
       (o.minMm ? emptyHeight(o.minMm) : '') +
       '</w:tc>';
@@ -118,7 +156,7 @@
   function emptyHeight(heightMm) {
     var lines = Math.max(1, Math.round(heightMm / 6));
     var out = '';
-    for (var i = 0; i < lines; i++) out += '<w:p><w:pPr><w:bidi/></w:pPr></w:p>';
+    for (var i = 0; i < lines; i++) out += '<w:p><w:pPr><w:bidi/><w:rPr>' + FONTS + '</w:rPr></w:pPr></w:p>';
     return out;
   }
 
@@ -132,7 +170,9 @@
     o = o || {};
     var grid = '';
     var each = Math.round(9638 / (cols || 1));   // عرض مفید A4 با حاشیهٔ ۱۲ میلی‌متر
-    for (var i = 0; i < (cols || 1); i++) grid += '<w:gridCol w:w="' + each + '"/>';
+    for (var i = 0; i < (cols || 1); i++) {
+      grid += '<w:gridCol w:w="' + (o.widths ? o.widths[i] : each) + '"/>';
+    }
     // ترتیب tblPr:  bidiVisual → tblW → tblBorders → tblCellMar
     return '<w:tbl><w:tblPr>' +
       '<w:bidiVisual/>' +                      // بدون این، ستون‌ها چپ‌به‌راست می‌شوند
@@ -178,14 +218,14 @@
   var STYLES =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
-    '<w:docDefaults><w:rPrDefault><w:rPr>' +
-    '<w:rFonts w:ascii="' + FONT + '" w:hAnsi="' + FONT + '" w:cs="' + FONT + '"/>' +
-    '<w:sz w:val="22"/><w:szCs w:val="' + Math.round(22 * CS_SCALE) + '"/><w:rtl/>' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' + FONTS +
+    '<w:sz w:val="22"/><w:szCs w:val="' + Math.round(22 * CS_SCALE) + '"/><w:rtl/>' + LANG +
     '</w:rPr></w:rPrDefault>' +
-    '<w:pPrDefault><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr></w:pPrDefault>' +
+    '<w:pPrDefault><w:pPr><w:bidi/><w:jc w:val="start"/></w:pPr></w:pPrDefault>' +
     '</w:docDefaults>' +
     '<w:style w:type="paragraph" w:default="1" w:styleId="Normal">' +
-    '<w:name w:val="Normal"/><w:qFormat/></w:style>' +
+    '<w:name w:val="Normal"/><w:qFormat/>' +
+    '<w:pPr><w:bidi/></w:pPr><w:rPr>' + FONTS + '<w:rtl/></w:rPr></w:style>' +
     '</w:styles>';
 
   /**
@@ -225,6 +265,7 @@
 
   w.Docx = {
     build: build, para: para, emptyPara: emptyPara, run: run,
-    cell: cell, table: table, emptyHeight: emptyHeight, mm: mm, esc: esc, MIME: MIME
+    cell: cell, table: table, emptyHeight: emptyHeight, mm: mm, esc: esc, MIME: MIME,
+    forWord: forWord, FONT: FONT
   };
 })(window);
